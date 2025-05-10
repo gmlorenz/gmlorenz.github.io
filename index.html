@@ -547,7 +547,7 @@
            function saveData() {
              const projectName = projectNameInput.value;
              const totalPoints = grandTotalSpan.textContent;
-             let outputString = `Project: ${projectName}\nExtracted Points: ${totalPoints}\nCategory Totals:\n`;
+             let outputString = `Project: ${projectName}\nTotal Points: ${totalPoints}\nCategory Totals:\n`;
              for (let i = 1; i <= numberOfCategories; i++) {
                const categoryTotalDiv = document.getElementById(`category-total${i}`);
                if (categoryTotalDiv) {
