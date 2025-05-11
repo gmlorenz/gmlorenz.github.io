@@ -91,7 +91,8 @@
          /* Apply the Roboto Slab font */
          /*font-family: 'Roboto Slab', serif;*/
          /* Or apply the Montserrat font */
-         font-family: 'Montserrat', sans-serif;
+         /*font-family: 'Montserrat', sans-serif;*/
+         font-family: "Lucida Console", "Courier New", monospace;
          }
          .log-y {
          color: green;
@@ -848,9 +849,9 @@
          letterLogDiv.innerHTML = ''; // Clear previous logs
          
          // Add the log messages
-         letterLogDiv.innerHTML += `<span class="log-y">Extracted: Fix Yes ${yCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-n">Extracted: No Fix ${nCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-m">Extracted: Miss ${mCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-y">Fix Yes ${yCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-n">No Fix ${nCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-m">Miss ${mCount}</span><br>`;
          
          
          // Reset all quantity fields to 0 before auto-filling
