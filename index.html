@@ -4,6 +4,10 @@
    <head>
       <title>Fixpoints Extractor</title>
       <link rel="icon" href="icon.png" type="image/png">
+      <link rel="stylesheet" href="style.css">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
       <style>
          body {
          display: flex;
@@ -76,6 +80,30 @@
          }
          #auto-fill-button:hover {
          background-color: #1976D2;
+         }
+         #letter-log {
+         margin-top: 10px;
+         padding: 10px;
+         border: 1px solid #ddd;
+         border-radius: 7px;
+         background-color: #f9f9f9;
+         font-size: 0.8em;
+         /* Apply the Roboto Slab font */
+         /*font-family: 'Roboto Slab', serif;*/
+         /* Or apply the Montserrat font */
+         font-family: 'Montserrat', sans-serif;
+         }
+         .log-y {
+         color: green;
+         font-weight: bold;
+         }
+         .log-n {
+         color: red;
+         font-weight: bold;
+         }
+         .log-m {
+         color: blue;
+         font-weight: bold;
          }
          #activity-input-container {
          background-color: #fff;
@@ -396,6 +424,7 @@
                <label for="number-paste-area">Paste Fixpoints</label>
                <textarea id="number-paste-area" rows="4"></textarea>
                <button id="auto-fill-button" class="action-button">Extract Fixpoints</button>
+               <div id="letter-log" style="margin-top: 10px;"></div>
             </div>
             <div id="category-inputs">
             </div>
@@ -807,29 +836,43 @@
            });
          
            autoFillButton.addEventListener('click', function() {
-             const pastedNumbers = numberPasteArea.value.trim();
-             const numbersArray = pastedNumbers.split(/\s+/); // Split by any whitespace
+         const pastedNumbers = numberPasteArea.value.trim().toUpperCase();
+         const numbersArray = pastedNumbers.split(/\s+/); // Split by any whitespace
          
-             // Reset all quantity fields to 0 before auto-filling
-             for (let i = 1; i <= numberOfCategories; i++) {
-               const quantityInput = document.getElementById(`quantity${i}`);
-               if (quantityInput) {
-                 quantityInput.value = 0;
-               }
-             }
+         // Count Y, N, and M (single letters only)
+         const yCount = (pastedNumbers.match(/\bY\b/g) || []).length;
+         const nCount = (pastedNumbers.match(/\bN\b/g) || []).length;
+         const mCount = (pastedNumbers.match(/\bM\b/g) || []).length;
          
-             numbersArray.forEach(numberStr => {
-               const number = parseInt(numberStr);
-               if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
-                 const quantityInput = document.getElementById(`quantity${number}`);
-                 if (quantityInput) {
-                   quantityInput.value = parseInt(quantityInput.value) + 1;
-                 }
-               }
-             });
+         const letterLogDiv = document.getElementById('letter-log');
+         letterLogDiv.innerHTML = ''; // Clear previous logs
          
-             updateTotals(); // Recalculate totals after auto-filling
-           });
+         // Add the log messages
+         letterLogDiv.innerHTML += `<span class="log-y">Extracted: Fix Yes ${yCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-n">Extracted: No Fix ${nCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-m">Extracted: Miss ${mCount}</span><br>`;
+         
+         
+         // Reset all quantity fields to 0 before auto-filling
+         for (let i = 1; i <= numberOfCategories; i++) {
+         const quantityInput = document.getElementById(`quantity${i}`);
+         if (quantityInput) {
+            quantityInput.value = 0;
+         }
+         }
+         
+         numbersArray.forEach(numberStr => {
+         const number = parseInt(numberStr);
+         if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
+            const quantityInput = document.getElementById(`quantity${number}`);
+            if (quantityInput) {
+                quantityInput.value = parseInt(quantityInput.value) + 1;
+            }
+         }
+         });
+         
+         updateTotals(); // Recalculate totals after auto-filling
+         });
          
            window.onload = function() {
              const savedData = localStorage.getItem('fixpointsData');if (savedData) {
@@ -872,5 +915,8 @@
            };
          });
       </script>
+   </body>
+   <body>
+      <script src="script.js"></script>
    </body>
 </html>
