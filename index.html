@@ -97,6 +97,10 @@
          .log-y {
          color: green;
          font-weight: bold;
+            }
+         .log-e {
+         color: orange;
+         font-weight: bold;
          }
          .log-n {
          color: red;
@@ -850,7 +854,7 @@
          
          // Add the log messages
          letterLogDiv.innerHTML += `<span class="log-y">Succesfully extracted</span><br>`;
-         /*letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Extracted ${yCount}</span><br>`;*/
+         letterLogDiv.innerHTML += `<span class="log-e">Fixpoints Count ${yCount}</span><br>`;
          letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
          letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
          
