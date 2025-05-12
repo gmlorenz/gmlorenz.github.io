@@ -842,16 +842,17 @@
          
          // Count Y, N, and M (single letters only)
          const yCount = (pastedNumbers.match(/\bY\b/g) || []).length;
-         const nCount = (pastedNumbers.match(/\bN\b/g) || []).length;
+         const nCount = (pastedNumbers.match(/\bE\b/g) || []).length;
          const mCount = (pastedNumbers.match(/\bM\b/g) || []).length;
          
          const letterLogDiv = document.getElementById('letter-log');
          letterLogDiv.innerHTML = ''; // Clear previous logs
          
          // Add the log messages
-         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Extracted ${yCount}</span><br>`;
-         /*letterLogDiv.innerHTML += `<span class="log-n">No Fix ${nCount}</span><br>`;*/
-         letterLogDiv.innerHTML += `<span class="log-m">Miss extracted ${mCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-y">Succesfully extracted</span><br>`;
+         /*letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Extracted ${yCount}</span><br>`;*/
+         letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
          
          
          // Reset all quantity fields to 0 before auto-filling
