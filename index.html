@@ -107,7 +107,7 @@
          font-weight: bold;
          }
          .log-m {
-         color: blue;
+         color: gray;
          font-weight: bold;
          }
          #activity-input-container {
@@ -851,12 +851,18 @@
          
          const letterLogDiv = document.getElementById('letter-log');
          letterLogDiv.innerHTML = ''; // Clear previous logs
+
+         const today = new Date();
+         const options = { year: 'numeric', month: 'long', day: 'numeric' };
+         const formattedDate = today.toLocaleDateString(undefined, options);
+
+         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
          
          // Add the log messages
          letterLogDiv.innerHTML += `<span class="log-y">Succesfully extracted</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-e">Fixpoints Count ${yCount}</span><br>`;
+         /*letterLogDiv.innerHTML += `<span class="log-e">Fixpoints Count ${yCount}</span><br>`;*/
          letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-e">Miss count ${mCount}</span><br>`;
          
          
          // Reset all quantity fields to 0 before auto-filling
