@@ -700,17 +700,17 @@
          
                  if (savedProjects.length> 0) {
                    const currentProject = savedProjects[savedProjects.length - 1];
-                   projectNameInput.value = currentProject.projectName;
-                   sizeSelection.value = currentProject.sizeSelection;
-                   optionIr.checked = currentProject.optionIr;
-                   finalMultiplierInput.value = currentProject.finalMultiplier;
-                   currentProject.quantities.forEach((qty, index) => {
-                     const qtyInput = document.getElementById(`quantity${index + 1}`);
-                     if (qtyInput) {
-                       qtyInput.value = qty;
-                     }
-                   });
-                   updateTotals();
+                   //projectNameInput.value = currentProject.projectName;
+                   //sizeSelection.value = currentProject.sizeSelection;
+                   //optionIr.checked = currentProject.optionIr;
+                   //finalMultiplierInput.value = currentProject.finalMultiplier;
+                   //currentProject.quantities.forEach((qty, index) => {
+                   //  const qtyInput = document.getElementById(`quantity${index + 1}`);
+                   //  if (qtyInput) {
+                   //   qtyInput.value = qty;
+                   //  }
+                   //});
+                   //updateTotals();
                  } else {
                    projectNameInput.value = '';
                    grandTotalSpan.textContent = '0';
