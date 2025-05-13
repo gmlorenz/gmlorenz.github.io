@@ -97,7 +97,7 @@
          .log-y {
          color: green;
          font-weight: bold;
-            }
+         }
          .log-e {
          color: orange;
          font-weight: bold;
@@ -844,22 +844,23 @@
          const pastedNumbers = numberPasteArea.value.trim().toUpperCase();
          const numbersArray = pastedNumbers.split(/\s+/); // Split by any whitespace
          
+         const letterLogDiv = document.getElementById('letter-log');
+         letterLogDiv.innerHTML = ''; // Clear previous logs
+         
+         const today = new Date();
+         const options = { year: 'numeric', month: 'long', day: 'numeric' };
+         const formattedDate = today.toLocaleDateString(undefined, options);
+         
+         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
+         
+         // Add the log message based on whether there was pasted text
+         if (pastedNumbers.length > 0) {
+         letterLogDiv.innerHTML += `<span class="log-y">Successfully extracted</span><br>`;
          // Count Y, N, and M (single letters only)
          const yCount = (pastedNumbers.match(/\bY\b/g) || []).length;
          const nCount = (pastedNumbers.match(/\bE\b/g) || []).length;
          const mCount = (pastedNumbers.match(/\bM\b/g) || []).length;
          
-         const letterLogDiv = document.getElementById('letter-log');
-         letterLogDiv.innerHTML = ''; // Clear previous logs
-
-         const today = new Date();
-         const options = { year: 'numeric', month: 'long', day: 'numeric' };
-         const formattedDate = today.toLocaleDateString(undefined, options);
-
-         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
-         
-         // Add the log messages
-         letterLogDiv.innerHTML += `<span class="log-y">Succesfully extracted</span><br>`;
          /*letterLogDiv.innerHTML += `<span class="log-e">Fixpoints Count ${yCount}</span><br>`;*/
          letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
          letterLogDiv.innerHTML += `<span class="log-e">Miss count ${mCount}</span><br>`;
@@ -867,23 +868,26 @@
          
          // Reset all quantity fields to 0 before auto-filling
          for (let i = 1; i <= numberOfCategories; i++) {
-         const quantityInput = document.getElementById(`quantity${i}`);
-         if (quantityInput) {
-            quantityInput.value = 0;
-         }
+            const quantityInput = document.getElementById(`quantity${i}`);
+            if (quantityInput) {
+                quantityInput.value = 0;
+            }
          }
          
          numbersArray.forEach(numberStr => {
-         const number = parseInt(numberStr);
-         if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
-            const quantityInput = document.getElementById(`quantity${number}`);
-            if (quantityInput) {
-                quantityInput.value = parseInt(quantityInput.value) + 1;
+            const number = parseInt(numberStr);
+            if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
+                const quantityInput = document.getElementById(`quantity${number}`);
+                if (quantityInput) {
+                    quantityInput.value = parseInt(quantityInput.value) + 1;
+                }
             }
-         }
          });
          
          updateTotals(); // Recalculate totals after auto-filling
+         } else {
+         letterLogDiv.innerHTML += `<span class="log-e">Extraction failed</span><br>`;
+         }
          });
          
            window.onload = function() {
