@@ -862,7 +862,7 @@
         const fixed1ColumnIndex = headers.indexOf("FIXED1?");
         const rv1LabelColumnIndex = headers.indexOf("RV1_LABEL");
         const i3qaCatColumnIndex = headers.indexOf("i3QA_CAT");
-        const rv1CatColumnIndex = headers.indexOf("RV1_CAT");  // New column
+        const rv1CatColumnIndex = headers.indexOf("RV1_CAT");
 
         // Initialize category counts
         const categoryCounts = {};
@@ -880,7 +880,7 @@
 
             // Check FIXED1? for 'Y'
             if (fixed1ColumnIndex !== -1 && values.length > fixed1ColumnIndex) {
-                const fixed1Value = values[fixed1Value].trim().toUpperCase();
+                const fixed1Value = values[fixed1ColumnIndex].trim().toUpperCase();
                 if (fixed1Value === 'Y') yCount++;
             }
 
@@ -891,7 +891,7 @@
                 if (rv1LabelValue === 'M') mCount++;
             }
 
-            // Check CATEGORY
+            // Check CATEGORY for category number
             if (categoryColumnIndex !== -1 && values.length > categoryColumnIndex) {
                 const categoryValue = values[categoryColumnIndex].trim();
                 const categoryNumber = parseInt(categoryValue);
@@ -900,18 +900,18 @@
                 }
             }
 
-            // Check i3QA_CAT
+            // Check i3QA_CAT for category number
             if (i3qaCatColumnIndex !== -1 && values.length > i3qaCatColumnIndex) {
-                const i3qaCatValue = values[i3qaCatValue].trim();
+                const i3qaCatValue = values[i3qaCatColumnIndex].trim();
                 const categoryNumber = parseInt(i3qaCatValue);
                 if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
                     categoryCounts[categoryNumber]++;
                 }
             }
 
-            // Check RV1_CAT
+            // Check RV1_CAT for category number
             if (rv1CatColumnIndex !== -1 && values.length > rv1CatColumnIndex) {
-                const rv1CatValue = values[rv1CatValue].trim();
+                const rv1CatValue = values[rv1CatColumnIndex].trim();
                 const categoryNumber = parseInt(rv1CatValue);
                 if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
                     categoryCounts[categoryNumber]++;
@@ -919,14 +919,15 @@
             }
         });
 
-        // Update category input fields with counts from all relevant columns
+        // Update category input fields with combined counts
         for (let i = 1; i <= numberOfCategories; i++) {
             const quantityInput = document.getElementById(`quantity${i}`);
             if (quantityInput) {
-                quantityInput.value = categoryCounts[i]; // Directly assign the combined count
+                quantityInput.value = categoryCounts[i];
             }
         }
 
+        // Display Y/N/M counts
         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
         letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
@@ -938,7 +939,6 @@
     }
 
     // --- Helper Functions ---
-    // (Keep resetQuantityFields and incrementQuantity if used elsewhere)
     function resetQuantityFields() {
         for (let i = 1; i <= numberOfCategories; i++) {
             const quantityInput = document.getElementById(`quantity${i}`);
@@ -954,7 +954,6 @@
             quantityInput.value = parseInt(quantityInput.value) + 1;
         }
     }
-
 });
          
            window.onload = function() {
