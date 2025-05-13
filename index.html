@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html>
    <head>
       <title>Fixpoints Extractor</title>
@@ -840,12 +839,10 @@
              }
            });
          
-           autoFillButton.addEventListener('click', function() {
-         const pastedNumbers = numberPasteArea.value.trim().toUpperCase();
-         const numbersArray = pastedNumbers.split(/\s+/); // Split by any whitespace
-         
+         autoFillButton.addEventListener('click', function() {
+         const pastedText = numberPasteArea.value.trim(); // Don't uppercase initially
          const letterLogDiv = document.getElementById('letter-log');
-         letterLogDiv.innerHTML = ''; // Clear previous logs
+         letterLogDiv.innerHTML = '';
          
          const today = new Date();
          const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -853,40 +850,107 @@
          
          letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
          
-         // Add the log message based on whether there was pasted text
-         if (pastedNumbers.length > 0) {
+         if (pastedText.length > 0) {
          letterLogDiv.innerHTML += `<span class="log-y">Successfully extracted</span><br>`;
-         // Count Y, N, and M (single letters only)
-         const yCount = (pastedNumbers.match(/\bY\b/g) || []).length;
-         const nCount = (pastedNumbers.match(/\bE\b/g) || []).length;
-         const mCount = (pastedNumbers.match(/\bM\b/g) || []).length;
          
-         /*letterLogDiv.innerHTML += `<span class="log-e">Fixpoints Count ${yCount}</span><br>`;
+         // Split into rows
+         const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
+         
+         // Extract headers (if present) and find the CATEGORY, FIXED1?, and RV1_LABEL columns
+         let headers = rows.shift().split(/\t|,/);
+         const categoryColumnIndex = headers.indexOf("CATEGORY");
+         const fixed1ColumnIndex = headers.indexOf("FIXED1?");
+         const rv1LabelColumnIndex = headers.indexOf("RV1_LABEL");
+         
+         if (categoryColumnIndex === -1) {
+            letterLogDiv.innerHTML += `<span class="log-e">Error: "CATEGORY" column not found. Processing as raw numbers.</span><br>`;
+            processRawNumbers(rows.join('\n'));
+         } else {
+            processCategoryColumn(rows, categoryColumnIndex);
+         }
+         
+         // Count Y from the FIXED1? column, and E/M from the RV1_LABEL column, if they exist
+         let yCount = 0;
+         let nCount = 0;
+         let mCount = 0;
+         
+         rows.forEach(row => {
+            const values = row.split(/\t|,/);
+         
+            // Check FIXED1? for 'Y'
+            if (fixed1ColumnIndex !== -1 && values.length > fixed1ColumnIndex) {
+                const fixed1Value = values[fixed1ColumnIndex].trim().toUpperCase();
+                if (fixed1Value === 'Y') yCount++;
+            }
+         
+            // Check RV1_LABEL for 'E' and 'M'
+            if (rv1LabelColumnIndex !== -1 && values.length > rv1LabelColumnIndex) {
+                const rv1LabelValue = values[rv1LabelColumnIndex].trim().toUpperCase();
+                if (rv1LabelValue === 'E') nCount++;
+                if (rv1LabelValue === 'M') mCount++;
+            }
+         });
+         
+         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
          letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-e">Miss count ${mCount}</span><br>`;*/
+         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
          
+         updateTotals();
          
-         // Reset all quantity fields to 0 before auto-filling
+         } else {
+         letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
+         }
+         
+         // --- Helper Functions ---
+         
+         function processCategoryColumn(rows, categoryColumnIndex) {
+         // Reset all quantity fields
+         resetQuantityFields();
+         
+         rows.forEach(row => {
+            const values = row.split(/\t|,/);
+            if (values.length > categoryColumnIndex) {
+                const categoryValue = values[categoryColumnIndex].trim();
+                //  ---  Improved Validation (No Logging) ---
+                if (categoryValue !== "") { //  Check for empty string
+                    const categoryNumber = parseInt(categoryValue);
+                    if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
+                        incrementQuantity(categoryNumber);
+                    }
+                    //  If it's not a valid number, we simply do nothing (don't count it)
+                }
+                //  If categoryValue is empty, we also do nothing (don't count it)
+            }
+         });
+         }
+         
+         function processRawNumbers(pastedText) {
+         // Reset all quantity fields
+         resetQuantityFields();
+         
+         const numbersArray = pastedText.toUpperCase().split(/\s+/);
+         numbersArray.forEach(numberStr => {
+            const number = parseInt(numberStr);
+            if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
+                incrementQuantity(number);
+            }
+         });
+         }
+         
+         function resetQuantityFields() {
          for (let i = 1; i <= numberOfCategories; i++) {
             const quantityInput = document.getElementById(`quantity${i}`);
             if (quantityInput) {
                 quantityInput.value = 0;
             }
          }
+         }
          
-         numbersArray.forEach(numberStr => {
-            const number = parseInt(numberStr);
-            if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
-                const quantityInput = document.getElementById(`quantity${number}`);
-                if (quantityInput) {
-                    quantityInput.value = parseInt(quantityInput.value) + 1;
-                }
-            }
-         });
-         
-         updateTotals(); // Recalculate totals after auto-filling
-         } else {
-         letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
+         function incrementQuantity(number) {
+         const quantityInput = document.getElementById(`quantity${number}`);
+         if (quantityInput) {
+            quantityInput.value = parseInt(quantityInput.value) + 1;
+         }
          }
          });
          
