@@ -839,120 +839,123 @@
              }
            });
          
-         autoFillButton.addEventListener('click', function() {
-         const pastedText = numberPasteArea.value.trim(); // Don't uppercase initially
-         const letterLogDiv = document.getElementById('letter-log');
-         letterLogDiv.innerHTML = '';
-         
-         const today = new Date();
-         const options = { year: 'numeric', month: 'long', day: 'numeric' };
-         const formattedDate = today.toLocaleDateString(undefined, options);
-         
-         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
-         
-         if (pastedText.length > 0) {
-         letterLogDiv.innerHTML += `<span class="log-y">Successfully extracted</span><br>`;
-         
-         // Split into rows
-         const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
-         
-         // Extract headers (if present) and find the CATEGORY, FIXED1?, and RV1_LABEL columns
-         let headers = rows.shift().split(/\t|,/);
-         const categoryColumnIndex = headers.indexOf("CATEGORY");
-         const fixed1ColumnIndex = headers.indexOf("FIXED1?");
-         const rv1LabelColumnIndex = headers.indexOf("RV1_LABEL");
-         
-         if (categoryColumnIndex === -1) {
-            letterLogDiv.innerHTML += `<span class="log-e">Error: "CATEGORY" column not found. Processing as raw numbers.</span><br>`;
-            processRawNumbers(rows.join('\n'));
-         } else {
-            processCategoryColumn(rows, categoryColumnIndex);
-         }
-         
-         // Count Y from the FIXED1? column, and E/M from the RV1_LABEL column, if they exist
-         let yCount = 0;
-         let nCount = 0;
-         let mCount = 0;
-         
-         rows.forEach(row => {
+     autoFillButton.addEventListener('click', function() {
+    const pastedText = numberPasteArea.value.trim();
+    const letterLogDiv = document.getElementById('letter-log');
+    letterLogDiv.innerHTML = '';
+
+    const today = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = today.toLocaleDateString(undefined, options);
+
+    letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
+
+    if (pastedText.length > 0) {
+        letterLogDiv.innerHTML += `<span class="log-y">Successfully extracted</span><br>`;
+
+        // Split into rows
+        const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
+
+        // Extract headers and find relevant columns
+        let headers = rows.shift().split(/\t|,/);
+        const categoryColumnIndex = headers.indexOf("CATEGORY");
+        const fixed1ColumnIndex = headers.indexOf("FIXED1?");
+        const rv1LabelColumnIndex = headers.indexOf("RV1_LABEL");
+        const i3qaCatColumnIndex = headers.indexOf("i3QA_CAT");
+        const rv1CatColumnIndex = headers.indexOf("RV1_CAT");  // New column
+
+        // Initialize category counts
+        const categoryCounts = {};
+        for (let i = 1; i <= numberOfCategories; i++) {
+            categoryCounts[i] = 0;
+        }
+
+        // Initialize Y/N/M counts
+        let yCount = 0;
+        let nCount = 0;
+        let mCount = 0;
+
+        rows.forEach(row => {
             const values = row.split(/\t|,/);
-         
+
             // Check FIXED1? for 'Y'
             if (fixed1ColumnIndex !== -1 && values.length > fixed1ColumnIndex) {
-                const fixed1Value = values[fixed1ColumnIndex].trim().toUpperCase();
+                const fixed1Value = values[fixed1Value].trim().toUpperCase();
                 if (fixed1Value === 'Y') yCount++;
             }
-         
+
             // Check RV1_LABEL for 'E' and 'M'
             if (rv1LabelColumnIndex !== -1 && values.length > rv1LabelColumnIndex) {
                 const rv1LabelValue = values[rv1LabelColumnIndex].trim().toUpperCase();
                 if (rv1LabelValue === 'E') nCount++;
                 if (rv1LabelValue === 'M') mCount++;
             }
-         });
-         
-         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
-         
-         updateTotals();
-         
-         } else {
-         letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
-         }
-         
-         // --- Helper Functions ---
-         
-         function processCategoryColumn(rows, categoryColumnIndex) {
-         // Reset all quantity fields
-         resetQuantityFields();
-         
-         rows.forEach(row => {
-            const values = row.split(/\t|,/);
-            if (values.length > categoryColumnIndex) {
+
+            // Check CATEGORY
+            if (categoryColumnIndex !== -1 && values.length > categoryColumnIndex) {
                 const categoryValue = values[categoryColumnIndex].trim();
-                //  ---  Improved Validation (No Logging) ---
-                if (categoryValue !== "") { //  Check for empty string
-                    const categoryNumber = parseInt(categoryValue);
-                    if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
-                        incrementQuantity(categoryNumber);
-                    }
-                    //  If it's not a valid number, we simply do nothing (don't count it)
+                const categoryNumber = parseInt(categoryValue);
+                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
+                    categoryCounts[categoryNumber]++;
                 }
-                //  If categoryValue is empty, we also do nothing (don't count it)
             }
-         });
-         }
-         
-         function processRawNumbers(pastedText) {
-         // Reset all quantity fields
-         resetQuantityFields();
-         
-         const numbersArray = pastedText.toUpperCase().split(/\s+/);
-         numbersArray.forEach(numberStr => {
-            const number = parseInt(numberStr);
-            if (!isNaN(number) && number >= 1 && number <= numberOfCategories) {
-                incrementQuantity(number);
+
+            // Check i3QA_CAT
+            if (i3qaCatColumnIndex !== -1 && values.length > i3qaCatColumnIndex) {
+                const i3qaCatValue = values[i3qaCatValue].trim();
+                const categoryNumber = parseInt(i3qaCatValue);
+                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
+                    categoryCounts[categoryNumber]++;
+                }
             }
-         });
-         }
-         
-         function resetQuantityFields() {
-         for (let i = 1; i <= numberOfCategories; i++) {
+
+            // Check RV1_CAT
+            if (rv1CatColumnIndex !== -1 && values.length > rv1CatColumnIndex) {
+                const rv1CatValue = values[rv1CatValue].trim();
+                const categoryNumber = parseInt(rv1CatValue);
+                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
+                    categoryCounts[categoryNumber]++;
+                }
+            }
+        });
+
+        // Update category input fields with counts from all relevant columns
+        for (let i = 1; i <= numberOfCategories; i++) {
+            const quantityInput = document.getElementById(`quantity${i}`);
+            if (quantityInput) {
+                quantityInput.value = categoryCounts[i]; // Directly assign the combined count
+            }
+        }
+
+        letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
+        letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
+        letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
+
+        updateTotals();
+
+    } else {
+        letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
+    }
+
+    // --- Helper Functions ---
+    // (Keep resetQuantityFields and incrementQuantity if used elsewhere)
+    function resetQuantityFields() {
+        for (let i = 1; i <= numberOfCategories; i++) {
             const quantityInput = document.getElementById(`quantity${i}`);
             if (quantityInput) {
                 quantityInput.value = 0;
             }
-         }
-         }
-         
-         function incrementQuantity(number) {
-         const quantityInput = document.getElementById(`quantity${number}`);
-         if (quantityInput) {
+        }
+    }
+
+    function incrementQuantity(number) {
+        const quantityInput = document.getElementById(`quantity${number}`);
+        if (quantityInput) {
             quantityInput.value = parseInt(quantityInput.value) + 1;
-         }
-         }
-         });
+        }
+    }
+
+});
          
            window.onload = function() {
              const savedData = localStorage.getItem('fixpointsData');if (savedData) {
