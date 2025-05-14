@@ -14,14 +14,13 @@
          align-items: flex-start;
          min-height: 100vh;
          margin: 20px;
-         /*background-color: #1D2023; /* Existing background color */
-         /* Add the following line to set your background image */
-         background-image: url("extractor_bg.jpg");  Replace "your-image.jpg" with the actual filename of your image 
-         background-repeat: no-repeat; /* Optional: Prevent the image from repeating */
-         background-size: cover; /* Optional: Scale the image to cover the entire background */
-         background-position: center center; /* Optional: Center the image */
-         font-family: 'Roboto', sans-serif;
+         background-image: url("extractor_bg.jpg"); /* Replace "your-image.jpg" with the actual filename of your image */
+         background-repeat: no-repeat;
+         background-size: cover;
+         background-position: center center;
+         font-family: 'Roboto Slab', serif;
          }
+         /* ... rest of your CSS stays the same ... */
          #main-container {
          display: grid;
          grid-template-columns: 1fr 1fr;
@@ -410,6 +409,8 @@
       </style>
    </head>
    <body>
+      <!-- your existing HTML content from the first <body> here remains unchanged -->
+      <!-- ensure it ends like this: -->
       <div id="main-container">
          <main id="extractor-container">
             <h1>123 Extractor</h1>
@@ -472,6 +473,7 @@
          <p>Project name was empty!</p>
          <button id="close-save-warning-popup">Close</button>
       </div>
+      <!-- Closing popup and scripts -->
       <script>
          document.addEventListener('DOMContentLoaded', function() {
            const categoryInputsDiv = document.getElementById('category-inputs');
@@ -839,122 +841,83 @@
              }
            });
          
-     autoFillButton.addEventListener('click', function() {
-    const pastedText = numberPasteArea.value.trim();
-    const letterLogDiv = document.getElementById('letter-log');
-    letterLogDiv.innerHTML = '';
-
-    const today = new Date();
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = today.toLocaleDateString(undefined, options);
-
-    letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
-
-    if (pastedText.length > 0) {
-        letterLogDiv.innerHTML += `<span class="log-y">Successfully extracted</span><br>`;
-
-        // Split into rows
-        const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
-
-        // Extract headers and find relevant columns
-        let headers = rows.shift().split(/\t|,/);
-        const categoryColumnIndex = headers.indexOf("CATEGORY");
-        const fixed1ColumnIndex = headers.indexOf("FIXED1?");
-        const rv1LabelColumnIndex = headers.indexOf("RV1_LABEL");
-        const i3qaCatColumnIndex = headers.indexOf("i3QA_CAT");
-        const rv1CatColumnIndex = headers.indexOf("RV1_CAT");
-
-        // Initialize category counts
-        const categoryCounts = {};
-        for (let i = 1; i <= numberOfCategories; i++) {
-            categoryCounts[i] = 0;
-        }
-
-        // Initialize Y/N/M counts
-        let yCount = 0;
-        let nCount = 0;
-        let mCount = 0;
-
-        rows.forEach(row => {
-            const values = row.split(/\t|,/);
-
-            // Check FIXED1? for 'Y'
-            if (fixed1ColumnIndex !== -1 && values.length > fixed1ColumnIndex) {
-                const fixed1Value = values[fixed1ColumnIndex].trim().toUpperCase();
-                if (fixed1Value === 'Y') yCount++;
-            }
-
-            // Check RV1_LABEL for 'E' and 'M'
-            if (rv1LabelColumnIndex !== -1 && values.length > rv1LabelColumnIndex) {
-                const rv1LabelValue = values[rv1LabelColumnIndex].trim().toUpperCase();
-                if (rv1LabelValue === 'E') nCount++;
-                if (rv1LabelValue === 'M') mCount++;
-            }
-
-            // Check CATEGORY for category number
-            if (categoryColumnIndex !== -1 && values.length > categoryColumnIndex) {
-                const categoryValue = values[categoryColumnIndex].trim();
-                const categoryNumber = parseInt(categoryValue);
-                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
-                    categoryCounts[categoryNumber]++;
+         autoFillButton.addEventListener('click', function () {
+         const pastedText = numberPasteArea.value.trim();
+         const letterLogDiv = document.getElementById('letter-log');
+         letterLogDiv.innerHTML = '';
+         
+         const today = new Date();
+         const options = { year: 'numeric', month: 'long', day: 'numeric' };
+         const formattedDate = today.toLocaleDateString(undefined, options);
+         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
+         
+         if (!pastedText) {
+         letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
+         return;
+         }
+         
+         letterLogDiv.innerHTML += `<span class="log-y">Attempting extraction...</span><br>`;
+         
+         const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
+         
+         const headers = rows.shift().split(/\t|,/).map(h => h.trim().toUpperCase());
+         const columnIndexes = {
+         category: headers.indexOf("CATEGORY"),
+         fixed1: headers.indexOf("FIXED1?"),
+         rv1Label: headers.indexOf("RV1_LABEL"),
+         i3qaCat: headers.indexOf("I3QA_CAT"),
+         rv1Cat: headers.indexOf("RV1_CAT")
+         };
+         
+         const numberOfCategories = 9;
+         const categoryCounts = {};
+         for (let i = 1; i <= numberOfCategories; i++) {
+         categoryCounts[i] = 0;
+         }
+         
+         let yCount = 0, nCount = 0, mCount = 0;
+         
+         rows.forEach(row => {
+         const values = row.split(/\t|,/);
+         
+         // FIXED1?
+         if (columnIndexes.fixed1 !== -1 && values[columnIndexes.fixed1]) {
+            const fixed = values[columnIndexes.fixed1].trim().toUpperCase();
+            if (fixed === 'Y') yCount++;
+         }
+         
+         // RV1_LABEL
+         if (columnIndexes.rv1Label !== -1 && values[columnIndexes.rv1Label]) {
+            const label = values[columnIndexes.rv1Label].trim().toUpperCase();
+            if (label === 'E') nCount++;
+            if (label === 'M') mCount++;
+         }
+         
+         // CATEGORY fields (collect into counts if number 1–9)
+         ["category", "i3qaCat", "rv1Cat"].forEach(key => {
+            const idx = columnIndexes[key];
+            if (idx !== -1 && values[idx]) {
+                const val = parseInt(values[idx].trim());
+                if (!isNaN(val) && val >= 1 && val <= numberOfCategories) {
+                    categoryCounts[val]++;
                 }
             }
-
-            // Check i3QA_CAT for category number
-            if (i3qaCatColumnIndex !== -1 && values.length > i3qaCatColumnIndex) {
-                const i3qaCatValue = values[i3qaCatColumnIndex].trim();
-                const categoryNumber = parseInt(i3qaCatValue);
-                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
-                    categoryCounts[categoryNumber]++;
-                }
-            }
-
-            // Check RV1_CAT for category number
-            if (rv1CatColumnIndex !== -1 && values.length > rv1CatColumnIndex) {
-                const rv1CatValue = values[rv1CatColumnIndex].trim();
-                const categoryNumber = parseInt(rv1CatValue);
-                if (!isNaN(categoryNumber) && categoryNumber >= 1 && categoryNumber <= numberOfCategories) {
-                    categoryCounts[categoryNumber]++;
-                }
-            }
-        });
-
-        // Update category input fields with combined counts
-        for (let i = 1; i <= numberOfCategories; i++) {
-            const quantityInput = document.getElementById(`quantity${i}`);
-            if (quantityInput) {
-                quantityInput.value = categoryCounts[i];
-            }
-        }
-
-        // Display Y/N/M counts
-        letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
-        letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
-        letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
-
-        updateTotals();
-
-    } else {
-        letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
-    }
-
-    // --- Helper Functions ---
-    function resetQuantityFields() {
-        for (let i = 1; i <= numberOfCategories; i++) {
-            const quantityInput = document.getElementById(`quantity${i}`);
-            if (quantityInput) {
-                quantityInput.value = 0;
-            }
-        }
-    }
-
-    function incrementQuantity(number) {
-        const quantityInput = document.getElementById(`quantity${number}`);
-        if (quantityInput) {
-            quantityInput.value = parseInt(quantityInput.value) + 1;
-        }
-    }
-});
+         });
+         });
+         
+         // Fill inputs
+         for (let i = 1; i <= numberOfCategories; i++) {
+         const input = document.getElementById(`quantity${i}`);
+         if (input) input.value = categoryCounts[i];
+         }
+         
+         // Display log
+         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
+         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
+         
+         updateTotals();
+         });
          
            window.onload = function() {
              const savedData = localStorage.getItem('fixpointsData');if (savedData) {
@@ -997,8 +960,6 @@
            };
          });
       </script>
-   </body>
-   <body>
       <script src="script.js"></script>
    </body>
 </html>
