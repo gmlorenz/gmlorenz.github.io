@@ -352,26 +352,54 @@ function calculateAllTechIDs() {
         }
     });
 
-    let allResultsHTML = '';
-    allCalculatedResults = [];
+    allCalculatedResults = []; // Reset the array
 
+    // Create table elements
+    let table = document.createElement('table');
+    table.classList.add('striped'); // Add Materialize CSS class for styling
+    let thead = table.createTHead();
+    let tbody = table.createTBody();
+    let headerRow = thead.insertRow();
+
+    // Create table headers
+    const tableHeaders = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
+    tableHeaders.forEach(headerText => {
+        let th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+
+    // Populate table rows
     techIDs.forEach(techID => {
         const result = calculatePointsForTechID(raw, techID, size, ir);
         if (result) {
             allCalculatedResults.push(result);
-            allResultsHTML += `<h6>TECH ID: ${result.techID}</h6>`;
-            allResultsHTML += `<p>Total Points: ${result.totalPoints}</p><p>Category Totals:</p><ul>`;
-            result.categoryTotals.forEach((total, i) => {
-                allResultsHTML += `<li>CAT ${i + 1}: Total: ${total}</li>`;
+            let row = tbody.insertRow();
+            let cell = row.insertCell();
+            cell.textContent = result.techID;
+
+            cell = row.insertCell();
+            cell.textContent = result.totalPoints;
+
+            result.categoryTotals.forEach(total => {
+                cell = row.insertCell();
+                cell.textContent = total;
             });
-            allResultsHTML += '</ul>';
-            allResultsHTML += `<p>Additional FixPoints: ${result.additionalFixPoints}</p>`;
-            allResultsHTML += `<p>Excessive FixPoints: ${result.excessiveFixPoints}</p>`;
-            allResultsHTML += `<p>Miss FixPoints: ${result.missFixPoints}</p><hr>`;
+
+            cell = row.insertCell();
+            cell.textContent = result.additionalFixPoints;
+
+            cell = row.insertCell();
+            cell.textContent = result.excessiveFixPoints;
+
+            cell = row.insertCell();
+            cell.textContent = result.missFixPoints;
         }
     });
 
-    allResultsDiv.innerHTML = allResultsHTML;
+    // Update allResultsDiv
+    allResultsDiv.innerHTML = '';
+    allResultsDiv.appendChild(table);
 }
 
 function searchTechID() {
