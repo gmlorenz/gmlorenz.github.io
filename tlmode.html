@@ -16,127 +16,217 @@
       border-left: 4px solid #42a5f5;
       font-family: monospace;
     }
-    textarea {
+    #raw-data {
+      height: 50px !important;
       resize: vertical;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h4 class="center-align">TL MODE - Search by Tech ID</h4><div class="input-field">
-  <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
-  <label for="raw-data">Fixpoints Data</label>
-</div>
-
-<div class="input-field">
-  <input id="tech-id" type="text" placeholder="e.g. TECH123">
-  <label for="tech-id">Search TECH ID (FIX1_ID)</label>
-</div>
-
-<div class="row">
-  <div class="input-field col s6">
-    <select id="size">
-      <option value="3in">3IN</option>
-      <option value="9in">9IN</option>
-    </select>
-    <label for="size">Project Size</label>
+    <h4 class="center-align">TL MODE</h4>
+    <div class="input-field">
+      <select id="project-selector">
+        <option value="" disabled selected>Select a saved project</option>
+      </select>
+      <label for="project-selector">Load Project</label>
+    </div>
+    <div class="center-align">
+      <button class="btn red darken-2" id="delete-project">
+        <i class="material-icons left">delete</i>Delete Project
+      </button>
+    </div>
+    <div class="input-field">
+      <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
+      <label for="raw-data">Fixpoints Data</label>
+    </div>
+    <div class="input-field">
+      <input id="project-name" type="text" placeholder="Enter project name">
+      <label for="project-name">Project Name</label>
+    </div>
+    <div class="center-align">
+      <button class="btn green" id="save-project">
+        <i class="material-icons left">save</i>Save Project
+      </button>
+    </div>
+    <br>
+    <div class="input-field">
+      <input id="tech-id" type="text" placeholder="e.g. TECH123">
+      <label for="tech-id">Search TECH ID (FIX1_ID)</label>
+    </div>
+    <div class="row">
+      <div class="input-field col s6">
+        <select id="size">
+          <option value="3in">3IN</option>
+          <option value="9in">9IN</option>
+        </select>
+        <label for="size">Project Size</label>
+      </div>
+      <div class="input-field col s6">
+        <label>
+          <input type="checkbox" id="ir-check"/>
+          <span>IR Multiplier</span>
+        </label>
+      </div>
+    </div>
+    <div class="center-align">
+      <button class="btn blue" id="search-button">
+        <i class="material-icons left">search</i>Search
+      </button>
+    </div>
+    <div id="output" class="result z-depth-1"></div>
   </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      let activeProjectData = '';const prices = [
+    { "3in": 2.19, "9in": 0.99 },
+    { "3in": 5.86, "9in": 2.08 },
+    { "3in": 7.44, "9in": 2.78 },
+    { "3in": 2.29, "9in": 1.57 },
+    { "3in": 1.55, "9in": 0.60 },
+    { "3in": 1.84, "9in": 0.78 },
+    { "3in": 1.00, "9in": 1.00 },
+    { "3in": 3.74, "9in": 3.74 },
+    { "3in": 1.73, "9in": 1.73 }
+  ];
 
-  <div class="input-field col s6">
-    <label>
-      <input type="checkbox" id="ir-check"/>
-      <span>IR Multiplier</span>
-    </label>
-  </div>
-</div>
+  const projectSelector = document.getElementById('project-selector');
+  const rawData = document.getElementById('raw-data');
+  const projectName = document.getElementById('project-name');
+  const techId = document.getElementById('tech-id');
+  const sizeSelect = document.getElementById('size');
+  const irCheck = document.getElementById('ir-check');
+  const output = document.getElementById('output');
 
-<div class="center-align">
-  <button class="btn blue" onclick="searchTechID()">
-    <i class="material-icons left">search</i>Search
-  </button>
-</div>
+  function loadProjectList() {
+    projectSelector.innerHTML = '<option disabled selected>Select a saved project</option>';
+    for (let key in localStorage) {
+      if (key.startsWith('tl_project_')) {
+        const name = key.replace('tl_project_', '');
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        projectSelector.appendChild(option);
+      }
+    }
+    M.FormSelect.init(projectSelector);
+  }
 
-<div id="output" class="result z-depth-1"></div>
+  function saveProject() {
+    const name = projectName.value.trim();
+    const data = rawData.value.trim();
+    const size = sizeSelect.value;
+    const ir = irCheck.checked;
 
-  </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var elems = document.querySelectorAll('select');
-      M.FormSelect.init(elems);
+    if (!name || !data) {
+      M.toast({ html: 'Please enter a project name and paste some data.', classes: 'red' });
+      return;
+    }
+
+    const payload = JSON.stringify({ data, size, ir });
+    localStorage.setItem(`tl_project_${name}`, payload);
+    M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
+    loadProjectList();
+  }
+
+  function deleteSelectedProject() {
+    const selected = projectSelector.value;
+    if (!selected) {
+      M.toast({ html: 'No project selected.', classes: 'red' });
+      return;
+    }
+    if (confirm(`Are you sure you want to delete project '${selected}'?`)) {
+      localStorage.removeItem(`tl_project_${selected}`);
+      M.toast({ html: `Project '${selected}' deleted.`, classes: 'orange' });
+      loadProjectList();
+      rawData.value = '';
+      activeProjectData = '';
+      M.updateTextFields();
+    }
+  }
+
+  function searchTechID() {
+    const raw = activeProjectData || rawData.value.trim();
+    const techIDValue = techId.value.trim().toUpperCase();
+    const size = sizeSelect.value;
+    const ir = irCheck.checked;
+
+    if (!raw || !techIDValue) {
+      output.textContent = 'Please paste data and enter a TECH ID to search.';
+      return;
+    }
+
+    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+    const headers = rows.shift().split(/[\t,]/).map(h => h.trim().toUpperCase());
+    const indexes = {
+      fixId: headers.indexOf("FIX1_ID"),
+      category: headers.indexOf("CATEGORY"),
+      i3qa: headers.indexOf("I3QA_CAT"),
+      rv1cat: headers.indexOf("RV1_CAT")
+    };
+
+    if (indexes.fixId === -1) {
+      output.textContent = 'FIX1_ID column not found.';
+      return;
+    }
+
+    const catCount = Array(9).fill(0);
+    const matched = rows.filter(row => {
+      const fields = row.split(/[\t,]/);
+      return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
     });
 
-    const prices = [
-      { "3in": 2.19, "9in": 0.99 },
-      { "3in": 5.86, "9in": 2.08 },
-      { "3in": 7.44, "9in": 2.78 },
-      { "3in": 2.29, "9in": 1.57 },
-      { "3in": 1.55, "9in": 0.60 },
-      { "3in": 1.84, "9in": 0.78 },
-      { "3in": 1.00, "9in": 1.00 },
-      { "3in": 3.74, "9in": 3.74 },
-      { "3in": 1.73, "9in": 1.73 }
-    ];
-
-    function searchTechID() {
-      const raw = document.getElementById('raw-data').value.trim();
-      const techID = document.getElementById('tech-id').value.trim().toUpperCase();
-      const size = document.getElementById('size').value;
-      const ir = document.getElementById('ir-check').checked;
-      const output = document.getElementById('output');
-
-      if (!raw || !techID) {
-        output.textContent = 'Please paste data and enter a TECH ID to search.';
-        return;
-      }
-
-      const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-      const headers = rows.shift().split(/[\t,]/).map(h => h.trim().toUpperCase());
-      const indexes = {
-        fixId: headers.indexOf("FIX1_ID"),
-        category: headers.indexOf("CATEGORY"),
-        i3qa: headers.indexOf("I3QA_CAT"),
-        rv1cat: headers.indexOf("RV1_CAT")
-      };
-
-      if (indexes.fixId === -1) {
-        output.textContent = 'FIX1_ID column not found.';
-        return;
-      }
-
-      const catCount = Array(9).fill(0);
-      const matched = rows.filter(row => {
-        const fields = row.split(/[\t,]/);
-        return fields[indexes.fixId]?.trim().toUpperCase() === techID;
-      });
-
-      matched.forEach(row => {
-        const fields = row.split(/[\t,]/);
-        [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
-          if (idx !== -1 && fields[idx]) {
-            const val = parseInt(fields[idx].trim());
-            if (!isNaN(val) && val >= 1 && val <= 9) {
-              catCount[val - 1]++;
-            }
+    matched.forEach(row => {
+      const fields = row.split(/[\t,]/);
+      [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+        if (idx !== -1 && fields[idx]) {
+          const val = parseInt(fields[idx].trim());
+          if (!isNaN(val) && val >= 1 && val <= 9) {
+            catCount[val - 1]++;
           }
-        });
+        }
       });
+    });
 
-      const multiplier = ir ? 2 : 1;
-      let grandTotal = 0;
-      let result = `TECH ID: ${techID}\n`;
-      result += 'Total Points: ';
-      result += catCount.reduce((sum, count, i) => {
-        const price = prices[i][size];
-        const total = count * price * multiplier;
-        grandTotal += total;
-        return sum;
-      }, 0).toFixed(2) + '\nCategory Totals:\n';
+    const multiplier = ir ? 2 : 1;
+    let result = `TECH ID: ${techIDValue}\n`;
+    result += 'Total Points: ';
+    result += catCount.reduce((sum, count, i) => {
+      const price = prices[i][size];
+      return sum + (count * price * multiplier);
+    }, 0).toFixed(2) + '\nCategory Totals:\n';
 
-      catCount.forEach((count, i) => {
-        const total = (count * prices[i][size] * multiplier).toFixed(2);
-        result += `CAT ${i + 1}: Total: ${total}\n`;
-      });
+    catCount.forEach((count, i) => {
+      const total = (count * prices[i][size] * multiplier).toFixed(2);
+      result += `CAT ${i + 1}: Total: ${total}\n`;
+    });
 
-      output.textContent = result;
+    output.textContent = result;
+  }
+
+  document.getElementById('save-project').addEventListener('click', saveProject);
+  document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
+  document.getElementById('search-button').addEventListener('click', searchTechID);
+  projectSelector.addEventListener('change', function () {
+    const selected = this.value;
+    const project = localStorage.getItem(`tl_project_${selected}`);
+    if (project) {
+      const { data, size, ir } = JSON.parse(project);
+      activeProjectData = data;
+      rawData.value = '********';
+      sizeSelect.value = size;
+      irCheck.checked = ir;
+      M.FormSelect.init(sizeSelect);
+      M.updateTextFields();
     }
-  </script></body>
+  });
+
+  loadProjectList();
+  M.FormSelect.init(sizeSelect);
+  M.updateTextFields();
+});
+
+  </script>
+</body>
 </html>
