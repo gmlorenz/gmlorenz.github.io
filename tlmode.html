@@ -244,192 +244,261 @@
       }
 
       function calculatePointsForTechID(raw, techIDValue, size, ir) {
-        const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-        const indexes = {
-          fixId: headers.indexOf("FIX1_ID"),
-          category: headers.indexOf("CATEGORY"),
-          i3qa: headers.indexOf("I3QA_CAT"),
-          rv1cat: headers.indexOf("RV1_CAT")
-        };
+    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+    const indexes = {
+        fixId: headers.indexOf("FIX1_ID"),
+        category: headers.indexOf("CATEGORY"),
+        i3qa: headers.indexOf("I3QA_CAT"),
+        rv1cat: headers.indexOf("RV1_CAT"),
+        afp1stat: headers.indexOf("AFP1_STAT"), 
+        rv1label: headers.indexOf("RV1_LABEL"),
+        i3qalabel: headers.indexOf("I3QA_LABEL")
+    };
 
-        if (indexes.fixId === -1) {
-          return null; // Indicate an error
-        }
+    if (indexes.fixId === -1) {
+        return null;
+    }
 
-        const catCount = Array(9).fill(0);
-        const matched = rows.filter(row => {
-          const fields = row.split(/[\t,]/);
-          return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
-        });
+    const catCount = Array(9).fill(0);
+    let additionalFixPoints = 0;
+    let excessiveFixPoints = 0;
+    let missFixPoints = 0;
 
-        matched.forEach(row => {
-          const fields = row.split(/[\t,]/);
-          [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
-            if (idx !== -1 && fields[idx]) {
-              const val = parseInt(fields[idx].trim());
-              if (!isNaN(val) && val >= 1 && val <= 9) {
-                catCount[val - 1]++;
-              }
+    const matched = rows.filter(row => {
+        const fields = row.split(/[\t,]/);
+        return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
+    });
+
+    matched.forEach(row => {
+        const fields = row.split(/[\t,]/);
+        let excludeCounts = false;
+        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+            excludeCounts = fields[indexes.rv1label].toUpperCase().includes("E");
+            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                excessiveFixPoints++;
             }
-          });
-        });
-
-        const multiplier = ir ? 2 : 1;
-        const totalPoints = catCount.reduce((sum, count, i) => {
-          const price = prices[i][size];
-          return sum + (count * price * multiplier);
-        }, 0).toFixed(2);
-
-        const categoryTotals = catCount.map((count, i) => {
-          return (count * prices[i][size] * multiplier).toFixed(2);
-        });
-
-        return { techID: techIDValue, totalPoints: totalPoints, categoryTotals: categoryTotals };
-      }
-
-      function calculateAllTechIDs() {
-        const raw = activeProjectData?.data;
-        const size = activeProjectData?.size;
-        const ir = activeProjectData?.ir;
-
-        if (!raw || !size) {
-          allResultsDiv.textContent = 'Please load a project first.';
-          allCalculatedResults = [];
-          return;
+            if (fields[indexes.rv1label].toUpperCase().includes("M")) {
+                missFixPoints++;
+            }
+        }
+        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") { // Corrected column name
+            additionalFixPoints++; // Count "AA" in AFP1_STAT
+        }
+        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+            missFixPoints++;
         }
 
-        const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-        const fixIdIndex = headers.indexOf("FIX1_ID");
-
-        if (fixIdIndex === -1) {
-          allResultsDiv.textContent = 'Error: FIX1_ID column not found.';
-          allCalculatedResults = [];
-          return;
+        if (!excludeCounts) {
+            [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+                if (idx !== -1 && fields[idx]) {
+                    const val = parseInt(fields[idx].trim());
+                    if (!isNaN(val) && val >= 1 && val <= 9) {
+                        catCount[val - 1]++;
+                    }
+                }
+            });
         }
+    });
 
-        const techIDs = new Set();
-        rows.forEach(row => {
-          const fields = row.split(/[\t,]/);
-          const techID = fields[fixIdIndex]?.trim().toUpperCase();
-          if (techID) {
+    const multiplier = ir ? 2 : 1;
+    const totalPoints = catCount.reduce((sum, count, i) => {
+        const price = prices[i][size];
+        return sum + (count * price * multiplier);
+    }, 0).toFixed(2);
+
+    const categoryTotals = catCount.map((count, i) => {
+        return (count * prices[i][size] * multiplier).toFixed(2);
+    });
+
+    return {
+        techID: techIDValue,
+        totalPoints: totalPoints,
+        categoryTotals: categoryTotals,
+        additionalFixPoints: additionalFixPoints,
+        excessiveFixPoints: excessiveFixPoints,
+        missFixPoints: missFixPoints
+    };
+}
+
+function calculateAllTechIDs() {
+    const raw = activeProjectData?.data;
+    const size = activeProjectData?.size;
+    const ir = activeProjectData?.ir;
+
+    if (!raw || !size) {
+        allResultsDiv.textContent = 'Please load a project first.';
+        allCalculatedResults = [];
+        return;
+    }
+
+    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+    const fixIdIndex = headers.indexOf("FIX1_ID");
+
+    if (fixIdIndex === -1) {
+        allResultsDiv.textContent = 'Error: FIX1_ID column not found.';
+        allCalculatedResults = [];
+        return;
+    }
+
+    const techIDs = new Set();
+    rows.forEach(row => {
+        const fields = row.split(/[\t,]/);
+        const techID = fields[fixIdIndex]?.trim().toUpperCase();
+        if (techID) {
             techIDs.add(techID);
-          }
-        });
+        }
+    });
 
-        let allResultsHTML = '';
-        allCalculatedResults = []; // Reset the array
+    let allResultsHTML = '';
+    allCalculatedResults = [];
 
-        techIDs.forEach(techID => {
-          const result = calculatePointsForTechID(raw, techID, size, ir);
-          if (result) {
+    techIDs.forEach(techID => {
+        const result = calculatePointsForTechID(raw, techID, size, ir);
+        if (result) {
             allCalculatedResults.push(result);
             allResultsHTML += `<h6>TECH ID: ${result.techID}</h6>`;
             allResultsHTML += `<p>Total Points: ${result.totalPoints}</p><p>Category Totals:</p><ul>`;
             result.categoryTotals.forEach((total, i) => {
-              allResultsHTML += `<li>CAT ${i + 1}: Total: ${total}</li>`;
+                allResultsHTML += `<li>CAT ${i + 1}: Total: ${total}</li>`;
             });
-            allResultsHTML += '</ul><hr>';
-          }
-        });
-
-        allResultsDiv.innerHTML = allResultsHTML;
-      }
-
-      function searchTechID() {
-        const raw = activeProjectData?.data;
-        const techIDValue = techIdInput.value.trim().toUpperCase();
-        const size = activeProjectData?.size;
-        const ir = activeProjectData?.ir;
-
-        if (!raw || !techIDValue || !size) {
-          output.textContent = 'Please load a project and enter a TECH ID to search.';
-          lastResult = ''; // Clear last result
-          return;
+            allResultsHTML += '</ul>';
+            allResultsHTML += `<p>Additional FixPoints: ${result.additionalFixPoints}</p>`;
+            allResultsHTML += `<p>Excessive FixPoints: ${result.excessiveFixPoints}</p>`;
+            allResultsHTML += `<p>Miss FixPoints: ${result.missFixPoints}</p><hr>`;
         }
+    });
 
-        const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-        const indexes = {
-          fixId: headers.indexOf("FIX1_ID"),
-          category: headers.indexOf("CATEGORY"),
-          i3qa: headers.indexOf("I3QA_CAT"),
-          rv1cat: headers.indexOf("RV1_CAT")
-        };
+    allResultsDiv.innerHTML = allResultsHTML;
+}
 
-        if (indexes.fixId === -1) {
-          output.textContent = 'FIX1_ID column not found.';
-          lastResult = '';
-          return;
-        }
+function searchTechID() {
+    const raw = activeProjectData?.data;
+    const techIDValue = techIdInput.value.trim().toUpperCase();
+    const size = activeProjectData?.size;
+    const ir = activeProjectData?.ir;
 
-        const catCount = Array(9).fill(0);
-        const matched = rows.filter(row => {
-          const fields = row.split(/[\t,]/);
-          return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
-        });
+    if (!raw || !techIDValue || !size) {
+        output.textContent = 'Please load a project and enter a TECH ID to search.';
+        lastResult = '';
+        return;
+    }
 
-        const multiplier = ir ? 2 : 1;
-        let totalPoints = 0;
-        const categoryTotals = Array(9).fill(0);
+    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+    const indexes = {
+        fixId: headers.indexOf("FIX1_ID"),
+        category: headers.indexOf("CATEGORY"),
+        i3qa: headers.indexOf("I3QA_CAT"),
+        rv1cat: headers.indexOf("RV1_CAT"),
+        afp1stat: headers.indexOf("AFP1_STAT"), // Corrected column name
+        rv1label: headers.indexOf("RV1_LABEL"),
+        i3qalabel: headers.indexOf("I3QA_LABEL")
+    };
 
-        matched.forEach(row => {
-          const fields = row.split(/[\t,]/);
-          [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
-            if (idx !== -1 && fields[idx]) {
-              const val = parseInt(fields[idx].trim());
-              if (!isNaN(val) && val >= 1 && val <= 9) {
-                const price = prices[val - 1][size];
-                totalPoints += price * multiplier;
-                categoryTotals[val - 1] += price * multiplier;
-              }
+    if (indexes.fixId === -1) {
+        output.textContent = 'FIX1_ID column not found.';
+        lastResult = '';
+        return;
+    }
+
+    const catCount = Array(9).fill(0);
+    let additionalFixPoints = 0;
+    let excessiveFixPoints = 0;
+    let missFixPoints = 0;
+
+    const matched = rows.filter(row => {
+        const fields = row.split(/[\t,]/);
+        return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
+    });
+
+    const multiplier = ir ? 2 : 1;
+    let totalPoints = 0;
+    const categoryTotals = Array(9).fill(0);
+
+    matched.forEach(row => {
+        const fields = row.split(/[\t,]/);
+        let excludeCounts = false;
+        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+            excludeCounts = fields[indexes.rv1label].toUpperCase().includes("E");
+            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                excessiveFixPoints++;
             }
-          });
-        });
+            if (fields[indexes.rv1label].toUpperCase().includes("M")) {
+                missFixPoints++;
+            }
+        }
+        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") { // Corrected column name
+            additionalFixPoints++; // Count "AA" in AFP1_STAT
+        }
+        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+            missFixPoints++;
+        }
 
-        output.textContent = `TECH ID: ${techIDValue}\nTotal Points: ${totalPoints.toFixed(2)}\nCategory Totals:\n${categoryTotals.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}`;
-        lastResult = {
-          techID: techIDValue,
-          totalPoints: totalPoints.toFixed(2),
-          categoryTotals: categoryTotals.map(t => t.toFixed(2))
-        };
-      }
+        if (!excludeCounts) {
+            [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+                if (idx !== -1 && fields[idx]) {
+                    const val = parseInt(fields[idx].trim());
+                    if (!isNaN(val) && val >= 1 && val <= 9) {
+                        const price = prices[val - 1][size];
+                        totalPoints += price * multiplier;
+                        categoryTotals[val - 1] += price * multiplier;
+                    }
+                }
+            });
+        }
+    });
 
-      function exportCSV() {
-        if (allCalculatedResults.length > 0) {
-          // Export all calculated results
-          const header = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`)];
-          const rows = allCalculatedResults.map(res => [res.techID, res.totalPoints, ...res.categoryTotals]);
-          const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `all_tech_id_summary.csv`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        } else if (lastResult.techID) {
-          // Export single search result (fallback if "Calculate All" hasn't been run)
-          const rows = [
+    output.textContent = `TECH ID: ${techIDValue}\nTotal Points: ${totalPoints.toFixed(2)}\nCategory Totals:\n${categoryTotals.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}\nAdditional FixPoints: ${additionalFixPoints}\nExcessive FixPoints: ${excessiveFixPoints}\nMiss FixPoints: ${missFixPoints}`;
+    lastResult = {
+        techID: techIDValue,
+        totalPoints: totalPoints.toFixed(2),
+        categoryTotals: categoryTotals.map(t => t.toFixed(2)),
+        additionalFixPoints: additionalFixPoints,
+        excessiveFixPoints: excessiveFixPoints,
+        missFixPoints: missFixPoints
+    };
+}
+
+function exportCSV() {
+    if (allCalculatedResults.length > 0) {
+        // Export all calculated results
+        const header = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
+        const rows = allCalculatedResults.map(res => [res.techID, res.totalPoints, ...res.categoryTotals, res.additionalFixPoints, res.excessiveFixPoints, res.missFixPoints]);
+        const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `all_tech_id_summary.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } else if (lastResult.techID) {
+        // Export single search result (fallback if "Calculate All" hasn't been run)
+        const rows = [
             ['TECH ID', 'Total Points'],
             [lastResult.techID, lastResult.totalPoints],
             [],
             ['Category', 'Total'],
-            ...lastResult.categoryTotals.map((total, i) => [`CAT ${i + 1}`, total])
-          ];
-          const csvContent = rows.map(r => r.join(",")).join("\n");
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `summary_${lastResult.techID}.csv`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        } else {
-          M.toast({ html: 'Please run "Calculate All" or a single search first.', classes: 'red' });
-        }
-      }
+            ...lastResult.categoryTotals.map((total, i) => [`CAT ${i + 1}`, total]),
+            [],
+            ['Additional FixPoints', lastResult.additionalFixPoints],
+            ['Excessive FixPoints', lastResult.excessiveFixPoints],
+            ['Miss FixPoints', lastResult.missFixPoints]
+        ];
+        const csvContent = rows.map(r => r.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `summary_${lastResult.techID}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } else {
+        M.toast({ html: 'Please run "Calculate All" or a single search first.', classes: 'red' });
+    }
+}
 
       document.getElementById('save-project').addEventListener('click', saveProject);
       document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
