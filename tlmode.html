@@ -45,6 +45,26 @@
       margin-bottom: 25px;
     }
 
+    /* Style for the scrollable all results view */
+    #all-results {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #all-results h6 {
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    #all-results ul {
+      margin-left: 20px;
+      margin-bottom: 10px;
+    }
+    #all-results hr {
+      margin-top: 15px;
+      margin-bottom: 15px;
+      border: 0;
+      border-top: 1px solid #ccc;
+    }
+
     /* Add spacing within the modal content */
     .modal-content h5 {
       margin-bottom: 20px;
@@ -62,7 +82,7 @@
 </head>
 <body>
   <div class="container">
-    <h5 class="center-align">TL MODE</h5>
+    <h5 class="center-align">TL MODE EXTRACTOR</h5>
     <div class="right-align" style="margin-top: 10px;">
       <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
         <i class="material-icons">add</i>
@@ -91,6 +111,9 @@
       <button class="btn blue" id="search-button">
         <i class="material-icons left">search</i>Search
       </button>
+      <button class="btn green" id="calculate-all-button">
+        <i class="material-icons left">calculate</i>Calculate All
+      </button>
     </div>
 
     <div class="center-align" style="margin-top: 10px;">
@@ -100,6 +123,9 @@
     </div>
 
     <div id="output" class="result z-depth-1"></div>
+
+    <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
+    </div>
 
     <div id="add-project-modal" class="modal">
       <div class="modal-content">
@@ -136,10 +162,11 @@
 
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script>
+<script>
     document.addEventListener('DOMContentLoaded', function () {
       let activeProjectData = '';
-      let lastResult = '';
+      let allCalculatedResults = []; // Array to store results from "Calculate All"
+      let lastResult = ''; // Still used for single search export
 
       const prices = [
         { "3in": 2.19, "9in": 0.99 },
@@ -156,8 +183,9 @@
       const projectSelector = document.getElementById('project-selector');
       const rawData = document.getElementById('raw-data');
       const projectName = document.getElementById('project-name');
-      const techId = document.getElementById('tech-id');
+      const techIdInput = document.getElementById('tech-id');
       const output = document.getElementById('output');
+      const allResultsDiv = document.getElementById('all-results');
 
       function loadProjectList() {
         projectSelector.innerHTML = '<option disabled selected>Select a saved project</option>';
@@ -204,22 +232,14 @@
           M.toast({ html: `Project '${selected}' deleted.`, classes: 'orange' });
           loadProjectList();
           activeProjectData = '';
+          allResultsDiv.innerHTML = '';
+          allCalculatedResults = []; // Clear calculated results
         }
       }
 
-      function searchTechID() {
-        const raw = activeProjectData?.data; // Access the data property
-        const techIDValue = techId.value.trim().toUpperCase();
-        const size = activeProjectData?.size; // Access the size property
-        const ir = activeProjectData?.ir; // Access the ir property
-
-        if (!raw || !techIDValue || !size) {
-          output.textContent = 'Please load a project and enter a TECH ID to search.';
-          return;
-        }
-
+      function calculatePointsForTechID(raw, techIDValue, size, ir) {
         const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-        const headers = rows.shift().split(/[\t,]/).map(h => h.trim().toUpperCase());
+        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
         const indexes = {
           fixId: headers.indexOf("FIX1_ID"),
           category: headers.indexOf("CATEGORY"),
@@ -228,8 +248,7 @@
         };
 
         if (indexes.fixId === -1) {
-          output.textContent = 'FIX1_ID column not found.';
-          return;
+          return null; // Indicate an error
         }
 
         const catCount = Array(9).fill(0);
@@ -251,58 +270,176 @@
         });
 
         const multiplier = ir ? 2 : 1;
-        let result = `TECH ID: ${techIDValue}\n`;
-        result += 'Total Points: ';
-        result += catCount.reduce((sum, count, i) => {
+        const totalPoints = catCount.reduce((sum, count, i) => {
           const price = prices[i][size];
           return sum + (count * price * multiplier);
-        }, 0).toFixed(2) + '\nCategory Totals:\n';
+        }, 0).toFixed(2);
 
-        catCount.forEach((count, i) => {
-          const total = (count * prices[i][size] * multiplier).toFixed(2);
-          result += `CAT ${i + 1}: Total: ${total}\n`;
+        const categoryTotals = catCount.map((count, i) => {
+          return (count * prices[i][size] * multiplier).toFixed(2);
         });
 
-        output.textContent = result;
+        return { techID: techIDValue, totalPoints: totalPoints, categoryTotals: categoryTotals };
+      }
+
+      function calculateAllTechIDs() {
+        const raw = activeProjectData?.data;
+        const size = activeProjectData?.size;
+        const ir = activeProjectData?.ir;
+
+        if (!raw || !size) {
+          allResultsDiv.textContent = 'Please load a project first.';
+          allCalculatedResults = [];
+          return;
+        }
+
+        const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+        const fixIdIndex = headers.indexOf("FIX1_ID");
+
+        if (fixIdIndex === -1) {
+          allResultsDiv.textContent = 'Error: FIX1_ID column not found.';
+          allCalculatedResults = [];
+          return;
+        }
+
+        const techIDs = new Set();
+        rows.forEach(row => {
+          const fields = row.split(/[\t,]/);
+          const techID = fields[fixIdIndex]?.trim().toUpperCase();
+          if (techID) {
+            techIDs.add(techID);
+          }
+        });
+
+        let allResultsHTML = '';
+        allCalculatedResults = []; // Reset the array
+
+        techIDs.forEach(techID => {
+          const result = calculatePointsForTechID(raw, techID, size, ir);
+          if (result) {
+            allCalculatedResults.push(result);
+            allResultsHTML += `<h6>TECH ID: ${result.techID}</h6>`;
+            allResultsHTML += `<p>Total Points: ${result.totalPoints}</p><p>Category Totals:</p><ul>`;
+            result.categoryTotals.forEach((total, i) => {
+              allResultsHTML += `<li>CAT ${i + 1}: Total: ${total}</li>`;
+            });
+            allResultsHTML += '</ul><hr>';
+          }
+        });
+
+        allResultsDiv.innerHTML = allResultsHTML;
+      }
+
+      function searchTechID() {
+        const raw = activeProjectData?.data;
+        const techIDValue = techIdInput.value.trim().toUpperCase();
+        const size = activeProjectData?.size;
+        const ir = activeProjectData?.ir;
+
+        if (!raw || !techIDValue || !size) {
+          output.textContent = 'Please load a project and enter a TECH ID to search.';
+          lastResult = ''; // Clear last result
+          return;
+        }
+
+        const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+        const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+        const indexes = {
+          fixId: headers.indexOf("FIX1_ID"),
+          category: headers.indexOf("CATEGORY"),
+          i3qa: headers.indexOf("I3QA_CAT"),
+          rv1cat: headers.indexOf("RV1_CAT")
+        };
+
+        if (indexes.fixId === -1) {
+          output.textContent = 'FIX1_ID column not found.';
+          lastResult = '';
+          return;
+        }
+
+        const catCount = Array(9).fill(0);
+        const matched = rows.filter(row => {
+          const fields = row.split(/[\t,]/);
+          return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
+        });
+
+        const multiplier = ir ? 2 : 1;
+        let totalPoints = 0;
+        const categoryTotals = Array(9).fill(0);
+
+        matched.forEach(row => {
+          const fields = row.split(/[\t,]/);
+          [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+            if (idx !== -1 && fields[idx]) {
+              const val = parseInt(fields[idx].trim());
+              if (!isNaN(val) && val >= 1 && val <= 9) {
+                const price = prices[val - 1][size];
+                totalPoints += price * multiplier;
+                categoryTotals[val - 1] += price * multiplier;
+              }
+            }
+          });
+        });
+
+        output.textContent = `TECH ID: ${techIDValue}\nTotal Points: ${totalPoints.toFixed(2)}\nCategory Totals:\n${categoryTotals.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}`;
         lastResult = {
           techID: techIDValue,
-          totals: catCount.map((c, i) => (c * prices[i][size] * multiplier).toFixed(2)),
-          totalPoints: catCount.reduce((sum, count, i) => sum + (count * prices[i][size] * multiplier), 0).toFixed(2)
+          totalPoints: totalPoints.toFixed(2),
+          categoryTotals: categoryTotals.map(t => t.toFixed(2))
         };
       }
 
       function exportCSV() {
-        if (!lastResult.techID) {
-          M.toast({ html: 'Please run a search first.', classes: 'red' });
-          return;
+        if (allCalculatedResults.length > 0) {
+          // Export all calculated results
+          const header = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`)];
+          const rows = allCalculatedResults.map(res => [res.techID, res.totalPoints, ...res.categoryTotals]);
+          const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `all_tech_id_summary.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else if (lastResult.techID) {
+          // Export single search result (fallback if "Calculate All" hasn't been run)
+          const rows = [
+            ['TECH ID', 'Total Points'],
+            [lastResult.techID, lastResult.totalPoints],
+            [],
+            ['Category', 'Total'],
+            ...lastResult.categoryTotals.map((total, i) => [`CAT ${i + 1}`, total])
+          ];
+          const csvContent = rows.map(r => r.join(",")).join("\n");
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `summary_${lastResult.techID}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          M.toast({ html: 'Please run "Calculate All" or a single search first.', classes: 'red' });
         }
-        const rows = [
-          ['TECH ID', 'Total Points'],
-          [lastResult.techID, lastResult.totalPoints],
-          [],
-          ['Category', 'Total'],
-          ...lastResult.totals.map((total, i) => [`CAT ${i + 1}`, total])
-        ];
-        const csvContent = rows.map(r => r.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `summary_${lastResult.techID}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
       }
 
       document.getElementById('save-project').addEventListener('click', saveProject);
       document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
       document.getElementById('search-button').addEventListener('click', searchTechID);
+      document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
       document.getElementById('export-button').addEventListener('click', exportCSV);
 
       projectSelector.addEventListener('change', function () {
         const selected = this.value;
         const project = localStorage.getItem(`tl_project_${selected}`);
         if (project) {
-          activeProjectData = JSON.parse(project); // Parse the entire project object
+          activeProjectData = JSON.parse(project);
+          output.textContent = '';
+          allResultsDiv.innerHTML = '';
+          allCalculatedResults = []; // Clear calculated results on project load
+          lastResult = ''; // Clear last single search result
           M.updateTextFields();
         }
       });
