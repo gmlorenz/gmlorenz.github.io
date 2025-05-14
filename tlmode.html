@@ -1,559 +1,756 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>TL MODE - Fixpoint Search</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body {
-      padding: 20px;
-    }
-    .result {
-      background: #f9f9f9;
-      padding: 20px;
-      margin-top: 20px;
-      white-space: pre-wrap;
-      border-left: 4px solid #42a5f5;
-      font-family: monospace;
-    }
-   .modal textarea {
-    height: 150px;       /* Set a fixed height */
-    overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
-    resize: none;       /* Optional: Prevent user resizing */
-   }
-   .modal-content textarea.materialize-textarea { /* If your textarea has the materialize-textarea class */
-    height: 150px !important; /* Use !important as a temporary measure to see if it helps */
-    overflow-y: auto;
-    resize: none;
-   }
-    /* Add margin to input fields */
-    .input-field {
-      margin-top: 20px;
-      margin-bottom: 10px;
-    }
-
-    /* Add margin to buttons */
-    .btn {
-      margin-top: 15px;
-      margin-bottom: 15px;
-      margin-right: 10px; /* Add some horizontal spacing between buttons if they appear in a row */
-    }
-
-    /* Add margin to the floating action button */
-    .right-align {
-      margin-bottom: 20px;
-    }
-
-    /* Add margin to center-aligned elements */
-    .center-align {
-      margin-top: 25px;
-      margin-bottom: 25px;
-    }
-
-    /* Style for the scrollable all results view */
-    #all-results {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    #all-results h6 {
-      margin-top: 10px;
-      margin-bottom: 5px;
-    }
-    #all-results ul {
-      margin-left: 20px;
-      margin-bottom: 10px;
-    }
-    #all-results hr {
-      margin-top: 15px;
-      margin-bottom: 15px;
-      border: 0;
-      border-top: 1px solid #ccc;
-    }
-
-    /* Add spacing within the modal content */
-    .modal-content h5 {
-      margin-bottom: 20px;
-    }
-    .modal-content .input-field {
-      margin-top: 15px;
-      margin-bottom: 15px;
-    }
-
-    /* Add spacing in the modal footer */
-    .modal-footer a {
-      margin-left: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h5 class="center-align">TL MODE EXTRACTOR</h5>
-    <div class="right-align" style="margin-top: 10px;">
-      <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
-        <i class="material-icons">add</i>
-      </a>
-    </div>
-
-    <div class="input-field">
-      <select id="project-selector">
-        <option value="" disabled selected>Select a saved project</option>
-      </select>
-      <label for="project-selector">Load Project</label>
-    </div>
-
-    <div class="center-align">
-      <button class="btn red darken-2" id="delete-project">
-        <i class="material-icons left">delete</i>Delete Project
-      </button>
-    </div>
-
-    <div class="input-field">
-      <input id="tech-id" type="text" placeholder="e.g. TECH123">
-      <label for="tech-id">Search TECH ID (FIX1_ID)</label>
-    </div>
-
-    <div class="center-align">
-      <button class="btn blue" id="search-button">
-        <i class="material-icons left">search</i>Search
-      </button>
-      <button class="btn green" id="calculate-all-button">
-        <i class="material-icons left">calculate</i>Calculate All
-      </button>
-    </div>
-
-    <div class="center-align" style="margin-top: 10px;">
-      <button class="btn orange" id="export-button">
-        <i class="material-icons left">file_download</i>Download CSV
-      </button>
-    </div>
-
-    <div id="output" class="result z-depth-1"></div>
-
-    <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
-    </div>
-
-    <div id="add-project-modal" class="modal">
-      <div class="modal-content">
-        <h5>Add New Project</h5>
-        <div class="input-field">
-          <input id="project-name" type="text">
-          <label for="project-name">Project Name</label>
-        </div>
-        <div class="input-field">
-          <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
-          <label for="raw-data">Fixpoints Data</label>
-        </div>
-        <div class="row">
-          <div class="input-field col s6">
-            <select id="modal-size">
-              <option value="3in">3IN</option>
-              <option value="9in">9IN</option>
+   <head>
+      <title>TL MODE - Fixpoint Search</title>
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <style>
+         body {
+         padding: 20px;
+         }
+         .result {
+         background: #f9f9f9;
+         padding: 20px;
+         margin-top: 20px;
+         white-space: pre-wrap;
+         border-left: 4px solid #42a5f5;
+         font-family: monospace;
+         }
+         .modal textarea {
+         height: 150px;       /* Set a fixed height */
+         overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
+         resize: none;       /* Optional: Prevent user resizing */
+         }
+         .modal-content textarea.materialize-textarea { /* If your textarea has the materialize-textarea class */
+         height: 150px !important; /* Use !important as a temporary measure to see if it helps */
+         overflow-y: auto;
+         resize: none;
+         }
+         /* Add margin to input fields */
+         .input-field {
+         margin-top: 20px;
+         margin-bottom: 10px;
+         }
+         /* Add margin to buttons */
+         .btn {
+         margin-top: 15px;
+         margin-bottom: 15px;
+         margin-right: 10px; /* Add some horizontal spacing between buttons if they appear in a row */
+         }
+         /* Add margin to the floating action button */
+         .right-align {
+         margin-bottom: 20px;
+         }
+         /* Add margin to center-aligned elements */
+         .center-align {
+         margin-top: 25px;
+         margin-bottom: 25px;
+         }
+         /* Style for the scrollable all results view */
+         #all-results {
+         max-height: 300px;
+         overflow-y: auto;
+         }
+         #all-results h6 {
+         margin-top: 10px;
+         margin-bottom: 5px;
+         }
+         #all-results ul {
+         margin-left: 20px;
+         margin-bottom: 10px;
+         }
+         #all-results hr {
+         margin-top: 15px;
+         margin-bottom: 15px;
+         border: 0;
+         border-top: 1px solid #ccc;
+         }
+         /* Add spacing within the modal content */
+         .modal-content h5 {
+         margin-bottom: 20px;
+         }
+         .modal-content .input-field {
+         margin-top: 15px;
+         margin-bottom: 15px;
+         }
+         /* Add spacing in the modal footer */
+         .modal-footer a {
+         margin-left: 10px;
+         }
+      </style>
+   </head>
+   <body>
+      <div class="container">
+         <h5 class="center-align">TL MODE EXTRACTOR</h5>
+         <div class="right-align" style="margin-top: 10px;">
+            <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
+            <i class="material-icons">add</i>
+            </a>
+         </div>
+         <div class="input-field">
+            <select id="project-selector">
+               <option value="" disabled selected>Select a saved project</option>
             </select>
-            <label for="modal-size">Project Size</label>
-          </div>
-          <div class="input-field col s6">
-            <label>
-              <input type="checkbox" id="modal-ir-check" />
-              <span>IR Multiplier</span>
-            </label>
-          </div>
-        </div>
+            <label for="project-selector">Load Project</label>
+         </div>
+         <div class="center-align">
+            <button class="btn red darken-2" id="delete-project">
+            <i class="material-icons left">delete</i>Delete Project
+            </button>
+         </div>
+         <div class="input-field">
+            <input id="tech-id" type="text" placeholder="e.g. TECH123">
+            <label for="tech-id">Search TECH ID (FIX1_ID)</label>
+         </div>
+         <div class="center-align">
+            <button class="btn blue" id="search-button">
+            <i class="material-icons left">search</i>Search
+            </button>
+            <button class="btn green" id="calculate-all-button">
+            <i class="material-icons left">calculate</i>Calculate All
+            </button>
+            <button class="btn purple darken-2 modal-trigger" href="#multiplier-modal" id="calculate-all-projects-button">
+            <i class="material-icons left">grid_on</i>All Projects Total
+            </button>
+         </div>
+         <div class="center-align" style="margin-top: 10px;">
+            <button class="btn orange" id="export-button">
+            <i class="material-icons left">file_download</i>Download CSV
+            </button>
+         </div>
+         <div id="output" class="result z-depth-1"></div>
+         <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
+         </div>
+         <div id="multiplier-modal" class="modal">
+            <div class="modal-content">
+               <h5>Enter Multiplier</h5>
+               <div class="input-field">
+                  <input id="total-multiplier" type="number" value="1" step="0.01">
+                  <label for="total-multiplier">Multiplier</label>
+               </div>
+            </div>
+            <div class="modal-footer">
+               <a href="#!" class="modal-close btn grey">Cancel</a>
+               <a href="#!" class="btn green" id="apply-multiplier">Apply Multiplier</a>
+            </div>
+         </div>
+         <div id="add-project-modal" class="modal">
+            <div class="modal-content">
+               <h5>Add New Project</h5>
+               <div class="input-field">
+                  <input id="project-name" type="text">
+                  <label for="project-name">Project Name</label>
+               </div>
+               <div class="input-field">
+                  <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
+                  <label for="raw-data">Fixpoints Data</label>
+               </div>
+               <div class="row">
+                  <div class="input-field col s6">
+                     <select id="modal-size">
+                        <option value="3in">3IN</option>
+                        <option value="9in">9IN</option>
+                     </select>
+                     <label for="modal-size">Project Size</label>
+                  </div>
+                  <div class="input-field col s6">
+                     <label>
+                     <input type="checkbox" id="modal-ir-check" />
+                     <span>IR Multiplier</span>
+                     </label>
+                  </div>
+               </div>
+            </div>
+            <div class="modal-footer">
+               <a href="#!" class="modal-close btn grey">Cancel</a>
+               <a href="#!" class="btn green" id="save-project">Save Project</a>
+            </div>
+         </div>
       </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close btn grey">Cancel</a>
-        <a href="#!" class="btn green" id="save-project">Save Project</a>
-      </div>
-    </div>
-
-  </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-      let activeProjectData = '';
-      let allCalculatedResults = []; // Array to store results from "Calculate All"
-      let lastResult = ''; // Still used for single search export
-
-      const prices = [
-        { "3in": 2.19, "9in": 0.99 },
-        { "3in": 5.86, "9in": 2.08 },
-        { "3in": 7.44, "9in": 2.78 },
-        { "3in": 2.29, "9in": 1.57 },
-        { "3in": 1.55, "9in": 0.60 },
-        { "3in": 1.84, "9in": 0.78 },
-        { "3in": 1.00, "9in": 1.00 },
-        { "3in": 3.74, "9in": 3.74 },
-        { "3in": 1.73, "9in": 1.73 }
-      ];
-
-      const projectSelector = document.getElementById('project-selector');
-      const rawData = document.getElementById('raw-data');
-      const projectName = document.getElementById('project-name');
-      const techIdInput = document.getElementById('tech-id');
-      const output = document.getElementById('output');
-      const allResultsDiv = document.getElementById('all-results');
-
-      function loadProjectList() {
-        projectSelector.innerHTML = '<option disabled selected>Select a saved project</option>';
-        for (let key in localStorage) {
-          if (key.startsWith('tl_project_')) {
-            const name = key.replace('tl_project_', '');
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            projectSelector.appendChild(option);
-          }
-        }
-        M.FormSelect.init(projectSelector);
-      }
-
-      function saveProject() {
-        const name = projectName.value.trim();
-        const data = rawData.value.trim();
-        const size = document.getElementById('modal-size').value;
-        const ir = document.getElementById('modal-ir-check').checked;
-
-        if (!name || !data) {
-          M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
-          return;
-        }
-
-        const payload = JSON.stringify({ data, size, ir });
-        localStorage.setItem(`tl_project_${name}`, payload);
-        M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
-        loadProjectList();
-        const modalElem = document.querySelector('#add-project-modal');
-        const modalInstance = M.Modal.getInstance(modalElem);
-        modalInstance.close();
-      }
-
-      function deleteSelectedProject() {
-        const selected = projectSelector.value;
-        if (!selected) {
-          M.toast({ html: 'No project selected.', classes: 'red' });
-          return;
-        }
-        if (confirm(`Are you sure you want to delete project '${selected}'?`)) {
-          localStorage.removeItem(`tl_project_${selected}`);
-          M.toast({ html: `Project '${selected}' deleted.`, classes: 'orange' });
-          loadProjectList();
-          activeProjectData = '';
-          allResultsDiv.innerHTML = '';
-          allCalculatedResults = []; // Clear calculated results
-        }
-      }
-
-      function calculatePointsForTechID(raw, techIDValue, size, ir) {
-    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-    const indexes = {
-        fixId: headers.indexOf("FIX1_ID"),
-        category: headers.indexOf("CATEGORY"),
-        i3qa: headers.indexOf("I3QA_CAT"),
-        rv1cat: headers.indexOf("RV1_CAT"),
-        afp1stat: headers.indexOf("AFP1_STAT"),
-        afp1cat: headers.indexOf("AFP1_CAT"), // Add AFP1_CAT to indexes
-        rv1label: headers.indexOf("RV1_LABEL"),
-        i3qalabel: headers.indexOf("I3QA_LABEL")
-    };
-
-    if (indexes.fixId === -1) {
-        return null;
-    }
-
-    const catCount = Array(9).fill(0);
-    let additionalFixPoints = 0;
-    let excessiveFixPoints = 0;
-    let missFixPoints = 0;
-
-    const matched = rows.filter(row => {
-        const fields = row.split(/[\t,]/);
-        return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
-    });
-
-    matched.forEach(row => {
-        const fields = row.split(/[\t,]/);
-        let excludeCounts = false;
-        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
-            excludeCounts = fields[indexes.rv1label].toUpperCase().includes("E");
-            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
-                excessiveFixPoints++;
-            }
-            if (fields[indexes.rv1label].toUpperCase().includes("M")) {
-                missFixPoints++;
-            }
-        }
-        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
-            additionalFixPoints++;
-        }
-        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-            missFixPoints++;
-        }
-
-        if (!excludeCounts) {
-            [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => { // Include afp1cat
-                if (idx !== -1 && fields[idx]) {
-                    const val = parseInt(fields[idx].trim());
-                    if (!isNaN(val) && val >= 1 && val <= 9) {
-                        catCount[val - 1]++;
-                    }
-                }
-            });
-        }
-    });
-
-    const multiplier = ir ? 2 : 1;
-    const totalPoints = catCount.reduce((sum, count, i) => {
-        const price = prices[i][size];
-        return sum + (count * price * multiplier);
-    }, 0).toFixed(2);
-
-    const categoryTotals = catCount.map((count, i) => {
-        return (count * prices[i][size] * multiplier).toFixed(2);
-    });
-
-    return {
-        techID: techIDValue,
-        totalPoints: totalPoints,
-        categoryTotals: categoryTotals,
-        additionalFixPoints: additionalFixPoints,
-        excessiveFixPoints: excessiveFixPoints,
-        missFixPoints: missFixPoints
-    };
-}
-
-function calculateAllTechIDs() {
-    const raw = activeProjectData?.data;
-    const size = activeProjectData?.size;
-    const ir = activeProjectData?.ir;
-
-    if (!raw || !size) {
-        allResultsDiv.textContent = 'Please load a project first.';
-        allCalculatedResults = [];
-        return;
-    }
-
-    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-    const fixIdIndex = headers.indexOf("FIX1_ID");
-
-    if (fixIdIndex === -1) {
-        allResultsDiv.textContent = 'Error: FIX1_ID column not found.';
-        allCalculatedResults = [];
-        return;
-    }
-
-    const techIDs = new Set();
-    rows.forEach(row => {
-        const fields = row.split(/[\t,]/);
-        const techID = fields[fixIdIndex]?.trim().toUpperCase();
-        if (techID) {
-            techIDs.add(techID);
-        }
-    });
-
-    allCalculatedResults = []; // Reset the array
-
-    // Create table elements
-    let table = document.createElement('table');
-    table.classList.add('striped'); // Add Materialize CSS class for styling
-    let thead = table.createTHead();
-    let tbody = table.createTBody();
-    let headerRow = thead.insertRow();
-
-    // Create table headers
-    const tableHeaders = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
-    tableHeaders.forEach(headerText => {
-        let th = document.createElement('th');
-        th.textContent = headerText;
-        headerRow.appendChild(th);
-    });
-
-    // Populate table rows
-    techIDs.forEach(techID => {
-        const result = calculatePointsForTechID(raw, techID, size, ir);
-        if (result) {
-            allCalculatedResults.push(result);
-            let row = tbody.insertRow();
-            let cell = row.insertCell();
-            cell.textContent = result.techID;
-
-            cell = row.insertCell();
-            cell.textContent = result.totalPoints;
-
-            result.categoryTotals.forEach(total => {
-                cell = row.insertCell();
-                cell.textContent = total;
-            });
-
-            cell = row.insertCell();
-            cell.textContent = result.additionalFixPoints;
-
-            cell = row.insertCell();
-            cell.textContent = result.excessiveFixPoints;
-
-            cell = row.insertCell();
-            cell.textContent = result.missFixPoints;
-        }
-    });
-
-    // Update allResultsDiv
-    allResultsDiv.innerHTML = '';
-    allResultsDiv.appendChild(table);
-}
-
-function searchTechID() {
-    const raw = activeProjectData?.data;
-    const techIDValue = techIdInput.value.trim().toUpperCase();
-    const size = activeProjectData?.size;
-    const ir = activeProjectData?.ir;
-
-    if (!raw || !techIDValue || !size) {
-        output.textContent = 'Please load a project and enter a TECH ID to search.';
-        lastResult = '';
-        return;
-    }
-
-    const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
-    const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-    const indexes = {
-        fixId: headers.indexOf("FIX1_ID"),
-        category: headers.indexOf("CATEGORY"),
-        i3qa: headers.indexOf("I3QA_CAT"),
-        rv1cat: headers.indexOf("RV1_CAT"),
-        afp1stat: headers.indexOf("AFP1_STAT"),
-        afp1cat: headers.indexOf("AFP1_CAT"), // Add AFP1_CAT to indexes
-        rv1label: headers.indexOf("RV1_LABEL"),
-        i3qalabel: headers.indexOf("I3QA_LABEL")
-    };
-
-    if (indexes.fixId === -1) {
-        output.textContent = 'FIX1_ID column not found.';
-        lastResult = '';
-        return;
-    }
-
-    const catCount = Array(9).fill(0);
-    let additionalFixPoints = 0;
-    let excessiveFixPoints = 0;
-    let missFixPoints = 0;
-
-    const matched = rows.filter(row => {
-        const fields = row.split(/[\t,]/);
-        return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
-    });
-
-    const multiplier = ir ? 2 : 1;
-    let totalPoints = 0;
-    const categoryTotals = Array(9).fill(0);
-
-    matched.forEach(row => {
-        const fields = row.split(/[\t,]/);
-        let excludeCounts = false;
-        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
-            excludeCounts = fields[indexes.rv1label].toUpperCase().includes("E");
-            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
-                excessiveFixPoints++;
-            }
-            if (fields[indexes.rv1label].toUpperCase().includes("M")) {
-                missFixPoints++;
-            }
-        }
-        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
-            additionalFixPoints++;
-        }
-        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-            missFixPoints++;
-        }
-
-        if (!excludeCounts) {
-            [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => { // Include afp1cat
-                if (idx !== -1 && fields[idx]) {
-                    const val = parseInt(fields[idx].trim());
-                    if (!isNaN(val) && val >= 1 && val <= 9) {
-                        const price = prices[val - 1][size];
-                        totalPoints += price * multiplier;
-                        categoryTotals[val - 1] += price * multiplier;
-                    }
-                }
-            });
-        }
-    });
-
-    output.textContent = `TECH ID: ${techIDValue}\nTotal Points: ${totalPoints.toFixed(2)}\nCategory Totals:\n${categoryTotals.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}\nAdditional FixPoints: ${additionalFixPoints}\nExcessive FixPoints: ${excessiveFixPoints}\nMiss FixPoints: ${missFixPoints}`;
-    lastResult = {
-        techID: techIDValue,
-        totalPoints: totalPoints.toFixed(2),
-        categoryTotals: categoryTotals.map(t => t.toFixed(2)),
-        additionalFixPoints: additionalFixPoints,
-        excessiveFixPoints: excessiveFixPoints,
-        missFixPoints: missFixPoints
-    };
-}
-
-function exportCSV() {
-    if (allCalculatedResults.length > 0) {
-        // Export all calculated results
-        const header = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
-        const rows = allCalculatedResults.map(res => [res.techID, res.totalPoints, ...res.categoryTotals, res.additionalFixPoints, res.excessiveFixPoints, res.missFixPoints]);
-        const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `all_tech_id_summary.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } else if (lastResult.techID) {
-        // Export single search result (fallback if "Calculate All" hasn't been run)
-        const rows = [
-            ['TECH ID', 'Total Points'],
-            [lastResult.techID, lastResult.totalPoints],
-            [],
-            ['Category', 'Total'],
-            ...lastResult.categoryTotals.map((total, i) => [`CAT ${i + 1}`, total]),
-            [],
-            ['Additional FixPoints', lastResult.additionalFixPoints],
-            ['Excessive FixPoints', lastResult.excessiveFixPoints],
-            ['Miss FixPoints', lastResult.missFixPoints]
-        ];
-        const csvContent = rows.map(r => r.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `summary_${lastResult.techID}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } else {
-        M.toast({ html: 'Please run "Calculate All" or a single search first.', classes: 'red' });
-    }
-}
-
-      document.getElementById('save-project').addEventListener('click', saveProject);
-      document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
-      document.getElementById('search-button').addEventListener('click', searchTechID);
-      document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
-      document.getElementById('export-button').addEventListener('click', exportCSV);
-
-      projectSelector.addEventListener('change', function () {
-        const selected = this.value;
-        const project = localStorage.getItem(`tl_project_${selected}`);
-        if (project) {
-          activeProjectData = JSON.parse(project);
-          output.textContent = '';
-          allResultsDiv.innerHTML = '';
-          allCalculatedResults = []; // Clear calculated results on project load
-          lastResult = ''; // Clear last single search result
-          M.updateTextFields();
-        }
-      });
-
-      M.FormSelect.init(document.querySelectorAll('select'));
-      M.Modal.init(document.querySelectorAll('.modal'));
-      M.updateTextFields();
-      loadProjectList();
-    });
-  </script>
-</body>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      <script>
+         document.addEventListener('DOMContentLoaded', function () {
+             let activeProjectData = '';
+             let allCalculatedResults = []; // Array to store results from "Calculate All" (per project)
+             let lastResult = ''; // Still used for single search export
+             let allProjectsAggregatedResults = {}; // Object to store aggregated results per TECH ID across all projects
+         
+             const prices = [
+                 { "3in": 2.19, "9in": 0.99 },
+                 { "3in": 5.86, "9in": 2.08 },
+                 { "3in": 7.44, "9in": 2.78 },
+                 { "3in": 2.29, "9in": 1.57 },
+                 { "3in": 1.55, "9in": 0.60 },
+                 { "3in": 1.84, "9in": 0.78 },
+                 { "3in": 1.00, "9in": 1.00 }, // Assuming CAT 7 is 1:1 ratio for both sizes based on value
+                 { "3in": 3.74, "9in": 3.74 }, // Assuming CAT 8 is 1:1 ratio for both sizes
+                 { "3in": 1.73, "9in": 1.73 }  // Assuming CAT 9 is 1:1 ratio for both sizes
+             ];
+         
+             const projectSelector = document.getElementById('project-selector');
+             const rawData = document.getElementById('raw-data');
+             const projectName = document.getElementById('project-name');
+             const techIdInput = document.getElementById('tech-id');
+             const output = document.getElementById('output');
+             const allResultsDiv = document.getElementById('all-results'); // Use this div for displaying results
+         
+         
+             function loadProjectList() {
+                 projectSelector.innerHTML = '<option value="" disabled selected>Select a saved project</option>';
+                 for (let i = 0; i < localStorage.length; i++) {
+                     const key = localStorage.key(i);
+                     if (key.startsWith('tl_project_')) {
+                         const name = key.replace('tl_project_', '');
+                         const option = document.createElement('option');
+                         option.value = name;
+                         option.textContent = name;
+                         projectSelector.appendChild(option);
+                     }
+                 }
+                 M.FormSelect.init(projectSelector);
+             }
+         
+             function saveProject() {
+                 const name = projectName.value.trim();
+                 const data = rawData.value.trim();
+                 const size = document.getElementById('modal-size').value;
+                 const ir = document.getElementById('modal-ir-check').checked;
+         
+                 if (!name || !data) {
+                     M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
+                     return;
+                 }
+         
+                 const payload = JSON.stringify({ data, size, ir });
+                 localStorage.setItem(`tl_project_${name}`, payload);
+                 M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
+                 loadProjectList();
+                 const modalElem = document.querySelector('#add-project-modal');
+                 const modalInstance = M.Modal.getInstance(modalElem);
+                 modalInstance.close();
+                 // Clear modal inputs
+                 projectName.value = '';
+                 rawData.value = '';
+                 document.getElementById('modal-size').value = '3in'; // Reset select
+                 document.getElementById('modal-ir-check').checked = false; // Reset checkbox
+                 M.FormSelect.init(document.getElementById('modal-size')); // Re-initialize select
+                 M.updateTextFields(); // Update text fields after clearing
+             }
+         
+             function deleteSelectedProject() {
+                 const selected = projectSelector.value;
+                 if (!selected) {
+                     M.toast({ html: 'No project selected.', classes: 'red' });
+                     return;
+                 }
+                 if (confirm(`Are you sure you want to delete project '${selected}'?`)) {
+                     localStorage.removeItem(`tl_project_${selected}`);
+                     M.toast({ html: `Project '${selected}' deleted.`, classes: 'orange' });
+                     loadProjectList();
+                     activeProjectData = '';
+                     output.textContent = ''; // Clear single search output
+                     allResultsDiv.innerHTML = ''; // Clear all results output
+                     allCalculatedResults = []; // Clear calculated results
+                     lastResult = ''; // Clear last single search result
+                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                 }
+             }
+         
+              // Helper function to calculate points for a single row of raw data
+             function calculatePointsForRow(fields, headers, size, ir) {
+                  const indexes = {
+                     category: headers.indexOf("CATEGORY"),
+                     i3qa: headers.indexOf("I3QA_CAT"),
+                     rv1cat: headers.indexOf("RV1_CAT"),
+                     afp1stat: headers.indexOf("AFP1_STAT"),
+                     afp1cat: headers.indexOf("AFP1_CAT"),
+                     rv1label: headers.indexOf("RV1_LABEL"),
+                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                 };
+         
+                 let rowPoints = 0;
+                 let excludeCounts = false;
+         
+                 // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
+                  if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+                      if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                           excludeCounts = true; // Exclude from main category points if marked 'E'
+                      }
+                  }
+                   if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
+                      if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+                           // Assuming 'M' does not exclude category points based on previous logic
+                      }
+                  }
+         
+                 if (!excludeCounts) {
+                     [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
+                         if (idx !== -1 && fields[idx]) {
+                             const val = parseInt(fields[idx].trim());
+                             if (!isNaN(val) && val >= 1 && val <= 9) {
+                                 const price = prices[val - 1][size];
+                                 const rowMultiplier = ir ? 2 : 1; // Apply project-specific IR
+                                 rowPoints += price * rowMultiplier;
+                             }
+                         }
+                     });
+                 }
+                 return rowPoints;
+             }
+         
+         
+             // Helper function to calculate points and details for a single TECH ID within a given raw data chunk
+             function calculatePointsForTechIDInRaw(raw, techIDValue, size, ir) {
+                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                 const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                 const indexes = {
+                     fixId: headers.indexOf("FIX1_ID"),
+                     category: headers.indexOf("CATEGORY"),
+                     i3qa: headers.indexOf("I3QA_CAT"),
+                     rv1cat: headers.indexOf("RV1_CAT"),
+                     afp1stat: headers.indexOf("AFP1_STAT"),
+                     afp1cat: headers.indexOf("AFP1_CAT"),
+                     rv1label: headers.indexOf("RV1_LABEL"),
+                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                 };
+         
+                 if (indexes.fixId === -1) {
+                     return null; // Cannot calculate without FIX1_ID
+                 }
+         
+                 let totalPoints = 0;
+                 let additionalFixPoints = 0;
+                 let excessiveFixPoints = 0;
+                 let missFixPoints = 0;
+                 const categoryPoints = Array(9).fill(0); // Sum points per category
+         
+                 const matched = rows.filter(row => {
+                     const fields = row.split(/[\t,]/);
+                     return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
+                 });
+         
+                 const multiplier = ir ? 2 : 1;
+         
+                 matched.forEach(row => {
+                     const fields = row.split(/[\t,]/);
+                      let excludeCounts = false;
+         
+                      // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
+                       if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+                           if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                                excessiveFixPoints++;
+                                excludeCounts = true; // Exclude from main category points if marked 'E'
+                           }
+                           if (fields[indexes.rv1label].toUpperCase().includes("M")) {
+                               missFixPoints++;
+                           }
+                       }
+                        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
+                           if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+                                missFixPoints++;
+                           }
+                       }
+                      if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
+                          additionalFixPoints++;
+                      }
+         
+         
+                     if (!excludeCounts) {
+                         [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
+                             if (idx !== -1 && fields[idx]) {
+                                 const val = parseInt(fields[idx].trim());
+                                 if (!isNaN(val) && val >= 1 && val <= 9) {
+                                     const price = prices[val - 1][size];
+                                     totalPoints += price * multiplier;
+                                     categoryPoints[val - 1] += price * multiplier;
+                                 }
+                             }
+                         });
+                     }
+                 });
+         
+                 return {
+                     techID: techIDValue,
+                     totalPoints: totalPoints, // Return raw total for aggregation
+                     additionalFixPoints: additionalFixPoints,
+                     excessiveFixPoints: excessiveFixPoints,
+                     missFixPoints: missFixPoints,
+                     categoryPoints: categoryPoints // Return points per category for this TECH ID in this raw data
+                 };
+             }
+         
+         
+             function calculateAllTechIDs() {
+                 const raw = activeProjectData?.data;
+                 const size = activeProjectData?.size;
+                 const ir = activeProjectData?.ir;
+         
+                 if (!raw || !size) {
+                     allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
+                     allCalculatedResults = [];
+                     allProjectsAggregatedResults = {}; // Reset
+                     return;
+                 }
+         
+                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                 const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                 const fixIdIndex = headers.indexOf("FIX1_ID");
+         
+                 if (fixIdIndex === -1) {
+                     allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
+                     allCalculatedResults = [];
+                      allProjectsAggregatedResults = {}; // Reset
+                     return;
+                 }
+         
+                 const techIDs = new Set();
+                 rows.forEach(row => {
+                     const fields = row.split(/[\t,]/);
+                     const techID = fields[fixIdIndex]?.trim().toUpperCase();
+                     if (techID) {
+                         techIDs.add(techID);
+                     }
+                 });
+         
+                 allCalculatedResults = []; // Reset the array for "Calculate All" (per project)
+                 let tableHtml = '<table class="striped"><thead><tr>';
+         
+                 // Create table headers
+                 const tableHeaders = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
+                 tableHeaders.forEach(headerText => {
+                     tableHtml += `<th>${headerText}</th>`;
+                 });
+                 tableHtml += '</tr></thead><tbody>';
+         
+                 // Populate table rows
+                 techIDs.forEach(techID => {
+                     const result = calculatePointsForTechIDInRaw(raw, techID, size, ir);
+                     if (result) {
+                         allCalculatedResults.push(result); // Store for export
+                         tableHtml += '<tr>';
+                         tableHtml += `<td>${result.techID}</td>`;
+                         tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`; // Format for display
+                         result.categoryPoints.forEach(total => {
+                             tableHtml += `<td>${total.toFixed(2)}</td>`; // Format for display
+                         });
+                         tableHtml += `<td>${result.additionalFixPoints}</td>`;
+                         tableHtml += `<td>${result.excessiveFixPoints}</td>`;
+                         tableHtml += `<td>${result.missFixPoints}</td>`;
+                         tableHtml += '</tr>';
+                     }
+                 });
+         
+                 tableHtml += '</tbody></table>';
+         
+                 // Update allResultsDiv
+                 allResultsDiv.innerHTML = `<h5>Results for Loaded Project</h5>${tableHtml}`;
+                 output.textContent = ''; // Clear single search output
+                 allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
+             }
+         
+             function searchTechID() {
+                 const raw = activeProjectData?.data;
+                 const techIDValue = techIdInput.value.trim().toUpperCase();
+                 const size = activeProjectData?.size;
+                 const ir = activeProjectData?.ir;
+         
+                 if (!raw || !techIDValue || !size) {
+                     output.textContent = 'Please load a project and enter a TECH ID to search.';
+                     lastResult = '';
+                     allProjectsAggregatedResults = {}; // Reset
+                     return;
+                 }
+         
+                 const result = calculatePointsForTechIDInRaw(raw, techIDValue, size, ir);
+         
+                 if (result) {
+                      output.textContent = `TECH ID: ${result.techID}\nTotal Points: ${result.totalPoints.toFixed(2)}\nCategory Totals:\n${result.categoryPoints.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}\nAdditional FixPoints: ${result.additionalFixPoints}\nExcessive FixPoints: ${result.excessiveFixPoints}\nMiss FixPoints: ${result.missFixPoints}`;
+                     lastResult = result; // Store the single search result
+                     allResultsDiv.innerHTML = ''; // Clear all results when doing a single search
+                     allCalculatedResults = []; // Clear all calculated results
+                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                 } else {
+                      output.textContent = `TECH ID '${techIDValue}' not found or error in data in the loaded project.`;
+                      lastResult = '';
+                      allResultsDiv.innerHTML = '';
+                      allCalculatedResults = [];
+                      allProjectsAggregatedResults = {};
+                 }
+             }
+         
+         
+             // MODIFIED FEATURE: Calculate Total Across All Projects (Aggregate by TECH ID, then apply multiplier)
+             function calculateTotalAcrossAllProjects() {
+                 const multiplierInput = document.getElementById('total-multiplier');
+                 const multiplier = parseFloat(multiplierInput.value) || 1; // Default to 1 if input is invalid
+         
+                 allProjectsAggregatedResults = {}; // Reset the aggregated results
+                 let processingErrors = []; // To collect any errors during processing
+         
+                 // --- Step 1: Aggregate points per TECH ID across all projects ---
+                 for (let i = 0; i < localStorage.length; i++) {
+                     const key = localStorage.key(i);
+                     if (key.startsWith('tl_project_')) {
+                         const projectName = key.replace('tl_project_', ''); // Get project name for error reporting
+                         const projectDataString = localStorage.getItem(key);
+                         if (projectDataString) {
+                             const project = JSON.parse(projectDataString);
+                             const raw = project.data;
+                             const size = project.size;
+                             const ir = project.ir; // IR multiplier is project-specific
+         
+                             if (raw && size) {
+                                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                                 const headerRow = rows.shift(); // Get the header row
+         
+                                  if (!headerRow) {
+                                     processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
+                                     continue; // Skip this project
+                                 }
+         
+                                 const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                                 const fixIdIndex = headers.indexOf("FIX1_ID");
+         
+                                 if (fixIdIndex === -1) {
+                                     processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
+                                     continue; // Skip this project if FIX1_ID is missing
+                                 }
+         
+                                 // Process each data row in the project to aggregate points by TECH ID
+                                 rows.forEach(row => {
+                                     const fields = row.split(/[\t,]/);
+                                     const techID = fields[fixIdIndex]?.trim().toUpperCase();
+         
+                                     if (techID) {
+                                         // Calculate points for this specific row based on its categories and the project's size/IR
+                                         const rowPoints = calculatePointsForRow(fields, headers, size, ir);
+         
+                                         // Aggregate points by TECH ID
+                                         if (allProjectsAggregatedResults[techID]) {
+                                             allProjectsAggregatedResults[techID].totalPoints += rowPoints;
+                                         } else {
+                                             allProjectsAggregatedResults[techID] = {
+                                                 totalPoints: rowPoints
+                                             };
+                                         }
+                                     }
+                                 });
+         
+                              } else {
+                                  processingErrors.push(`Project '${projectName}': Incomplete project data (missing raw data or size).`);
+                              }
+                         } else {
+                             processingErrors.push(`Project '${projectName}': Could not retrieve data from local storage.`);
+                         }
+                     }
+                 }
+         
+                 // --- Step 2: Apply multiplier to each aggregated TECH ID total and calculate final grand total ---
+                 let grandTotal = 0;
+                 let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5><div id="aggregated-results-list">`;
+                 let techIDTotals = []; // Array to hold TECH ID results for sorting and display
+         
+                 // Convert aggregated results to an array and apply multiplier
+                 for (const techID in allProjectsAggregatedResults) {
+                     if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
+                         const originalTotal = allProjectsAggregatedResults[techID].totalPoints;
+                         const multipliedTotal = originalTotal * multiplier;
+                         allProjectsAggregatedResults[techID].multipliedTotal = multipliedTotal; // Store multiplied total (as number)
+                         techIDTotals.push({
+                              techID: techID,
+                              originalTotal: originalTotal,
+                              multipliedTotal: multipliedTotal
+                         });
+                         grandTotal += multipliedTotal; // Add to grand total
+                     }
+                 }
+         
+                 // Sort TECH IDs alphabetically
+                 techIDTotals.sort((a, b) => a.techID.localeCompare(b.techID));
+         
+         
+                 if (techIDTotals.length === 0 && processingErrors.length === 0) {
+                      resultsOutput += '<p>No TECH IDs found across all projects.</p>';
+                 } else {
+                     // Display sorted TECH ID totals in the specified format
+                     techIDTotals.forEach(item => {
+                         resultsOutput += `<p><strong>${item.techID}:</strong> Points with Multiplier: ${item.multipliedTotal.toFixed(2)} Points without Multiplier: ${item.originalTotal.toFixed(2)}</p>`;
+                     });
+         
+                     //resultsOutput += `</div><hr><h4>Final Grand Total (Sum of Multiplied TECH ID Totals): ${grandTotal.toFixed(2)} points</h4>`;
+                 }
+         
+         
+                 // Display any processing errors
+                 if (processingErrors.length > 0) {
+                     resultsOutput += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
+                     processingErrors.forEach(error => {
+                         resultsOutput += `<li>${error}</li>`;
+                     });
+                     resultsOutput += '</ul></div></div>';
+                 }
+         
+         
+                 // Display the results
+                 allResultsDiv.innerHTML = resultsOutput; // Display in the all-results div
+                 output.textContent = ''; // Clear single search output
+                 allCalculatedResults = []; // Clear per-project calculated results
+         
+         
+                 // Close the modal
+                 const modalElem = document.querySelector('#multiplier-modal');
+                 const modalInstance = M.Modal.getInstance(modalElem);
+                 modalInstance.close();
+             }
+         
+             // Function to export CSV (modified to handle different result types)
+             function exportCSV() {
+                  if (allCalculatedResults.length > 0) {
+                      // Export "Calculate All" results (per project)
+                      const header = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
+                      // Use categoryPoints which stores calculated points per category for the project's size/IR
+                      const rows = allCalculatedResults.map(res => [res.techID, res.totalPoints.toFixed(2), ...res.categoryPoints.map(p => p.toFixed(2)), res.additionalFixPoints, res.excessiveFixPoints, res.missFixPoints]);
+                      const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement("a");
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `calculated_tech_id_summary_project.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+         
+                  } else if (Object.keys(allProjectsAggregatedResults).length > 0) {
+                      // Export the "Total All Projects" (Aggregated by TECH ID with Multiplier) summary
+                      let csvContent = 'Aggregated TECH ID Totals Across All Projects\n';
+                      csvContent += 'TECH ID,Total Points (Before Multiplier),Total Points (After Multiplier)\n';
+         
+                      const sortedTechIDs = Object.keys(allProjectsAggregatedResults).sort();
+                      let grandTotal = 0;
+         
+                      sortedTechIDs.forEach(techID => {
+                          const originalTotal = allProjectsAggregatedResults[techID].totalPoints.toFixed(2);
+                          const multipliedTotal = allProjectsAggregatedResults[techID].multipliedTotal.toFixed(2); // Already calculated and stored
+                          csvContent += `${techID},${originalTotal},${multipliedTotal}\n`;
+                          grandTotal += parseFloat(multipliedTotal);
+                      });
+         
+                      // Add multiplier and grand total
+                      const multiplierInput = document.getElementById('total-multiplier');
+                      const multiplier = parseFloat(multiplierInput.value) || 1;
+         
+                      csvContent += `\nApplied Multiplier,${multiplier}\n`;
+                      csvContent += `Final Grand Total (Sum of Multiplied TECH ID Totals),${grandTotal.toFixed(2)}\n`;
+         
+         
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement("a");
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `all_projects_tech_id_multiplied_summary.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+         
+                 } else if (lastResult.techID) {
+                     // Export single search result
+                     const rows = [
+                         ['TECH ID', 'Total Points'],
+                         [lastResult.techID, lastResult.totalPoints.toFixed(2)], // Format for display
+                         [],
+                         ['Category', 'Total'],
+                         ...lastResult.categoryPoints.map((total, i) => [`CAT ${i + 1}`, total.toFixed(2)]), // Use categoryPoints and format
+                         [],
+                         ['Additional FixPoints', lastResult.additionalFixPoints],
+                         ['Excessive FixPoints', lastResult.excessiveFixPoints],
+                         ['Miss FixPoints', lastResult.missFixPoints]
+                     ];
+                     const csvContent = rows.map(r => r.join(",")).join("\n");
+                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                     const link = document.createElement("a");
+                     link.href = URL.createObjectURL(blob);
+                     link.download = `summary_${lastResult.techID}.csv`;
+                     document.body.appendChild(link);
+                     link.click();
+                     document.body.removeChild(link);
+                 } else {
+                     M.toast({ html: 'No results to export. Run a search or calculation first.', classes: 'red' });
+                 }
+             }
+         
+         
+             // Event Listeners
+             document.getElementById('save-project').addEventListener('click', saveProject);
+             document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
+             document.getElementById('search-button').addEventListener('click', searchTechID);
+             document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
+             document.getElementById('export-button').addEventListener('click', exportCSV);
+         
+             // NEW EVENT LISTENERS for the All Projects Total feature
+             // This button should trigger the multiplier modal
+             const calculateAllProjectsButton = document.getElementById('calculate-all-projects-button');
+             if (calculateAllProjectsButton) { // Check if the button exists (user adds it manually)
+                 calculateAllProjectsButton.addEventListener('click', function() {
+                     const modalElem = document.querySelector('#multiplier-modal');
+                     if (modalElem) { // Check if the modal exists (user adds it manually)
+                          const modalInstance = M.Modal.getInstance(modalElem);
+                          // Reset multiplier input to 1 before opening
+                          const multiplierInput = document.getElementById('total-multiplier');
+                          if (multiplierInput) {
+                              multiplierInput.value = '1';
+                              M.updateTextFields(); // Update label position for the reset input
+                          }
+                          modalInstance.open();
+                     } else {
+                          M.toast({ html: 'Multiplier modal not found. Please add the modal HTML.', classes: 'red' });
+                          console.error("Multiplier modal (#multiplier-modal) not found.");
+                     }
+                 });
+             } else {
+                  console.error("Button with ID 'calculate-all-projects-button' not found. Please add the button HTML.");
+             }
+         
+         
+             // This button within the modal applies the multiplier and performs calculation
+             const applyMultiplierButton = document.getElementById('apply-multiplier');
+             if (applyMultiplierButton) { // Check if the button exists (user adds it manually)
+                 applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
+             } else {
+                  console.error("Button with ID 'apply-multiplier' not found. Please add the modal HTML with this button.");
+             }
+         
+         
+             projectSelector.addEventListener('change', function () {
+                 const selected = this.value;
+                 const project = localStorage.getItem(`tl_project_${selected}`);
+                 if (project) {
+                     activeProjectData = JSON.parse(project);
+                     output.textContent = '';
+                     allResultsDiv.innerHTML = ''; // Clear results when a new project is loaded
+                     allCalculatedResults = []; // Clear calculated results on project load
+                     lastResult = ''; // Clear last single search result
+                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                     M.updateTextFields();
+                 } else {
+                      // Handle case where selected project might have been deleted
+                      activeProjectData = '';
+                      output.textContent = '';
+                      allResultsDiv.innerHTML = '';
+                      allCalculatedResults = [];
+                      lastResult = '';
+                      allProjectsAggregatedResults = {};
+                 }
+                  // Ensure the select element is re-initialized after changing value
+                  M.FormSelect.init(projectSelector);
+             });
+         
+             // Initialize Materialize components
+             M.FormSelect.init(document.querySelectorAll('select'));
+             M.Modal.init(document.querySelectorAll('.modal')); // Initialize all modals
+             M.updateTextFields(); // Update text field labels
+         
+             // Load projects on page load
+             loadProjectList();
+         });
+      </script>
+   </body>
 </html>
