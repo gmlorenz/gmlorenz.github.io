@@ -1,0 +1,142 @@
+<!DOCTYPE html><html>
+<head>
+  <title>TL MODE - Fixpoint Search</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      padding: 20px;
+    }
+    .result {
+      background: #f9f9f9;
+      padding: 20px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      border-left: 4px solid #42a5f5;
+      font-family: monospace;
+    }
+    textarea {
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h4 class="center-align">TL MODE - Search by Tech ID</h4><div class="input-field">
+  <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
+  <label for="raw-data">Fixpoints Data</label>
+</div>
+
+<div class="input-field">
+  <input id="tech-id" type="text" placeholder="e.g. TECH123">
+  <label for="tech-id">Search TECH ID (FIX1_ID)</label>
+</div>
+
+<div class="row">
+  <div class="input-field col s6">
+    <select id="size">
+      <option value="3in">3IN</option>
+      <option value="9in">9IN</option>
+    </select>
+    <label for="size">Project Size</label>
+  </div>
+
+  <div class="input-field col s6">
+    <label>
+      <input type="checkbox" id="ir-check"/>
+      <span>IR Multiplier</span>
+    </label>
+  </div>
+</div>
+
+<div class="center-align">
+  <button class="btn blue" onclick="searchTechID()">
+    <i class="material-icons left">search</i>Search
+  </button>
+</div>
+
+<div id="output" class="result z-depth-1"></div>
+
+  </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var elems = document.querySelectorAll('select');
+      M.FormSelect.init(elems);
+    });
+
+    const prices = [
+      { "3in": 2.19, "9in": 0.99 },
+      { "3in": 5.86, "9in": 2.08 },
+      { "3in": 7.44, "9in": 2.78 },
+      { "3in": 2.29, "9in": 1.57 },
+      { "3in": 1.55, "9in": 0.60 },
+      { "3in": 1.84, "9in": 0.78 },
+      { "3in": 1.00, "9in": 1.00 },
+      { "3in": 3.74, "9in": 3.74 },
+      { "3in": 1.73, "9in": 1.73 }
+    ];
+
+    function searchTechID() {
+      const raw = document.getElementById('raw-data').value.trim();
+      const techID = document.getElementById('tech-id').value.trim().toUpperCase();
+      const size = document.getElementById('size').value;
+      const ir = document.getElementById('ir-check').checked;
+      const output = document.getElementById('output');
+
+      if (!raw || !techID) {
+        output.textContent = 'Please paste data and enter a TECH ID to search.';
+        return;
+      }
+
+      const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+      const headers = rows.shift().split(/[\t,]/).map(h => h.trim().toUpperCase());
+      const indexes = {
+        fixId: headers.indexOf("FIX1_ID"),
+        category: headers.indexOf("CATEGORY"),
+        i3qa: headers.indexOf("I3QA_CAT"),
+        rv1cat: headers.indexOf("RV1_CAT")
+      };
+
+      if (indexes.fixId === -1) {
+        output.textContent = 'FIX1_ID column not found.';
+        return;
+      }
+
+      const catCount = Array(9).fill(0);
+      const matched = rows.filter(row => {
+        const fields = row.split(/[\t,]/);
+        return fields[indexes.fixId]?.trim().toUpperCase() === techID;
+      });
+
+      matched.forEach(row => {
+        const fields = row.split(/[\t,]/);
+        [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+          if (idx !== -1 && fields[idx]) {
+            const val = parseInt(fields[idx].trim());
+            if (!isNaN(val) && val >= 1 && val <= 9) {
+              catCount[val - 1]++;
+            }
+          }
+        });
+      });
+
+      const multiplier = ir ? 2 : 1;
+      let grandTotal = 0;
+      let result = `TECH ID: ${techID}\n`;
+      result += 'Total Points: ';
+      result += catCount.reduce((sum, count, i) => {
+        const price = prices[i][size];
+        const total = count * price * multiplier;
+        grandTotal += total;
+        return sum;
+      }, 0).toFixed(2) + '\nCategory Totals:\n';
+
+      catCount.forEach((count, i) => {
+        const total = (count * prices[i][size] * multiplier).toFixed(2);
+        result += `CAT ${i + 1}: Total: ${total}\n`;
+      });
+
+      output.textContent = result;
+    }
+  </script></body>
+</html>
