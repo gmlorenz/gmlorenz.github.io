@@ -251,7 +251,8 @@
         category: headers.indexOf("CATEGORY"),
         i3qa: headers.indexOf("I3QA_CAT"),
         rv1cat: headers.indexOf("RV1_CAT"),
-        afp1stat: headers.indexOf("AFP1_STAT"), 
+        afp1stat: headers.indexOf("AFP1_STAT"),
+        afp1cat: headers.indexOf("AFP1_CAT"), // Add AFP1_CAT to indexes
         rv1label: headers.indexOf("RV1_LABEL"),
         i3qalabel: headers.indexOf("I3QA_LABEL")
     };
@@ -282,15 +283,15 @@
                 missFixPoints++;
             }
         }
-        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") { // Corrected column name
-            additionalFixPoints++; // Count "AA" in AFP1_STAT
+        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
+            additionalFixPoints++;
         }
         if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
             missFixPoints++;
         }
 
         if (!excludeCounts) {
-            [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+            [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => { // Include afp1cat
                 if (idx !== -1 && fields[idx]) {
                     const val = parseInt(fields[idx].trim());
                     if (!isNaN(val) && val >= 1 && val <= 9) {
@@ -392,7 +393,8 @@ function searchTechID() {
         category: headers.indexOf("CATEGORY"),
         i3qa: headers.indexOf("I3QA_CAT"),
         rv1cat: headers.indexOf("RV1_CAT"),
-        afp1stat: headers.indexOf("AFP1_STAT"), // Corrected column name
+        afp1stat: headers.indexOf("AFP1_STAT"),
+        afp1cat: headers.indexOf("AFP1_CAT"), // Add AFP1_CAT to indexes
         rv1label: headers.indexOf("RV1_LABEL"),
         i3qalabel: headers.indexOf("I3QA_LABEL")
     };
@@ -429,15 +431,15 @@ function searchTechID() {
                 missFixPoints++;
             }
         }
-        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") { // Corrected column name
-            additionalFixPoints++; // Count "AA" in AFP1_STAT
+        if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
+            additionalFixPoints++;
         }
         if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
             missFixPoints++;
         }
 
         if (!excludeCounts) {
-            [indexes.category, indexes.i3qa, indexes.rv1cat].forEach(idx => {
+            [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => { // Include afp1cat
                 if (idx !== -1 && fields[idx]) {
                     const val = parseInt(fields[idx].trim());
                     if (!isNaN(val) && val >= 1 && val <= 9) {
