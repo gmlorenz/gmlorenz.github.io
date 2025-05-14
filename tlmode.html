@@ -17,9 +17,11 @@
       border-left: 4px solid #42a5f5;
       font-family: monospace;
     }
-    .modal textarea {
-      min-height: 50px;
-    }
+   .modal textarea {
+    height: 150px;       /* Set a fixed height */
+    overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
+    resize: none;       /* Optional: Prevent user resizing */
+   }
 
     /* Add margin to input fields */
     .input-field {
