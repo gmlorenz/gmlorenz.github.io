@@ -22,7 +22,11 @@
     overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
     resize: none;       /* Optional: Prevent user resizing */
    }
-
+   .modal-content textarea.materialize-textarea { /* If your textarea has the materialize-textarea class */
+    height: 150px !important; /* Use !important as a temporary measure to see if it helps */
+    overflow-y: auto;
+    resize: none;
+   }
     /* Add margin to input fields */
     .input-field {
       margin-top: 20px;
