@@ -61,7 +61,6 @@
          font-size: 0.9em;
          line-height: 1.3;
          resize: vertical;
-         rows: 4;
          }
          #auto-fill-button {
          border: none;
@@ -903,6 +902,11 @@
                 }
             }
          });
+         });
+         ["CATEGORY", "FIXED1?", "RV1_LABEL", "I3QA_CAT", "RV1_CAT"].forEach(field => {
+         if (!headers.includes(field)) {
+         letterLogDiv.innerHTML += `<span class="log-e">Warning: Missing column "${field}"</span><br>`;
+         }
          });
          
          // Fill inputs
