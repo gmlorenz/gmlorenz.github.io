@@ -422,6 +422,9 @@
                <div class="option-checkbox-container">
                   <input type="checkbox" id="option-ir">
                   <label for="option-ir">(IR)</label>
+                  <button id="tl-mode-button" class="action-button" style="margin-left: 10px; background-color: #6A1B9A;">
+                  TL MODE
+                  </button>
                </div>
             </div>
             <div id="paste-input-container">
@@ -962,6 +965,10 @@
              }
              updateTotals();
            };
+         });
+         const tlModeButton = document.getElementById('tl-mode-button');
+         tlModeButton.addEventListener('click', function() {
+         window.location.href = 'tlmode.html'; // or whatever new page you plan
          });
       </script>
       <script src="script.js"></script>
