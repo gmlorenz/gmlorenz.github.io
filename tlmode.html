@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
    <head>
-      <title>TL MODE - Fixpoint Search</title>
+      <title>TL MODE - Fixpoint Extractor</title>
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
       <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -14,7 +14,7 @@
          padding: 20px;
          margin-top: 20px;
          white-space: pre-wrap;
-         border-left: 22px solid #42a5f5; /* Increased border for visibility */
+         border-left: 4px solid #42a5f5; /* Reverted border-left to original size */
          font-family: monospace;
          }
          .modal textarea {
@@ -78,33 +78,35 @@
          .modal-footer a {
          margin-left: 10px;
          }
-         #output {
-         max-height: 300px; /* Keep vertical scrolling if needed */
-         overflow-y: auto;  /* Keep vertical scrolling */
-         overflow-x: auto;  /* Add horizontal scrolling */
-         /* You can keep other .result styles */
-         background: #f9f9f9;
-         padding: 20px;
-         margin-top: 20px;
-         white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
-         border-left: 22px solid #42a5f5;
-         font-family: monospace;
-         }
-         /* Ensure tables within the output div don't overflow their container */
-         #output table {
-         width: auto; /* Allow table to take necessary width, scrolling handled by parent */
-         min-width: 100%; /* Ensure it at least fills the container if narrower */
-         }
-         /* Optional: Add some padding to table cells for better readability */
-         #output table td, #output table th {
-         padding: 8px; /* Adjust as needed */
-         white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
-         }
+		 #output {
+    max-height: 300px; /* Keep vertical scrolling if needed */
+    overflow-y: auto;  /* Keep vertical scrolling */
+    overflow-x: auto;  /* Add horizontal scrolling */
+    /* You can keep other .result styles */
+    background: #f9f9f9;
+    padding: 20px;
+    margin-top: 20px;
+    white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
+    border-left: 4px solid #42a5f5;
+    font-family: monospace;
+}
+
+/* Ensure tables within the output div don't overflow their container */
+#output table {
+    width: auto; /* Allow table to take necessary width, scrolling handled by parent */
+    min-width: 100%; /* Ensure it at least fills the container if narrower */
+}
+
+/* Optional: Add some padding to table cells for better readability */
+#output table td, #output table th {
+    padding: 8px; /* Adjust as needed */
+    white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
+}
       </style>
    </head>
    <body>
       <div class="container">
-         <h5 class="center-align">TL MODE EXTRACTOR</h5>
+         <h5 class="center-align">123 EXTRACTOR V2</h5>
          <div class="right-align" style="margin-top: 10px;">
             <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
             <i class="material-icons">add</i>
@@ -117,6 +119,9 @@
             <label for="project-selector">Load Project</label>
          </div>
          <div class="center-align">
+            <button class="btn orange darken-2" id="edit-project">
+            <i class="material-icons left">edit</i>Edit Project
+            </button>
             <button class="btn red darken-2" id="delete-project">
             <i class="material-icons left">delete</i>Delete Project
             </button>
@@ -141,13 +146,14 @@
             <i class="material-icons left">file_download</i>Download CSV
             </button>
          </div>
+
          <div class="center-align" style="margin-top: 10px;">
-            <button class="btn blue darken-1" id="copy-all-projects-json">
-            <i class="material-icons left">content_copy</i>Copy All Projects DATA
-            </button>
-            <button class="btn deep-purple darken-2" id="auto-fetch-external-json">
-            <i class="material-icons left">cloud_download</i>Load Project Online
-            </button>
+             <button class="btn blue darken-1" id="copy-all-projects-json">
+                 <i class="material-icons left">content_copy</i>Copy All Projects DATA
+             </button>
+             <button class="btn deep-purple darken-2" id="auto-fetch-external-json">
+                 <i class="material-icons left">cloud_download</i>Load Project Online
+             </button>
          </div>
          <div id="output" class="result z-depth-1"></div>
          <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
@@ -167,7 +173,7 @@
          </div>
          <div id="add-project-modal" class="modal">
             <div class="modal-content">
-               <h5>Add New Project</h5>
+               <h5 id="modal-title">Add New Project</h5>
                <div class="input-field">
                   <input id="project-name" type="text">
                   <label for="project-name">Project Name</label>
@@ -194,7 +200,7 @@
             </div>
             <div class="modal-footer">
                <a href="#!" class="modal-close btn grey">Cancel</a>
-               <a href="#!" class="btn green" id="save-project">Save Project</a>
+               <a href="#!" class="btn green" id="save-project-modal-button">Save Project</a>
             </div>
          </div>
       </div>
@@ -205,14 +211,15 @@
              let allCalculatedResults = []; // Array to store results from "Calculate All" (per project)
              let lastResult = ''; // Still used for single search export
              let allProjectsAggregatedResults = {}; // Object to store aggregated results per TECH ID across all projects
-         
+             let editingProjectName = null; // Variable to store the name of the project being edited
+
              // --- HARDCODED URL FOR PROJECT JSON ---
              // Replace 'YOUR_RAW_GIST_URL_HERE' with the raw URL of your GitHub Gist or other service
              // hosting the projects JSON array.
              const HARDCODED_PROJECTS_JSON_URL = 'https://gist.githubusercontent.com/gmlorenz/2c83d92c089dc95a5aa89ec071c253d3/raw/a22deb7023725a81a123eb65c4578f5dbfd00561/projects_data.json';
              // Example Gist Raw URL: https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json
              // -----------------------------------
-         
+
              const prices = [
                  { "3in": 2.19, "9in": 0.99 },
                  { "3in": 5.86, "9in": 2.08 },
@@ -224,14 +231,17 @@
                  { "3in": 3.74, "9in": 3.74 }, // Assuming CAT 8 is 1:1 ratio for both sizes
                  { "3in": 1.73, "9in": 1.73 }  // Assuming CAT 9 is 1:1 ratio for both sizes
              ];
-         
+
              const projectSelector = document.getElementById('project-selector');
              const rawData = document.getElementById('raw-data');
-             const projectName = document.getElementById('project-name');
+             const projectNameInput = document.getElementById('project-name'); // Renamed for clarity
              const techIdInput = document.getElementById('tech-id');
              const output = document.getElementById('output');
              const allResultsDiv = document.getElementById('all-results'); // Use this div for displaying results
-         
+             const addProjectModal = document.querySelector('#add-project-modal'); // Get the modal element
+             const modalTitle = document.getElementById('modal-title'); // Get the modal title element
+             const saveProjectModalButton = document.getElementById('save-project-modal-button'); // Get the modal save button
+
              // Loader and safe localStorage functions (already present, included for completeness)
              function safeSetLocalStorage(key, value) {
                  try {
@@ -252,7 +262,7 @@
              }
              // Disabling buttons temporarily logic is not included here to keep it focused,
              // but you can add it back if needed.
-         
+
              function loadProjectList() {
                  projectSelector.innerHTML = '<option value="" disabled selected>Select a saved project</option>';
                  for (let i = 0; i < localStorage.length; i++) {
@@ -267,35 +277,44 @@
                  }
                  M.FormSelect.init(projectSelector);
              }
-         
+
+             // Modified saveProject function to handle both add and edit
              function saveProject() {
-                 const name = projectName.value.trim();
+                 const name = projectNameInput.value.trim();
                  const data = rawData.value.trim();
                  const size = document.getElementById('modal-size').value;
                  const ir = document.getElementById('modal-ir-check').checked;
-         
+
                  if (!name || !data) {
                      M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
                      return;
                  }
-         
+
                  const payload = JSON.stringify({ data, size, ir });
-                 if (safeSetLocalStorage(`tl_project_${name}`, payload)) {
+                 const storageKey = `tl_project_${name}`;
+
+                 // If editingProjectName is set, it means we are editing an existing project
+                 if (editingProjectName && editingProjectName !== name) {
+                     // If the name has changed, remove the old project from local storage
+                     localStorage.removeItem(`tl_project_${editingProjectName}`);
+                 }
+
+                 if (safeSetLocalStorage(storageKey, payload)) {
                      M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
                      loadProjectList();
-                     const modalElem = document.querySelector('#add-project-modal');
-                     const modalInstance = M.Modal.getInstance(modalElem);
+                     const modalInstance = M.Modal.getInstance(addProjectModal);
                      modalInstance.close();
-                     // Clear modal inputs
-                     projectName.value = '';
+                     // Clear modal inputs and reset editing state
+                     projectNameInput.value = '';
                      rawData.value = '';
                      document.getElementById('modal-size').value = '3in'; // Reset select
                      document.getElementById('modal-ir-check').checked = false; // Reset checkbox
                      M.FormSelect.init(document.getElementById('modal-size')); // Re-initialize select
                      M.updateTextFields(); // Update text fields after clearing
+                     editingProjectName = null; // Reset editing state
                  }
              }
-         
+
              function deleteSelectedProject() {
                  const selected = projectSelector.value;
                  if (!selected) {
@@ -312,9 +331,10 @@
                      allCalculatedResults = []; // Clear calculated results
                      lastResult = ''; // Clear last single search result
                      allProjectsAggregatedResults = {}; // Clear aggregated results
+                     editingProjectName = null; // Reset editing state if the deleted project was being edited
                  }
              }
-         
+
               // Helper function to calculate points for a single row of raw data
              function calculatePointsForRow(fields, headers, size, ir) {
                   const indexes = {
@@ -326,10 +346,10 @@
                      rv1label: headers.indexOf("RV1_LABEL"),
                      i3qalabel: headers.indexOf("I3QA_LABEL")
                  };
-         
+
                  let rowPoints = 0;
                  let excludeCounts = false;
-         
+
                  // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
                   if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
                       if (fields[indexes.rv1label].toUpperCase().includes("E")) {
@@ -341,7 +361,7 @@
                            // Assuming 'M' does not exclude category points based on previous logic
                       }
                   }
-         
+
                  if (!excludeCounts) {
                      [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
                          if (idx !== -1 && fields[idx]) {
@@ -356,8 +376,8 @@
                  }
                  return rowPoints;
              }
-         
-         
+
+
              // Helper function to calculate points and details for a single TECH ID within a given raw data chunk
              function calculatePointsForTechIDInRaw(raw, techIDValue, size, ir) {
                  const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
@@ -372,28 +392,28 @@
                      rv1label: headers.indexOf("RV1_LABEL"),
                      i3qalabel: headers.indexOf("I3QA_LABEL")
                  };
-         
+
                  if (indexes.fixId === -1) {
                      return null; // Cannot calculate without FIX1_ID
                  }
-         
+
                  let totalPoints = 0;
                  let additionalFixPoints = 0;
                  let excessiveFixPoints = 0;
                  let missFixPoints = 0;
                  const categoryPoints = Array(9).fill(0); // Sum points per category
-         
+
                  const matched = rows.filter(row => {
                      const fields = row.split(/[\t,]/);
                      return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
                  });
-         
+
                  const multiplier = ir ? 2 : 1;
-         
+
                  matched.forEach(row => {
                      const fields = row.split(/[\t,]/);
                       let excludeCounts = false;
-         
+
                       // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
                        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
                            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
@@ -412,8 +432,8 @@
                       if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
                           additionalFixPoints++;
                       }
-         
-         
+
+
                      if (!excludeCounts) {
                          [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
                              if (idx !== -1 && fields[idx]) {
@@ -427,7 +447,7 @@
                          });
                      }
                  });
-         
+
                  return {
                      techID: techIDValue,
                      totalPoints: totalPoints, // Return raw total for aggregation
@@ -437,31 +457,31 @@
                      categoryPoints: categoryPoints // Return points per category for this TECH ID in this raw data
                  };
              }
-         
-         
+
+
              function calculateAllTechIDs() {
                  const raw = activeProjectData?.data;
                  const size = activeProjectData?.size;
                  const ir = activeProjectData?.ir;
-         
+
                  if (!raw || !size) {
                      allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
                      allCalculatedResults = [];
                      allProjectsAggregatedResults = {}; // Reset
                      return;
                  }
-         
+
                  const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
                  const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
                  const fixIdIndex = headers.indexOf("FIX1_ID");
-         
+
                  if (fixIdIndex === -1) {
                      allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
                      allCalculatedResults = [];
                       allProjectsAggregatedResults = {}; // Reset
                      return;
                  }
-         
+
                  const techIDs = new Set();
                  rows.forEach(row => {
                      const fields = row.split(/[\t,]/);
@@ -470,17 +490,17 @@
                          techIDs.add(techID);
                      }
                  });
-         
+
                  allCalculatedResults = []; // Reset the array for "Calculate All" (per project)
                  let tableHtml = '<table class="striped"><thead><tr>';
-         
+
                  // Create table headers
                  const tableHeaders = ['TECH ID', 'Total Points', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Total`), 'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints'];
                  tableHeaders.forEach(headerText => {
                      tableHtml += `<th>${headerText}</th>`;
                  });
                  tableHtml += '</tr></thead><tbody>';
-         
+
                  // Populate table rows
                  techIDs.forEach(techID => {
                      const result = calculatePointsForTechIDInRaw(raw, techID, size, ir);
@@ -498,78 +518,78 @@
                          tableHtml += '</tr>';
                      }
                  });
-         
+
                  tableHtml += '</tbody></table>';
-         
+
                  // Update allResultsDiv
                  allResultsDiv.innerHTML = `<h5>Results for Loaded Project</h5>${tableHtml}`;
                  output.textContent = ''; // Clear single search output
                  allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
              }
-         
+
            function searchTechID() {
                  const raw = activeProjectData?.data;
                  const techIDValue = techIdInput.value.trim().toUpperCase();
                  const size = activeProjectData?.size;
                  const ir = activeProjectData?.ir;
-         
+
                  const outputDiv = document.getElementById('output'); // Use the output div for single search
-         
+
                  // Clear previous results from both areas
                  outputDiv.innerHTML = '';
                  allResultsDiv.innerHTML = '';
                  lastResult = '';
                  allCalculatedResults = [];
                  allProjectsAggregatedResults = {};
-         
+
                  if (!raw || !techIDValue || !size) {
                      outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
                      return;
                  }
-         
+
                  const result = calculatePointsForTechIDInRaw(raw, techIDValue, size, ir);
-         
+
                  if (result) {
                      let outputHtml = `<h5>Search Results for TECH ID: ${result.techID}</h5>`;
-         
+
                      // Display the overall Total Points separately
                      outputHtml += `<p><strong>Project Total Points: ${result.totalPoints.toFixed(2)}</strong></p>`;
-         
+
                      // Start the breakdown table
                      outputHtml += '<table class="striped"><thead><tr>';
                      outputHtml += '<th>Category</th><th>Points</th>'; // Two-column header for the breakdown
                      outputHtml += '</tr></thead><tbody>';
-         
+
                      // Add Category Totals rows
                      result.categoryPoints.forEach((total, i) => {
                          outputHtml += `<tr><td>CAT ${i + 1} Total</td><td>${total.toFixed(2)}</td></tr>`;
                      });
-         
+
                      // Add FixPoint counts rows
                      outputHtml += `<tr><td>Additional FixPoints</td><td>${result.additionalFixPoints}</td></tr>`;
                      outputHtml += `<tr><td>Excessive FixPoints</td><td>${result.excessiveFixPoints}</td></tr>`;
                      outputHtml += `<tr><td>Miss FixPoints</td><td>${result.missFixPoints}</td></tr>`;
-         
-         
+
+
                      outputHtml += '</tbody></table>';
-         
+
                      outputDiv.innerHTML = outputHtml; // Set the HTML content of the output div
                      lastResult = result; // Store the single search result (still useful for export)
-         
+
                  } else {
                       outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
                  }
              }
-         
-         
-             // MODIFIED FEATURE: Calculate Total Across All Projects (Aggregate by TECH ID, then apply multiplier)
+
+
+             // Calculate Total Across All Projects (Aggregate by TECH ID, then apply multiplier)
              function calculateTotalAcrossAllProjects() {
                  const multiplierInput = document.getElementById('total-multiplier');
                  const multiplier = parseFloat(multiplierInput.value) || 1; // Default to 1 if input is invalid
-         
+
                  allProjectsAggregatedResults = {}; // Reset the aggregated results
                  let processingErrors = []; // To collect any errors during processing
-         
+
                  // --- Step 1: Aggregate points per TECH ID across all projects ---
                  for (let i = 0; i < localStorage.length; i++) {
                      const key = localStorage.key(i);
@@ -581,33 +601,33 @@
                              const raw = project.data;
                              const size = project.size;
                              const ir = project.ir; // IR multiplier is project-specific
-         
+
                              if (raw && size) {
                                  const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
                                  const headerRow = rows.shift(); // Get the header row
-         
+
                                   if (!headerRow) {
                                      processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
                                      continue; // Skip this project
                                  }
-         
+
                                  const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
                                  const fixIdIndex = headers.indexOf("FIX1_ID");
-         
+
                                  if (fixIdIndex === -1) {
                                      processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
                                      continue; // Skip this project if FIX1_ID is missing
                                  }
-         
+
                                  // Process each data row in the project to aggregate points by TECH ID
                                  rows.forEach(row => {
                                      const fields = row.split(/[\t,]/);
                                      const techID = fields[fixIdIndex]?.trim().toUpperCase();
-         
+
                                      if (techID) {
                                          // Calculate points for this specific row based on its categories and the project's size/IR
                                          const rowPoints = calculatePointsForRow(fields, headers, size, ir);
-         
+
                                          // Aggregate points by TECH ID
                                          if (allProjectsAggregatedResults[techID]) {
                                              allProjectsAggregatedResults[techID].totalPoints += rowPoints;
@@ -618,7 +638,7 @@
                                          }
                                      }
                                  });
-         
+
                               } else {
                                   processingErrors.push(`Project '${projectName}': Incomplete project data (missing raw data or size).`);
                               }
@@ -627,12 +647,12 @@
                          }
                      }
                  }
-         
+
                  // --- Step 2: Apply multiplier to each aggregated TECH ID total and calculate final grand total ---
                  let grandTotal = 0;
                  let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5>`;
                  let techIDTotals = []; // Array to hold TECH ID results for sorting and display
-         
+
                  // Convert aggregated results to an array and apply multiplier
                  for (const techID in allProjectsAggregatedResults) {
                      if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
@@ -647,11 +667,11 @@
                          grandTotal += multipliedTotal; // Add to grand total
                      }
                  }
-         
+
                  // Sort TECH IDs alphabetically
                  techIDTotals.sort((a, b) => a.techID.localeCompare(b.techID));
-         
-         
+
+
                  if (techIDTotals.length === 0 && processingErrors.length === 0) {
                       resultsOutput += '<p>No TECH IDs found across all projects.</p>';
                  } else {
@@ -661,7 +681,7 @@
                      resultsOutput += '<th>Total Points (Without Multiplier)</th>';
                      resultsOutput += '<th>Total Points (With Multiplier)</th>';
                      resultsOutput += '</tr></thead><tbody>';
-         
+
                      // Populate table rows
                      techIDTotals.forEach(item => {
                          resultsOutput += '<tr>';
@@ -670,14 +690,14 @@
                          resultsOutput += `<td>${item.multipliedTotal.toFixed(2)}</td>`; // Format for display
                          resultsOutput += '</tr>';
                      });
-         
+
                      resultsOutput += '</tbody></table>';
-         
+
                      // Add the grand total below the table
                       resultsOutput += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
                  }
-         
-         
+
+
                  // Display any processing errors
                  if (processingErrors.length > 0) {
                      resultsOutput += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
@@ -686,20 +706,20 @@
                      });
                      resultsOutput += '</ul></div></div>';
                  }
-         
-         
+
+
                  // Display the results
                  allResultsDiv.innerHTML = resultsOutput; // Display in the all-results div
                  output.textContent = ''; // Clear single search output
                  allCalculatedResults = []; // Clear per-project calculated results
-         
-         
+
+
                  // Close the modal
                  const modalElem = document.querySelector('#multiplier-modal');
                  const modalInstance = M.Modal.getInstance(modalElem);
                  modalInstance.close();
              }
-         
+
              // Function to export CSV (modified to handle different result types)
              function exportCSV() {
                   if (allCalculatedResults.length > 0) {
@@ -715,30 +735,30 @@
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-         
+
                   } else if (Object.keys(allProjectsAggregatedResults).length > 0) {
                       // Export the "Total All Projects" (Aggregated by TECH ID with Multiplier) summary
                       let csvContent = 'Aggregated TECH ID Totals Across All Projects\n';
                       csvContent += 'TECH ID,Total Points (Without Multiplier),Total Points (With Multiplier)\n';
-         
+
                       const sortedTechIDs = Object.keys(allProjectsAggregatedResults).sort();
                       let grandTotal = 0;
-         
+
                       sortedTechIDs.forEach(techID => {
                           const originalTotal = allProjectsAggregatedResults[techID].totalPoints.toFixed(2);
                           const multipliedTotal = allProjectsAggregatedResults[techID].multipliedTotal.toFixed(2); // Already calculated and stored
                           csvContent += `${techID},${originalTotal},${multipliedTotal}\n`;
                           grandTotal += parseFloat(multipliedTotal);
                       });
-         
+
                       // Add multiplier and grand total
                       const multiplierInput = document.getElementById('total-multiplier');
                       const multiplier = parseFloat(multiplierInput.value) || 1;
-         
+
                       csvContent += `\nApplied Multiplier,${multiplier}\n`;
                       csvContent += `Final Grand Total (Sum of Multiplied TECH ID Totals),${grandTotal.toFixed(2)}\n`;
-         
-         
+
+
                       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement("a");
                       link.href = URL.createObjectURL(blob);
@@ -746,7 +766,7 @@
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-         
+
                  } else if (lastResult.techID) {
                      // Export single search result
                      const rows = [
@@ -772,10 +792,10 @@
                      M.toast({ html: 'No results to export. Run a search or calculation first.', classes: 'red' });
                  }
              }
-         
-         
-            // --- EXTERNAL JSON INTEGRATION FUNCTIONS (Modified for generic URL) ---
-         
+
+
+            // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
+
             // Function to copy ALL saved projects JSON to clipboard
             function copyAllProjectsJsonToClipboard() {
                 const allProjects = [];
@@ -797,16 +817,16 @@
                         }
                     }
                 }
-         
+
                 if (allProjects.length === 0) {
                     M.toast({ html: 'No saved projects found to copy.', classes: 'orange' });
                     return;
                 }
-         
+
                 try {
                     // Create the JSON string for the array of projects
                     const allProjectsJson = JSON.stringify(allProjects, null, 2); // Use null, 2 for pretty printing
-         
+
                     navigator.clipboard.writeText(allProjectsJson)
                         .then(() => {
                             M.toast({ html: `Copied ${allProjects.length} project(s) JSON to clipboard!`, classes: 'green' });
@@ -820,7 +840,7 @@
                     console.error('ALL projects JSON conversion error:', e);
                 }
             }
-         
+
             // Function to automatically fetch JSON from the configured URL and save projects
             async function fetchAndSaveAllProjectsFromURL() {
                  // Ensure the URL variable is defined and is a non-empty string
@@ -829,18 +849,18 @@
                       console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
                       return;
                  }
-         
+
                  showLoader(); // Show loader while fetching
-         
+
                  try {
                      const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
-         
+
                      if (!response.ok) {
                          throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
                      }
-         
+
                      const allProjectsDataText = await response.text();
-         
+
                      // Attempt to parse the fetched text as JSON
                      let fetchedProjectsArray;
                      try {
@@ -848,26 +868,26 @@
                      } catch (e) {
                          throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
                      }
-         
+
                      // Validate the structure of the fetched JSON (should be an array)
                      if (!Array.isArray(fetchedProjectsArray)) {
                           throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
                      }
-         
+
                      let updatedCount = 0;
                      let errorCount = 0;
                      let skippedCount = 0;
-         
+
                      // Iterate through the array and save each project
                      fetchedProjectsArray.forEach(project => {
                          // Validate individual project object structure
                          // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
                          if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
-         
+
                              const projectName = project.name.trim();
                              const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
                              const storageKey = `tl_project_${projectName}`;
-         
+
                              // Use safeSetLocalStorage to save/update
                              if (safeSetLocalStorage(storageKey, payload)) {
                                   updatedCount++;
@@ -883,7 +903,7 @@
                              M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
                          }
                      });
-         
+
                      let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
                       if (skippedCount > 0) {
                            resultMessage += ` Skipped invalid items: ${skippedCount}.`;
@@ -898,10 +918,10 @@
                       } else if (errorCount === 0 && skippedCount === 0) {
                            M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
                       }
-         
-         
+
+
                      loadProjectList(); // Refresh the project dropdown
-         
+
                  } catch (e) {
                      M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
                      console.error('Auto-fetch URL error:', e);
@@ -909,9 +929,9 @@
                       hideLoader(); // Hide loader regardless of success or failure
                  }
             }
-         
+
             // --- Event Listeners for External JSON Integration ---
-         
+
             // Event listener for the "Copy All Projects JSON" button
             const copyAllProjectsJsonButton = document.getElementById('copy-all-projects-json');
             if (copyAllProjectsJsonButton) {
@@ -919,7 +939,7 @@
             } else {
                  console.error("Button with ID 'copy-all-projects-json' not found.");
             }
-         
+
             // Event listener for the "Fetch Projects from URL" button (formerly auto-fetch-pastebin)
             const autoFetchExternalJsonButton = document.getElementById('auto-fetch-external-json');
             if (autoFetchExternalJsonButton) {
@@ -927,18 +947,54 @@
             } else {
                   console.error("Button with ID 'auto-fetch-external-json' not found.");
             }
-         
+
             // --- End Event Listeners ---
-         
-         
+
+
              // Event Listeners for existing buttons (included for completeness)
-             document.getElementById('save-project').addEventListener('click', saveProject);
+             // Renamed save button listener to match new ID
+             document.getElementById('save-project-modal-button').addEventListener('click', saveProject);
              document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
              document.getElementById('search-button').addEventListener('click', searchTechID);
              document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
              document.getElementById('export-button').addEventListener('click', exportCSV);
-         
-         
+
+             // Event listener for the new Edit Project button
+             document.getElementById('edit-project').addEventListener('click', function() {
+                 const selectedProjectName = projectSelector.value;
+                 if (!selectedProjectName) {
+                     M.toast({ html: 'Please select a project to edit.', classes: 'orange' });
+                     return;
+                 }
+
+                 const projectDataString = localStorage.getItem(`tl_project_${selectedProjectName}`);
+                 if (projectDataString) {
+                     const projectData = JSON.parse(projectDataString);
+
+                     // Populate the modal fields
+                     projectNameInput.value = selectedProjectName; // Project name is the key
+                     rawData.value = projectData.data;
+                     document.getElementById('modal-size').value = projectData.size;
+                     document.getElementById('modal-ir-check').checked = projectData.ir;
+
+                     // Update Materialize text field labels and select
+                     M.updateTextFields();
+                     M.FormSelect.init(document.getElementById('modal-size'));
+
+                     // Set the editing state and update modal title
+                     editingProjectName = selectedProjectName;
+                     modalTitle.textContent = 'Edit Project';
+                     saveProjectModalButton.textContent = 'Save Changes'; // Change button text
+
+                     // Open the modal
+                     const modalInstance = M.Modal.getInstance(addProjectModal);
+                     modalInstance.open();
+                 } else {
+                     M.toast({ html: `Could not find data for project '${selectedProjectName}'.`, classes: 'red' });
+                 }
+             });
+
+
              // Event listeners for the All Projects Total feature (included for completeness)
              const calculateAllProjectsButton = document.getElementById('calculate-all-projects-button');
              if (calculateAllProjectsButton) {
@@ -959,15 +1015,15 @@
              } else {
                   console.error("Button with ID 'calculate-all-projects-button' not found.");
              }
-         
+
              const applyMultiplierButton = document.getElementById('apply-multiplier');
              if (applyMultiplierButton) {
                  applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
              } else {
                   console.error("Button with ID 'apply-multiplier' not found.");
              }
-         
-         
+
+
              projectSelector.addEventListener('change', function () {
                  const selected = this.value;
                  const project = localStorage.getItem(`tl_project_${selected}`);
@@ -991,30 +1047,44 @@
                   // Ensure the select element is re-initialized after changing value
                   M.FormSelect.init(projectSelector);
              });
-         
+
              // Initialize Materialize components
              M.FormSelect.init(document.querySelectorAll('select'));
              M.Modal.init(document.querySelectorAll('.modal')); // Initialize all modals
+
+             // Add event listener to reset modal when closed
+             addProjectModal.addEventListener('closeEnd', function() {
+                 // Reset modal title and button text
+                 modalTitle.textContent = 'Add New Project';
+                 saveProjectModalButton.textContent = 'Save Project';
+                 // Clear input fields
+                 projectNameInput.value = '';
+                 rawData.value = '';
+                 document.getElementById('modal-size').value = '3in';
+                 document.getElementById('modal-ir-check').checked = false;
+                 M.updateTextFields();
+                 M.FormSelect.init(document.getElementById('modal-size'));
+                 // Reset editing state
+                 editingProjectName = null;
+             });
+
+
              M.updateTextFields(); // Update text field labels
-         
+
              // Load projects on page load
              loadProjectList();
          });
       </script>
-      <div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
-         <div class="preloader-wrapper active">
-            <div class="spinner-layer spinner-blue-only">
-               <div class="circle-clipper left">
-                  <div class="circle"></div>
-               </div>
-               <div class="gap-patch">
-                  <div class="circle"></div>
-               </div>
-               <div class="circle-clipper right">
-                  <div class="circle"></div>
-               </div>
-            </div>
-         </div>
-      </div>
-   </body>
+
+<div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
+  <div class="preloader-wrapper active">
+    <div class="spinner-layer spinner-blue-only">
+      <div class="circle-clipper left"><div class="circle"></div></div>
+      <div class="gap-patch"><div class="circle"></div></div>
+      <div class="circle-clipper right"><div class="circle"></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
 </html>
