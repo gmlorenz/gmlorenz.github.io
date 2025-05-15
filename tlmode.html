@@ -78,6 +78,30 @@
          .modal-footer a {
          margin-left: 10px;
          }
+		 #output {
+    max-height: 300px; /* Keep vertical scrolling if needed */
+    overflow-y: auto;  /* Keep vertical scrolling */
+    overflow-x: auto;  /* Add horizontal scrolling */
+    /* You can keep other .result styles */
+    background: #f9f9f9;
+    padding: 20px;
+    margin-top: 20px;
+    white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
+    border-left: 4px solid #42a5f5;
+    font-family: monospace;
+}
+
+/* Ensure tables within the output div don't overflow their container */
+#output table {
+    width: auto; /* Allow table to take necessary width, scrolling handled by parent */
+    min-width: 100%; /* Ensure it at least fills the container if narrower */
+}
+
+/* Optional: Add some padding to table cells for better readability */
+#output table td, #output table th {
+    padding: 8px; /* Adjust as needed */
+    white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
+}
       </style>
    </head>
    <body>
@@ -449,33 +473,59 @@
                  allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
              }
          
-             function searchTechID() {
+           function searchTechID() {
                  const raw = activeProjectData?.data;
                  const techIDValue = techIdInput.value.trim().toUpperCase();
                  const size = activeProjectData?.size;
                  const ir = activeProjectData?.ir;
-         
+
+                 const outputDiv = document.getElementById('output'); // Use the output div for single search
+
+                 // Clear previous results from both areas
+                 outputDiv.innerHTML = '';
+                 allResultsDiv.innerHTML = '';
+                 lastResult = '';
+                 allCalculatedResults = [];
+                 allProjectsAggregatedResults = {};
+
                  if (!raw || !techIDValue || !size) {
-                     output.textContent = 'Please load a project and enter a TECH ID to search.';
-                     lastResult = '';
-                     allProjectsAggregatedResults = {}; // Reset
+                     outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
                      return;
                  }
-         
+
                  const result = calculatePointsForTechIDInRaw(raw, techIDValue, size, ir);
-         
+
                  if (result) {
-                      output.textContent = `TECH ID: ${result.techID}\nTotal Points: ${result.totalPoints.toFixed(2)}\nCategory Totals:\n${result.categoryPoints.map((total, i) => `CAT ${i + 1}: Total: ${total.toFixed(2)}`).join('\n')}\nAdditional FixPoints: ${result.additionalFixPoints}\nExcessive FixPoints: ${result.excessiveFixPoints}\nMiss FixPoints: ${result.missFixPoints}`;
-                     lastResult = result; // Store the single search result
-                     allResultsDiv.innerHTML = ''; // Clear all results when doing a single search
-                     allCalculatedResults = []; // Clear all calculated results
-                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                     let outputHtml = `<h5>Search Results for TECH ID: ${result.techID}</h5>`;
+
+                     // Display the overall Total Points separately
+                     outputHtml += `<p><strong>Project Total Points: ${result.totalPoints.toFixed(2)}</strong></p>`;
+
+                     // Start the breakdown table
+                     outputHtml += '<table class="striped"><thead><tr>';
+                     outputHtml += '<th>Category</th><th>Points</th>'; // Two-column header for the breakdown
+                     outputHtml += '</tr></thead><tbody>';
+
+                     // The line adding the "Total Points" row to the table is removed here.
+
+                     // Add Category Totals rows
+                     result.categoryPoints.forEach((total, i) => {
+                         outputHtml += `<tr><td>CAT ${i + 1} Total</td><td>${total.toFixed(2)}</td></tr>`;
+                     });
+
+                     // Add FixPoint counts rows
+                     outputHtml += `<tr><td>Additional FixPoints</td><td>${result.additionalFixPoints}</td></tr>`;
+                     outputHtml += `<tr><td>Excessive FixPoints</td><td>${result.excessiveFixPoints}</td></tr>`;
+                     outputHtml += `<tr><td>Miss FixPoints</td><td>${result.missFixPoints}</td></tr>`;
+
+
+                     outputHtml += '</tbody></table>';
+
+                     outputDiv.innerHTML = outputHtml; // Set the HTML content of the output div
+                     lastResult = result; // Store the single search result (still useful for export)
+
                  } else {
-                      output.textContent = `TECH ID '${techIDValue}' not found or error in data in the loaded project.`;
-                      lastResult = '';
-                      allResultsDiv.innerHTML = '';
-                      allCalculatedResults = [];
-                      allProjectsAggregatedResults = {};
+                      outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
                  }
              }
          
@@ -484,10 +534,10 @@
              function calculateTotalAcrossAllProjects() {
                  const multiplierInput = document.getElementById('total-multiplier');
                  const multiplier = parseFloat(multiplierInput.value) || 1; // Default to 1 if input is invalid
-         
+
                  allProjectsAggregatedResults = {}; // Reset the aggregated results
                  let processingErrors = []; // To collect any errors during processing
-         
+
                  // --- Step 1: Aggregate points per TECH ID across all projects ---
                  for (let i = 0; i < localStorage.length; i++) {
                      const key = localStorage.key(i);
@@ -499,33 +549,33 @@
                              const raw = project.data;
                              const size = project.size;
                              const ir = project.ir; // IR multiplier is project-specific
-         
+
                              if (raw && size) {
                                  const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
                                  const headerRow = rows.shift(); // Get the header row
-         
+
                                   if (!headerRow) {
                                      processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
                                      continue; // Skip this project
                                  }
-         
+
                                  const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
                                  const fixIdIndex = headers.indexOf("FIX1_ID");
-         
+
                                  if (fixIdIndex === -1) {
                                      processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
                                      continue; // Skip this project if FIX1_ID is missing
                                  }
-         
+
                                  // Process each data row in the project to aggregate points by TECH ID
                                  rows.forEach(row => {
                                      const fields = row.split(/[\t,]/);
                                      const techID = fields[fixIdIndex]?.trim().toUpperCase();
-         
+
                                      if (techID) {
                                          // Calculate points for this specific row based on its categories and the project's size/IR
                                          const rowPoints = calculatePointsForRow(fields, headers, size, ir);
-         
+
                                          // Aggregate points by TECH ID
                                          if (allProjectsAggregatedResults[techID]) {
                                              allProjectsAggregatedResults[techID].totalPoints += rowPoints;
@@ -536,7 +586,7 @@
                                          }
                                      }
                                  });
-         
+
                               } else {
                                   processingErrors.push(`Project '${projectName}': Incomplete project data (missing raw data or size).`);
                               }
@@ -545,12 +595,12 @@
                          }
                      }
                  }
-         
+
                  // --- Step 2: Apply multiplier to each aggregated TECH ID total and calculate final grand total ---
                  let grandTotal = 0;
-                 let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5><div id="aggregated-results-list">`;
+                 let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5>`;
                  let techIDTotals = []; // Array to hold TECH ID results for sorting and display
-         
+
                  // Convert aggregated results to an array and apply multiplier
                  for (const techID in allProjectsAggregatedResults) {
                      if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
@@ -565,23 +615,37 @@
                          grandTotal += multipliedTotal; // Add to grand total
                      }
                  }
-         
+
                  // Sort TECH IDs alphabetically
                  techIDTotals.sort((a, b) => a.techID.localeCompare(b.techID));
-         
-         
+
+
                  if (techIDTotals.length === 0 && processingErrors.length === 0) {
                       resultsOutput += '<p>No TECH IDs found across all projects.</p>';
                  } else {
-                     // Display sorted TECH ID totals in the specified format
+                     // Start building the table HTML
+                     resultsOutput += '<table class="striped"><thead><tr>';
+                     resultsOutput += '<th>TECH ID</th>';
+                     resultsOutput += '<th>Total Points (Without Multiplier)</th>';
+                     resultsOutput += '<th>Total Points (With Multiplier)</th>';
+                     resultsOutput += '</tr></thead><tbody>';
+
+                     // Populate table rows
                      techIDTotals.forEach(item => {
-                         resultsOutput += `<p><strong>${item.techID}:</strong> Points with Multiplier: ${item.multipliedTotal.toFixed(2)} Points without Multiplier: ${item.originalTotal.toFixed(2)}</p>`;
+                         resultsOutput += '<tr>';
+                         resultsOutput += `<td>${item.techID}</td>`;
+                         resultsOutput += `<td>${item.originalTotal.toFixed(2)}</td>`; // Format for display
+                         resultsOutput += `<td>${item.multipliedTotal.toFixed(2)}</td>`; // Format for display
+                         resultsOutput += '</tr>';
                      });
-         
-                     //resultsOutput += `</div><hr><h4>Final Grand Total (Sum of Multiplied TECH ID Totals): ${grandTotal.toFixed(2)} points</h4>`;
+
+                     resultsOutput += '</tbody></table>';
+
+                     // Add the grand total below the table
+                      resultsOutput += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
                  }
-         
-         
+
+
                  // Display any processing errors
                  if (processingErrors.length > 0) {
                      resultsOutput += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
@@ -590,14 +654,14 @@
                      });
                      resultsOutput += '</ul></div></div>';
                  }
-         
-         
+
+
                  // Display the results
                  allResultsDiv.innerHTML = resultsOutput; // Display in the all-results div
                  output.textContent = ''; // Clear single search output
                  allCalculatedResults = []; // Clear per-project calculated results
-         
-         
+
+
                  // Close the modal
                  const modalElem = document.querySelector('#multiplier-modal');
                  const modalInstance = M.Modal.getInstance(modalElem);
@@ -623,7 +687,7 @@
                   } else if (Object.keys(allProjectsAggregatedResults).length > 0) {
                       // Export the "Total All Projects" (Aggregated by TECH ID with Multiplier) summary
                       let csvContent = 'Aggregated TECH ID Totals Across All Projects\n';
-                      csvContent += 'TECH ID,Total Points (Before Multiplier),Total Points (After Multiplier)\n';
+                      csvContent += 'TECH ID,Total Points (Without Multiplier),Total Points (With Multiplier)\n';
          
                       const sortedTechIDs = Object.keys(allProjectsAggregatedResults).sort();
                       let grandTotal = 0;
