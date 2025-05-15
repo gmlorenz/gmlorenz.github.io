@@ -1,977 +1,1174 @@
 <!DOCTYPE html>
 <html>
    <head>
-      <title>Fixpoints Extractor</title>
-      <link rel="icon" href="icon.png" type="image/png">
-      <link rel="stylesheet" href="style.css">
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <title>TL MODE - Fixpoint Search</title>
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
       <style>
          body {
-         display: flex;
-         justify-content: center;
-         align-items: flex-start;
-         min-height: 100vh;
-         margin: 20px;
-         background-color: #fff;   
-         /*background-image: url("extractor_bg.jpg"); /* Replace "your-image.jpg" with the actual filename of your image */
-         background-repeat: no-repeat;
-         background-size: cover;
-         background-position: center center;
-         font-family: 'Roboto Slab', serif;
-         }
-         /* ... rest of your CSS stays the same ... */
-         #main-container {
-         display: grid;
-         grid-template-columns: 1fr 1fr;
-         gap: 20px;
-         width: 95%;
-         max-width: 900px;
-         }
-         #extractor-container {
-         background-color: #fff;
          padding: 20px;
-         border-radius: 8px;
-         box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-         display: flex;
-         flex-direction: column;
-         align-items: stretch;
-         min-height: 0;
          }
-         #paste-input-container {
-         background-color: #fff;
+         .result {
+         background: #f9f9f9;
          padding: 20px;
-         border-radius: 8px;
-         box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+         margin-top: 20px;
+         white-space: pre-wrap;
+         border-left: 4px solid #42a5f5; /* Reverted border-left to original size */
+         font-family: 'Courier New', monospace; /* Added Roboto Slab font */
+         min-height: 600px; /* Added minimum height */
+         }
+         /* Custom styles for striped table rows within .result containers */
+         .result table.striped tbody tr:nth-child(odd) {
+         /* Change this color for the odd rows */
+         background-color: #e0e0e0; /* Light grey */
+         }
+         .result table.striped tbody tr:nth-child(even) {
+         /* Change this color for the even rows */
+         background-color: #599173; /* White */
+         }
+         .modal textarea {
+         height: 150px;       /* Set a fixed height */
+         overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
+         resize: none;       /* Optional: Prevent user resizing */
+         }
+         .modal-content textarea.materialize-textarea { /* If your textarea has the materialize-textarea class */
+         height: 150px !important; /* Use !important as a temporary measure to see if it helps */
+         overflow-y: auto;
+         resize: none;
+         }
+         /* Add margin to input fields */
+         .input-field {
+         margin-top: 20px;
+         margin-bottom: 10px;
+         }
+         /* Add margin to buttons */
+         .btn {
+         margin-top: 15px;
+         margin-bottom: 15px;
+         margin-right: 10px; /* Add some horizontal spacing between buttons if they appear in a row */
+         }
+         /* Add margin to the floating action button */
+         .right-align {
+         margin-bottom: 20px;
+         }
+         /* Add margin to center-aligned elements */
+         .center-align {
+         margin-top: 25px;
+         margin-bottom: 25px;
+         }
+         /* Style for the scrollable all results view */
+         #all-results {
+         max-height: 300px;
+         overflow-y: auto;
+         }
+         #all-results h6 {
+         margin-top: 10px;
+         margin-bottom: 5px;
+         }
+         #all-results ul {
+         margin-left: 20px;
+         margin-bottom: 10px;
+         }
+         #all-results hr {
+         margin-top: 15px;
+         margin-bottom: 15px;
+         border: 0;
+         border-top: 1px solid #ccc;
+         }
+         /* Add spacing within the modal content */
+         .modal-content h5 {
+         margin-bottom: 20px;
+         }
+         .modal-content .input-field {
+         margin-top: 15px;
          margin-bottom: 15px;
          }
-         #paste-input-container label {
-         display: block;
-         font-size: 1em;
-         font-weight: bold;
-         margin-bottom: 10px;
-         text-align: center;
+         /* Add spacing in the modal footer */
+         .modal-footer a {
+         margin-left: 10px;
          }
-         #number-paste-area {
-         width: 100%;
-         padding: 8px;
-         border: 1px solid #ddd;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 0.9em;
-         line-height: 1.3;
-         resize: vertical;
-         }
-         #auto-fill-button {
-         border: none;
-         padding: 8px 12px;
-         border-radius: 7px;
-         cursor: pointer;
-         font-size: 0.8em;
-         transition: background-color 0.3s ease;
-         color: white;
-         background-color: #2196F3;
-         margin-top: 10px;
-         width: 100%; /* Make the button full width */
-         box-sizing: border-box; /* Ensure padding and border are included in the width */
-         }
-         #auto-fill-button:hover {
-         background-color: #1976D2;
-         }
-         #letter-log {
-         margin-top: 10px;
-         padding: 10px;
-         border: 1px solid #ddd;
-         border-radius: 7px;
-         background-color: #f9f9f9;
-         font-size: 0.8em;
-         /* Apply the Roboto Slab font */
-         /*font-family: 'Roboto Slab', serif;*/
-         /* Or apply the Montserrat font */
-         /*font-family: 'Montserrat', sans-serif;*/
-         font-family: "Lucida Console", "Courier New", monospace;
-         }
-         .log-y {
-         color: green;
-         font-weight: bold;
-         }
-         .log-e {
-         color: orange;
-         font-weight: bold;
-         }
-         .log-n {
-         color: red;
-         font-weight: bold;
-         }
-         .log-m {
-         color: gray;
-         font-weight: bold;
-         }
-         #activity-input-container {
-         background-color: #fff;
+         #output {
+         max-height: 300px; /* Keep vertical scrolling if needed */
+         overflow-y: auto;  /* Keep vertical scrolling */
+         overflow-x: auto;  /* Add horizontal scrolling */
+         /* You can keep other .result styles */
+         background: #f9f9f9;
          padding: 20px;
-         border-radius: 8px;
-         box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-         text-align: left;
-         display: flex;
-         flex-direction: column;
+         margin-top: 20px;
+         white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
+         border-left: 4px solid #42a5f5;
+         font-family: monospace;
+         min-height: 100px;
          }
-         #activity-input-container label {
-         display: block;
-         font-size: 1em;
-         font-weight: bold;
-         margin-bottom: 10px;
-         text-align: center;
+         /* Ensure tables within the output div don't overflow their container */
+         #output table {
+         width: auto; /* Allow table to take necessary width, scrolling handled by parent */
+         min-width: 100%; /* Ensure it at least fills the container if narrower */
          }
-         #saved-projects {
-         width: 100%;
-         padding: 8px;
-         border: 1px solid #1D2023;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 0.9em;
-         line-height: 1.3;
-         resize: vertical;
-         min-height: 1100px;
-         background-color: #31364A;
-         color: #8F94A8;
-         }  
-         #category-inputs {
-         display: flex;
-         flex-direction: column;
-         width: 100%;
-         margin-bottom: 10px;
-         flex-grow: 1;
-         min-height: 0;
-         }
-         .category-input {
-         margin-bottom: 8px;
-         display: flex;
-         align-items: center;
-         justify-content: space-between;
-         flex-wrap: nowrap;
-         border-bottom: 1px solid #eee;
-         padding-bottom: 8px;
-         }
-         .category-label {
-         font-weight: bold;
-         margin-right: 8px;
-         font-size: 0.85em;
-         min-width: 60px;
-         text-align: left;
-         }
-         .input-container {
-         display: flex;
-         align-items: center;
-         margin-right: 8px;
-         }
-         .input-container label {
-         margin-right: 3px;
-         font-size: 0.75em;
-         }
-         input[type="number"] {
-         width: 45px;
-         padding: 4px;
-         border: 1px solid #aaa;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 0.75em;
-         }
-         input[type="number"]:focus {
-         border-color: #007bff;
-         box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-         outline: none;
-         }
-         .category-total {
-         font-weight: bold;
-         margin-top: 5px;
-         text-align: right;
-         color: #008000;
-         background-color: #f0fff0;
-         border-radius: 5px;
-         padding: 6px 8px;
-         margin-left: 8px;
-         font-size: 0.8em;
-         min-width: 80px;
-         text-align: right;
-         }
-         #grand-total {
-         font-weight: bold;
-         font-size: 1.1em;
-         color: #008000;
-         }
-         #option-selection-container {
-         margin-bottom: 10px;
-         text-align: center;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         flex-wrap: wrap;
-         padding: 8px;
-         border-bottom: 1px solid #ddd;
-         }
-         #size-selection {
-         padding: 4px;
-         font-size: 0.75em;
-         margin-right: 8px;
-         margin-bottom: 6px;
-         border: 1px solid #aaa;
-         border-radius: 5px;
-         height: auto;
-         }
-         #size-selection:focus {
-         border-color: #007bff;
-         box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-         outline: none;
-         }
-         .option-checkbox-container {
-         margin-bottom: 6px;
-         display: flex;
-         align-items: center;
-         margin-right: 15px;
-         }
-         .option-checkbox-container input {
-         margin-right: 3px;
-         height: 11px;
-         width: 11px;
-         }
-         .option-checkbox-container label {
-         font-size: 0.75em;
-         }
-         .multiplier-input-container {
-         display: flex;
-         align-items: center;
-         }
-         .multiplier-input-container label {
-         font-size: 0.75em;
-         margin-right: 5px;
-         }
-         #final-multiplier {
-         width: 50px;
-         padding: 4px;
-         border: 1px solid #aaa;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 0.75em;
-         }
-         #final-multiplier:focus {
-         border-color: #007bff;
-         box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-         outline: none;
-         }
-         #project-name-container {
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         margin-bottom: 15px;
-         }
-         #project-name-container label {
-         font-size: 0.8em;
-         margin-right: 8px;
-         }
-         #project-name {
-         width: 100%;
-         max-width: 200px;
-         padding: 6px;
-         border: 1px solid #ddd;
-         border-radius: 5px;
-         box-sizing: border-box;
-         font-size: 0.8em;
-         text-transform: uppercase;
-         }
-         #option-selection-container label[for="size-selection"] {
-         margin-right: 5px;
-         }
-         #extractor-container h1 {
-         text-align: center;
-         }
-         .button-container {
-         display: flex;
-         justify-content: center;
-         flex-direction: column;
-         align-items: center;
-         }
-         .button-container > div {
-         display: flex;
-         gap: 10px;
-         margin-bottom: 10px;
-         flex-shrink: 0;
-         align-items: center; /* Vertically align items in the button row */
-         }
-         .action-button {
-         border: none;
-         padding: 8px 12px;
-         border-radius: 7px;
-         cursor: pointer;
-         font-size: 0.8em;
-         transition: background-color 0.3s ease;
-         color: white;
-         }
-         #calculate-total-button {
-         background-color: #007bff;
-         margin-bottom: 15px; /* Added margin-bottom here */
-         }
-         #calculate-total-button:hover {
-         background-color: #0056b3;
-         }
-         #clear-button {
-         background-color: #dc3545;
-         }
-         #clear-button:hover {
-         background-color: #c82333;
-         }
-         #save-button {
-         background-color: #28a745;
-         }
-         #save-button:hover {
-         background-color: #218838;
-         }
-         #undo-button {
-         background-color: orange;
-         }
-         #undo-button:hover {
-         background-color: #cc6600;
-         }
-         #export-json-button {
-         background-color: #00c853;
-         }
-         #export-json-button:hover {
-         background-color: #00a541;
-         }
-         #import-json-button {
-         background-color: #64b5f6;
-         }
-         #import-json-button:hover {
-         background-color: #42a5f5;
-         }
-         #overall-total-display {
-         margin-top: 10px;
-         font-weight: bold;
-         color: #008000;
-         display: none;
-         }
-         .popup {
-         display: none;
-         position: fixed;
-         top: 50%;
-         left: 50%;
-         transform: translate(-50%, -50%);
-         padding: 20px;
-         background-color: rgba(0, 0, 0, 0.8);
-         color: white;
-         border-radius: 8px;
-         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-         z-index: 10;
-         text-align: center;
-         }
-         .popup button {
-         margin-top: 10px;
-         padding: 8px 16px;
-         background-color: #007bff;
-         color: white;
-         border: none;
-         border-radius: 5px;
-         cursor: pointer;
-         font-size: 0.9em;
-         }
-         .popup button:hover {
-         background-color: #0056b3;
-         }
-         #save-warning-popup {
-         display: none;
-         position: fixed;
-         top: 50%;
-         left: 50%;
-         transform: translate(-50%, -50%);
-         padding: 20px;
-         background-color: rgba(255, 0, 0, 0.8);
-         color: white;
-         border-radius: 8px;
-         border-radius: 8px;
-         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-         z-index: 10;
-         text-align: center;
-         }
-         #save-warning-popup button {
-         margin-top: 10px;
-         padding: 8px 16px;
-         background-color: #FFF;
-         color: #FF0000;
-         border: none;
-         border-radius: 5px;
-         cursor: pointer;
-         font-size: 0.9em;
-         }
-         #save-warning-popup button:hover {
-         background-color: #f7f7f7;
+         /* Optional: Add some padding to table cells for better readability */
+         #output table td, #output table th {
+         padding: 8px; /* Adjust as needed */
+         white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
          }
       </style>
    </head>
    <body>
-      <!-- your existing HTML content from the first <body> here remains unchanged -->
-      <!-- ensure it ends like this: -->
-      <div id="main-container">
-         <main id="extractor-container">
-            <h1>123 Extractor</h1>
-            <div id="option-selection-container">
-               <label for="size-selection">Project Size:</label>
-               <select id="size-selection">
-                  <option value="3in">3IN</option>
-                  <option value="9in">9IN</option>
-               </select>
-               <div class="option-checkbox-container">
-                  <input type="checkbox" id="option-ir">
-                  <label for="option-ir">(IR)</label>
-                  <button id="tl-mode-button" class="action-button" style="margin-left: 10px; background-color: #6A1B9A;">
-                  TL MODE
-                  </button>
+      <div class="container">
+         <h5 class="center-align">123 EXTRACTOR v2.1</h5>
+         <div class="right-align" style="margin-top: 10px;">
+            <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
+            <i class="material-icons">add</i>
+            </a>
+         </div>
+         <div class="input-field">
+            <select id="project-selector">
+               <option value="" disabled selected>Select a saved project</option>
+            </select>
+            <label for="project-selector">Load Project</label>
+         </div>
+         <div class="center-align">
+            <button class="btn orange darken-2" id="edit-project">
+            <i class="material-icons left">edit</i>Edit Project
+            </button>
+            <button class="btn red darken-2" id="delete-project">
+            <i class="material-icons left">delete</i>Delete Project
+            </button>
+         </div>
+         <div class="input-field">
+            <input id="tech-id" type="text" placeholder="e.g. TECH123">
+            <label for="tech-id">Search TECH ID</label>
+         </div>
+         <div class="center-align">
+            <button class="btn blue" id="search-button">
+            <i class="material-icons left">search</i>Search
+            </button>
+            <button class="btn green" id="calculate-all-button">
+            <i class="material-icons left">calculate</i>Calculate All
+            </button>
+            <button class="btn purple darken-2 modal-trigger" href="#multiplier-modal" id="calculate-all-projects-button">
+            <i class="material-icons left">grid_on</i>All Projects Total
+            </button>
+         </div>
+         <div class="center-align" style="margin-top: 10px;">
+            <button class="btn orange" id="export-button">
+            <i class="material-icons left">file_download</i>Download CSV
+            </button>
+         </div>
+         <div class="center-align" style="margin-top: 10px;">
+            <button class="btn blue darken-1" id="copy-all-projects-json">
+            <i class="material-icons left">content_copy</i>Copy All Projects Data
+            </button>
+            <button class="btn deep-purple darken-2" id="auto-fetch-external-json">
+            <i class="material-icons left">cloud_download</i>Update Projects Online
+            </button>
+         </div>
+         <div id="output" class="result z-depth-1"></div>
+         <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
+         </div>
+         <div id="multiplier-modal" class="modal">
+            <div class="modal-content">
+               <h5>Enter Multiplier</h5>
+               <div class="input-field">
+                  <input id="total-multiplier" type="number" value="1" step="0.01">
+                  <label for="total-multiplier">Multiplier</label>
                </div>
             </div>
-            <div id="paste-input-container">
-               <label for="number-paste-area">Paste Fixpoints</label>
-               <textarea id="number-paste-area" rows="4"></textarea>
-               <button id="auto-fill-button" class="action-button">Extract Fixpoints</button>
-               <div id="letter-log" style="margin-top: 10px;"></div>
+            <div class="modal-footer">
+               <a href="#!" class="modal-close btn grey">Cancel</a>
+               <a href="#!" class="btn green" id="apply-multiplier">Apply Multiplier</a>
             </div>
-            <div id="category-inputs">
-            </div>
-            <h2>Total Points: <span id="grand-total">0</span></h2>
-            <div id="project-name-container">
-               <label for="project-name">Project name:</label>
-               <input type="text" id="project-name" placeholder="">
-            </div>
-            <div class="button-container">
-               <div>
-                  <button id="clear-button" class="action-button">Clear Data</button>
-                  <button id="save-button" class="action-button">Save</button>
-                  <button id="undo-button" class="action-button" style="background-color: orange;">Undo</button>
-                  <div class="multiplier-input-container">  <label for="final-multiplier">Multiplier:</label>
-                     <input type="number" id="final-multiplier" value="1" step="0.01">
+         </div>
+         <div id="add-project-modal" class="modal">
+            <div class="modal-content">
+               <h5 id="modal-title">Add New Project</h5>
+               <div class="input-field">
+                  <input id="project-name" type="text">
+                  <label for="project-name">Project Name</label>
+               </div>
+               <div class="input-field">
+                  <textarea id="raw-data" class="materialize-textarea" placeholder="Paste your fixpoints data here..."></textarea>
+                  <label for="raw-data">Fixpoints Data</label>
+               </div>
+               <div class="row">
+                  <div class="input-field col s6">
+                     <select id="modal-size">
+                        <option value="3in">3IN</option>
+                        <option value="9in">9IN</option>
+                     </select>
+                     <label for="modal-size">Project Size</label>
+                  </div>
+                  <div class="input-field col s6">
+                     <label>
+                     <input type="checkbox" id="modal-ir-check" />
+                     <span>IR Multiplier</span>
+                     </label>
                   </div>
                </div>
-               <button id="calculate-total-button" class="action-button" style="margin-bottom: 15px;">Calculate</button>
-               <div>
-                  <button id="export-json-button" class="action-button" style="background-color: #00c853;">Export as JSON</button>
-                  <button id="import-json-button" class="action-button" style="background-color: #64b5f6;">Import from JSON</button>
-                  <input type="file" id="import-file" accept=".json" style="display: none;">
-               </div>
-               <div id="overall-total-display"></div>
             </div>
-            <footer style="text-align: center; margin-top: 2em; font-size: 0.9em; color: #666;">
-               &copy; 2025 Team123. All rights reserved.
-            </footer>
-         </main>
-         <aside id="activity-input-container">
-            <label for="saved-projects"></label>
-            <textarea id="saved-projects" placeholder=":/ $" readonly></textarea>
-         </aside>
+            <div class="modal-footer">
+               <a href="#!" class="modal-close btn grey">Cancel</a>
+               <a href="#!" class="btn green" id="save-project-modal-button">Save Project</a>
+            </div>
+         </div>
       </div>
-      <div id="total-popup" class="popup">
-         <p>Total of All Projects:</p>
-         <h2 id="popup-total-value"></h2>
-         <button id="close-popup">Close</button>
-      </div>
-      <div id="save-warning-popup" class="popup">
-         <p>Project name was empty!</p>
-         <button id="close-save-warning-popup">Close</button>
-      </div>
-      <!-- Closing popup and scripts -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
       <script>
-         document.addEventListener('DOMContentLoaded', function() {
-           const categoryInputsDiv = document.getElementById('category-inputs');
-           const grandTotalSpan = document.getElementById('grand-total');
-           const numberOfCategories = 9;
-           const saveButton = document.getElementById('save-button');
-           const projectNameInput = document.getElementById('project-name');
-           const savedProjectsTextarea = document.getElementById('saved-projects');
-           const sizeSelection = document.getElementById('size-selection');
-           const optionIr = document.getElementById('option-ir');
-           const calculateTotalButton = document.getElementById('calculate-total-button');
-           const finalMultiplierInput = document.getElementById('final-multiplier');
-           const clearButton = document.getElementById('clear-button');
-           const undoButton = document.getElementById('undo-button');
+         document.addEventListener('DOMContentLoaded', function () {
+             let activeProjectData = '';
+             let allCalculatedResults = []; // Array to store results from "Calculate All" (per project)
+             let lastResult = ''; // Still used for single search export
+             let allProjectsAggregatedResults = {}; // Object to store aggregated results per TECH ID across all projects
+             let editingProjectName = null; // Variable to store the name of the project being edited
          
-           const totalPopup = document.getElementById('total-popup');
-           const popupTotalValue = document.getElementById('popup-total-value');
-           const closePopup = document.getElementById('close-popup');
-           const saveWarningPopup = document.getElementById('save-warning-popup');
-           const closeSaveWarningPopup = document.getElementById('close-save-warning-popup');
+             // --- HARDCODED URL FOR PROJECT JSON ---
+             // Replace 'YOUR_RAW_GIST_URL_HERE' with the raw URL of your GitHub Gist or other service
+             // hosting the projects JSON array.
+             const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/serhgs/project_data.json/refs/heads/main/update.json';
+             // Example Gist Raw URL: https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json
+             // -----------------------------------
          
-           const exportJsonButton = document.getElementById('export-json-button');
-           const importJsonButton = document.getElementById('import-json-button');
-           const importFile = document.getElementById('import-file');
-           const numberPasteArea = document.getElementById('number-paste-area');
-           const autoFillButton = document.getElementById('auto-fill-button');
+             const prices = [
+                 { "3in": 2.19, "9in": 0.99 },
+                 { "3in": 5.86, "9in": 2.08 },
+                 { "3in": 7.44, "9in": 2.78 },
+                 { "3in": 2.29, "9in": 1.57 },
+                 { "3in": 1.55, "9in": 0.60 },
+                 { "3in": 1.84, "9in": 0.78 },
+                 { "3in": 1.00, "9in": 1.00 }, // Assuming CAT 7 is 1:1 ratio for both sizes based on value
+                 { "3in": 3.74, "9in": 3.74 }, // Assuming CAT 8 is 1:1 ratio for both sizes
+                 { "3in": 1.73, "9in": 1.73 }  // Assuming CAT 9 is 1:1 ratio for both sizes
+             ];
          
+             const projectSelector = document.getElementById('project-selector');
+             const rawData = document.getElementById('raw-data');
+             const projectNameInput = document.getElementById('project-name'); // Renamed for clarity
+             const techIdInput = document.getElementById('tech-id');
+             const output = document.getElementById('output');
+             const allResultsDiv = document.getElementById('all-results'); // Use this div for displaying results
+             const addProjectModal = document.querySelector('#add-project-modal'); // Get the modal element
+             const modalTitle = document.getElementById('modal-title'); // Get the modal title element
+             const saveProjectModalButton = document.getElementById('save-project-modal-button'); // Get the modal save button
          
-           const prices = [
-             { "3in": 2.19, "9in": 0.99 },
-             { "3in": 5.86, "9in": 2.08 },
-             { "3in": 7.44, "9in": 2.78 },
-             { "3in": 2.29, "9in": 1.57 },
-             { "3in": 1.55, "9in": 0.60 },
-             { "3in": 1.84, "9in": 0.78 },
-             { "3in": 1.00, "9in": 1.00 },
-             { "3in": 3.74, "9in": 3.74 },
-             { "3in": 1.73, "9in": 1.73 },
-           ];
-         
-         
-           // Function to create a single category input
-           function createCategoryInput(i) {
-             const inputDiv = document.createElement('div');
-             inputDiv.classList.add('category-input');
-         
-             const label = document.createElement('label');
-             label.textContent = `CAT ${i}: `;
-             label.classList.add('category-label');
-         
-             const quantityContainer = document.createElement('div');
-             quantityContainer.classList.add('input-container');
-             const quantityLabel = document.createElement('label');
-             quantityLabel.textContent = " Qty: ";
-             quantityLabel.style.fontSize = '0.75em';
-             const quantityInput = document.createElement('input');
-             quantityInput.type = 'number';
-             quantityInput.id = `quantity${i}`;
-             quantityInput.classList.add('quantity-input');
-             quantityInput.value = 0;
-             quantityInput.setAttribute('min', '0');
-             quantityContainer.appendChild(quantityLabel);
-             quantityContainer.appendChild(quantityInput);
-         
-             const categoryTotalDiv = document.createElement('div');
-             categoryTotalDiv.classList.add('category-total');
-             categoryTotalDiv.id = `category-total${i}`;
-             categoryTotalDiv.textContent = "Total: 0.00";
-         
-             inputDiv.appendChild(label);
-             inputDiv.appendChild(quantityContainer);
-             inputDiv.appendChild(categoryTotalDiv);
-             categoryInputsDiv.appendChild(inputDiv);
-         
-             quantityInput.addEventListener('input', updateTotals);
-           }
-         
-           // Create all category inputs on page load
-           for (let i = 1; i <= numberOfCategories; i++) {
-             createCategoryInput(i);
-           }
-         
-           function updateTotals() {
-             let grandTotalBeforeFinalMultiplier = 0;
-             const selectedSize = sizeSelection.value;
-             const irMultiplier = optionIr.checked ? 2 : 1;
-         
-             for (let i = 1; i <= numberOfCategories; i++) {
-               const quantityInput = document.getElementById(`quantity${i}`);
-               const categoryTotalDiv = document.getElementById(`category-total${i}`);
-               if (quantityInput && categoryTotalDiv) {
-                 let quantity = parseFloat(quantityInput.value);
-                 quantity = isNaN(quantity) ? 0 : quantity;
-                 quantity = quantity < 0 ? 0 : quantity;
-                 quantityInput.value = quantity;
-         
-                 const price = prices[i - 1][selectedSize];
-                 const categoryTotal = quantity * price * irMultiplier;
-                 categoryTotalDiv.textContent = `Total: ${categoryTotal.toFixed(2)}`;
-                 grandTotalBeforeFinalMultiplier += categoryTotal;
-               }
-             }
-         
-             grandTotalSpan.textContent = grandTotalBeforeFinalMultiplier.toFixed(2);
-           }
-         
-           function saveData() {
-             const projectName = projectNameInput.value;
-             const totalPoints = grandTotalSpan.textContent;
-             let outputString = `Project: ${projectName}\nTotal Points: ${totalPoints}\nCategory Totals:\n`;
-             for (let i = 1; i <= numberOfCategories; i++) {
-               const categoryTotalDiv = document.getElementById(`category-total${i}`);
-               if (categoryTotalDiv) {
-                 outputString += `CAT ${i}: ${categoryTotalDiv.textContent}\n`;
-               }
-             }
-             outputString += `\n`;
-             savedProjectsTextarea.value += outputString;
-         
-             let savedData = localStorage.getItem('fixpointsData');
-             let savedProjects = savedData ? JSON.parse(savedData) : [];
-             savedProjects.push({
-               projectName: projectName,
-               totalPoints: totalPoints,
-               categoryTotals: Array.from({ length: numberOfCategories }, (_, i) => {
-                 const catTotalDiv = document.getElementById(`category-total${i + 1}`);
-                 return catTotalDiv ? catTotalDiv.textContent : "Total: 0.00";
-               }),
-               sizeSelection: sizeSelection.value,
-               optionIr: optionIr.checked,
-               finalMultiplier: finalMultiplierInput.value,
-               quantities: Array.from({ length: numberOfCategories }, (_, i) => {
-                 const qtyInput = document.getElementById(`quantity${i + 1}`);
-                 return qtyInput ? qtyInput.value : 0;
-               })
-             });
-             localStorage.setItem('fixpointsData', JSON.stringify(savedProjects));
-           }
-         
-           saveButton.addEventListener('click', function() {
-             const projectName = projectNameInput.value;
-             if (projectName.trim() === "") {
-               saveWarningPopup.style.display = 'block';
-               return;
-             }
-             saveData();
-             alert('Project saved!');
-           });
-         
-           calculateTotalButton.addEventListener('click', function() {
-             const savedProjectsText = savedProjectsTextarea.value;
-             const projectEntries = savedProjectsText.split('\n\n');
-             let overallTotal = 0;
-         
-             for (const entry of projectEntries) {
-               const totalPointsMatch = entry.match(/Total Points: (\d+\.?\d*)/);
-               if (totalPointsMatch && totalPointsMatch[1]) {
-                 overallTotal += parseFloat(totalPointsMatch[1]);
-               }
-             }
-             let finalMultiplier = parseFloat(finalMultiplierInput.value);
-             finalMultiplier = isNaN(finalMultiplier) ? 1 : finalMultiplier;
-             finalMultiplier = finalMultiplier < 0 ? 1: finalMultiplier;
-             popupTotalValue.textContent = (overallTotal * finalMultiplier).toFixed(2);
-             totalPopup.style.display = 'block';
-           });
-         
-           closePopup.addEventListener('click', function() {
-             totalPopup.style.display = 'none';
-           });
-         
-           closeSaveWarningPopup.addEventListener('click', function() {
-             saveWarningPopup.style.display = 'none';
-           });
-         
-           sizeSelection.addEventListener('change', updateTotals);
-           optionIr.addEventListener('change', updateTotals);
-         
-           projectNameInput.addEventListener('input', function() {
-             this.value = this.value.toUpperCase();
-           });
-         
-           clearButton.addEventListener('click', function() {
-             projectNameInput.value = '';
-             grandTotalSpan.textContent = '0';
-             savedProjectsTextarea.value = '';
-             sizeSelection.value = '3in';
-             optionIr.checked = false;
-             finalMultiplierInput.value = 1;
-             numberPasteArea.value = ''; // Clear the paste area
-         
-             for (let i = 1; i <= numberOfCategories; i++) {
-               const quantityInput = document.getElementById(`quantity${i}`);
-               const categoryTotalDiv = document.getElementById(`category-total${i}`);
-               if (quantityInput && categoryTotalDiv) {
-                 quantityInput.value = 0;
-                 categoryTotalDiv.textContent = 'Total: 0.00';
-               }
-             }
-             updateTotals();
-             localStorage.removeItem('fixpointsData');
-           });
-         
-           function undoSave() {
-             let savedData = localStorage.getItem('fixpointsData');
-             if (savedData) {
-               let savedProjects = JSON.parse(savedData);
-               if (savedProjects.length > 0) {
-                 const lastRemoved = savedProjects.pop();
-                 localStorage.setItem('fixpointsData', JSON.stringify(savedProjects));
-         
-                 let savedProjectsText = '';
-                 savedProjects.forEach(project => {
-                   savedProjectsText += `Project: ${project.projectName}\n`;
-                   savedProjectsText += `Total Points: ${project.totalPoints}\n`;
-                   savedProjectsText += `Category Totals:\n`;
-                   project.categoryTotals.forEach((total, index) => {
-                     savedProjectsText += `CAT ${index + 1}: ${total}\n`;
-                   });
-                   savedProjectsText += `\n`;
-                 });
-                 savedProjectsTextarea.value = savedProjectsText;
-         
-                 alert('Last saved project undone!');
-         
-                 if (savedProjects.length> 0) {
-                   const currentProject = savedProjects[savedProjects.length - 1];
-                   projectNameInput.value = currentProject.projectName;
-                   sizeSelection.value = currentProject.sizeSelection;
-                   optionIr.checked = currentProject.optionIr;
-                   finalMultiplierInput.value = currentProject.finalMultiplier;
-                   currentProject.quantities.forEach((qty, index) => {
-                     const qtyInput = document.getElementById(`quantity${index + 1}`);
-                     if (qtyInput) {
-                      qtyInput.value = qty;
-                     }
-                   });
-                   updateTotals();
-                 } else {
-                   projectNameInput.value = '';
-                   grandTotalSpan.textContent = '0';
-                   sizeSelection.value = '3in';
-                   optionIr.checked = false;
-                   finalMultiplierInput.value = 1;
-                   for (let i = 1; i <= numberOfCategories; i++) {
-                     const quantityInput = document.getElementById(`quantity${i}`);
-                     const categoryTotalDiv = document.getElementById(`category-total${i}`);
-                     if (quantityInput && categoryTotalDiv) {
-                       quantityInput.value = 0;
-                       categoryTotalDiv.textContent = 'Total: 0.00';
-                     }
-                   }
-                   updateTotals();
-                 }
-               } else {
-                 alert('No saved projects to undo!');
-               }
-             } else {
-               alert('No saved data found!');
-             }
-           }
-         
-           undoButton.addEventListener('click', undoSave);
-         
-           exportJsonButton.addEventListener('click', function() {
-             const savedData = localStorage.getItem('fixpointsData');
-         
-             if (savedData) {
-               const jsonData = JSON.stringify(JSON.parse(savedData), null, 2); // Convert to JSON string with indentation for readability
-               const filename = 'fixpoints_data.json';
-               const blob = new Blob([jsonData], { type: 'application/json' });
-         
-               // Create a temporary <a> element to trigger the download
-               const link = document.createElement('a');
-               link.href = URL.createObjectURL(blob);
-               link.download = filename;
-         
-               // Programmatically click the link to start the download
-               document.body.appendChild(link);
-               link.click();
-         
-               // Clean up the temporary link
-               document.body.removeChild(link);
-               URL.revokeObjectURL(link.href);
-         
-               alert('Saved data exported as JSON!');
-             } else {
-               alert('No saved data to export.');
-             }
-           });
-         
-           importJsonButton.addEventListener('click', function() {
-             importFile.click(); // Trigger the file input when the import button is clicked
-           });
-         
-           importFile.addEventListener('change', function(event) {
-             const file = event.target.files[0];
-         
-             if (file) {
-               const reader = new FileReader();
-         
-               reader.onload = function(e) {
+             // Loader and safe localStorage functions (already present, included for completeness)
+             function safeSetLocalStorage(key, value) {
                  try {
-                   const importedData = JSON.parse(e.target.result);
-                   localStorage.setItem('fixpointsData', JSON.stringify(importedData));
-         
-                   // Update the displayed projects
-                   let savedProjectsText = '';
-                   importedData.forEach(project => {
-                     savedProjectsText += `Project: ${project.projectName}\n`;
-                     savedProjectsText += `Total Points: ${project.totalPoints}\n`;
-                     savedProjectsText += `Category Totals:\n`;
-                     project.categoryTotals.forEach((total, index) => {
-                       savedProjectsText += `CAT ${index + 1}: ${total}\n`;
-                     });
-                     savedProjectsText += `\n`;
-                   });
-                   savedProjectsTextarea.value = savedProjectsText;
-         
-                   // Optionally load the last imported project's details
-                   if (importedData.length > 0) {
-                     const lastProject = importedData[importedData.length - 1];
-                     //projectNameInput.value = lastProject.projectName;
-                     //sizeSelection.value = lastProject.sizeSelection;
-                     //optionIr.checked = lastProject.optionIr;
-                     //finalMultiplierInput.value = lastProject.finalMultiplier;
-                     //lastProject.quantities.forEach((qty, index) => {
-                     //  const qtyInput = document.getElementById(`quantity${index + 1}`);
-                     //  if (qtyInput) {
-                     //    qtyInput.value = qty;
-                     //  }
-                     //});
-                     //updateTotals();
-                   } else {
-                     // Clear the form if no projects were imported
-                     projectNameInput.value = '';
-                     grandTotalSpan.textContent = '0';
-                     sizeSelection.value = '3in';
-                     optionIr.checked = false;
-                     finalMultiplierInput.value = 1;
-                     for (let i = 1; i <= numberOfCategories; i++) {
-                       const quantityInput = document.getElementById(`quantity${i}`);
-                       const categoryTotalDiv = document.getElementById(`category-total${i}`);
-                       if (quantityInput && categoryTotalDiv) {
-                         quantityInput.value = 0;
-                         categoryTotalDiv.textContent = 'Total: 0.00';
-                       }
-                     }
-                     updateTotals();
-                   }
-         
-                   alert('Data imported from JSON!');
-         
-                 } catch (error) {
-                   console.error('Error parsing JSON file:', error);
-                   alert('Error: Could not parse the selected JSON file.');
+                     localStorage.setItem(key, value);
+                     return true;
+                 } catch (e) {
+                     M.toast({ html: 'Local storage full! Could not save project.', classes: 'red' });
+                     return false;
                  }
-               };
-         
-               reader.onerror = function() {
-                 alert('Error: Could not read the selected file.');
-               };
-         
-               reader.readAsText(file);
              }
-           });
+             function showLoader() {
+                 const loader = document.getElementById('loader-spinner');
+                 if(loader) loader.style.display = 'block';
+             }
+             function hideLoader() {
+                  const loader = document.getElementById('loader-spinner');
+                 if(loader) loader.style.display = 'none';
+             }
+             // Disabling buttons temporarily logic is not included here to keep it focused,
+             // but you can add it back if needed.
          
-         autoFillButton.addEventListener('click', function () {
-         const pastedText = numberPasteArea.value.trim();
-         const letterLogDiv = document.getElementById('letter-log');
-         letterLogDiv.innerHTML = '';
+             function loadProjectList() {
+                 projectSelector.innerHTML = '<option value="" disabled selected>Select a saved project</option>';
+                 for (let i = 0; i < localStorage.length; i++) {
+                     const key = localStorage.key(i);
+                     if (key.startsWith('tl_project_')) {
+                         const name = key.replace('tl_project_', '');
+                         const option = document.createElement('option');
+                         option.value = name;
+                         option.textContent = name;
+                         projectSelector.appendChild(option);
+                     }
+                 }
+                 M.FormSelect.init(projectSelector);
+             }
          
-         const today = new Date();
-         const options = { year: 'numeric', month: 'long', day: 'numeric' };
-         const formattedDate = today.toLocaleDateString(undefined, options);
-         letterLogDiv.innerHTML += `<span class="log-m">${formattedDate}</span><br>`;
+             // Modified saveProject function to handle both add and edit
+             function saveProject() {
+                 const name = projectNameInput.value.trim();
+                 const data = rawData.value.trim();
+                 const size = document.getElementById('modal-size').value;
+                 const ir = document.getElementById('modal-ir-check').checked;
          
-         if (!pastedText) {
-         letterLogDiv.innerHTML += `<span class="log-e">Failed, No data found!</span><br>`;
-         return;
-         }
+                 if (!name || !data) {
+                     M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
+                     return;
+                 }
          
-         letterLogDiv.innerHTML += `<span class="log-y">Attempting extraction...</span><br>`;
+                 const payload = JSON.stringify({ data, size, ir });
+                 const storageKey = `tl_project_${name}`;
          
-         const rows = pastedText.split(/\r?\n/).filter(row => row.trim() !== "");
+                 // If editingProjectName is set, it means we are editing an existing project
+                 if (editingProjectName && editingProjectName !== name) {
+                     // If the name has changed, remove the old project from local storage
+                     localStorage.removeItem(`tl_project_${editingProjectName}`);
+                 }
          
-         const headers = rows.shift().split(/\t|,/).map(h => h.trim().toUpperCase());
-         const columnIndexes = {
-         category: headers.indexOf("CATEGORY"),
-         fixed1: headers.indexOf("FIXED1?"),
-         rv1Label: headers.indexOf("RV1_LABEL"),
-         i3qaCat: headers.indexOf("I3QA_CAT"),
-         rv1Cat: headers.indexOf("RV1_CAT")
-         };
+                 if (safeSetLocalStorage(storageKey, payload)) {
+                     M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
+                     loadProjectList();
+                     const modalInstance = M.Modal.getInstance(addProjectModal);
+                     modalInstance.close();
+                     // Clear modal inputs and reset editing state
+                     projectNameInput.value = '';
+                     rawData.value = '';
+                     document.getElementById('modal-size').value = '3in'; // Reset select
+                     document.getElementById('modal-ir-check').checked = false; // Reset checkbox
+                     M.FormSelect.init(document.getElementById('modal-size')); // Re-initialize select
+                     M.updateTextFields(); // Update text fields after clearing
+                     editingProjectName = null; // Reset editing state
+                 }
+             }
          
-         const numberOfCategories = 9;
-         const categoryCounts = {};
-         for (let i = 1; i <= numberOfCategories; i++) {
-         categoryCounts[i] = 0;
-         }
+             function deleteSelectedProject() {
+                 const selected = projectSelector.value;
+                 if (!selected) {
+                     M.toast({ html: 'No project selected.', classes: 'red' });
+                     return;
+                 }
+                 if (confirm(`Are you sure you want to delete project '${selected}'?`)) {
+                     localStorage.removeItem(`tl_project_${selected}`);
+                     M.toast({ html: `Project '${selected}' deleted.`, classes: 'orange' });
+                     loadProjectList();
+                     activeProjectData = '';
+                     output.textContent = ''; // Clear single search output
+                     allResultsDiv.innerHTML = ''; // Clear all results output
+                     allCalculatedResults = []; // Clear calculated results
+                     lastResult = ''; // Clear last single search result
+                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                     editingProjectName = null; // Reset editing state if the deleted project was being edited
+                 }
+             }
          
-         let yCount = 0, nCount = 0, mCount = 0;
+              // Helper function to calculate points and count for a single row of raw data
+             function calculateRowDetails(fields, headers, size, ir) {
+                  const indexes = {
+                     category: headers.indexOf("CATEGORY"),
+                     i3qa: headers.indexOf("I3QA_CAT"),
+                     rv1cat: headers.indexOf("RV1_CAT"),
+                     afp1stat: headers.indexOf("AFP1_STAT"),
+                     afp1cat: headers.indexOf("AFP1_CAT"),
+                     rv1label: headers.indexOf("RV1_LABEL"),
+                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                 };
          
-         rows.forEach(row => {
-         const values = row.split(/\t|,/);
+                 let rowPoints = 0;
+                 let categoryCounts = Array(9).fill(0); // Initialize counts for categories 1-9
+                 let excludeCounts = false;
          
-         // FIXED1?
-         if (columnIndexes.fixed1 !== -1 && values[columnIndexes.fixed1]) {
-            const fixed = values[columnIndexes.fixed1].trim().toUpperCase();
-            if (fixed === 'Y') yCount++;
-         }
+                 // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
+                  if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+                      if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                           excludeCounts = true; // Exclude from main category points and counts if marked 'E'
+                      }
+                  }
+                   if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
+                      if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+                           // Assuming 'M' does not exclude category points or counts based on previous logic
+                      }
+                  }
          
-         // RV1_LABEL
-         if (columnIndexes.rv1Label !== -1 && values[columnIndexes.rv1Label]) {
-            const label = values[columnIndexes.rv1Label].trim().toUpperCase();
-            if (label === 'E') nCount++;
-            if (label === 'M') mCount++;
-         }
+                 if (!excludeCounts) {
+                     [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
+                         if (idx !== -1 && fields[idx]) {
+                             const val = parseInt(fields[idx].trim());
+                             if (!isNaN(val) && val >= 1 && val <= 9) {
+                                 const price = prices[val - 1][size];
+                                 const rowMultiplier = ir ? 2 : 1; // Apply project-specific IR
+                                 rowPoints += price * rowMultiplier;
+                                 categoryCounts[val - 1]++; // Increment count for this category
+                             }
+                         }
+                     });
+                 }
+                 return { rowPoints, categoryCounts };
+             }
          
-         // CATEGORY fields (collect into counts if number 1–9)
-         ["category", "i3qaCat", "rv1Cat"].forEach(key => {
-            const idx = columnIndexes[key];
-            if (idx !== -1 && values[idx]) {
-                const val = parseInt(values[idx].trim());
-                if (!isNaN(val) && val >= 1 && val <= numberOfCategories) {
-                    categoryCounts[val]++;
+         
+             // Helper function to calculate points, counts, and details for a single TECH ID within a given raw data chunk
+             function calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir) {
+                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                 const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                 const indexes = {
+                     fixId: headers.indexOf("FIX1_ID"),
+                     afp1stat: headers.indexOf("AFP1_STAT"),
+                     rv1label: headers.indexOf("RV1_LABEL"),
+                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                 };
+         
+                 if (indexes.fixId === -1) {
+                     return null; // Cannot calculate without FIX1_ID
+                 }
+         
+                 let totalPoints = 0;
+                 let additionalFixPoints = 0;
+                 let excessiveFixPoints = 0;
+                 let missFixPoints = 0;
+                 const categoryPoints = Array(9).fill(0); // Sum points per category
+                 const categoryCounts = Array(9).fill(0); // Count fixpoints per category
+         
+                 const matched = rows.filter(row => {
+                     const fields = row.split(/[\t,]/);
+                     return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
+                 });
+         
+                 matched.forEach(row => {
+                     const fields = row.split(/[\t,]/);
+                      let excludeCounts = false;
+         
+                      // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
+                       if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+                           if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                                excessiveFixPoints++;
+                                excludeCounts = true; // Exclude from main category points and counts if marked 'E'
+                           }
+                           if (fields[indexes.rv1label].toUpperCase().includes("M")) {
+                               missFixPoints++;
+                           }
+                       }
+                        if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
+                           if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+                                missFixPoints++;
+                           }
+                       }
+                      if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
+                          additionalFixPoints++;
+                      }
+         
+                     // Calculate points and counts for this row if not excluded
+                     if (!excludeCounts) {
+                         const rowDetails = calculateRowDetails(fields, headers, size, ir);
+                         totalPoints += rowDetails.rowPoints;
+                         rowDetails.categoryCounts.forEach((count, index) => {
+                             categoryCounts[index] += count; // Aggregate category counts
+                             // Also aggregate category points here based on rowDetails.rowPoints for this category
+                             const categoryValue = parseInt(fields[headers.indexOf("CATEGORY")].trim()); // Assuming CATEGORY is always present and valid for points
+                             if (!isNaN(categoryValue) && categoryValue >= 1 && categoryValue <= 9 && index === categoryValue - 1) {
+                                  const price = prices[categoryValue - 1][size];
+                                  const rowMultiplier = ir ? 2 : 1;
+                                  categoryPoints[index] += price * rowMultiplier;
+                             }
+                         });
+                     }
+                 });
+         
+                 return {
+                     techID: techIDValue,
+                     totalPoints: totalPoints,
+                     additionalFixPoints: additionalFixPoints,
+                     excessiveFixPoints: excessiveFixPoints,
+                     missFixPoints: missFixPoints,
+                     categoryPoints: categoryPoints, // Points per category
+                     categoryCounts: categoryCounts // Counts per category
+                 };
+             }
+         
+         
+             function calculateAllTechIDs() {
+                 const raw = activeProjectData?.data;
+                 const size = activeProjectData?.size;
+                 const ir = activeProjectData?.ir;
+         
+                 if (!raw || !size) {
+                     allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
+                     allCalculatedResults = [];
+                     allProjectsAggregatedResults = {}; // Reset
+                     return;
+                 }
+         
+                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                 const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                 const fixIdIndex = headers.indexOf("FIX1_ID");
+         
+                 if (fixIdIndex === -1) {
+                     allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
+                     allCalculatedResults = [];
+                      allProjectsAggregatedResults = {}; // Reset
+                     return;
+                 }
+         
+                 const techIDs = new Set();
+                 rows.forEach(row => {
+                     const fields = row.split(/[\t,]/);
+                     const techID = fields[fixIdIndex]?.trim().toUpperCase();
+                     if (techID) {
+                         techIDs.add(techID);
+                     }
+                 });
+         
+                 allCalculatedResults = []; // Reset the array for "Calculate All" (per project)
+                 let tableHtml = '<table class="striped"><thead><tr>';
+         
+                 // Create table headers - Added headers for Category Counts
+                 const tableHeaders = [
+                     'TECH ID',
+                     'Total Points',
+                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Category Points
+                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts
+                     'Additional FixPoints',
+                     'Excessive FixPoints',
+                     'Miss FixPoints'
+                 ];
+                 tableHeaders.forEach(headerText => {
+                     tableHtml += `<th>${headerText}</th>`;
+                 });
+                 tableHtml += '</tr></thead><tbody>';
+         
+                 // Populate table rows
+                 techIDs.forEach(techID => {
+                     const result = calculateDetailsForTechIDInRaw(raw, techID, size, ir); // Use the updated function
+                     if (result) {
+                         allCalculatedResults.push(result); // Store for export
+                         tableHtml += '<tr>';
+                         tableHtml += `<td>${result.techID}</td>`;
+                         tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`; // Format for display
+                         result.categoryPoints.forEach(total => {
+                             tableHtml += `<td>${total.toFixed(2)}</td>`; // Format for display
+                         });
+                         result.categoryCounts.forEach(count => { // Add Category Counts to the table
+                             tableHtml += `<td>${count}</td>`;
+                         });
+                         tableHtml += `<td>${result.additionalFixPoints}</td>`;
+                         tableHtml += `<td>${result.excessiveFixPoints}</td>`;
+                         tableHtml += `<td>${result.missFixPoints}</td>`;
+                         tableHtml += '</tr>';
+                     }
+                 });
+         
+                 tableHtml += '</tbody></table>';
+         
+                 // Update allResultsDiv
+                 allResultsDiv.innerHTML = `<h5>Results for Loaded Project</h5>${tableHtml}`;
+                 output.textContent = ''; // Clear single search output
+                 allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
+             }
+         
+           function searchTechID() {
+                 const raw = activeProjectData?.data;
+                 const techIDValue = techIdInput.value.trim().toUpperCase();
+                 const size = activeProjectData?.size;
+                 const ir = activeProjectData?.ir;
+         
+                 const outputDiv = document.getElementById('output'); // Use the output div for single search
+         
+                 // Clear previous results from both areas
+                 outputDiv.innerHTML = '';
+                 allResultsDiv.innerHTML = '';
+                 lastResult = '';
+                 allCalculatedResults = [];
+                 allProjectsAggregatedResults = {};
+         
+                 if (!raw || !techIDValue || !size) {
+                     outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
+                     return;
+                 }
+         
+                 const result = calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir); // Use the updated function
+         
+                 if (result) {
+                     let outputHtml = `<h5>Search Results for TECH ID: ${result.techID}</h5>`;
+         
+                     // Display the overall Total Points separately
+                     outputHtml += `<p><strong>Project Total Points: ${result.totalPoints.toFixed(2)}</strong></p>`;
+         
+                     // Start the breakdown table
+                     outputHtml += '<table class="striped"><thead><tr>';
+                     outputHtml += '<th>Category</th><th>Points</th><th>Count</th>'; // Added Count column
+                     outputHtml += '</tr></thead><tbody>';
+         
+                     // Add Category Totals and Counts rows
+                     result.categoryPoints.forEach((total, i) => {
+                         outputHtml += `<tr><td>CAT ${i + 1}</td><td>${total.toFixed(2)}</td><td>${result.categoryCounts[i]}</td></tr>`; // Display points and counts
+                     });
+         
+                     // Add FixPoint counts rows
+                     outputHtml += `<tr><td>Additional FixPoints</td><td>N/A</td><td>${result.additionalFixPoints}</td></tr>`; // Points not applicable here
+                     outputHtml += `<tr><td>Excessive FixPoints</td><td>N/A</td><td>${result.excessiveFixPoints}</td></tr>`; // Points not applicable here
+                     outputHtml += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`; // Points not applicable here
+         
+         
+                     outputHtml += '</tbody></table>';
+         
+                     outputDiv.innerHTML = outputHtml; // Set the HTML content of the output div
+                     lastResult = result; // Store the single search result (still useful for export)
+         
+                 } else {
+                      outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
+                 }
+             }
+         
+         
+             // Calculate Total Across All Projects (Aggregate by TECH ID, then apply multiplier)
+             function calculateTotalAcrossAllProjects() {
+                 const multiplierInput = document.getElementById('total-multiplier');
+                 const multiplier = parseFloat(multiplierInput.value) || 1; // Default to 1 if input is invalid
+         
+                 allProjectsAggregatedResults = {}; // Reset the aggregated results
+                 let processingErrors = []; // To collect any errors during processing
+         
+                 // --- Step 1: Aggregate points per TECH ID across all projects ---
+                 for (let i = 0; i < localStorage.length; i++) {
+                     const key = localStorage.key(i);
+                     if (key.startsWith('tl_project_')) {
+                         const projectName = key.replace('tl_project_', ''); // Get project name for error reporting
+                         const projectDataString = localStorage.getItem(key);
+                         if (projectDataString) {
+                             const project = JSON.parse(projectDataString);
+                             const raw = project.data;
+                             const size = project.size;
+                             const ir = project.ir; // IR multiplier is project-specific
+         
+                             if (raw && size) {
+                                 const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+                                 const headerRow = rows.shift(); // Get the header row
+         
+                                  if (!headerRow) {
+                                     processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
+                                     continue; // Skip this project
+                                 }
+         
+                                 const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
+                                 const fixIdIndex = headers.indexOf("FIX1_ID");
+         
+                                 if (fixIdIndex === -1) {
+                                     processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
+                                     continue; // Skip this project if FIX1_ID is missing
+                                 }
+         
+                                 // Process each data row in the project to aggregate points by TECH ID
+                                 rows.forEach(row => {
+                                     const fields = row.split(/[\t,]/);
+                                     const techID = fields[fixIdIndex]?.trim().toUpperCase();
+         
+                                     if (techID) {
+                                         // Calculate points and counts for this specific row based on its categories and the project's size/IR
+                                         const rowDetails = calculateRowDetails(fields, headers, size, ir);
+         
+                                         // Aggregate points and counts by TECH ID
+                                         if (!allProjectsAggregatedResults[techID]) {
+                                             allProjectsAggregatedResults[techID] = {
+                                                 totalPoints: 0,
+                                                 categoryPoints: Array(9).fill(0), // Initialize category points for aggregation
+                                                 categoryCounts: Array(9).fill(0)  // Initialize category counts for aggregation
+                                             };
+                                         }
+                                         allProjectsAggregatedResults[techID].totalPoints += rowDetails.rowPoints;
+                                         rowDetails.categoryCounts.forEach((count, index) => {
+                                             allProjectsAggregatedResults[techID].categoryCounts[index] += count; // Aggregate category counts
+                                             // Aggregate category points here based on rowDetails.rowPoints for this category
+                                             const categoryValue = parseInt(fields[headers.indexOf("CATEGORY")].trim()); // Assuming CATEGORY is always present and valid for points
+                                             if (!isNaN(categoryValue) && categoryValue >= 1 && categoryValue <= 9 && index === categoryValue - 1) {
+                                                  const price = prices[categoryValue - 1][size];
+                                                  const rowMultiplier = ir ? 2 : 1;
+                                                  allProjectsAggregatedResults[techID].categoryPoints[index] += price * rowMultiplier;
+                                             }
+                                         });
+                                     }
+                                 });
+         
+                              } else {
+                                  processingErrors.push(`Project '${projectName}': Incomplete project data (missing raw data or size).`);
+                              }
+                         } else {
+                             processingErrors.push(`Project '${projectName}': Could not retrieve data from local storage.`);
+                         }
+                     }
+                 }
+         
+                 // --- Step 2: Apply multiplier to each aggregated TECH ID total and calculate final grand total ---
+                 let grandTotal = 0;
+                 let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5>`;
+                 let techIDTotals = []; // Array to hold TECH ID results for sorting and display
+         
+                 // Convert aggregated results to an array and apply multiplier
+                 for (const techID in allProjectsAggregatedResults) {
+                     if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
+                         const originalTotal = allProjectsAggregatedResults[techID].totalPoints;
+                         const multipliedTotal = originalTotal * multiplier;
+                         allProjectsAggregatedResults[techID].multipliedTotal = multipliedTotal; // Store multiplied total (as number)
+                         techIDTotals.push({
+                              techID: techID,
+                              originalTotal: originalTotal,
+                              multipliedTotal: multipliedTotal,
+                              categoryPoints: allProjectsAggregatedResults[techID].categoryPoints, // Include aggregated category points
+                              categoryCounts: allProjectsAggregatedResults[techID].categoryCounts  // Include aggregated category counts
+                         });
+                         grandTotal += multipliedTotal; // Add to grand total
+                     }
+                 }
+         
+                 // Sort TECH IDs alphabetically
+                 techIDTotals.sort((a, b) => a.techID.localeCompare(b.techID));
+         
+         
+                 if (techIDTotals.length === 0 && processingErrors.length === 0) {
+                      resultsOutput += '<p>No TECH IDs found across all projects.</p>';
+                 } else {
+                     // Start building the table HTML
+                     resultsOutput += '<table class="striped"><thead><tr>';
+                     // Added headers for Category Points and Counts in the aggregated view
+                     resultsOutput += '<th>TECH ID</th>';
+                     resultsOutput += '<th>Total Points (Without Multiplier)</th>';
+                     resultsOutput += '<th>Total Points (With Multiplier)</th>';
+                      Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`).forEach(headerText => {
+                         resultsOutput += `<th>${headerText}</th>`;
+                     });
+                      Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`).forEach(headerText => {
+                         resultsOutput += `<th>${headerText}</th>`;
+                     });
+                     resultsOutput += '</tr></thead><tbody>';
+         
+                     // Populate table rows
+                     techIDTotals.forEach(item => {
+                         resultsOutput += '<tr>';
+                         resultsOutput += `<td>${item.techID}</td>`;
+                         resultsOutput += `<td>${item.originalTotal.toFixed(2)}</td>`; // Format for display
+                         resultsOutput += `<td>${item.multipliedTotal.toFixed(2)}</td>`; // Format for display
+                         item.categoryPoints.forEach(total => { // Display aggregated category points
+                             resultsOutput += `<td>${total.toFixed(2)}</td>`;
+                         });
+                         item.categoryCounts.forEach(count => { // Display aggregated category counts
+                             resultsOutput += `<td>${count}</td>`;
+                         });
+                         resultsOutput += '</tr>';
+                     });
+         
+                     resultsOutput += '</tbody></table>';
+         
+                     // Add the grand total below the table
+                      resultsOutput += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
+                 }
+         
+         
+                 // Display any processing errors
+                 if (processingErrors.length > 0) {
+                     resultsOutput += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
+                     processingErrors.forEach(error => {
+                         resultsOutput += `<li>${error}</li>`;
+                     });
+                     resultsOutput += '</ul></div></div>';
+                 }
+         
+         
+                 // Display the results
+                 allResultsDiv.innerHTML = resultsOutput; // Display in the all-results div
+                 output.textContent = ''; // Clear single search output
+                 allCalculatedResults = []; // Clear per-project calculated results
+         
+         
+                 // Close the modal
+                 const modalElem = document.querySelector('#multiplier-modal');
+                 const modalInstance = M.Modal.getInstance(modalElem);
+                 modalInstance.close();
+             }
+         
+             // Function to export CSV (modified to handle different result types and new columns)
+             function exportCSV() {
+                  if (allCalculatedResults.length > 0) {
+                      // Export "Calculate All" results (per project)
+                      // Added headers for Category Counts
+                      const header = [
+                           'TECH ID',
+                           'Total Points',
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Category Points
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts
+                           'Additional FixPoints',
+                           'Excessive FixPoints',
+                           'Miss FixPoints'
+                       ];
+                      // Use categoryPoints and categoryCounts
+                      const rows = allCalculatedResults.map(res => [
+                           res.techID,
+                           res.totalPoints.toFixed(2),
+                           ...res.categoryPoints.map(p => p.toFixed(2)),
+                           ...res.categoryCounts.map(c => c), // Include category counts
+                           res.additionalFixPoints,
+                           res.excessiveFixPoints,
+                           res.missFixPoints
+                       ]);
+                      const csvContent = [header, ...rows].map(r => r.join(",")).join("\n");
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement("a");
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `calculated_tech_id_summary_project.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+         
+                  } else if (Object.keys(allProjectsAggregatedResults).length > 0) {
+                      // Export the "Total All Projects" (Aggregated by TECH ID with Multiplier) summary
+                      let csvContent = 'Aggregated TECH ID Totals Across All Projects\n';
+                      // Added headers for Category Points and Counts in the aggregated export
+                      const header = [
+                           'TECH ID',
+                           'Total Points (Without Multiplier)',
+                           'Total Points (With Multiplier)',
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Aggregated Category Points
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`)  // Headers for Aggregated Category Counts
+                       ];
+                      csvContent += header.join(",") + "\n";
+         
+         
+                      const sortedTechIDs = Object.keys(allProjectsAggregatedResults).sort();
+                      let grandTotal = 0;
+         
+                      sortedTechIDs.forEach(techID => {
+                          const item = allProjectsAggregatedResults[techID];
+                          const originalTotal = item.totalPoints.toFixed(2);
+                          const multipliedTotal = item.multipliedTotal.toFixed(2); // Already calculated and stored
+                          const rowData = [
+                               techID,
+                               originalTotal,
+                               multipliedTotal,
+                               ...item.categoryPoints.map(p => p.toFixed(2)), // Include aggregated category points
+                               ...item.categoryCounts.map(c => c)  // Include aggregated category counts
+                           ];
+                          csvContent += rowData.join(",") + "\n";
+                          grandTotal += parseFloat(multipliedTotal);
+                      });
+         
+                      // Add multiplier and grand total
+                      const multiplierInput = document.getElementById('total-multiplier');
+                      const multiplier = parseFloat(multiplierInput.value) || 1;
+         
+                      csvContent += `\nApplied Multiplier,${multiplier}\n`;
+                      csvContent += `Final Grand Total (Sum of Multiplied TECH ID Totals),${grandTotal.toFixed(2)}\n`;
+         
+         
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement("a");
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `all_projects_tech_id_multiplied_summary.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+         
+                 } else if (lastResult.techID) {
+                     // Export single search result (already includes counts)
+                     const rows = [
+                         ['TECH ID', 'Total Points'],
+                         [lastResult.techID, lastResult.totalPoints.toFixed(2)], // Format for display
+                         [],
+                         ['Category', 'Points', 'Count'], // Added Count header
+                         ...lastResult.categoryPoints.map((total, i) => [`CAT ${i + 1}`, total.toFixed(2), lastResult.categoryCounts[i]]), // Include counts
+                         [],
+                         ['Additional FixPoints', 'N/A', lastResult.additionalFixPoints], // Include counts
+                         ['Excessive FixPoints', 'N/A', lastResult.excessiveFixPoints], // Include counts
+                         ['Miss FixPoints', 'N/A', lastResult.missFixPoints] // Include counts
+                     ];
+                     const csvContent = rows.map(r => r.join(",")).join("\n");
+                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                     const link = document.createElement("a");
+                     link.href = URL.createObjectURL(blob);
+                     link.download = `summary_${lastResult.techID}.csv`;
+                     document.body.appendChild(link);
+                     link.click();
+                     document.body.removeChild(link);
+                 } else {
+                     M.toast({ html: 'No results to export. Run a search or calculation first.', classes: 'red' });
+                 }
+             }
+         
+         
+            // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
+         
+            // Function to copy ALL saved projects JSON to clipboard
+            function copyAllProjectsJsonToClipboard() {
+                const allProjects = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tl_project_')) {
+                        const name = key.replace('tl_project_', '');
+                        const projectDataString = localStorage.getItem(key);
+                        if (projectDataString) {
+                            try {
+                                const projectData = JSON.parse(projectDataString);
+                                // Store name and data object
+                                allProjects.push({ name: name, data: projectData });
+                            } catch (e) {
+                                console.error(`Error parsing project JSON for key ${key}:`, e);
+                                // Optionally inform user about parsing errors
+                                M.toast({ html: `Warning: Could not parse data for project '${name}'.`, classes: 'orange' });
+                            }
+                        }
+                    }
+                }
+         
+                if (allProjects.length === 0) {
+                    M.toast({ html: 'No saved projects found to copy.', classes: 'orange' });
+                    return;
+                }
+         
+                try {
+                    // Create the JSON string for the array of projects
+                    const allProjectsJson = JSON.stringify(allProjects, null, 2); // Use null, 2 for pretty printing
+         
+                    navigator.clipboard.writeText(allProjectsJson)
+                        .then(() => {
+                            M.toast({ html: `Copied ${allProjects.length} project(s) JSON to clipboard!`, classes: 'green' });
+                        })
+                        .catch(err => {
+                            M.toast({ html: 'Failed to copy ALL projects JSON to clipboard. Make sure your browser supports the Clipboard API and you grant permission if prompted.', classes: 'red' });
+                            console.error('Failed to copy ALL projects JSON:', err);
+                        });
+                } catch (e) {
+                    M.toast({ html: 'Error converting all projects data to JSON.', classes: 'red' });
+                    console.error('ALL projects JSON conversion error:', e);
                 }
             }
-         });
-         });
-         ["CATEGORY", "FIXED1?", "RV1_LABEL", "I3QA_CAT", "RV1_CAT"].forEach(field => {
-         if (!headers.includes(field)) {
-         letterLogDiv.innerHTML += `<span class="log-e">Warning: Missing column "${field}"</span><br>`;
-         }
-         });
          
-         // Fill inputs
-         for (let i = 1; i <= numberOfCategories; i++) {
-         const input = document.getElementById(`quantity${i}`);
-         if (input) input.value = categoryCounts[i];
-         }
-         
-         // Display log
-         letterLogDiv.innerHTML += `<span class="log-y">Fixpoints Count ${yCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-n">Excessive count ${nCount}</span><br>`;
-         letterLogDiv.innerHTML += `<span class="log-m">Miss count ${mCount}</span><br>`;
-         
-         updateTotals();
-         });
-         
-           window.onload = function() {
-             const savedData = localStorage.getItem('fixpointsData');if (savedData) {
-               try {
-                 const savedProjects = JSON.parse(savedData);
-                 let savedProjectsText = '';
-                 savedProjects.forEach(project => {
-                   savedProjectsText += `Project: ${project.projectName}\n`;
-                   savedProjectsText += `Total Points: ${project.totalPoints}\n`;
-                   savedProjectsText += `Category Totals:\n`;
-                   project.categoryTotals.forEach((total, index) => {
-                     savedProjectsText += `CAT ${index + 1}: ${total}\n`;
-                   });
-                   savedProjectsText += `\n`;
-                 });
-                 savedProjectsTextarea.value = savedProjectsText;
-         
-                 if (savedProjects.length > 0) {
-                   const lastProject = savedProjects[savedProjects.length - 1];
-                   //projectNameInput.value = lastProject.projectName;
-                   //sizeSelection.value = lastProject.sizeSelection;
-                   //optionIr.checked = lastProject.optionIr;
-                   //finalMultiplierInput.value = lastProject.finalMultiplier;
-         
-                   //lastProject.quantities.forEach((qty, index) => {
-                   //  const qtyInput = document.getElementById(`quantity${index + 1}`);
-                   //  if (qtyInput) {
-                   //    qtyInput.value = qty;
-                   //  }
-                   // });
-                   //updateTotals();
+            // Function to automatically fetch JSON from the configured URL and save projects
+            async function fetchAndSaveAllProjectsFromURL() {
+                 // Ensure the URL variable is defined and is a non-empty string
+                 if (typeof HARDCODED_PROJECTS_JSON_URL !== 'string' || HARDCODED_PROJECTS_JSON_URL.trim() === '' || HARDCODED_PROJECTS_JSON_URL === 'YOUR_RAW_GIST_URL_HERE') {
+                      M.toast({ html: 'Project JSON URL is not configured in the script code. Please set the HARDCODED_PROJECTS_JSON_URL variable with your raw JSON URL.', classes: 'red' });
+                      console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
+                      return;
                  }
          
-               } catch (e) {
-                 console.error('Failed to load saved data:', e);
-                 localStorage.removeItem('fixpointsData');
-               }
+                 showLoader(); // Show loader while fetching
+         
+                 try {
+                     const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+         
+                     if (!response.ok) {
+                         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
+                     }
+         
+                     const allProjectsDataText = await response.text();
+         
+                     // Attempt to parse the fetched text as JSON
+                     let fetchedProjectsArray;
+                     try {
+                         fetchedProjectsArray = JSON.parse(allProjectsDataText);
+                     } catch (e) {
+                         throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
+                     }
+         
+                     // Validate the structure of the fetched JSON (should be an array)
+                     if (!Array.isArray(fetchedProjectsArray)) {
+                          throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
+                     }
+         
+                     let updatedCount = 0;
+                     let errorCount = 0;
+                     let skippedCount = 0;
+         
+                     // Iterate through the array and save each project
+                     fetchedProjectsArray.forEach(project => {
+                         // Validate individual project object structure
+                         // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
+                         if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
+         
+                             const projectName = project.name.trim();
+                             const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
+                             const storageKey = `tl_project_${projectName}`;
+         
+                             // Use safeSetLocalStorage to save/update
+                             if (safeSetLocalStorage(storageKey, payload)) {
+                                  updatedCount++;
+                             } else {
+                                 errorCount++;
+                                 console.error(`Failed to save project '${projectName}' from URL (localStorage full).`);
+                                 // safeSetLocalStorage already shows a toast for full storage
+                             }
+                         } else {
+                             skippedCount++;
+                             console.error("Skipping item from URL due to invalid project object structure:", project);
+                             // Optionally show a toast for invalid individual items
+                             M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
+                         }
+                     });
+         
+                     let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
+                      if (skippedCount > 0) {
+                           resultMessage += ` Skipped invalid items: ${skippedCount}.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      }
+                       if (errorCount > 0) {
+                          resultMessage += ` Save Errors: ${errorCount}. Check console for details.`;
+                          M.toast({ html: resultMessage, classes: 'red' }); // Use red for save errors
+                      } else if (updatedCount === 0 && skippedCount === 0) {
+                           resultMessage = `Auto update complete. No valid projects found at the configured URL.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      } else if (errorCount === 0 && skippedCount === 0) {
+                           M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
+                      }
+         
+         
+                     loadProjectList(); // Refresh the project dropdown
+         
+                 } catch (e) {
+                     M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
+                     console.error('Auto-fetch URL error:', e);
+                 } finally {
+                      hideLoader(); // Hide loader regardless of success or failure
+                 }
+            }
+         
+            // --- Event Listeners for External JSON Integration ---
+         
+            // Event listener for the "Copy All Projects JSON" button
+            const copyAllProjectsJsonButton = document.getElementById('copy-all-projects-json');
+            if (copyAllProjectsJsonButton) {
+                 copyAllProjectsJsonButton.addEventListener('click', copyAllProjectsJsonToClipboard);
+            } else {
+                 console.error("Button with ID 'copy-all-projects-json' not found.");
+            }
+         
+            // Event listener for the "Fetch Projects from URL" button (formerly auto-fetch-pastebin)
+            const autoFetchExternalJsonButton = document.getElementById('auto-fetch-external-json');
+            if (autoFetchExternalJsonButton) {
+                 autoFetchExternalJsonButton.addEventListener('click', fetchAndSaveAllProjectsFromURL);
+            } else {
+                  console.error("Button with ID 'auto-fetch-external-json' not found.");
+            }
+         
+            // --- End Event Listeners ---
+         
+         
+             // Event Listeners for existing buttons (included for completeness)
+             // Renamed save button listener to match new ID
+             document.getElementById('save-project-modal-button').addEventListener('click', saveProject);
+             document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
+             document.getElementById('search-button').addEventListener('click', searchTechID);
+             document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
+             document.getElementById('export-button').addEventListener('click', exportCSV);
+         
+             // Event listener for the new Edit Project button
+             document.getElementById('edit-project').addEventListener('click', function() {
+                 const selectedProjectName = projectSelector.value;
+                 if (!selectedProjectName) {
+                     M.toast({ html: 'Please select a project to edit.', classes: 'orange' });
+                     return;
+                 }
+         
+                 const projectDataString = localStorage.getItem(`tl_project_${selectedProjectName}`);
+                 if (projectDataString) {
+                     const projectData = JSON.parse(projectDataString);
+         
+                     // Populate the modal fields
+                     projectNameInput.value = selectedProjectName; // Project name is the key
+                     rawData.value = projectData.data;
+                     document.getElementById('modal-size').value = projectData.size;
+                     document.getElementById('modal-ir-check').checked = projectData.ir;
+         
+                     // Update Materialize text field labels and select
+                     M.updateTextFields();
+                     M.FormSelect.init(document.getElementById('modal-size'));
+         
+                     // Set the editing state and update modal title
+                     editingProjectName = selectedProjectName;
+                     modalTitle.textContent = 'Edit Project';
+                     saveProjectModalButton.textContent = 'Save Changes'; // Change button text
+         
+                     // Open the modal
+                     const modalInstance = M.Modal.getInstance(addProjectModal);
+                     modalInstance.open();
+                 } else {
+                     M.toast({ html: `Could not find data for project '${selectedProjectName}'.`, classes: 'red' });
+                 }
+             });
+         
+         
+             // Event listeners for the All Projects Total feature (included for completeness)
+             const calculateAllProjectsButton = document.getElementById('calculate-all-projects-button');
+             if (calculateAllProjectsButton) {
+                 calculateAllProjectsButton.addEventListener('click', function() {
+                     const modalElem = document.querySelector('#multiplier-modal');
+                     if (modalElem) {
+                          const modalInstance = M.Modal.getInstance(modalElem);
+                          const multiplierInput = document.getElementById('total-multiplier');
+                          if (multiplierInput) {
+                              multiplierInput.value = '1';
+                              M.updateTextFields();
+                          }
+                          modalInstance.open();
+                     } else {
+                          console.error("Multiplier modal (#multiplier-modal) not found.");
+                     }
+                 });
+             } else {
+                  console.error("Button with ID 'calculate-all-projects-button' not found.");
              }
-             updateTotals();
-           };
-         });
-         const tlModeButton = document.getElementById('tl-mode-button');
-         tlModeButton.addEventListener('click', function() {
-         window.location.href = 'tlmode.html'; // or whatever new page you plan
+         
+             const applyMultiplierButton = document.getElementById('apply-multiplier');
+             if (applyMultiplierButton) {
+                 applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
+             } else {
+                  console.error("Button with ID 'apply-multiplier' not found.");
+             }
+         
+         
+             projectSelector.addEventListener('change', function () {
+                 const selected = this.value;
+                 const project = localStorage.getItem(`tl_project_${selected}`);
+                 if (project) {
+                     activeProjectData = JSON.parse(project);
+                     output.textContent = '';
+                     allResultsDiv.innerHTML = ''; // Clear results when a new project is loaded
+                     allCalculatedResults = []; // Clear calculated results on project load
+                     lastResult = ''; // Clear last single search result
+                     allProjectsAggregatedResults = {}; // Clear aggregated results
+                     M.updateTextFields();
+                 } else {
+                      // Handle case where selected project might have been deleted
+                      activeProjectData = '';
+                      output.textContent = '';
+                      allResultsDiv.innerHTML = '';
+                      allCalculatedResults = [];
+                      lastResult = '';
+                      allProjectsAggregatedResults = {};
+                 }
+                  // Ensure the select element is re-initialized after changing value
+                  M.FormSelect.init(projectSelector);
+             });
+         
+             // Initialize Materialize components
+             M.FormSelect.init(document.querySelectorAll('select'));
+             M.Modal.init(document.querySelectorAll('.modal')); // Initialize all modals
+         
+             // Add event listener to reset modal when closed
+             addProjectModal.addEventListener('closeEnd', function() {
+                 // Reset modal title and button text
+                 modalTitle.textContent = 'Add New Project';
+                 saveProjectModalButton.textContent = 'Save Project';
+                 // Clear input fields
+                 projectNameInput.value = '';
+                 rawData.value = '';
+                 document.getElementById('modal-size').value = '3in';
+                 document.getElementById('modal-ir-check').checked = false;
+                 M.updateTextFields();
+                 M.FormSelect.init(document.getElementById('modal-size'));
+                 // Reset editing state
+                 editingProjectName = null;
+             });
+         
+         
+             M.updateTextFields(); // Update text field labels
+         
+             // Load projects on page load
+             loadProjectList();
          });
       </script>
-      <script src="script.js"></script>
+      <div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
+         <div class="preloader-wrapper active">
+            <div class="spinner-layer spinner-blue-only">
+               <div class="circle-clipper left">
+                  <div class="circle"></div>
+               </div>
+               <div class="gap-patch">
+                  <div class="circle"></div>
+               </div>
+               <div class="circle-clipper right">
+                  <div class="circle"></div>
+               </div>
+            </div>
+         </div>
+      </div>
    </body>
 </html>
