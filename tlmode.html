@@ -192,7 +192,90 @@
             </div>
          </div>
       </div>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js">
+// Loader and safe localStorage
+function safeSetLocalStorage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        M.toast({ html: 'Local storage full! Could not save project.', classes: 'red' });
+        return false;
+    }
+}
+function showLoader() {
+    document.getElementById('loader-spinner').style.display = 'block';
+}
+function hideLoader() {
+    document.getElementById('loader-spinner').style.display = 'none';
+}
+function disableButtonsTemporarily(buttons) {
+    buttons.forEach(btn => btn.setAttribute('disabled', true));
+    setTimeout(() => buttons.forEach(btn => btn.removeAttribute('disabled')), 1000);
+}
+
+const patchFunctionsWithLoader = () => {
+    if (typeof exportCSV === 'function') {
+        const originalExportCSV = exportCSV;
+        exportCSV = function () {
+            showLoader();
+            setTimeout(() => {
+                originalExportCSV();
+                hideLoader();
+            }, 50);
+        };
+    }
+    if (typeof calculateAllTechIDs === 'function') {
+        const originalCalculateAllTechIDs = calculateAllTechIDs;
+        calculateAllTechIDs = function () {
+            showLoader();
+            setTimeout(() => {
+                originalCalculateAllTechIDs();
+                hideLoader();
+            }, 100);
+        };
+    }
+    if (typeof calculateTotalAcrossAllProjects === 'function') {
+        const originalCalculateTotalAcrossAllProjects = calculateTotalAcrossAllProjects;
+        calculateTotalAcrossAllProjects = function () {
+            showLoader();
+            setTimeout(() => {
+                originalCalculateTotalAcrossAllProjects();
+                hideLoader();
+            }, 100);
+        };
+    }
+    if (typeof saveProject === 'function') {
+        const originalSaveProject = saveProject;
+        saveProject = function () {
+            const name = projectName.value.trim();
+            const data = rawData.value.trim();
+            const size = document.getElementById('modal-size').value;
+            const ir = document.getElementById('modal-ir-check').checked;
+            if (!name || !data) {
+                M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
+                return;
+            }
+            const payload = JSON.stringify({ data, size, ir });
+            if (safeSetLocalStorage(`tl_project_${name}`, payload)) {
+                M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
+                loadProjectList();
+                const modalElem = document.querySelector('#add-project-modal');
+                const modalInstance = M.Modal.getInstance(modalElem);
+                modalInstance.close();
+                projectName.value = '';
+                rawData.value = '';
+                document.getElementById('modal-size').value = '3in';
+                document.getElementById('modal-ir-check').checked = false;
+                M.FormSelect.init(document.getElementById('modal-size'));
+                M.updateTextFields();
+            }
+        };
+    }
+};
+document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
+
+</script>
       <script>
          document.addEventListener('DOMContentLoaded', function () {
              let activeProjectData = '';
@@ -816,5 +899,17 @@
              loadProjectList();
          });
       </script>
-   </body>
+   
+<!-- Loader Spinner -->
+<div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
+  <div class="preloader-wrapper active">
+    <div class="spinner-layer spinner-blue-only">
+      <div class="circle-clipper left"><div class="circle"></div></div>
+      <div class="gap-patch"><div class="circle"></div></div>
+      <div class="circle-clipper right"><div class="circle"></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
 </html>
