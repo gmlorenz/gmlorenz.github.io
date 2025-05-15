@@ -118,7 +118,7 @@
 
     const githubConfig = {
       username: 'gmlorenz',
-      repo: 'gmlorenz.github.io',
+      repo: 'mysave_data',
       token: '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'
     };
 
@@ -153,7 +153,8 @@
       }
 
       const payload = JSON.stringify({ data, size, ir }, null, 2);
-      const filePath = `projects/${name}.json`;
+      //const filePath = `projects/${name}.json`;
+	  const filePath = `projects/project.json`;
 
       try {
         await uploadToGitHub(filePath, payload);
