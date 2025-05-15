@@ -14,7 +14,7 @@
          padding: 20px;
          margin-top: 20px;
          white-space: pre-wrap;
-         border-left: 4px solid #42a5f5;
+         border-left: 22px solid #42a5f5; /* Increased border for visibility */
          font-family: monospace;
          }
          .modal textarea {
@@ -78,30 +78,28 @@
          .modal-footer a {
          margin-left: 10px;
          }
-		 #output {
-    max-height: 300px; /* Keep vertical scrolling if needed */
-    overflow-y: auto;  /* Keep vertical scrolling */
-    overflow-x: auto;  /* Add horizontal scrolling */
-    /* You can keep other .result styles */
-    background: #f9f9f9;
-    padding: 20px;
-    margin-top: 20px;
-    white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
-    border-left: 4px solid #42a5f5;
-    font-family: monospace;
-}
-
-/* Ensure tables within the output div don't overflow their container */
-#output table {
-    width: auto; /* Allow table to take necessary width, scrolling handled by parent */
-    min-width: 100%; /* Ensure it at least fills the container if narrower */
-}
-
-/* Optional: Add some padding to table cells for better readability */
-#output table td, #output table th {
-    padding: 8px; /* Adjust as needed */
-    white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
-}
+         #output {
+         max-height: 300px; /* Keep vertical scrolling if needed */
+         overflow-y: auto;  /* Keep vertical scrolling */
+         overflow-x: auto;  /* Add horizontal scrolling */
+         /* You can keep other .result styles */
+         background: #f9f9f9;
+         padding: 20px;
+         margin-top: 20px;
+         white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
+         border-left: 22px solid #42a5f5;
+         font-family: monospace;
+         }
+         /* Ensure tables within the output div don't overflow their container */
+         #output table {
+         width: auto; /* Allow table to take necessary width, scrolling handled by parent */
+         min-width: 100%; /* Ensure it at least fills the container if narrower */
+         }
+         /* Optional: Add some padding to table cells for better readability */
+         #output table td, #output table th {
+         padding: 8px; /* Adjust as needed */
+         white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
+         }
       </style>
    </head>
    <body>
@@ -141,6 +139,14 @@
          <div class="center-align" style="margin-top: 10px;">
             <button class="btn orange" id="export-button">
             <i class="material-icons left">file_download</i>Download CSV
+            </button>
+         </div>
+         <div class="center-align" style="margin-top: 10px;">
+            <button class="btn blue darken-1" id="copy-all-projects-json">
+            <i class="material-icons left">content_copy</i>Copy All Projects DATA
+            </button>
+            <button class="btn deep-purple darken-2" id="auto-fetch-external-json">
+            <i class="material-icons left">cloud_download</i>Load Project Online
             </button>
          </div>
          <div id="output" class="result z-depth-1"></div>
@@ -192,96 +198,20 @@
             </div>
          </div>
       </div>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js">
-// Loader and safe localStorage
-function safeSetLocalStorage(key, value) {
-    try {
-        localStorage.setItem(key, value);
-        return true;
-    } catch (e) {
-        M.toast({ html: 'Local storage full! Could not save project.', classes: 'red' });
-        return false;
-    }
-}
-function showLoader() {
-    document.getElementById('loader-spinner').style.display = 'block';
-}
-function hideLoader() {
-    document.getElementById('loader-spinner').style.display = 'none';
-}
-function disableButtonsTemporarily(buttons) {
-    buttons.forEach(btn => btn.setAttribute('disabled', true));
-    setTimeout(() => buttons.forEach(btn => btn.removeAttribute('disabled')), 1000);
-}
-
-const patchFunctionsWithLoader = () => {
-    if (typeof exportCSV === 'function') {
-        const originalExportCSV = exportCSV;
-        exportCSV = function () {
-            showLoader();
-            setTimeout(() => {
-                originalExportCSV();
-                hideLoader();
-            }, 50);
-        };
-    }
-    if (typeof calculateAllTechIDs === 'function') {
-        const originalCalculateAllTechIDs = calculateAllTechIDs;
-        calculateAllTechIDs = function () {
-            showLoader();
-            setTimeout(() => {
-                originalCalculateAllTechIDs();
-                hideLoader();
-            }, 100);
-        };
-    }
-    if (typeof calculateTotalAcrossAllProjects === 'function') {
-        const originalCalculateTotalAcrossAllProjects = calculateTotalAcrossAllProjects;
-        calculateTotalAcrossAllProjects = function () {
-            showLoader();
-            setTimeout(() => {
-                originalCalculateTotalAcrossAllProjects();
-                hideLoader();
-            }, 100);
-        };
-    }
-    if (typeof saveProject === 'function') {
-        const originalSaveProject = saveProject;
-        saveProject = function () {
-            const name = projectName.value.trim();
-            const data = rawData.value.trim();
-            const size = document.getElementById('modal-size').value;
-            const ir = document.getElementById('modal-ir-check').checked;
-            if (!name || !data) {
-                M.toast({ html: 'Please enter a project name and data.', classes: 'red' });
-                return;
-            }
-            const payload = JSON.stringify({ data, size, ir });
-            if (safeSetLocalStorage(`tl_project_${name}`, payload)) {
-                M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
-                loadProjectList();
-                const modalElem = document.querySelector('#add-project-modal');
-                const modalInstance = M.Modal.getInstance(modalElem);
-                modalInstance.close();
-                projectName.value = '';
-                rawData.value = '';
-                document.getElementById('modal-size').value = '3in';
-                document.getElementById('modal-ir-check').checked = false;
-                M.FormSelect.init(document.getElementById('modal-size'));
-                M.updateTextFields();
-            }
-        };
-    }
-};
-document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
-
-</script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
       <script>
          document.addEventListener('DOMContentLoaded', function () {
              let activeProjectData = '';
              let allCalculatedResults = []; // Array to store results from "Calculate All" (per project)
              let lastResult = ''; // Still used for single search export
              let allProjectsAggregatedResults = {}; // Object to store aggregated results per TECH ID across all projects
+         
+             // --- HARDCODED URL FOR PROJECT JSON ---
+             // Replace 'YOUR_RAW_GIST_URL_HERE' with the raw URL of your GitHub Gist or other service
+             // hosting the projects JSON array.
+             const HARDCODED_PROJECTS_JSON_URL = 'https://gist.githubusercontent.com/gmlorenz/2c83d92c089dc95a5aa89ec071c253d3/raw/a22deb7023725a81a123eb65c4578f5dbfd00561/projects_data.json';
+             // Example Gist Raw URL: https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json
+             // -----------------------------------
          
              const prices = [
                  { "3in": 2.19, "9in": 0.99 },
@@ -302,6 +232,26 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
              const output = document.getElementById('output');
              const allResultsDiv = document.getElementById('all-results'); // Use this div for displaying results
          
+             // Loader and safe localStorage functions (already present, included for completeness)
+             function safeSetLocalStorage(key, value) {
+                 try {
+                     localStorage.setItem(key, value);
+                     return true;
+                 } catch (e) {
+                     M.toast({ html: 'Local storage full! Could not save project.', classes: 'red' });
+                     return false;
+                 }
+             }
+             function showLoader() {
+                 const loader = document.getElementById('loader-spinner');
+                 if(loader) loader.style.display = 'block';
+             }
+             function hideLoader() {
+                  const loader = document.getElementById('loader-spinner');
+                 if(loader) loader.style.display = 'none';
+             }
+             // Disabling buttons temporarily logic is not included here to keep it focused,
+             // but you can add it back if needed.
          
              function loadProjectList() {
                  projectSelector.innerHTML = '<option value="" disabled selected>Select a saved project</option>';
@@ -330,19 +280,20 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                  }
          
                  const payload = JSON.stringify({ data, size, ir });
-                 localStorage.setItem(`tl_project_${name}`, payload);
-                 M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
-                 loadProjectList();
-                 const modalElem = document.querySelector('#add-project-modal');
-                 const modalInstance = M.Modal.getInstance(modalElem);
-                 modalInstance.close();
-                 // Clear modal inputs
-                 projectName.value = '';
-                 rawData.value = '';
-                 document.getElementById('modal-size').value = '3in'; // Reset select
-                 document.getElementById('modal-ir-check').checked = false; // Reset checkbox
-                 M.FormSelect.init(document.getElementById('modal-size')); // Re-initialize select
-                 M.updateTextFields(); // Update text fields after clearing
+                 if (safeSetLocalStorage(`tl_project_${name}`, payload)) {
+                     M.toast({ html: `Project '${name}' saved!`, classes: 'green' });
+                     loadProjectList();
+                     const modalElem = document.querySelector('#add-project-modal');
+                     const modalInstance = M.Modal.getInstance(modalElem);
+                     modalInstance.close();
+                     // Clear modal inputs
+                     projectName.value = '';
+                     rawData.value = '';
+                     document.getElementById('modal-size').value = '3in'; // Reset select
+                     document.getElementById('modal-ir-check').checked = false; // Reset checkbox
+                     M.FormSelect.init(document.getElementById('modal-size')); // Re-initialize select
+                     M.updateTextFields(); // Update text fields after clearing
+                 }
              }
          
              function deleteSelectedProject() {
@@ -561,52 +512,50 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                  const techIDValue = techIdInput.value.trim().toUpperCase();
                  const size = activeProjectData?.size;
                  const ir = activeProjectData?.ir;
-
+         
                  const outputDiv = document.getElementById('output'); // Use the output div for single search
-
+         
                  // Clear previous results from both areas
                  outputDiv.innerHTML = '';
                  allResultsDiv.innerHTML = '';
                  lastResult = '';
                  allCalculatedResults = [];
                  allProjectsAggregatedResults = {};
-
+         
                  if (!raw || !techIDValue || !size) {
                      outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
                      return;
                  }
-
+         
                  const result = calculatePointsForTechIDInRaw(raw, techIDValue, size, ir);
-
+         
                  if (result) {
                      let outputHtml = `<h5>Search Results for TECH ID: ${result.techID}</h5>`;
-
+         
                      // Display the overall Total Points separately
                      outputHtml += `<p><strong>Project Total Points: ${result.totalPoints.toFixed(2)}</strong></p>`;
-
+         
                      // Start the breakdown table
                      outputHtml += '<table class="striped"><thead><tr>';
                      outputHtml += '<th>Category</th><th>Points</th>'; // Two-column header for the breakdown
                      outputHtml += '</tr></thead><tbody>';
-
-                     // The line adding the "Total Points" row to the table is removed here.
-
+         
                      // Add Category Totals rows
                      result.categoryPoints.forEach((total, i) => {
                          outputHtml += `<tr><td>CAT ${i + 1} Total</td><td>${total.toFixed(2)}</td></tr>`;
                      });
-
+         
                      // Add FixPoint counts rows
                      outputHtml += `<tr><td>Additional FixPoints</td><td>${result.additionalFixPoints}</td></tr>`;
                      outputHtml += `<tr><td>Excessive FixPoints</td><td>${result.excessiveFixPoints}</td></tr>`;
                      outputHtml += `<tr><td>Miss FixPoints</td><td>${result.missFixPoints}</td></tr>`;
-
-
+         
+         
                      outputHtml += '</tbody></table>';
-
+         
                      outputDiv.innerHTML = outputHtml; // Set the HTML content of the output div
                      lastResult = result; // Store the single search result (still useful for export)
-
+         
                  } else {
                       outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
                  }
@@ -617,10 +566,10 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
              function calculateTotalAcrossAllProjects() {
                  const multiplierInput = document.getElementById('total-multiplier');
                  const multiplier = parseFloat(multiplierInput.value) || 1; // Default to 1 if input is invalid
-
+         
                  allProjectsAggregatedResults = {}; // Reset the aggregated results
                  let processingErrors = []; // To collect any errors during processing
-
+         
                  // --- Step 1: Aggregate points per TECH ID across all projects ---
                  for (let i = 0; i < localStorage.length; i++) {
                      const key = localStorage.key(i);
@@ -632,33 +581,33 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                              const raw = project.data;
                              const size = project.size;
                              const ir = project.ir; // IR multiplier is project-specific
-
+         
                              if (raw && size) {
                                  const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
                                  const headerRow = rows.shift(); // Get the header row
-
+         
                                   if (!headerRow) {
                                      processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
                                      continue; // Skip this project
                                  }
-
+         
                                  const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
                                  const fixIdIndex = headers.indexOf("FIX1_ID");
-
+         
                                  if (fixIdIndex === -1) {
                                      processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
                                      continue; // Skip this project if FIX1_ID is missing
                                  }
-
+         
                                  // Process each data row in the project to aggregate points by TECH ID
                                  rows.forEach(row => {
                                      const fields = row.split(/[\t,]/);
                                      const techID = fields[fixIdIndex]?.trim().toUpperCase();
-
+         
                                      if (techID) {
                                          // Calculate points for this specific row based on its categories and the project's size/IR
                                          const rowPoints = calculatePointsForRow(fields, headers, size, ir);
-
+         
                                          // Aggregate points by TECH ID
                                          if (allProjectsAggregatedResults[techID]) {
                                              allProjectsAggregatedResults[techID].totalPoints += rowPoints;
@@ -669,7 +618,7 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                                          }
                                      }
                                  });
-
+         
                               } else {
                                   processingErrors.push(`Project '${projectName}': Incomplete project data (missing raw data or size).`);
                               }
@@ -678,12 +627,12 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                          }
                      }
                  }
-
+         
                  // --- Step 2: Apply multiplier to each aggregated TECH ID total and calculate final grand total ---
                  let grandTotal = 0;
                  let resultsOutput = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5>`;
                  let techIDTotals = []; // Array to hold TECH ID results for sorting and display
-
+         
                  // Convert aggregated results to an array and apply multiplier
                  for (const techID in allProjectsAggregatedResults) {
                      if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
@@ -698,11 +647,11 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                          grandTotal += multipliedTotal; // Add to grand total
                      }
                  }
-
+         
                  // Sort TECH IDs alphabetically
                  techIDTotals.sort((a, b) => a.techID.localeCompare(b.techID));
-
-
+         
+         
                  if (techIDTotals.length === 0 && processingErrors.length === 0) {
                       resultsOutput += '<p>No TECH IDs found across all projects.</p>';
                  } else {
@@ -712,7 +661,7 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                      resultsOutput += '<th>Total Points (Without Multiplier)</th>';
                      resultsOutput += '<th>Total Points (With Multiplier)</th>';
                      resultsOutput += '</tr></thead><tbody>';
-
+         
                      // Populate table rows
                      techIDTotals.forEach(item => {
                          resultsOutput += '<tr>';
@@ -721,14 +670,14 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                          resultsOutput += `<td>${item.multipliedTotal.toFixed(2)}</td>`; // Format for display
                          resultsOutput += '</tr>';
                      });
-
+         
                      resultsOutput += '</tbody></table>';
-
+         
                      // Add the grand total below the table
                       resultsOutput += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
                  }
-
-
+         
+         
                  // Display any processing errors
                  if (processingErrors.length > 0) {
                      resultsOutput += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
@@ -737,14 +686,14 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
                      });
                      resultsOutput += '</ul></div></div>';
                  }
-
-
+         
+         
                  // Display the results
                  allResultsDiv.innerHTML = resultsOutput; // Display in the all-results div
                  output.textContent = ''; // Clear single search output
                  allCalculatedResults = []; // Clear per-project calculated results
-
-
+         
+         
                  // Close the modal
                  const modalElem = document.querySelector('#multiplier-modal');
                  const modalInstance = M.Modal.getInstance(modalElem);
@@ -825,44 +774,197 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
              }
          
          
-             // Event Listeners
+            // --- EXTERNAL JSON INTEGRATION FUNCTIONS (Modified for generic URL) ---
+         
+            // Function to copy ALL saved projects JSON to clipboard
+            function copyAllProjectsJsonToClipboard() {
+                const allProjects = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tl_project_')) {
+                        const name = key.replace('tl_project_', '');
+                        const projectDataString = localStorage.getItem(key);
+                        if (projectDataString) {
+                            try {
+                                const projectData = JSON.parse(projectDataString);
+                                // Store name and data object
+                                allProjects.push({ name: name, data: projectData });
+                            } catch (e) {
+                                console.error(`Error parsing project JSON for key ${key}:`, e);
+                                // Optionally inform user about parsing errors
+                                M.toast({ html: `Warning: Could not parse data for project '${name}'.`, classes: 'orange' });
+                            }
+                        }
+                    }
+                }
+         
+                if (allProjects.length === 0) {
+                    M.toast({ html: 'No saved projects found to copy.', classes: 'orange' });
+                    return;
+                }
+         
+                try {
+                    // Create the JSON string for the array of projects
+                    const allProjectsJson = JSON.stringify(allProjects, null, 2); // Use null, 2 for pretty printing
+         
+                    navigator.clipboard.writeText(allProjectsJson)
+                        .then(() => {
+                            M.toast({ html: `Copied ${allProjects.length} project(s) JSON to clipboard!`, classes: 'green' });
+                        })
+                        .catch(err => {
+                            M.toast({ html: 'Failed to copy ALL projects JSON to clipboard. Make sure your browser supports the Clipboard API and you grant permission if prompted.', classes: 'red' });
+                            console.error('Failed to copy ALL projects JSON:', err);
+                        });
+                } catch (e) {
+                    M.toast({ html: 'Error converting all projects data to JSON.', classes: 'red' });
+                    console.error('ALL projects JSON conversion error:', e);
+                }
+            }
+         
+            // Function to automatically fetch JSON from the configured URL and save projects
+            async function fetchAndSaveAllProjectsFromURL() {
+                 // Ensure the URL variable is defined and is a non-empty string
+                 if (typeof HARDCODED_PROJECTS_JSON_URL !== 'string' || HARDCODED_PROJECTS_JSON_URL.trim() === '' || HARDCODED_PROJECTS_JSON_URL === 'YOUR_RAW_GIST_URL_HERE') {
+                      M.toast({ html: 'Project JSON URL is not configured in the script code. Please set the HARDCODED_PROJECTS_JSON_URL variable with your raw JSON URL.', classes: 'red' });
+                      console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
+                      return;
+                 }
+         
+                 showLoader(); // Show loader while fetching
+         
+                 try {
+                     const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+         
+                     if (!response.ok) {
+                         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
+                     }
+         
+                     const allProjectsDataText = await response.text();
+         
+                     // Attempt to parse the fetched text as JSON
+                     let fetchedProjectsArray;
+                     try {
+                         fetchedProjectsArray = JSON.parse(allProjectsDataText);
+                     } catch (e) {
+                         throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
+                     }
+         
+                     // Validate the structure of the fetched JSON (should be an array)
+                     if (!Array.isArray(fetchedProjectsArray)) {
+                          throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
+                     }
+         
+                     let updatedCount = 0;
+                     let errorCount = 0;
+                     let skippedCount = 0;
+         
+                     // Iterate through the array and save each project
+                     fetchedProjectsArray.forEach(project => {
+                         // Validate individual project object structure
+                         // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
+                         if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
+         
+                             const projectName = project.name.trim();
+                             const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
+                             const storageKey = `tl_project_${projectName}`;
+         
+                             // Use safeSetLocalStorage to save/update
+                             if (safeSetLocalStorage(storageKey, payload)) {
+                                  updatedCount++;
+                             } else {
+                                 errorCount++;
+                                 console.error(`Failed to save project '${projectName}' from URL (localStorage full).`);
+                                 // safeSetLocalStorage already shows a toast for full storage
+                             }
+                         } else {
+                             skippedCount++;
+                             console.error("Skipping item from URL due to invalid project object structure:", project);
+                             // Optionally show a toast for invalid individual items
+                             M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
+                         }
+                     });
+         
+                     let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
+                      if (skippedCount > 0) {
+                           resultMessage += ` Skipped invalid items: ${skippedCount}.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      }
+                       if (errorCount > 0) {
+                          resultMessage += ` Save Errors: ${errorCount}. Check console for details.`;
+                          M.toast({ html: resultMessage, classes: 'red' }); // Use red for save errors
+                      } else if (updatedCount === 0 && skippedCount === 0) {
+                           resultMessage = `Auto update complete. No valid projects found at the configured URL.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      } else if (errorCount === 0 && skippedCount === 0) {
+                           M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
+                      }
+         
+         
+                     loadProjectList(); // Refresh the project dropdown
+         
+                 } catch (e) {
+                     M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
+                     console.error('Auto-fetch URL error:', e);
+                 } finally {
+                      hideLoader(); // Hide loader regardless of success or failure
+                 }
+            }
+         
+            // --- Event Listeners for External JSON Integration ---
+         
+            // Event listener for the "Copy All Projects JSON" button
+            const copyAllProjectsJsonButton = document.getElementById('copy-all-projects-json');
+            if (copyAllProjectsJsonButton) {
+                 copyAllProjectsJsonButton.addEventListener('click', copyAllProjectsJsonToClipboard);
+            } else {
+                 console.error("Button with ID 'copy-all-projects-json' not found.");
+            }
+         
+            // Event listener for the "Fetch Projects from URL" button (formerly auto-fetch-pastebin)
+            const autoFetchExternalJsonButton = document.getElementById('auto-fetch-external-json');
+            if (autoFetchExternalJsonButton) {
+                 autoFetchExternalJsonButton.addEventListener('click', fetchAndSaveAllProjectsFromURL);
+            } else {
+                  console.error("Button with ID 'auto-fetch-external-json' not found.");
+            }
+         
+            // --- End Event Listeners ---
+         
+         
+             // Event Listeners for existing buttons (included for completeness)
              document.getElementById('save-project').addEventListener('click', saveProject);
              document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
              document.getElementById('search-button').addEventListener('click', searchTechID);
              document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
              document.getElementById('export-button').addEventListener('click', exportCSV);
          
-             // NEW EVENT LISTENERS for the All Projects Total feature
-             // This button should trigger the multiplier modal
+         
+             // Event listeners for the All Projects Total feature (included for completeness)
              const calculateAllProjectsButton = document.getElementById('calculate-all-projects-button');
-             if (calculateAllProjectsButton) { // Check if the button exists (user adds it manually)
+             if (calculateAllProjectsButton) {
                  calculateAllProjectsButton.addEventListener('click', function() {
                      const modalElem = document.querySelector('#multiplier-modal');
-                     if (modalElem) { // Check if the modal exists (user adds it manually)
+                     if (modalElem) {
                           const modalInstance = M.Modal.getInstance(modalElem);
-                          // Reset multiplier input to 1 before opening
                           const multiplierInput = document.getElementById('total-multiplier');
                           if (multiplierInput) {
                               multiplierInput.value = '1';
-                              M.updateTextFields(); // Update label position for the reset input
+                              M.updateTextFields();
                           }
                           modalInstance.open();
                      } else {
-                          M.toast({ html: 'Multiplier modal not found. Please add the modal HTML.', classes: 'red' });
                           console.error("Multiplier modal (#multiplier-modal) not found.");
                      }
                  });
              } else {
-                  console.error("Button with ID 'calculate-all-projects-button' not found. Please add the button HTML.");
+                  console.error("Button with ID 'calculate-all-projects-button' not found.");
              }
          
-         
-             // This button within the modal applies the multiplier and performs calculation
              const applyMultiplierButton = document.getElementById('apply-multiplier');
-             if (applyMultiplierButton) { // Check if the button exists (user adds it manually)
+             if (applyMultiplierButton) {
                  applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
              } else {
-                  console.error("Button with ID 'apply-multiplier' not found. Please add the modal HTML with this button.");
+                  console.error("Button with ID 'apply-multiplier' not found.");
              }
          
          
@@ -899,17 +1001,20 @@ document.addEventListener('DOMContentLoaded', patchFunctionsWithLoader);
              loadProjectList();
          });
       </script>
-   
-<!-- Loader Spinner -->
-<div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
-  <div class="preloader-wrapper active">
-    <div class="spinner-layer spinner-blue-only">
-      <div class="circle-clipper left"><div class="circle"></div></div>
-      <div class="gap-patch"><div class="circle"></div></div>
-      <div class="circle-clipper right"><div class="circle"></div></div>
-    </div>
-  </div>
-</div>
-
-</body>
+      <div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
+         <div class="preloader-wrapper active">
+            <div class="spinner-layer spinner-blue-only">
+               <div class="circle-clipper left">
+                  <div class="circle"></div>
+               </div>
+               <div class="gap-patch">
+                  <div class="circle"></div>
+               </div>
+               <div class="circle-clipper right">
+                  <div class="circle"></div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
 </html>
