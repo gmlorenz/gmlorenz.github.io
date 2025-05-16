@@ -36,31 +36,39 @@
          min-height: 100px; /* Adjusted minimum height */
          border-radius: 4px; /* Rounded corners for result boxes */
          overflow-x: auto; /* Ensure horizontal scrolling for tables */
-         position: relative; /* Needed for absolute positioning of the expand button */
+         position: relative; /* Needed for absolute positioning of the buttons */
          }
 
-         /* Style for the expand button */
-         .expand-button {
+         /* Container for buttons in result box */
+         .result-buttons {
              position: absolute;
              top: 8px; /* Adjust as needed */
              right: 8px; /* Adjust as needed */
+             z-index: 1; /* Ensure buttons are above content */
+         }
+
+         /* Style for the expand button and view data button in results */
+         .result-buttons .expand-button,
+         .result-buttons .view-data-result-button {
              background-color: rgba(0, 0, 0, 0.1); /* Semi-transparent background */
              border: none;
              border-radius: 50%; /* Circular button */
              width: 30px;
              height: 30px;
              cursor: pointer;
-             display: flex;
+             display: inline-flex; /* Use inline-flex to place buttons side-by-side */
              justify-content: center;
              align-items: center;
              padding: 0;
-             z-index: 1; /* Ensure button is above content */
              transition: background-color 0.3s ease;
+             margin-left: 5px; /* Add space between buttons */
          }
-         .expand-button:hover {
+         .result-buttons .expand-button:hover,
+         .result-buttons .view-data-result-button:hover {
              background-color: rgba(0, 0, 0, 0.2);
          }
-         .expand-button i.material-icons {
+         .result-buttons .expand-button i.material-icons,
+         .result-buttons .view-data-result-button i.material-icons {
              font-size: 18px;
              color: #333; /* Icon color */
          }
@@ -153,7 +161,7 @@
          }
          /* Style for the scrollable all results view */
          #all-results {
-         max-height: 400px; /* Increased max height */
+         max-height: 600px; /* Increased max height to show more results */
          overflow-y: auto;
          margin-top: 30px; /* More space above */
          }
@@ -179,6 +187,9 @@
          #login-modal {
              max-width: 400px;
              border-radius: 8px; /* Match container border-radius */
+             /* Centering adjustments - Reverted to simpler method */
+             margin: auto; /* Center horizontally */
+             /* Materialize handles vertical centering for modals */
          }
          #login-modal .modal-content {
              padding: 30px;
@@ -228,10 +239,10 @@
 
          #fullscreen-results-content {
              background-color: #ffffff;
-             padding: 20px;
+             padding: 15px; /* Adjusted padding */
              border-radius: 8px;
              max-width: 90%; /* Limit content width */
-             max-height: 90%; /* Limit content height */
+             max-height: 95%; /* Increased max-height */
              overflow: auto; /* Add scrolling to the content box */
              position: relative; /* Needed for close button positioning */
          }
@@ -260,6 +271,51 @@
              color: #333;
          }
 
+         /* Style for the View Data Modal */
+         #view-data-modal {
+             max-width: 95%; /* Make it wider for data table, closer to full screen */
+             max-height: 95%; /* Allow it to be taller, closer to full screen */
+             width: 95%; /* Make it take 95% of the width */
+             height: 95%; /* Make it take 95% of the height */
+             top: 2.5% !important; /* Center vertically */
+             transform: translate(-50%, 0%) !important; /* Adjust transform for vertical centering */
+             left: 50% !important; /* Center horizontally */
+         }
+          #view-data-modal .modal-content {
+              overflow-y: auto; /* Add scrolling to modal content */
+              max-height: calc(100% - 60px); /* Adjust max height to account for footer */
+              padding-bottom: 0; /* Remove bottom padding to use full space */
+          }
+         #view-data-modal table {
+             width: 100%; /* Ensure table fills modal width */
+             border-collapse: collapse;
+             margin-top: 10px; /* Add some space below title */
+         }
+          #view-data-modal table th,
+          #view-data-modal table td {
+              border: 1px solid #ddd; /* Add borders to table cells */
+              padding: 8px; /* Add padding */
+              text-align: left;
+              white-space: nowrap; /* Prevent wrapping in cells */
+          }
+         #view-data-modal table th {
+             background-color: #f2f2f2; /* Light grey background for headers */
+             font-weight: bold;
+         }
+         #view-data-modal .modal-footer {
+             border-top: 1px solid #eee; /* Add a border to the footer */
+             padding: 10px 20px; /* Adjust footer padding */
+         }
+
+         /* Style for the spinner in the view data modal */
+         #view-data-table-container .spinner-container {
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             min-height: 200px; /* Ensure spinner is visible */
+         }
+
+
          /* Responsive adjustments */
          @media (max-width: 600px) {
              body {
@@ -277,12 +333,20 @@
                  margin-bottom: 15px;
              }
              #all-results {
-                 max-height: 300px; /* Adjust max height for smaller screens */
+                 max-height: 400px; /* Adjust max height for smaller screens */
              }
              #fullscreen-results-content {
                  max-width: 95%; /* Adjust max width for smaller screens */
                  max-height: 95%; /* Adjust max height for smaller screens */
              }
+              #view-data-modal {
+                  max-width: 95%; /* Adjust for smaller screens */
+                  width: 95%;
+                  height: 95%;
+                  top: 2.5% !important;
+                  transform: translate(-50%, 0%) !important;
+                  left: 50% !important;
+              }
          }
 
       </style>
@@ -311,7 +375,7 @@
 
 
       <div class="container" id="main-app-content" style="display: none;">
-         <h5 class="center-align">123 EXTRACTOR v2.2</h5>
+         <h5 class="center-align">123 EXTRACTOR v2.3</h5>
          <div class="right-align" style="margin-top: 10px;">
             <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal" id="add-project-button">
             <i class="material-icons">add</i>
@@ -329,6 +393,9 @@
             </button>
             <button class="btn red darken-2" id="delete-project">
             <i class="material-icons left">delete</i>Delete Project
+            </button>
+             <button class="btn blue-grey darken-1 modal-trigger" href="#view-data-modal" id="view-project-data-button">
+                <i class="material-icons left">table_chart</i>View Data
             </button>
          </div>
          <div class="input-field">
@@ -364,7 +431,7 @@
          </div>
          <div id="output" class="result z-depth-1">
              </div>
-         <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
+         <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 600px; overflow-y: auto;">
               </div>
          <div id="multiplier-modal" class="modal">
             <div class="modal-content">
@@ -416,6 +483,33 @@
               </button>
           </div>
       </div>
+
+      <div id="view-data-modal" class="modal">
+          <div class="modal-content">
+              <h5 id="view-data-modal-title">Project Data</h5>
+              <div id="view-data-table-container" style="overflow-x: auto;">
+                  <div class="spinner-container" id="view-data-spinner" style="display: none;">
+                      <div class="preloader-wrapper active">
+                         <div class="spinner-layer spinner-blue-only">
+                            <div class="circle-clipper left">
+                               <div class="circle"></div>
+                            </div>
+                            <div class="gap-patch">
+                               <div class="circle"></div>
+                            </div>
+                            <div class="circle-clipper right">
+                               <div class="circle"></div>
+                            </div>
+                         </div>
+                      </div>
+                  </div>
+                  </div>
+          </div>
+          <div class="modal-footer">
+              <a href="#!" class="modal-close btn grey">Close</a>
+          </div>
+      </div>
+
 
       <div id="fullscreen-results-modal">
           <div id="fullscreen-results-content">
@@ -484,6 +578,12 @@
              const fullscreenResultsModal = document.getElementById('fullscreen-results-modal');
              const fullscreenResultsContent = document.getElementById('fullscreen-results-content');
              const fullscreenCloseButton = fullscreenResultsContent.querySelector('.close-button');
+
+             // View Data Modal elements
+             const viewDataModal = document.getElementById('view-data-modal');
+             const viewDataTableContainer = document.getElementById('view-data-table-container');
+             const viewDataModalTitle = document.getElementById('view-data-modal-title');
+             const viewDataSpinner = document.getElementById('view-data-spinner');
 
 
              // Loader and safe localStorage functions
@@ -752,8 +852,8 @@
                      allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
                      allCalculatedResults = [];
                      allProjectsAggregatedResults = {}; // Reset
-                     // Add expand button after content is set
-                     addExpandButton(allResultsDiv);
+                     // Add buttons after content is set
+                     addResultButtons(allResultsDiv);
                      return;
                  }
 
@@ -765,8 +865,8 @@
                      allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
                      allCalculatedResults = [];
                       allProjectsAggregatedResults = {}; // Reset
-                      // Add expand button after content is set
-                     addExpandButton(allResultsDiv);
+                      // Add buttons after content is set
+                     addResultButtons(allResultsDiv);
                      return;
                  }
 
@@ -825,8 +925,8 @@
                  output.textContent = ''; // Clear single search output
                  allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
 
-                 // Add expand button after content is set
-                 addExpandButton(allResultsDiv);
+                 // Add buttons after content is set
+                 addResultButtons(allResultsDiv);
              }
 
            function searchTechID() {
@@ -846,8 +946,8 @@
 
                  if (!raw || !techIDValue || !size) {
                      outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
-                     // Add expand button after content is set
-                     addExpandButton(outputDiv);
+                     // Add buttons after content is set
+                     addResultButtons(outputDiv);
                      return;
                  }
 
@@ -883,8 +983,8 @@
                  } else {
                       outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
                  }
-                 // Add expand button after content is set
-                 addExpandButton(outputDiv);
+                 // Add buttons after content is set
+                 addResultButtons(outputDiv);
              }
 
 
@@ -1058,8 +1158,8 @@
                  output.textContent = ''; // Clear single search output
                  allCalculatedResults = []; // Clear per-project calculated results
 
-                 // Add expand button after content is set
-                 addExpandButton(allResultsDiv);
+                 // Add buttons after content is set
+                 addResultButtons(allResultsDiv);
 
                  // Close the modal
                  const modalElem = document.querySelector('#multiplier-modal');
@@ -1175,158 +1275,6 @@
 
 
             // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
-
-            // Function to copy ALL saved projects data (raw content) to clipboard
-            function copyAllProjectsJsonToClipboard() {
-                let projectsDataString = '';
-                const projectNames = []; // To collect names for the success message
-
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('tl_project_')) {
-                        const name = key.replace('tl_project_', '');
-                        // Use safeGetLocalStorage to retrieve and decompress
-                        const projectDataString = safeGetLocalStorage(key);
-
-                        if (projectDataString !== null) { // Check if retrieval was successful
-                            try {
-                                // Parse the (now hopefully decompressed) string
-                                const projectData = JSON.parse(projectDataString);
-
-                                // Validate the parsed object structure and check for the raw data field
-                                if (projectData && typeof projectData === 'object' && 'data' in projectData && typeof projectData.data === 'string') {
-                                    // Append project name and its raw data
-                                    projectsDataString += `--- Project: ${name} ---\n`;
-                                    projectsDataString += projectData.data.trim() + '\n\n'; // Add raw data and extra line breaks
-                                    projectNames.push(name); // Add name to the list for the message
-
-                                } else {
-                                    console.error(`Skipping project '${name}': Invalid stored data structure.`);
-                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure.`, classes: 'orange' });
-                                }
-                            } catch (e) {
-                                console.error(`Error parsing project JSON for key ${key} after decompression:`, e);
-                                M.toast({ html: `Warning: Could not process data for project '${name}' when copying.`, classes: 'orange' });
-                            }
-                        }
-                    }
-                }
-
-                if (projectsDataString.length === 0) {
-                    M.toast({ html: 'No saved projects found with valid data to copy.', classes: 'orange' });
-                    return;
-                }
-
-                try {
-                    navigator.clipboard.writeText(projectsDataString)
-                        .then(() => {
-                            // List the names of the projects that were copied
-                            const copiedNames = projectNames.join(', ');
-                            M.toast({ html: `Copied data for project(s): ${copiedNames}`, classes: 'green' });
-                        })
-                        .catch(err => {
-                            M.toast({ html: 'Failed to copy project data to clipboard. Please copy manually.', classes: 'red' });
-                            console.error('Failed to copy project data:', err);
-                        });
-                } catch (e) {
-                    M.toast({ html: 'Error preparing data for copying.', classes: 'red' });
-                    console.error('Copy data preparation error:', e);
-                }
-            }
-
-            // Function to automatically fetch JSON from the configured URL and save projects
-            async function fetchAndSaveAllProjectsFromURL() {
-                 // Ensure the URL variable is defined and is a non-empty string
-                 if (typeof HARDCODED_PROJECTS_JSON_URL !== 'string' || HARDCODED_PROJECTS_JSON_URL.trim() === '' || HARDCODED_PROJECTS_JSON_URL === 'YOUR_RAW_GIST_URL_HERE') {
-                      M.toast({ html: 'Project JSON URL is not configured in the script code. Please set the HARDCODED_PROJECTS_JSON_URL variable with your raw JSON URL.', classes: 'red' });
-                      console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
-                      return;
-                 }
-
-                 showLoader(); // Show loader while fetching
-
-                 try {
-                     const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
-
-                     if (!response.ok) {
-                         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
-                     }
-
-                     // This version expects UNCOMPRESSED JSON from the URL
-                     const allProjectsDataText = await response.text();
-
-                     // Attempt to parse the fetched text as JSON
-                     let fetchedProjectsArray;
-                     try {
-                         fetchedProjectsArray = JSON.parse(allProjectsDataText);
-                     } catch (e) {
-                         throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
-                     }
-
-                     // Validate the structure of the fetched JSON (should be an array)
-                     if (!Array.isArray(fetchedProjectsArray)) {
-                          throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
-                     }
-
-                     let updatedCount = 0;
-                     let errorCount = 0;
-                     let skippedCount = 0;
-
-                     // Iterate through the array and save each project
-                     fetchedProjectsArray.forEach(project => {
-                         // Validate individual project object structure
-                         // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
-                         if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
-
-                             const projectName = project.name.trim();
-                             // project.data already contains the object { data, size, ir }
-                             const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
-                             const storageKey = `tl_project_${projectName}`;
-
-                             // Use safeSetLocalStorage to save/update
-                             // safeSetLocalStorage now handles compression internally for localStorage
-                             if (safeSetLocalStorage(storageKey, payload)) {
-                                  updatedCount++;
-                             } else {
-                                 errorCount++;
-                                 console.error(`Failed to save project '${projectName}' from URL (localStorage full or save error).`);
-                                 // safeSetLocalStorage already shows a toast for full storage or compression error
-                             }
-                         } else {
-                             skippedCount++;
-                             console.error("Skipping item from URL due to invalid project object structure:", project);
-                             // Optionally show a toast for invalid individual items
-                             M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
-                         }
-                     });
-
-                     let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
-                      if (skippedCount > 0) {
-                           resultMessage += ` Skipped invalid items: ${skippedCount}.`;
-                           M.toast({ html: resultMessage, classes: 'orange' });
-                      }
-                       if (errorCount > 0) {
-                          resultMessage += ` Save Errors: ${errorCount}. Check console for details.`;
-                          M.toast({ html: resultMessage, classes: 'red' }); // Use red for save errors
-                      } else if (updatedCount === 0 && skippedCount === 0) {
-                           resultMessage = `Auto update complete. No valid projects found at the configured URL.`;
-                           M.toast({ html: resultMessage, classes: 'orange' });
-                      } else if (errorCount === 0 && skippedCount === 0) {
-                           M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
-                      }
-
-
-                     loadProjectList(); // Refresh the project dropdown
-
-                 } catch (e) {
-                     M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
-                     console.error('Auto-fetch URL error:', e);
-                 } finally {
-                      hideLoader(); // Hide loader regardless of success or failure
-                 }
-            }
-
-            // --- Event Listeners for External JSON Integration ---
 
             // Function to copy ALL saved projects data (raw content) to clipboard
             function copyAllProjectsJsonToClipboard() {
@@ -1599,9 +1547,9 @@
                      M.updateTextFields();
                      // Ensure the select element is re-initialized after changing value
                      M.FormSelect.init(projectSelector);
-                      // Remove expand buttons if present
-                     removeExpandButton(output);
-                     removeExpandButton(allResultsDiv);
+                      // Remove buttons if present
+                     removeResultButtons(output);
+                     removeResultButtons(allResultsDiv);
                      return; // Exit the function early
                  }
 
@@ -1622,9 +1570,9 @@
                             lastResult = ''; // Clear last single search result
                             allProjectsAggregatedResults = {}; // Clear aggregated results
                             M.updateTextFields();
-                             // Remove expand buttons if present
-                            removeExpandButton(output);
-                            removeExpandButton(allResultsDiv);
+                             // Remove buttons if present
+                            removeResultButtons(output);
+                            removeResultButtons(allResultsDiv);
                          } else {
                               M.toast({ html: `Error: Data for project '${selected}' is in an invalid format.`, classes: 'red' });
                               console.error(`Invalid data format for project '${selected}':`, projectData);
@@ -1636,9 +1584,9 @@
                               lastResult = '';
                               allProjectsAggregatedResults = {};
                               M.updateTextFields();
-                               // Remove expand buttons if present
-                              removeExpandButton(output);
-                              removeExpandButton(allResultsDiv);
+                               // Remove buttons if present
+                              removeResultButtons(output);
+                              removeResultButtons(allResultsDiv);
                          }
 
                      } catch (e) {
@@ -1652,9 +1600,9 @@
                           lastResult = '';
                           allProjectsAggregatedResults = {};
                           M.updateTextFields();
-                           // Remove expand buttons if present
-                          removeExpandButton(output);
-                          removeExpandButton(allResultsDiv);
+                           // Remove buttons if present
+                          removeResultButtons(output);
+                          removeResultButtons(allResultsDiv);
                      }
                  } else {
                       // Handle case where selected project might have been deleted or safeGetLocalStorage failed
@@ -1665,9 +1613,9 @@
                       lastResult = '';
                       allProjectsAggregatedResults = {};
                       M.updateTextFields();
-                       // Remove expand buttons if present
-                      removeExpandButton(output);
-                      removeExpandButton(allResultsDiv);
+                       // Remove buttons if present
+                      removeResultButtons(output);
+                      removeResultButtons(allResultsDiv);
                  }
                   // Ensure the select element is re-initialized after changing value
                   M.FormSelect.init(projectSelector);
@@ -1703,9 +1651,9 @@
                          editingProjectName = null; // Reset editing state
                          techIdInput.value = ''; // Clear TECH ID input
                          M.updateTextFields(); // Update text field labels
-                          // Remove expand buttons if present
-                         removeExpandButton(output);
-                         removeExpandButton(allResultsDiv);
+                          // Remove buttons if present
+                         removeResultButtons(output);
+                         removeResultButtons(allResultsDiv);
                      }
                  });
              } else {
@@ -1858,25 +1806,105 @@
 
             // --- End Login Logic ---
 
-            // --- Expand Results Functionality ---
+            // --- Result Buttons Functionality (Expand and View Data) ---
 
-            // Function to add the expand button to a result container
-            function addExpandButton(containerElement) {
-                // Remove any existing expand button first
-                removeExpandButton(containerElement);
+            // Function to add the expand and view data buttons to a result container
+            function addResultButtons(containerElement) {
+                // Remove any existing buttons first
+                removeResultButtons(containerElement);
 
+                // Create a container for the buttons
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.classList.add('result-buttons');
+
+                // Create the View Data button
+                const viewDataButton = document.createElement('button');
+                viewDataButton.classList.add('view-data-result-button', 'modal-trigger');
+                viewDataButton.setAttribute('href', '#view-data-modal'); // Link to the view data modal
+                viewDataButton.innerHTML = '<i class="material-icons">table_chart</i>'; // Table icon
+
+                 // Add click listener to open view data modal with current project data
+                 viewDataButton.addEventListener('click', function(event) {
+                     // Prevent the default modal trigger behavior if necessary, although href should handle it
+                     // event.preventDefault();
+
+                      if (!activeProjectData || !activeProjectData.data) {
+                           M.toast({ html: 'No data loaded for the selected project to view.', classes: 'orange' });
+                           // Prevent modal from opening if no data
+                           event.stopPropagation(); // Stop event propagation to prevent modal trigger
+                           return;
+                      }
+
+                      // Show spinner and clear previous content
+                      viewDataTableContainer.innerHTML = ''; // Clear previous content
+                      viewDataSpinner.style.display = 'flex'; // Show spinner
+
+                      const raw = activeProjectData.data;
+                      const techIDFilter = techIdInput.value.trim().toUpperCase(); // Get the TECH ID from the input
+
+                      // Process data in a small delay to allow spinner to show
+                      setTimeout(() => {
+                           const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+
+                           if (rows.length === 0) {
+                               viewDataTableContainer.innerHTML = '<p>No data available for this project.</p>';
+                           } else {
+                               const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim()) || []; // Get and trim headers
+                               const fixIdIndex = headers.indexOf("FIX1_ID"); // Get index of FIX1_ID
+
+                               let tableHtml = '<table class="striped"><thead><tr>';
+
+                               // Add table headers
+                               headers.forEach(headerText => {
+                                   tableHtml += `<th>${headerText}</th>`;
+                               });
+                               tableHtml += '</tr></thead><tbody>';
+
+                               // Add table rows, applying filter if techIDFilter is not empty
+                               rows.forEach(row => {
+                                   const fields = row.split(/[\t,]/).map(f => f.trim()); // Split and trim fields
+
+                                   // Apply filter if a TECH ID is entered and FIX1_ID column exists
+                                   if (techIDFilter === '' || fixIdIndex === -1 || (fixIdIndex !== -1 && fields[fixIdIndex]?.toUpperCase() === techIDFilter)) {
+                                        tableHtml += '<tr>';
+                                        fields.forEach(field => {
+                                            tableHtml += `<td>${field}</td>`;
+                                        });
+                                        tableHtml += '</tr>';
+                                   }
+                               });
+
+                               tableHtml += '</tbody></table>';
+                               viewDataTableContainer.innerHTML = tableHtml; // Set the table HTML
+                           }
+
+                           // Update modal title based on filter
+                           viewDataModalTitle.textContent = `Data for Project: ${projectSelector.value || 'Loaded Project'}`;
+                           if (techIDFilter) {
+                               viewDataModalTitle.textContent += ` (Filtered by TECH ID: ${techIDFilter})`;
+                           }
+
+                           viewDataSpinner.style.display = 'none'; // Hide spinner after processing
+
+                      }, 50); // Small delay to allow spinner to render
+
+                      // The modal should open automatically due to modal-trigger class and href
+                 });
+
+
+                // Create the Expand button
                 const expandButton = document.createElement('button');
                 expandButton.classList.add('expand-button');
                 expandButton.innerHTML = '<i class="material-icons">fullscreen</i>'; // Use fullscreen icon
 
                 // Add click listener to open fullscreen modal
                 expandButton.addEventListener('click', function() {
-                    // Get the content of the parent result div (excluding the button itself)
+                    // Get the content of the parent result div (excluding the buttons)
                     let contentToExpand = containerElement.cloneNode(true); // Clone the container
-                    // Remove the expand button from the cloned content
-                    const clonedButton = contentToExpand.querySelector('.expand-button');
-                    if (clonedButton) {
-                        clonedButton.remove();
+                    // Remove the buttons container from the cloned content
+                    const clonedButtonsContainer = contentToExpand.querySelector('.result-buttons');
+                    if (clonedButtonsContainer) {
+                        clonedButtonsContainer.remove();
                     }
 
                     // Set the content in the fullscreen modal
@@ -1895,15 +1923,23 @@
                     fullscreenResultsModal.style.display = 'flex'; // Use flex to center content
                 });
 
-                // Append the button to the container
-                containerElement.appendChild(expandButton);
+                // Append buttons to the container
+                buttonsContainer.appendChild(viewDataButton);
+                buttonsContainer.appendChild(expandButton);
+
+
+                // Append the buttons container to the result container
+                containerElement.appendChild(buttonsContainer);
+
+                // Initialize the modal trigger for the view data button
+                 M.Modal.init(viewDataButton);
             }
 
-            // Function to remove the expand button from a result container
-            function removeExpandButton(containerElement) {
-                 const existingButton = containerElement.querySelector('.expand-button');
-                 if (existingButton) {
-                     existingButton.remove();
+            // Function to remove the result buttons container from a result container
+            function removeResultButtons(containerElement) {
+                 const existingButtonsContainer = containerElement.querySelector('.result-buttons');
+                 if (existingButtonsContainer) {
+                     existingButtonsContainer.remove();
                  }
             }
 
@@ -1924,7 +1960,76 @@
                 }
             });
 
-            // --- End Expand Results Functionality ---
+            // --- End Result Buttons Functionality ---
+
+
+            // --- View Data Functionality (for button next to project selector) ---
+            const viewProjectDataButton = document.getElementById('view-project-data-button');
+            if (viewProjectDataButton) {
+                viewProjectDataButton.addEventListener('click', function() {
+                    const selectedProjectName = projectSelector.value;
+                    if (!selectedProjectName) {
+                        M.toast({ html: 'Please select a project to view data.', classes: 'orange' });
+                        return;
+                    }
+
+                    if (!activeProjectData || !activeProjectData.data) {
+                         M.toast({ html: 'No data loaded for the selected project.', classes: 'orange' });
+                         return;
+                    }
+
+                    // Show spinner and clear previous content
+                    viewDataTableContainer.innerHTML = ''; // Clear previous content
+                    viewDataSpinner.style.display = 'flex'; // Show spinner
+
+
+                    const raw = activeProjectData.data;
+                    const techIDFilter = ''; // No filtering when using this button
+
+                     // Process data in a small delay to allow spinner to show
+                     setTimeout(() => {
+                           const rows = raw.split(/\r?\n/).filter(r => r.trim() !== "");
+
+                           if (rows.length === 0) {
+                               viewDataTableContainer.innerHTML = '<p>No data available for this project.</p>';
+                           } else {
+                               const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim()) || []; // Get and trim headers
+                               let tableHtml = '<table class="striped"><thead><tr>';
+
+                               // Add table headers
+                               headers.forEach(headerText => {
+                                   tableHtml += `<th>${headerText}</th>`;
+                               });
+                               tableHtml += '</tr></thead><tbody>';
+
+                               // Add table rows (no filtering here)
+                               rows.forEach(row => {
+                                   const fields = row.split(/[\t,]/).map(f => f.trim()); // Split and trim fields
+                                   tableHtml += '<tr>';
+                                   fields.forEach(field => {
+                                       tableHtml += `<td>${field}</td>`;
+                                   });
+                                   tableHtml += '</tr>';
+                               });
+
+                               tableHtml += '</tbody></table>';
+                               viewDataTableContainer.innerHTML = tableHtml; // Set the table HTML
+                           }
+
+                           viewDataModalTitle.textContent = `Data for Project: ${selectedProjectName}`; // Set modal title
+
+                           viewDataSpinner.style.display = 'none'; // Hide spinner after processing
+                     }, 50); // Small delay
+
+
+                    const modalInstance = M.Modal.getInstance(viewDataModal);
+                    modalInstance.open(); // Open the modal
+                });
+            } else {
+                 console.error("Button with ID 'view-project-data-button' not found.");
+            }
+
+            // --- End View Data Functionality ---
 
 
              // Initialize Materialize components
@@ -1945,6 +2050,13 @@
                  M.FormSelect.init(document.getElementById('modal-size'));
                  // Reset editing state
                  editingProjectName = null;
+             });
+
+             // Add event listener to clear view data modal content and hide spinner when closed
+             viewDataModal.addEventListener('closeEnd', function() {
+                 viewDataTableContainer.innerHTML = ''; // Clear table content
+                 viewDataModalTitle.textContent = 'Project Data'; // Reset title
+                 viewDataSpinner.style.display = 'none'; // Ensure spinner is hidden
              });
 
 
