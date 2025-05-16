@@ -375,7 +375,7 @@
 
 
       <div class="container" id="main-app-content" style="display: none;">
-         <h5 class="center-align">123 EXTRACTOR v2.3</h5>
+         <h5 class="center-align">123 EXTRACTOR v2.1</h5>
          <div class="right-align" style="margin-top: 10px;">
             <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal" id="add-project-button">
             <i class="material-icons">add</i>
@@ -1276,10 +1276,11 @@
 
             // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
 
-            // Function to copy ALL saved projects data (raw content) to clipboard
+            // Function to copy ALL saved projects data as JSON to clipboard
             function copyAllProjectsJsonToClipboard() {
-                let projectsDataString = '';
-                const projectNames = []; // To collect names for the success message
+                const allProjectsArray = [];
+                let processedCount = 0;
+                let errorCount = 0;
 
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
@@ -1293,44 +1294,58 @@
                                 // Parse the (now hopefully decompressed) string
                                 const projectData = JSON.parse(projectDataString);
 
-                                // Validate the parsed object structure and check for the raw data field
-                                if (projectData && typeof projectData === 'object' && 'data' in projectData && typeof projectData.data === 'string') {
-                                    // Append project name and its raw data
-                                    projectsDataString += `--- Project: ${name} ---\n`;
-                                    projectsDataString += projectData.data.trim() + '\n\n'; // Add raw data and extra line breaks
-                                    projectNames.push(name); // Add name to the list for the message
-
+                                // Validate the parsed object structure
+                                if (projectData && typeof projectData === 'object' && 'data' in projectData && 'size' in projectData && 'ir' in projectData) {
+                                    // Add project data to the array in the desired format
+                                    allProjectsArray.push({
+                                        name: name,
+                                        data: projectData // projectData already has { data: "...", size: "...", ir: true }
+                                    });
+                                    processedCount++;
                                 } else {
                                     console.error(`Skipping project '${name}': Invalid stored data structure.`);
-                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure.`, classes: 'orange' });
+                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure when copying.`, classes: 'orange' });
+                                    errorCount++;
                                 }
                             } catch (e) {
                                 console.error(`Error parsing project JSON for key ${key} after decompression:`, e);
                                 M.toast({ html: `Warning: Could not process data for project '${name}' when copying.`, classes: 'orange' });
+                                errorCount++;
                             }
+                        } else {
+                             console.error(`Could not retrieve project data for key ${key}.`);
+                             M.toast({ html: `Warning: Could not retrieve data for project '${name}' when copying.`, classes: 'orange' });
+                             errorCount++;
                         }
                     }
                 }
 
-                if (projectsDataString.length === 0) {
-                    M.toast({ html: 'No saved projects found with valid data to copy.', classes: 'orange' });
+                if (allProjectsArray.length === 0) {
+                    M.toast({ html: 'No saved projects found with valid data to copy as JSON.', classes: 'orange' });
                     return;
                 }
 
                 try {
-                    navigator.clipboard.writeText(projectsDataString)
+                    // Convert the array of project objects to a JSON string
+                    const jsonString = JSON.stringify(allProjectsArray, null, 2); // Use null, 2 for pretty printing
+
+                    navigator.clipboard.writeText(jsonString)
                         .then(() => {
-                            // List the names of the projects that were copied
-                            const copiedNames = projectNames.join(', ');
-                            M.toast({ html: `Copied data for project(s): ${copiedNames}`, classes: 'green' });
+                            let message = `Copied JSON data for ${processedCount} project(s) to clipboard.`;
+                            if (errorCount > 0) {
+                                message += ` (Skipped ${errorCount} due to errors/invalid format)`;
+                                M.toast({ html: message, classes: 'orange' });
+                            } else {
+                                M.toast({ html: message, classes: 'green' });
+                            }
                         })
                         .catch(err => {
-                            M.toast({ html: 'Failed to copy project data to clipboard. Please copy manually.', classes: 'red' });
-                            console.error('Failed to copy project data:', err);
+                            M.toast({ html: 'Failed to copy JSON data to clipboard. Please copy manually.', classes: 'red' });
+                            console.error('Failed to copy JSON data:', err);
                         });
                 } catch (e) {
-                    M.toast({ html: 'Error preparing data for copying.', classes: 'red' });
-                    console.error('Copy data preparation error:', e);
+                    M.toast({ html: 'Error generating JSON data for copying.', classes: 'red' });
+                    console.error('JSON generation error:', e);
                 }
             }
 
