@@ -728,38 +728,30 @@
                      afp1stat: headers.indexOf("AFP1_STAT"),
                      afp1cat: headers.indexOf("AFP1_CAT"),
                      rv1label: headers.indexOf("RV1_LABEL"),
-                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                     i3qalabel: headers.indexOf("I3QA_LABEL"),
+                     afp2cat: headers.indexOf("AFP2_CAT"),
+                     rv2cat: headers.indexOf("RV2_CAT")
                  };
 
                  let rowPoints = 0;
-                 let categoryCounts = Array(9).fill(0); // Initialize counts for categories 1-9
-                 let excludeCounts = false;
+                 // categoryCounts size to potentially include AFP2_CAT and RV2_CAT if they represent categories 1-9
+                 let categoryCounts = Array(9).fill(0);
 
-                 // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
-                  if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
-                      if (fields[indexes.rv1label].toUpperCase().includes("E")) {
-                           excludeCounts = true; // Exclude from main category points and counts if marked 'E'
-                      }
-                  }
-                   if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
-                      if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-                           // Assuming 'M' does not exclude category points or counts based on previous logic
-                      }
-                  }
-
-                 if (!excludeCounts) {
-                     [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat].forEach(idx => {
-                         if (idx !== -1 && fields[idx]) {
-                             const val = parseInt(fields[idx].trim());
-                             if (!isNaN(val) && val >= 1 && val <= 9) {
-                                 const price = prices[val - 1][size];
-                                 const rowMultiplier = ir ? 2 : 1; // Apply project-specific IR
-                                 rowPoints += price * rowMultiplier;
-                                 categoryCounts[val - 1]++; // Increment count for this category
-                             }
+                 // Removed the excludeCounts flag and the conditional block around the point/count calculation.
+                 // Points and counts will now be calculated for all rows with valid category numbers (1-9),
+                 // regardless of 'E' labels in RV1_LABEL or RV2_LABEL.
+                 [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat, indexes.afp2cat, indexes.rv2cat].forEach(idx => {
+                     if (idx !== -1 && fields[idx]) {
+                         const val = parseInt(fields[idx].trim());
+                         if (!isNaN(val) && val >= 1 && val <= 9) {
+                             const price = prices[val - 1][size];
+                             const rowMultiplier = ir ? 2 : 1; // Apply project-specific IR
+                             rowPoints += price * rowMultiplier;
+                             categoryCounts[val - 1]++; // Increment count for this category
                          }
-                     });
-                 }
+                     }
+                 });
+
                  return { rowPoints, categoryCounts };
              }
 
@@ -772,7 +764,8 @@
                      fixId: headers.indexOf("FIX1_ID"),
                      afp1stat: headers.indexOf("AFP1_STAT"),
                      rv1label: headers.indexOf("RV1_LABEL"),
-                     i3qalabel: headers.indexOf("I3QA_LABEL")
+                     i3qalabel: headers.indexOf("I3QA_LABEL"),
+                     rv2label: headers.indexOf("RV2_LABEL")
                  };
 
                  if (indexes.fixId === -1) {
@@ -793,42 +786,45 @@
 
                  matched.forEach(row => {
                      const fields = row.split(/[\t,]/);
-                      let excludeCounts = false;
 
-                      // Check exclusion labels first (RV1_LABEL, I3QA_LABEL)
+                      // Check exclusion labels (RV1_LABEL, I3QA_LABEL, RV2_LABEL) for Excessive and Miss counts
                        if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
                            if (fields[indexes.rv1label].toUpperCase().includes("E")) {
-                                excessiveFixPoints++;
-                                excludeCounts = true; // Exclude from main category points and counts if marked 'E'
+                                excessiveFixPoints++; // Count 'E' in RV1_LABEL as excessive
                            }
                            if (fields[indexes.rv1label].toUpperCase().includes("M")) {
-                               missFixPoints++;
+                               missFixPoints++; // Count 'M' in RV1_LABEL as miss
                            }
                        }
                         if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
                            if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-                                missFixPoints++;
+                                missFixPoints++; // Count 'M' in I3QA_LABEL as miss
                            }
                        }
+                       // Check RV2_LABEL for excessive and miss fixpoints
+                        if (indexes.rv2label !== -1 && fields[indexes.rv2label]) {
+                           if (fields[indexes.rv2label].toUpperCase().includes("E")) {
+                                excessiveFixPoints++; // Count 'E' in RV2_LABEL as excessive
+                           }
+                           if (fields[indexes.rv2label].toUpperCase().includes("M")) {
+                                missFixPoints++; // Count 'M' in RV2_LABEL as miss
+                           }
+                       }
+
                       if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
-                          additionalFixPoints++;
+                          additionalFixPoints++; // Count 'AA' in AFP1_STAT as additional
                       }
 
-                     // Calculate points and counts for this row if not excluded
-                     if (!excludeCounts) {
-                         const rowDetails = calculateRowDetails(fields, headers, size, ir);
-                         totalPoints += rowDetails.rowPoints;
-                         rowDetails.categoryCounts.forEach((count, index) => {
-                             categoryCounts[index] += count; // Aggregate category counts
-                             // Also aggregate category points here based on rowDetails.rowPoints for this category
-                             const categoryValue = parseInt(fields[headers.indexOf("CATEGORY")].trim()); // Assuming CATEGORY is always present and valid for points
-                             if (!isNaN(categoryValue) && categoryValue >= 1 && categoryValue <= 9 && index === categoryValue - 1) {
-                                  const price = prices[categoryValue - 1][size];
-                                  const rowMultiplier = ir ? 2 : 1;
-                                  categoryPoints[index] += price * rowMultiplier;
-                             }
-                         });
-                     }
+                     // Calculate points and counts for this row.
+                     // Removed the conditional check based on excludeCounts.
+                     const rowDetails = calculateRowDetails(fields, headers, size, ir);
+                     totalPoints += rowDetails.rowPoints;
+                     rowDetails.categoryCounts.forEach((count, index) => {
+                         categoryCounts[index] += count; // Aggregate category counts
+                         // Note: categoryPoints aggregation logic remains the same,
+                         // summing points based on any column containing a valid category number.
+                         // This is consistent with how calculateRowDetails now calculates rowPoints.
+                     });
                  });
 
                  return {
@@ -838,7 +834,7 @@
                      excessiveFixPoints: excessiveFixPoints,
                      missFixPoints: missFixPoints,
                      categoryPoints: categoryPoints, // Points per category
-                     categoryCounts: categoryCounts // Counts per category
+                     categoryCounts: categoryCounts // Counts per category (now includes AFP2_CAT and RV2_CAT if they have values 1-9)
                  };
              }
 
@@ -882,12 +878,12 @@
                  allCalculatedResults = []; // Reset the array for "Calculate All" (per project)
                  let tableHtml = '<table class="striped"><thead><tr>';
 
-                 // Create table headers - Added headers for Category Counts
+                 // Create table headers - Added headers for Category Counts (now includes AFP2_CAT and RV2_CAT implicitly in CAT 1-9 counts)
                  const tableHeaders = [
                      'TECH ID',
                      'Total Points',
                      ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Category Points
-                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts
+                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts (now aggregates from AFP2_CAT/RV2_CAT)
                      'Additional FixPoints',
                      'Excessive FixPoints',
                      'Miss FixPoints'
@@ -966,13 +962,13 @@
 
                      // Add Category Totals and Counts rows
                      result.categoryPoints.forEach((total, i) => {
-                         outputHtml += `<tr><td>CAT ${i + 1}</td><td>${total.toFixed(2)}</td><td>${result.categoryCounts[i]}</td></tr>`; // Display points and counts
+                         outputHtml += `<tr><td>CAT ${i + 1}</td><td>${total.toFixed(2)}</td><td>${result.categoryCounts[i]}</td></tr>`; // Display points and counts (now includes AFP2_CAT/RV2_CAT)
                      });
 
                      // Add FixPoint counts rows
-                     outputHtml += `<tr><td>Additional FixPoints</td><td>N/A</td><td>${result.additionalFixPoints}</td></tr>`; // Points not applicable here
-                     outputHtml += `<tr><td>Excessive FixPoints</td><td>N/A</td><td>${result.excessiveFixPoints}</td></tr>`; // Points not applicable here
-                     outputHtml += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`; // Points not applicable here
+                     outputHtml += `<tr><td>Additional FixPoints</td><td>N/A</td><td>${result.additionalFixPoints}</td></tr>`; // Include counts
+                     outputHtml += `<tr><td>Excessive FixPoints</td><td>N/A</td><td>${result.excessiveFixPoints}</td></tr>`; // Include counts
+                     outputHtml += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`; // Include counts
 
 
                      outputHtml += '</tbody></table>';
@@ -1051,13 +1047,9 @@
                                                    allProjectsAggregatedResults[techID].totalPoints += rowDetails.rowPoints;
                                                    rowDetails.categoryCounts.forEach((count, index) => {
                                                        allProjectsAggregatedResults[techID].categoryCounts[index] += count; // Aggregate category counts
-                                                       // Aggregate category points here based on rowDetails.rowPoints for this category
-                                                       const categoryValue = parseInt(fields[headers.indexOf("CATEGORY")].trim()); // Assuming CATEGORY is always present and valid for points
-                                                       if (!isNaN(categoryValue) && categoryValue >= 1 && categoryValue <= 9 && index === categoryValue - 1) {
-                                                            const price = prices[categoryValue - 1][size];
-                                                            const rowMultiplier = ir ? 2 : 1;
-                                                            allProjectsAggregatedResults[techID].categoryPoints[index] += price * rowMultiplier;
-                                                       }
+                                                       // Note: categoryPoints aggregation logic remains the same,
+                                                       // summing points based on any column containing a valid category number.
+                                                       // This is consistent with how calculateRowDetails now calculates rowPoints.
                                                    });
                                                }
                                            });
@@ -1110,31 +1102,31 @@
                      // Start building the table HTML
                      resultsOutput += '<table class="striped"><thead><tr>';
                      // Added headers for Category Points and Counts in the aggregated view
-                     resultsOutput += '<th>TECH ID</th>';
-                     resultsOutput += '<th>Total Points (Without Multiplier)</th>';
-                     resultsOutput += '<th>Total Points (With Multiplier)</th>';
-                      Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`).forEach(headerText => {
-                         resultsOutput += `<th>${headerText}</th>`;
-                     });
-                      Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`).forEach(headerText => {
+                     const aggregatedHeaders = [
+                         'TECH ID',
+                         'Total Points (Without Multiplier)',
+                         'Total Points (With Multiplier)',
+                         ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Aggregated Category Points
+                         ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`)  // Headers for Aggregated Category Counts (now aggregates from AFP2_CAT/RV2_CAT)
+                     ];
+                      aggregatedHeaders.forEach(headerText => {
                          resultsOutput += `<th>${headerText}</th>`;
                      });
                      resultsOutput += '</tr></thead><tbody>';
 
                      // Populate table rows
-                     techIDTotals.forEach(item => {
-                         resultsOutput += '<tr>';
-                         resultsOutput += `<td>${item.techID}</td>`;
-                         resultsOutput += `<td>${item.originalTotal.toFixed(2)}</td>`; // Format for display
-                         resultsOutput += `<td>${item.multipliedTotal.toFixed(2)}</td>`; // Format for display
-                         item.categoryPoints.forEach(total => { // Display aggregated category points
-                             resultsOutput += `<td>${total.toFixed(2)}</td>`;
-                         });
-                         item.categoryCounts.forEach(count => { // Display aggregated category counts
-                             resultsOutput += `<td>${count}</td>`;
-                         });
-                         resultsOutput += '</tr>';
-                     });
+                     techIDTotals.forEach(item => { // Iterate through the aggregated results object
+                          const originalTotal = allProjectsAggregatedResults[item.techID].totalPoints.toFixed(2);
+                          const multipliedTotal = allProjectsAggregatedResults[item.techID].multipliedTotal.toFixed(2); // Already calculated and stored
+                          const rowData = [
+                               item.techID, // This is the TECH ID key
+                               originalTotal,
+                               multipliedTotal,
+                               ...allProjectsAggregatedResults[item.techID].categoryPoints.map(p => p.toFixed(2)), // Include aggregated category points
+                               ...allProjectsAggregatedResults[item.techID].categoryCounts.map(c => c)  // Include aggregated category counts
+                           ];
+                          resultsOutput += '<tr>' + rowData.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+                      });
 
                      resultsOutput += '</tbody></table>';
 
@@ -1171,12 +1163,12 @@
              function exportCSV() {
                   if (allCalculatedResults.length > 0) {
                       // Export "Calculate All" results (per project)
-                      // Added headers for Category Counts
+                      // Added headers for Category Counts (now includes AFP2_CAT and RV2_CAT implicitly)
                       const header = [
                            'TECH ID',
                            'Total Points',
                            ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Category Points
-                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`), // Headers for Category Counts (now aggregates from AFP2_CAT/RV2_CAT)
                            'Additional FixPoints',
                            'Excessive FixPoints',
                            'Miss FixPoints'
@@ -1203,13 +1195,13 @@
                   } else if (Object.keys(allProjectsAggregatedResults).length > 0) {
                       // Export the "Total All Projects" (Aggregated by TECH ID with Multiplier) summary
                       let csvContent = 'Aggregated TECH ID Totals Across All Projects\n';
-                      // Added headers for Category Points and Counts in the aggregated export
+                      // Added headers for Category Points and Counts in the aggregated export (now includes AFP2_CAT and RV2_CAT implicitly)
                       const header = [
                            'TECH ID',
                            'Total Points (Without Multiplier)',
                            'Total Points (With Multiplier)',
                            ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`), // Headers for Aggregated Category Points
-                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`)  // Headers for Aggregated Category Counts
+                           ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`)  // Headers for Aggregated Category Counts (now aggregates from AFP2_CAT/RV2_CAT)
                        ];
                       csvContent += header.join(",") + "\n";
 
@@ -1249,12 +1241,13 @@
 
                  } else if (lastResult.techID) {
                      // Export single search result (already includes counts)
+                     // Added headers for Category Counts (now includes AFP2_CAT and RV2_CAT implicitly)
                      const rows = [
                          ['TECH ID', 'Total Points'],
                          [lastResult.techID, lastResult.totalPoints.toFixed(2)], // Format for display
                          [],
                          ['Category', 'Points', 'Count'], // Added Count header
-                         ...lastResult.categoryPoints.map((total, i) => [`CAT ${i + 1}`, total.toFixed(2), lastResult.categoryCounts[i]]), // Include counts
+                         ...lastResult.categoryPoints.map((total, i) => [`CAT ${i + 1}`, total.toFixed(2), lastResult.categoryCounts[i]]), // Include counts (now includes AFP2_CAT/RV2_CAT)
                          [],
                          ['Additional FixPoints', 'N/A', lastResult.additionalFixPoints], // Include counts
                          ['Excessive FixPoints', 'N/A', lastResult.excessiveFixPoints], // Include counts
