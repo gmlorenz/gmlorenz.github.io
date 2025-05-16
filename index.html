@@ -5,50 +5,143 @@
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
       <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
       <style>
          body {
          padding: 20px;
+         background-color: #f4f6f8; /* Light background color */
+         font-family: 'Open Sans', sans-serif; /* Use Open Sans for body text */
+         color: #333;
          }
+         h5, h4 {
+             font-family: 'Roboto Slab', serif; /* Keep Roboto Slab for headings */
+             color: #0d47a1; /* Dark blue heading color */
+         }
+
+         .container {
+             background-color: #ffffff; /* White background for the main container */
+             padding: 30px;
+             border-radius: 8px; /* Rounded corners for the main container */
+             box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+         }
+
          .result {
-         background: #f9f9f9;
+         background: #e3f2fd; /* Lighter blue background for results */
          padding: 20px;
          margin-top: 20px;
          white-space: pre-wrap;
-         border-left: 4px solid rgba(66, 165, 245, 0.5); /* Reverted border-left to original size */
-         font-family: 'Courier New', monospace; /* Added Roboto Slab font */
-         min-height: 600px; /* Added minimum height */
+         border-left: 4px solid #2196f3; /* Materialize blue border */
+         font-family: 'Courier New', monospace;
+         min-height: 100px; /* Adjusted minimum height */
+         border-radius: 4px; /* Rounded corners for result boxes */
+         overflow-x: auto; /* Ensure horizontal scrolling for tables */
+         position: relative; /* Needed for absolute positioning of the expand button */
          }
+
+         /* Style for the expand button */
+         .expand-button {
+             position: absolute;
+             top: 8px; /* Adjust as needed */
+             right: 8px; /* Adjust as needed */
+             background-color: rgba(0, 0, 0, 0.1); /* Semi-transparent background */
+             border: none;
+             border-radius: 50%; /* Circular button */
+             width: 30px;
+             height: 30px;
+             cursor: pointer;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             padding: 0;
+             z-index: 1; /* Ensure button is above content */
+             transition: background-color 0.3s ease;
+         }
+         .expand-button:hover {
+             background-color: rgba(0, 0, 0, 0.2);
+         }
+         .expand-button i.material-icons {
+             font-size: 18px;
+             color: #333; /* Icon color */
+         }
+
+
          /* Custom styles for striped table rows within .result containers */
          .result table.striped tbody tr:nth-child(odd) {
-         /* Change this color for the odd rows */
-         background-color: #e0e0e0; /* Light grey */
+         background-color: #bbdefb; /* Lighter blue for odd rows */
          }
          .result table.striped tbody tr:nth-child(even) {
-         /* Change this color for the even rows */
-         background-color: #599173; /* White */
+         background-color: #e3f2fd; /* Match result background for even rows */
          }
+         .result table th {
+             background-color: #1976d2; /* Darker blue for table headers */
+             color: white;
+         }
+         .result table td, .result table th {
+             padding: 12px 15px; /* More padding in table cells */
+             border: 1px solid #b0bec5; /* Subtle cell borders */
+         }
+          .result table {
+              border-collapse: collapse; /* Collapse borders */
+              width: 100%; /* Make table fill container */
+          }
+
+
          .modal textarea {
-         height: 150px;       /* Set a fixed height */
-         overflow-y: auto;  /* Add a vertical scrollbar when content overflows */
-         resize: none;       /* Optional: Prevent user resizing */
+         height: 150px;
+         overflow-y: auto;
+         resize: none;
          }
-         .modal-content textarea.materialize-textarea { /* If your textarea has the materialize-textarea class */
-         height: 150px !important; /* Use !important as a temporary measure to see if it helps */
+         .modal-content textarea.materialize-textarea {
+         height: 150px !important;
          overflow-y: auto;
          resize: none;
          }
          /* Add margin to input fields */
          .input-field {
          margin-top: 20px;
-         margin-bottom: 10px;
+         margin-bottom: 15px; /* Increased bottom margin */
          }
+
+         /* Style for input field focus */
+         .input-field input:focus + label,
+         .input-field textarea:focus + label {
+             color: #2196f3 !important; /* Materialize blue focus color */
+         }
+         .input-field input:focus,
+         .input-field textarea:focus {
+             border-bottom: 1px solid #2196f3 !important;
+             box-shadow: 0 1px 0 0 #2196f3 !important;
+         }
+          .input-field select:focus {
+              outline: 1px solid #2196f3; /* Outline for select on focus */
+          }
+
+
          /* Add margin to buttons */
          .btn {
          margin-top: 15px;
          margin-bottom: 15px;
-         margin-right: 10px; /* Add some horizontal spacing between buttons if they appear in a row */
+         margin-right: 10px;
+         border-radius: 4px; /* Rounded button corners */
+         transition: background-color 0.3s ease; /* Smooth hover effect */
          }
+         .btn:hover {
+             opacity: 0.9; /* Slightly reduce opacity on hover */
+         }
+
+         /* Specific button colors */
+         .btn.blue { background-color: #2196f3 !important; }
+         .btn.green { background-color: #4CAF50 !important; }
+         .btn.orange.darken-2 { background-color: #f57c00 !important; }
+         .btn.red.darken-2 { background-color: #d32f2f !important; }
+         .btn.purple.darken-2 { background-color: #7b1fa2 !important; }
+         .btn.red { background-color: #f44336 !important; }
+         .btn.blue.darken-1 { background-color: #1976d2 !important; }
+         .btn.deep-purple.darken-2 { background-color: #512da8 !important; }
+         .btn.grey.darken-1 { background-color: #757575 !important; }
+
+
          /* Add margin to the floating action button */
          .right-align {
          margin-bottom: 20px;
@@ -60,23 +153,16 @@
          }
          /* Style for the scrollable all results view */
          #all-results {
-         max-height: 300px;
+         max-height: 400px; /* Increased max height */
          overflow-y: auto;
+         margin-top: 30px; /* More space above */
          }
-         #all-results h6 {
-         margin-top: 10px;
-         margin-bottom: 5px;
+         #all-results h5 {
+             margin-bottom: 15px;
+             border-bottom: 2px solid #eee; /* Separator line */
+             padding-bottom: 10px;
          }
-         #all-results ul {
-         margin-left: 20px;
-         margin-bottom: 10px;
-         }
-         #all-results hr {
-         margin-top: 15px;
-         margin-bottom: 15px;
-         border: 0;
-         border-top: 1px solid #ccc;
-         }
+
          /* Add spacing within the modal content */
          .modal-content h5 {
          margin-bottom: 20px;
@@ -89,58 +175,114 @@
          .modal-footer a {
          margin-left: 10px;
          }
-         #output {
-         max-height: 300px; /* Keep vertical scrolling if needed */
-         overflow-y: auto;  /* Keep vertical scrolling */
-         overflow-x: auto;  /* Add horizontal scrolling */
-         /* You can keep other .result styles */
-         background: #f9f9f9;
-         padding: 20px;
-         margin-top: 20px;
-         white-space: pre-wrap; /* You might want to test removing this if layout is still an issue */
-         border-left: 4px solid #42a5f5;
-         font-family: monospace;
-         min-height: 100px;
-         }
-         /* Ensure tables within the output div don't overflow their container */
-         #output table {
-         width: auto; /* Allow table to take necessary width, scrolling handled by parent */
-         min-width: 100%; /* Ensure it at least fills the container if narrower */
-         }
-         /* Optional: Add some padding to table cells for better readability */
-         #output table td, #output table th {
-         padding: 8px; /* Adjust as needed */
-         white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
-         }
          /* Style for the login modal - Beautified */
          #login-modal {
-             max-width: 400px; /* Limit width for better appearance */
+             max-width: 400px;
+             border-radius: 8px; /* Match container border-radius */
          }
          #login-modal .modal-content {
              padding: 30px;
-             text-align: center; /* Center content within modal */
+             text-align: center;
+             background-color: #ffffff; /* White background */
          }
          #login-modal .modal-content h5 {
-             margin-bottom: 25px; /* More space below title */
-             color: #333; /* Darker text color */
+             margin-bottom: 25px;
+             color: #0d47a1; /* Dark blue heading color */
          }
          #login-modal .input-field {
-             margin-bottom: 20px; /* More space between inputs */
+             margin-bottom: 20px;
          }
          #login-modal .modal-footer {
              padding: 15px;
-             text-align: center; /* Center the login button */
-             background-color: #f4f4f4; /* Light grey footer background */
-             border-top: 1px solid #eee; /* Subtle border */
+             text-align: center;
+             background-color: #e3f2fd; /* Light blue footer background */
+             border-top: 1px solid #bbdefb; /* Subtle border */
+             border-bottom-left-radius: 8px; /* Rounded corners for footer */
+             border-bottom-right-radius: 8px;
          }
          #login-modal .btn {
-             width: 100%; /* Make button full width */
-             margin-right: 0; /* Remove right margin */
+             width: 100%;
+             margin-right: 0;
+             background-color: #2196f3 !important; /* Materialize blue button */
          }
 
          /* Style for the logout button */
          #logout-button {
-             margin-left: auto; /* Push to the right */
+             margin-left: auto;
+         }
+
+         /* Fullscreen Modal for Results */
+         #fullscreen-results-modal {
+             position: fixed;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+             z-index: 1000; /* Ensure it's on top */
+             display: none; /* Hidden by default */
+             justify-content: center;
+             align-items: center;
+             overflow-y: auto; /* Allow scrolling if content is tall */
+         }
+
+         #fullscreen-results-content {
+             background-color: #ffffff;
+             padding: 20px;
+             border-radius: 8px;
+             max-width: 90%; /* Limit content width */
+             max-height: 90%; /* Limit content height */
+             overflow: auto; /* Add scrolling to the content box */
+             position: relative; /* Needed for close button positioning */
+         }
+
+         #fullscreen-results-content .close-button {
+             position: absolute;
+             top: 10px;
+             right: 10px;
+             background-color: rgba(255, 255, 255, 0.8);
+             border: none;
+             border-radius: 50%;
+             width: 30px;
+             height: 30px;
+             cursor: pointer;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             padding: 0;
+             z-index: 2; /* Ensure close button is above content */
+         }
+         #fullscreen-results-content .close-button:hover {
+             background-color: rgba(255, 255, 255, 1);
+         }
+         #fullscreen-results-content .close-button i.material-icons {
+             font-size: 18px;
+             color: #333;
+         }
+
+         /* Responsive adjustments */
+         @media (max-width: 600px) {
+             body {
+                 padding: 10px; /* Reduce padding on small screens */
+             }
+             .container {
+                 padding: 20px; /* Reduce container padding */
+             }
+             .btn {
+                 margin-right: 5px; /* Reduce button spacing */
+                 margin-bottom: 10px;
+             }
+             .center-align {
+                 margin-top: 15px;
+                 margin-bottom: 15px;
+             }
+             #all-results {
+                 max-height: 300px; /* Adjust max height for smaller screens */
+             }
+             #fullscreen-results-content {
+                 max-width: 95%; /* Adjust max width for smaller screens */
+                 max-height: 95%; /* Adjust max height for smaller screens */
+             }
          }
 
       </style>
@@ -169,7 +311,7 @@
 
 
       <div class="container" id="main-app-content" style="display: none;">
-         <h5 class="center-align">123 EXTRACTOR v2.1</h5>
+         <h5 class="center-align">123 EXTRACTOR v2.2</h5>
          <div class="right-align" style="margin-top: 10px;">
             <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal" id="add-project-button">
             <i class="material-icons">add</i>
@@ -220,9 +362,10 @@
             <i class="material-icons left">cloud_download</i>Update Projects Online
             </button>
          </div>
-         <div id="output" class="result z-depth-1"></div>
+         <div id="output" class="result z-depth-1">
+             </div>
          <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
-         </div>
+              </div>
          <div id="multiplier-modal" class="modal">
             <div class="modal-content">
                <h5>Enter Multiplier</h5>
@@ -273,6 +416,14 @@
               </button>
           </div>
       </div>
+
+      <div id="fullscreen-results-modal">
+          <div id="fullscreen-results-content">
+              <button class="close-button"><i class="material-icons">close</i></button>
+              </div>
+      </div>
+
+
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
       <script>
@@ -322,13 +473,17 @@
              const mainAppContent = document.getElementById('main-app-content'); // Get the main app content container
              const logoutButton = document.getElementById('logout-button'); // Get the new logout button
 
-
              // Login modal elements
              const loginModal = document.getElementById('login-modal');
              const loginRoleSelect = document.getElementById('login-role');
              const tlCodeInputDiv = document.getElementById('tl-code-input');
              const tlLoginCodeInput = document.getElementById('tl-login-code');
              const loginButton = document.getElementById('login-button');
+
+             // Fullscreen modal elements
+             const fullscreenResultsModal = document.getElementById('fullscreen-results-modal');
+             const fullscreenResultsContent = document.getElementById('fullscreen-results-content');
+             const fullscreenCloseButton = fullscreenResultsContent.querySelector('.close-button');
 
 
              // Loader and safe localStorage functions
@@ -597,6 +752,8 @@
                      allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
                      allCalculatedResults = [];
                      allProjectsAggregatedResults = {}; // Reset
+                     // Add expand button after content is set
+                     addExpandButton(allResultsDiv);
                      return;
                  }
 
@@ -608,6 +765,8 @@
                      allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
                      allCalculatedResults = [];
                       allProjectsAggregatedResults = {}; // Reset
+                      // Add expand button after content is set
+                     addExpandButton(allResultsDiv);
                      return;
                  }
 
@@ -665,6 +824,9 @@
                  allResultsDiv.innerHTML = `<h5>Results for Loaded Project</h5>${tableHtml}`;
                  output.textContent = ''; // Clear single search output
                  allProjectsAggregatedResults = {}; // Clear the aggregated results when calculating per project
+
+                 // Add expand button after content is set
+                 addExpandButton(allResultsDiv);
              }
 
            function searchTechID() {
@@ -684,6 +846,8 @@
 
                  if (!raw || !techIDValue || !size) {
                      outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>'; // Use innerHTML
+                     // Add expand button after content is set
+                     addExpandButton(outputDiv);
                      return;
                  }
 
@@ -719,6 +883,8 @@
                  } else {
                       outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`; // Use innerHTML
                  }
+                 // Add expand button after content is set
+                 addExpandButton(outputDiv);
              }
 
 
@@ -892,6 +1058,8 @@
                  output.textContent = ''; // Clear single search output
                  allCalculatedResults = []; // Clear per-project calculated results
 
+                 // Add expand button after content is set
+                 addExpandButton(allResultsDiv);
 
                  // Close the modal
                  const modalElem = document.querySelector('#multiplier-modal');
@@ -1007,6 +1175,158 @@
 
 
             // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
+
+            // Function to copy ALL saved projects data (raw content) to clipboard
+            function copyAllProjectsJsonToClipboard() {
+                let projectsDataString = '';
+                const projectNames = []; // To collect names for the success message
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tl_project_')) {
+                        const name = key.replace('tl_project_', '');
+                        // Use safeGetLocalStorage to retrieve and decompress
+                        const projectDataString = safeGetLocalStorage(key);
+
+                        if (projectDataString !== null) { // Check if retrieval was successful
+                            try {
+                                // Parse the (now hopefully decompressed) string
+                                const projectData = JSON.parse(projectDataString);
+
+                                // Validate the parsed object structure and check for the raw data field
+                                if (projectData && typeof projectData === 'object' && 'data' in projectData && typeof projectData.data === 'string') {
+                                    // Append project name and its raw data
+                                    projectsDataString += `--- Project: ${name} ---\n`;
+                                    projectsDataString += projectData.data.trim() + '\n\n'; // Add raw data and extra line breaks
+                                    projectNames.push(name); // Add name to the list for the message
+
+                                } else {
+                                    console.error(`Skipping project '${name}': Invalid stored data structure.`);
+                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure.`, classes: 'orange' });
+                                }
+                            } catch (e) {
+                                console.error(`Error parsing project JSON for key ${key} after decompression:`, e);
+                                M.toast({ html: `Warning: Could not process data for project '${name}' when copying.`, classes: 'orange' });
+                            }
+                        }
+                    }
+                }
+
+                if (projectsDataString.length === 0) {
+                    M.toast({ html: 'No saved projects found with valid data to copy.', classes: 'orange' });
+                    return;
+                }
+
+                try {
+                    navigator.clipboard.writeText(projectsDataString)
+                        .then(() => {
+                            // List the names of the projects that were copied
+                            const copiedNames = projectNames.join(', ');
+                            M.toast({ html: `Copied data for project(s): ${copiedNames}`, classes: 'green' });
+                        })
+                        .catch(err => {
+                            M.toast({ html: 'Failed to copy project data to clipboard. Please copy manually.', classes: 'red' });
+                            console.error('Failed to copy project data:', err);
+                        });
+                } catch (e) {
+                    M.toast({ html: 'Error preparing data for copying.', classes: 'red' });
+                    console.error('Copy data preparation error:', e);
+                }
+            }
+
+            // Function to automatically fetch JSON from the configured URL and save projects
+            async function fetchAndSaveAllProjectsFromURL() {
+                 // Ensure the URL variable is defined and is a non-empty string
+                 if (typeof HARDCODED_PROJECTS_JSON_URL !== 'string' || HARDCODED_PROJECTS_JSON_URL.trim() === '' || HARDCODED_PROJECTS_JSON_URL === 'YOUR_RAW_GIST_URL_HERE') {
+                      M.toast({ html: 'Project JSON URL is not configured in the script code. Please set the HARDCODED_PROJECTS_JSON_URL variable with your raw JSON URL.', classes: 'red' });
+                      console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
+                      return;
+                 }
+
+                 showLoader(); // Show loader while fetching
+
+                 try {
+                     const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+
+                     if (!response.ok) {
+                         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
+                     }
+
+                     // This version expects UNCOMPRESSED JSON from the URL
+                     const allProjectsDataText = await response.text();
+
+                     // Attempt to parse the fetched text as JSON
+                     let fetchedProjectsArray;
+                     try {
+                         fetchedProjectsArray = JSON.parse(allProjectsDataText);
+                     } catch (e) {
+                         throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
+                     }
+
+                     // Validate the structure of the fetched JSON (should be an array)
+                     if (!Array.isArray(fetchedProjectsArray)) {
+                          throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
+                     }
+
+                     let updatedCount = 0;
+                     let errorCount = 0;
+                     let skippedCount = 0;
+
+                     // Iterate through the array and save each project
+                     fetchedProjectsArray.forEach(project => {
+                         // Validate individual project object structure
+                         // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
+                         if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
+
+                             const projectName = project.name.trim();
+                             // project.data already contains the object { data, size, ir }
+                             const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
+                             const storageKey = `tl_project_${projectName}`;
+
+                             // Use safeSetLocalStorage to save/update
+                             // safeSetLocalStorage now handles compression internally for localStorage
+                             if (safeSetLocalStorage(storageKey, payload)) {
+                                  updatedCount++;
+                             } else {
+                                 errorCount++;
+                                 console.error(`Failed to save project '${projectName}' from URL (localStorage full or save error).`);
+                                 // safeSetLocalStorage already shows a toast for full storage or compression error
+                             }
+                         } else {
+                             skippedCount++;
+                             console.error("Skipping item from URL due to invalid project object structure:", project);
+                             // Optionally show a toast for invalid individual items
+                             M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
+                         }
+                     });
+
+                     let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
+                      if (skippedCount > 0) {
+                           resultMessage += ` Skipped invalid items: ${skippedCount}.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      }
+                       if (errorCount > 0) {
+                          resultMessage += ` Save Errors: ${errorCount}. Check console for details.`;
+                          M.toast({ html: resultMessage, classes: 'red' }); // Use red for save errors
+                      } else if (updatedCount === 0 && skippedCount === 0) {
+                           resultMessage = `Auto update complete. No valid projects found at the configured URL.`;
+                           M.toast({ html: resultMessage, classes: 'orange' });
+                      } else if (errorCount === 0 && skippedCount === 0) {
+                           M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
+                      }
+
+
+                     loadProjectList(); // Refresh the project dropdown
+
+                 } catch (e) {
+                     M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
+                     console.error('Auto-fetch URL error:', e);
+                 } finally {
+                      hideLoader(); // Hide loader regardless of success or failure
+                 }
+            }
+
+            // --- Event Listeners for External JSON Integration ---
 
             // Function to copy ALL saved projects data (raw content) to clipboard
             function copyAllProjectsJsonToClipboard() {
@@ -1279,6 +1599,9 @@
                      M.updateTextFields();
                      // Ensure the select element is re-initialized after changing value
                      M.FormSelect.init(projectSelector);
+                      // Remove expand buttons if present
+                     removeExpandButton(output);
+                     removeExpandButton(allResultsDiv);
                      return; // Exit the function early
                  }
 
@@ -1290,7 +1613,7 @@
                          // Parse the (now hopefully decompressed) string
                          const projectData = JSON.parse(projectDataString);
 
-                         // Validate the parsed object structure
+                         // Validate the parsed project object structure
                          if (projectData && typeof projectData === 'object' && 'data' in projectData && 'size' in projectData && 'ir' in projectData) {
                             activeProjectData = projectData; // Use the parsed object
                             output.textContent = '';
@@ -1299,6 +1622,9 @@
                             lastResult = ''; // Clear last single search result
                             allProjectsAggregatedResults = {}; // Clear aggregated results
                             M.updateTextFields();
+                             // Remove expand buttons if present
+                            removeExpandButton(output);
+                            removeExpandButton(allResultsDiv);
                          } else {
                               M.toast({ html: `Error: Data for project '${selected}' is in an invalid format.`, classes: 'red' });
                               console.error(`Invalid data format for project '${selected}':`, projectData);
@@ -1310,6 +1636,9 @@
                               lastResult = '';
                               allProjectsAggregatedResults = {};
                               M.updateTextFields();
+                               // Remove expand buttons if present
+                              removeExpandButton(output);
+                              removeExpandButton(allResultsDiv);
                          }
 
                      } catch (e) {
@@ -1323,6 +1652,9 @@
                           lastResult = '';
                           allProjectsAggregatedResults = {};
                           M.updateTextFields();
+                           // Remove expand buttons if present
+                          removeExpandButton(output);
+                          removeExpandButton(allResultsDiv);
                      }
                  } else {
                       // Handle case where selected project might have been deleted or safeGetLocalStorage failed
@@ -1333,6 +1665,9 @@
                       lastResult = '';
                       allProjectsAggregatedResults = {};
                       M.updateTextFields();
+                       // Remove expand buttons if present
+                      removeExpandButton(output);
+                      removeExpandButton(allResultsDiv);
                  }
                   // Ensure the select element is re-initialized after changing value
                   M.FormSelect.init(projectSelector);
@@ -1368,6 +1703,9 @@
                          editingProjectName = null; // Reset editing state
                          techIdInput.value = ''; // Clear TECH ID input
                          M.updateTextFields(); // Update text field labels
+                          // Remove expand buttons if present
+                         removeExpandButton(output);
+                         removeExpandButton(allResultsDiv);
                      }
                  });
              } else {
@@ -1519,6 +1857,74 @@
 
 
             // --- End Login Logic ---
+
+            // --- Expand Results Functionality ---
+
+            // Function to add the expand button to a result container
+            function addExpandButton(containerElement) {
+                // Remove any existing expand button first
+                removeExpandButton(containerElement);
+
+                const expandButton = document.createElement('button');
+                expandButton.classList.add('expand-button');
+                expandButton.innerHTML = '<i class="material-icons">fullscreen</i>'; // Use fullscreen icon
+
+                // Add click listener to open fullscreen modal
+                expandButton.addEventListener('click', function() {
+                    // Get the content of the parent result div (excluding the button itself)
+                    let contentToExpand = containerElement.cloneNode(true); // Clone the container
+                    // Remove the expand button from the cloned content
+                    const clonedButton = contentToExpand.querySelector('.expand-button');
+                    if (clonedButton) {
+                        clonedButton.remove();
+                    }
+
+                    // Set the content in the fullscreen modal
+                    fullscreenResultsContent.innerHTML = ''; // Clear previous content
+                    fullscreenResultsContent.appendChild(contentToExpand); // Append the cloned content
+
+                     // Re-add the close button to the fullscreen content
+                    const closeButton = document.createElement('button');
+                    closeButton.classList.add('close-button');
+                    closeButton.innerHTML = '<i class="material-icons">close</i>';
+                    closeButton.addEventListener('click', hideFullscreenModal);
+                    fullscreenResultsContent.appendChild(closeButton);
+
+
+                    // Show the fullscreen modal
+                    fullscreenResultsModal.style.display = 'flex'; // Use flex to center content
+                });
+
+                // Append the button to the container
+                containerElement.appendChild(expandButton);
+            }
+
+            // Function to remove the expand button from a result container
+            function removeExpandButton(containerElement) {
+                 const existingButton = containerElement.querySelector('.expand-button');
+                 if (existingButton) {
+                     existingButton.remove();
+                 }
+            }
+
+
+            // Function to hide the fullscreen modal
+            function hideFullscreenModal() {
+                fullscreenResultsModal.style.display = 'none';
+                fullscreenResultsContent.innerHTML = ''; // Clear content when closing
+            }
+
+            // Add event listener to the fullscreen close button
+            fullscreenCloseButton.addEventListener('click', hideFullscreenModal);
+
+            // Close modal if clicked outside the content area
+            fullscreenResultsModal.addEventListener('click', function(event) {
+                if (event.target === fullscreenResultsModal) {
+                    hideFullscreenModal();
+                }
+            });
+
+            // --- End Expand Results Functionality ---
 
 
              // Initialize Materialize components
