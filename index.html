@@ -15,7 +15,7 @@
          padding: 20px;
          margin-top: 20px;
          white-space: pre-wrap;
-         border-left: 4gba(66, 165, 245, 0.5); /* Reverted border-left to original size */
+         border-left: 4px solid rgba(66, 165, 245, 0.5); /* Reverted border-left to original size */
          font-family: 'Courier New', monospace; /* Added Roboto Slab font */
          min-height: 600px; /* Added minimum height */
          }
@@ -112,13 +112,66 @@
          padding: 8px; /* Adjust as needed */
          white-space: nowrap; /* Prevent text wrapping in cells if you prefer */
          }
+         /* Style for the login modal - Beautified */
+         #login-modal {
+             max-width: 400px; /* Limit width for better appearance */
+         }
+         #login-modal .modal-content {
+             padding: 30px;
+             text-align: center; /* Center content within modal */
+         }
+         #login-modal .modal-content h5 {
+             margin-bottom: 25px; /* More space below title */
+             color: #333; /* Darker text color */
+         }
+         #login-modal .input-field {
+             margin-bottom: 20px; /* More space between inputs */
+         }
+         #login-modal .modal-footer {
+             padding: 15px;
+             text-align: center; /* Center the login button */
+             background-color: #f4f4f4; /* Light grey footer background */
+             border-top: 1px solid #eee; /* Subtle border */
+         }
+         #login-modal .btn {
+             width: 100%; /* Make button full width */
+             margin-right: 0; /* Remove right margin */
+         }
+
+         /* Style for the logout button */
+         #logout-button {
+             margin-left: auto; /* Push to the right */
+         }
+
       </style>
    </head>
    <body>
-      <div class="container">
+       <div id="login-modal" class="modal">
+           <div class="modal-content">
+               <h5 class="center-align">Login</h5>
+               <div class="input-field">
+                   <select id="login-role">
+                       <option value="" disabled selected>Choose your role</option>
+                       <option value="tl">Login as TL</option>
+                       <option value="tech">Login as Tech</option>
+                   </select>
+                   <label for="login-role">Select Role</label>
+               </div>
+               <div class="input-field" id="tl-code-input" style="display: none;">
+                   <input id="tl-login-code" type="password">
+                   <label for="tl-login-code">TL Login Code</label>
+               </div>
+           </div>
+           <div class="modal-footer">
+               <a href="#!" class="modal-close btn blue" id="login-button">Login</a>
+           </div>
+       </div>
+
+
+      <div class="container" id="main-app-content" style="display: none;">
          <h5 class="center-align">123 EXTRACTOR v2.1</h5>
          <div class="right-align" style="margin-top: 10px;">
-            <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal">
+            <a class="btn-floating btn-large green modal-trigger" href="#add-project-modal" id="add-project-button">
             <i class="material-icons">add</i>
             </a>
          </div>
@@ -154,6 +207,9 @@
          <div class="center-align" style="margin-top: 10px;">
             <button class="btn orange" id="export-button">
             <i class="material-icons left">file_download</i>Download CSV
+            </button>
+            <button class="btn red" id="clear-data-button">
+            <i class="material-icons left">clear_all</i>Clear All Data
             </button>
          </div>
          <div class="center-align" style="margin-top: 10px;">
@@ -208,10 +264,14 @@
                </div>
             </div>
             <div class="modal-footer">
-               <a href="#!" class="modal-close btn grey">Cancel</a>
-               <a href="#!" class="btn green" id="save-project-modal-button">Save Project</a>
+               <a href="#!" class="modal-close btn green" id="save-project-modal-button">Save Project</a>
             </div>
          </div>
+          <div class="center-align" style="margin-top: 20px;">
+              <button class="btn waves-effect waves-light grey darken-1" id="logout-button">
+                  <i class="material-icons left">logout</i>Logout / Change Role
+              </button>
+          </div>
       </div>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
@@ -222,6 +282,7 @@
              let lastResult = ''; // Still used for single search export
              let allProjectsAggregatedResults = {}; // Object to store aggregated results per TECH ID across all projects
              let editingProjectName = null; // Variable to store the name of the project being edited
+             let isLoggedInAsTL = false; // New state variable for login role
 
              // --- HARDCODED URL FOR PROJECT JSON ---
              // Replace 'YOUR_RAW_GIST_URL_HERE' with the raw URL of your GitHub Gist or other service
@@ -229,6 +290,11 @@
              const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/serhgs/project_data.json/refs/heads/main/update.json';
              // Example Gist Raw URL: https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json
              // -----------------------------------
+
+             // --- HARDCODED URL FOR TL LOGIN CODE JSON ---
+             // This JSON should contain a single object with a 'code' property, e.g., { "code": "your_secret_tl_code" }
+             const HARDCODED_TL_CODE_URL = 'https://raw.githubusercontent.com/gmlorenz/gmlorenz.github.io/refs/heads/main/projects_data.json'; // Replace with your actual URL
+             // ------------------------------------------
 
              const prices = [
                  { "3in": 2.19, "9in": 0.99 },
@@ -251,11 +317,24 @@
              const addProjectModal = document.querySelector('#add-project-modal'); // Get the modal element
              const modalTitle = document.getElementById('modal-title'); // Get the modal title element
              const saveProjectModalButton = document.getElementById('save-project-modal-button'); // Get the modal save button
+             const clearDataButton = document.getElementById('clear-data-button'); // Get the new clear data button
+             const addProjectButton = document.getElementById('add-project-button'); // Get the add project button
+             const mainAppContent = document.getElementById('main-app-content'); // Get the main app content container
+             const logoutButton = document.getElementById('logout-button'); // Get the new logout button
 
-             // Loader and safe localStorage functions (already present, included for completeness)
+
+             // Login modal elements
+             const loginModal = document.getElementById('login-modal');
+             const loginRoleSelect = document.getElementById('login-role');
+             const tlCodeInputDiv = document.getElementById('tl-code-input');
+             const tlLoginCodeInput = document.getElementById('tl-login-code');
+             const loginButton = document.getElementById('login-button');
+
+
+             // Loader and safe localStorage functions
              function safeSetLocalStorage(key, value) {
                  try {
-                     // *** MODIFIED: Compress the value before saving ***
+                     // Compress the value before saving
                      const compressedValue = LZString.compressToUTF16(value);
                      if (compressedValue === null) {
                          throw new Error("Compression failed.");
@@ -281,14 +360,14 @@
                          return null; // Item not found
                      }
 
-                     // *** MODIFIED: Try decompressing first (for new data) ***
+                     // Try decompressing first (for new data)
                      let decompressedValue = LZString.decompressFromUTF16(value);
 
                      if (decompressedValue !== null) {
                          return decompressedValue; // Successfully decompressed
                      }
 
-                     // *** Migration Step: If decompression fails, try using the value directly (for old data) ***
+                     // Migration Step: If decompression fails, try using the value directly (for old data)
                      console.warn(`Decompression failed for key "${key}". Attempting to load as uncompressed data.`);
                      return value; // Return original value if decompression failed
 
@@ -656,7 +735,7 @@
                      const key = localStorage.key(i);
                      if (key.startsWith('tl_project_')) {
                          const projectName = key.replace('tl_project_', ''); // Get project name for error reporting
-                         // *** MODIFIED: Use safeGetLocalStorage to retrieve and decompress ***
+                         // Use safeGetLocalStorage to retrieve and decompress
                          const projectDataString = safeGetLocalStorage(key);
 
                          if (projectDataString !== null) { // Check if retrieval was successful (found and potentially decompressed)
@@ -870,16 +949,15 @@
                       const sortedTechIDs = Object.keys(allProjectsAggregatedResults).sort();
                       let grandTotal = 0;
 
-                      sortedTechIDs.forEach(techID => {
-                          const item = allProjectsAggregatedResults[techID];
-                          const originalTotal = item.totalPoints.toFixed(2);
-                          const multipliedTotal = item.multipliedTotal.toFixed(2); // Already calculated and stored
+                      sortedTechIDs.forEach(item => { // Iterate through the aggregated results object
+                          const originalTotal = allProjectsAggregatedResults[item].totalPoints.toFixed(2);
+                          const multipliedTotal = allProjectsAggregatedResults[item].multipliedTotal.toFixed(2); // Already calculated and stored
                           const rowData = [
-                               techID,
+                               item, // This is the TECH ID key
                                originalTotal,
                                multipliedTotal,
-                               ...item.categoryPoints.map(p => p.toFixed(2)), // Include aggregated category points
-                               ...item.categoryCounts.map(c => c)  // Include aggregated category counts
+                               ...allProjectsAggregatedResults[item].categoryPoints.map(p => p.toFixed(2)), // Include aggregated category points
+                               ...allProjectsAggregatedResults[item].categoryCounts.map(c => c)  // Include aggregated category counts
                            ];
                           csvContent += rowData.join(",") + "\n";
                           grandTotal += parseFloat(multipliedTotal);
@@ -930,53 +1008,61 @@
 
             // --- EXTERNAL JSON INTEGRATION FUNCTIONS ---
 
-            // Function to copy ALL saved projects JSON to clipboard
+            // Function to copy ALL saved projects data (raw content) to clipboard
             function copyAllProjectsJsonToClipboard() {
-                const allProjects = [];
+                let projectsDataString = '';
+                const projectNames = []; // To collect names for the success message
+
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key.startsWith('tl_project_')) {
                         const name = key.replace('tl_project_', '');
-                        // *** MODIFIED: Use safeGetLocalStorage to retrieve and decompress ***
+                        // Use safeGetLocalStorage to retrieve and decompress
                         const projectDataString = safeGetLocalStorage(key);
 
                         if (projectDataString !== null) { // Check if retrieval was successful
                             try {
-                                // *** MODIFIED: Parse the (now hopefully decompressed) string ***
+                                // Parse the (now hopefully decompressed) string
                                 const projectData = JSON.parse(projectDataString);
 
-                                // Store name and data object (the original structure before saving)
-                                // This is what the external JSON is expected to look like
-                                allProjects.push({ name: name, data: projectData });
+                                // Validate the parsed object structure and check for the raw data field
+                                if (projectData && typeof projectData === 'object' && 'data' in projectData && typeof projectData.data === 'string') {
+                                    // Append project name and its raw data
+                                    projectsDataString += `--- Project: ${name} ---\n`;
+                                    projectsDataString += projectData.data.trim() + '\n\n'; // Add raw data and extra line breaks
+                                    projectNames.push(name); // Add name to the list for the message
+
+                                } else {
+                                    console.error(`Skipping project '${name}': Invalid stored data structure.`);
+                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure.`, classes: 'orange' });
+                                }
                             } catch (e) {
                                 console.error(`Error parsing project JSON for key ${key} after decompression:`, e);
-                                // Optionally inform user about parsing errors
-                                M.toast({ html: `Warning: Could not parse data for project '${name}' when copying.`, classes: 'orange' });
+                                M.toast({ html: `Warning: Could not process data for project '${name}' when copying.`, classes: 'orange' });
                             }
                         }
                     }
                 }
 
-                if (allProjects.length === 0) {
-                    M.toast({ html: 'No saved projects found to copy.', classes: 'orange' });
+                if (projectsDataString.length === 0) {
+                    M.toast({ html: 'No saved projects found with valid data to copy.', classes: 'orange' });
                     return;
                 }
 
                 try {
-                    // Create the JSON string for the array of projects
-                    const allProjectsJson = JSON.stringify(allProjects, null, 2); // Use null, 2 for pretty printing
-
-                    navigator.clipboard.writeText(allProjectsJson)
+                    navigator.clipboard.writeText(projectsDataString)
                         .then(() => {
-                            M.toast({ html: `Copied ${allProjects.length} project(s) data to clipboard!`, classes: 'green' });
+                            // List the names of the projects that were copied
+                            const copiedNames = projectNames.join(', ');
+                            M.toast({ html: `Copied data for project(s): ${copiedNames}`, classes: 'green' });
                         })
                         .catch(err => {
-                            M.toast({ html: 'Failed to copy ALL projects data to clipboard. Make sure your browser supports the Clipboard API and you grant permission if prompted.', classes: 'red' });
-                            console.error('Failed to copy ALL projects data:', err);
+                            M.toast({ html: 'Failed to copy project data to clipboard. Please copy manually.', classes: 'red' });
+                            console.error('Failed to copy project data:', err);
                         });
                 } catch (e) {
-                    M.toast({ html: 'Error converting all projects data to JSON for copying.', classes: 'red' });
-                    console.error('ALL projects JSON conversion error:', e);
+                    M.toast({ html: 'Error preparing data for copying.', classes: 'red' });
+                    console.error('Copy data preparation error:', e);
                 }
             }
 
@@ -998,6 +1084,7 @@
                          throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
                      }
 
+                     // This version expects UNCOMPRESSED JSON from the URL
                      const allProjectsDataText = await response.text();
 
                      // Attempt to parse the fetched text as JSON
@@ -1029,7 +1116,7 @@
                              const storageKey = `tl_project_${projectName}`;
 
                              // Use safeSetLocalStorage to save/update
-                             // safeSetLocalStorage now handles compression internally
+                             // safeSetLocalStorage now handles compression internally for localStorage
                              if (safeSetLocalStorage(storageKey, payload)) {
                                   updatedCount++;
                              } else {
@@ -1108,12 +1195,12 @@
                      return;
                  }
 
-                 // *** MODIFIED: Use safeGetLocalStorage to retrieve and decompress ***
+                 // Use safeGetLocalStorage to retrieve and decompress
                  const projectDataString = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
 
                  if (projectDataString !== null) { // Check if retrieval was successful
                      try {
-                          // *** MODIFIED: Parse the (now hopefully decompressed) string ***
+                          // Parse the (now hopefully decompressed) string
                          const projectData = JSON.parse(projectDataString);
 
                           // Validate the parsed object structure
@@ -1195,15 +1282,15 @@
                      return; // Exit the function early
                  }
 
-                 // *** MODIFIED: Use safeGetLocalStorage to retrieve and decompress ***
+                 // Use safeGetLocalStorage to retrieve and decompress
                  const projectDataString = safeGetLocalStorage(`tl_project_${selected}`);
 
                  if (projectDataString !== null) { // Check if retrieval was successful (found and potentially decompressed)
                      try {
-                         // *** MODIFIED: Parse the (now hopefully decompressed) string ***
+                         // Parse the (now hopefully decompressed) string
                          const projectData = JSON.parse(projectDataString);
 
-                         // Validate the parsed project object structure
+                         // Validate the parsed object structure
                          if (projectData && typeof projectData === 'object' && 'data' in projectData && 'size' in projectData && 'ir' in projectData) {
                             activeProjectData = projectData; // Use the parsed object
                             output.textContent = '';
@@ -1251,6 +1338,189 @@
                   M.FormSelect.init(projectSelector);
              });
 
+             // Event listener for the Clear Data button
+             if (clearDataButton) {
+                 clearDataButton.addEventListener('click', function() {
+                     if (confirm('Are you sure you want to clear ALL saved project data from your browser? This cannot be undone.')) {
+                         // Iterate through localStorage and remove items starting with the project prefix
+                         const keysToRemove = [];
+                         for (let i = 0; i < localStorage.length; i++) {
+                             const key = localStorage.key(i);
+                             if (key.startsWith('tl_project_')) {
+                                 keysToRemove.push(key);
+                             }
+                         }
+
+                         keysToRemove.forEach(key => {
+                             localStorage.removeItem(key);
+                         });
+
+                         M.toast({ html: 'All project data cleared from local storage.', classes: 'green' });
+
+                         // Reset application state after clearing data
+                         loadProjectList(); // Reload the empty project list
+                         activeProjectData = '';
+                         output.textContent = ''; // Clear single search output
+                         allResultsDiv.innerHTML = ''; // Clear all results output
+                         allCalculatedResults = []; // Clear calculated results
+                         lastResult = ''; // Clear last single search result
+                         allProjectsAggregatedResults = {}; // Clear aggregated results
+                         editingProjectName = null; // Reset editing state
+                         techIdInput.value = ''; // Clear TECH ID input
+                         M.updateTextFields(); // Update text field labels
+                     }
+                 });
+             } else {
+                  console.error("Button with ID 'clear-data-button' not found.");
+             }
+
+            // --- Login Logic ---
+
+            // Function to handle login
+            async function handleLogin() {
+                const selectedRole = loginRoleSelect.value;
+                const enteredCode = tlLoginCodeInput.value.trim();
+
+                if (!selectedRole) {
+                    M.toast({ html: 'Please select a role.', classes: 'orange' });
+                    return;
+                }
+
+                if (selectedRole === 'tl') {
+                    if (!enteredCode) {
+                        M.toast({ html: 'Please enter the TL login code.', classes: 'orange' });
+                        return;
+                    }
+
+                    showLoader(); // Show loader while fetching code
+                    try {
+                        const response = await fetch(HARDCODED_TL_CODE_URL);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        const correctCode = data.code; // Assuming the JSON has a 'code' property
+
+                        if (enteredCode === correctCode) {
+                            isLoggedInAsTL = true;
+                            M.toast({ html: 'Logged in as TL!', classes: 'green' });
+                            showAppContent(); // Show main app content
+                        } else {
+                            M.toast({ html: 'Invalid TL login code.', classes: 'red' });
+                             isLoggedInAsTL = false; // Ensure state is correct
+                        }
+                    } catch (e) {
+                        M.toast({ html: `Error fetching login code: ${e.message}`, classes: 'red' });
+                        console.error('Login code fetch error:', e);
+                         isLoggedInAsTL = false; // Ensure state is correct
+                    } finally {
+                        hideLoader(); // Hide loader
+                    }
+                } else if (selectedRole === 'tech') {
+                    isLoggedInAsTL = false; // Tech role does not have TL privileges
+                    M.toast({ html: 'Logged in as Tech.', classes: 'green' });
+                    showAppContent(); // Show main app content
+                }
+                 // After login attempt (success or failure), update button visibility
+                 updateButtonVisibility();
+            }
+
+            // Function to show main app content and hide login modal
+            function showAppContent() {
+                 const modalInstance = M.Modal.getInstance(loginModal);
+                 modalInstance.close(); // Close the login modal
+                 mainAppContent.style.display = 'block'; // Show the main container
+                 loadProjectList(); // Load projects after successful login
+            }
+
+            // Function to update button visibility based on login role
+            function updateButtonVisibility() {
+                if (isLoggedInAsTL) {
+                    addProjectButton.style.display = 'block'; // Show Add Project button for TL
+                } else {
+                    addProjectButton.style.display = 'none'; // Hide Add Project button for Tech
+                }
+                // Other buttons (Edit, Delete, Search, Calculate, Export, Copy, Update Online, Clear Data)
+                // should generally remain visible for both roles, but you can add logic here
+                // if you need to hide/show others based on role.
+            }
+
+            // Function to handle logout/change role
+            function handleLogout() {
+                 // Reset application state
+                 activeProjectData = '';
+                 allCalculatedResults = [];
+                 lastResult = '';
+                 allProjectsAggregatedResults = {};
+                 editingProjectName = null;
+                 isLoggedInAsTL = false;
+
+                 // Clear displayed content
+                 output.textContent = '';
+                 allResultsDiv.innerHTML = '';
+                 techIdInput.value = '';
+
+                 // Hide main app content
+                 mainAppContent.style.display = 'none';
+
+                 // Reset login modal fields
+                 loginRoleSelect.value = ''; // Reset select dropdown
+                 tlLoginCodeInput.value = ''; // Clear code input
+                 tlCodeInputDiv.style.display = 'none'; // Hide code input
+
+                 // Update Materialize components
+                 M.FormSelect.init(loginRoleSelect); // Re-initialize the select
+                 M.updateTextFields();
+
+                 // Update button visibility (will hide Add Project button)
+                 updateButtonVisibility();
+
+                 // Show the login modal again
+                 const loginModalInstance = M.Modal.getInstance(loginModal);
+                 if (loginModalInstance) {
+                     loginModalInstance.open();
+                 } else {
+                     console.error("Login modal not found or not initialized for logout.");
+                     // Fallback: If modal fails, just ensure main content is hidden
+                     mainAppContent.style.display = 'none';
+                 }
+                 M.toast({ html: 'Logged out.', classes: 'blue-grey' });
+            }
+
+
+            // Event listener for role selection change
+            loginRoleSelect.addEventListener('change', function() {
+                if (this.value === 'tl') {
+                    tlCodeInputDiv.style.display = 'block'; // Show code input for TL
+                } else {
+                    tlCodeInputDiv.style.display = 'none'; // Hide code input for Tech
+                    tlLoginCodeInput.value = ''; // Clear code input when switching away from TL
+                }
+                M.updateTextFields(); // Update text field labels
+            });
+
+            // Event listener for login button click
+            loginButton.addEventListener('click', handleLogin);
+
+            // Allow pressing Enter in the code field to trigger login
+            tlLoginCodeInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent default form submission
+                    handleLogin();
+                }
+            });
+
+            // Event listener for the Logout button
+            if (logoutButton) {
+                logoutButton.addEventListener('click', handleLogout);
+            } else {
+                console.error("Button with ID 'logout-button' not found.");
+            }
+
+
+            // --- End Login Logic ---
+
+
              // Initialize Materialize components
              M.FormSelect.init(document.querySelectorAll('select'));
              M.Modal.init(document.querySelectorAll('.modal')); // Initialize all modals
@@ -1274,8 +1544,25 @@
 
              M.updateTextFields(); // Update text field labels
 
-             // Load projects on page load
-             loadProjectList();
+             // --- Initial Load ---
+             // Initialize modals first
+             const loginModalInstance = M.Modal.getInstance(loginModal);
+
+             // Now make the body visible
+             document.body.style.display = 'block';
+
+             // Then attempt to open the login modal
+             if (loginModalInstance) {
+                loginModalInstance.open();
+             } else {
+                 console.error("Login modal not found or not initialized by Materialize.");
+                 // If modal fails, just show the app content (as a fallback)
+                 mainAppContent.style.display = 'block';
+                 loadProjectList();
+                 updateButtonVisibility(); // Still update visibility based on default state (Tech)
+             }
+             // --- End Initial Load ---
+
          });
       </script>
       <div id="loader-spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000;">
