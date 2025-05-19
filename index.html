@@ -532,7 +532,7 @@
              // --- HARDCODED URL FOR PROJECT JSON ---
              // Replace 'YOUR_RAW_GIST_URL_HERE' with the raw URL of your GitHub Gist or other service
              // hosting the projects JSON array.
-             const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/serhgs/project_data.json/refs/heads/main/update.json';
+             const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/gmlorenz/gmlorenz.github.io/refs/heads/main/Online-update';
              // Example Gist Raw URL: https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/YOUR_FILENAME.json
              // -----------------------------------
 
@@ -1271,168 +1271,89 @@
 
             // Function to copy ALL saved projects data as JSON to clipboard
             function copyAllProjectsJsonToClipboard() {
-                const allProjectsArray = [];
-                let processedCount = 0;
-                let errorCount = 0;
+    const allProjectsArray = [];
+    let processedCount = 0;
 
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('tl_project_')) {
-                        const name = key.replace('tl_project_', '');
-                        // Use safeGetLocalStorage to retrieve and decompress
-                        const projectDataString = safeGetLocalStorage(key);
-
-                        if (projectDataString !== null) { // Check if retrieval was successful
-                            try {
-                                // Parse the (now hopefully decompressed) string
-                                const projectData = JSON.parse(projectDataString);
-
-                                // Validate the parsed object structure
-                                if (projectData && typeof projectData === 'object' && 'data' in projectData && 'size' in projectData && 'ir' in projectData) {
-                                    // Add project data to the array in the desired format
-                                    allProjectsArray.push({
-                                        name: name,
-                                        data: projectData // projectData already has { data: "...", size: "...", ir: true }
-                                    });
-                                    processedCount++;
-                                } else {
-                                    console.error(`Skipping project '${name}': Invalid stored data structure.`);
-                                    M.toast({ html: `Warning: Skipped project '${name}' due to invalid data structure when copying.`, classes: 'orange' });
-                                    errorCount++;
-                                }
-                            } catch (e) {
-                                console.error(`Error parsing project JSON for key ${key} after decompression:`, e);
-                                M.toast({ html: `Warning: Could not process data for project '${name}' when copying.`, classes: 'orange' });
-                                errorCount++;
-                            }
-                        } else {
-                             console.error(`Could not retrieve project data for key ${key}.`);
-                             M.toast({ html: `Warning: Could not retrieve data for project '${name}' when copying.`, classes: 'orange' });
-                             errorCount++;
-                        }
-                    }
-                }
-
-                if (allProjectsArray.length === 0) {
-                    M.toast({ html: 'No saved projects found with valid data to copy as JSON.', classes: 'orange' });
-                    return;
-                }
-
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('tl_project_')) {
+            const name = key.replace('tl_project_', '');
+            const projectDataString = safeGetLocalStorage(key);
+            if (projectDataString !== null) {
                 try {
-                    // Convert the array of project objects to a JSON string
-                    const jsonString = JSON.stringify(allProjectsArray, null, 2); // Use null, 2 for pretty printing
-
-                    navigator.clipboard.writeText(jsonString)
-                        .then(() => {
-                            let message = `Copied JSON data for ${processedCount} project(s) to clipboard.`;
-                            if (errorCount > 0) {
-                                message += ` (Skipped ${errorCount} due to errors/invalid format)`;
-                                M.toast({ html: message, classes: 'orange' });
-                            } else {
-                                M.toast({ html: message, classes: 'green' });
-                            }
-                        })
-                        .catch(err => {
-                            M.toast({ html: 'Failed to copy JSON data to clipboard. Please copy manually.', classes: 'red' });
-                            console.error('Failed to copy JSON data:', err);
+                    const projectData = JSON.parse(projectDataString);
+                    if (projectData && typeof projectData === 'object' && 'data' in projectData && 'size' in projectData && 'ir' in projectData) {
+                        allProjectsArray.push({
+                            name: name,
+                            data: projectData
                         });
+                        processedCount++;
+                    }
                 } catch (e) {
-                    M.toast({ html: 'Error generating JSON data for copying.', classes: 'red' });
-                    console.error('JSON generation error:', e);
+                    console.error(`Error parsing project JSON for key ${key}:`, e);
                 }
             }
+        }
+    }
 
-            // Function to automatically fetch JSON from the configured URL and save projects
+    if (allProjectsArray.length === 0) {
+        M.toast({ html: 'No saved projects found to copy.', classes: 'orange' });
+        return;
+    }
+
+    try {
+        const jsonString = JSON.stringify(allProjectsArray);
+        const compressed = LZString.compressToBase64(jsonString);
+        navigator.clipboard.writeText(compressed)
+            .then(() => {
+                M.toast({ html: `Copied compressed JSON for ${processedCount} project(s).`, classes: 'green' });
+            })
+            .catch(err => {
+                M.toast({ html: 'Failed to copy to clipboard.', classes: 'red' });
+                console.error('Clipboard error:', err);
+            });
+    } catch (e) {
+        M.toast({ html: 'Compression error.', classes: 'red' });
+        console.error('Compression error:', e);
+    }
+}
+
+// Function to automatically fetch JSON from the configured URL and save projects
             async function fetchAndSaveAllProjectsFromURL() {
-                 // Ensure the URL variable is defined and is a non-empty string
-                 if (typeof HARDCODED_PROJECTS_JSON_URL !== 'string' || HARDCODED_PROJECTS_JSON_URL.trim() === '' || HARDCODED_PROJECTS_JSON_URL === 'YOUR_RAW_GIST_URL_HERE') {
-                      M.toast({ html: 'Project JSON URL is not configured in the script code. Please set the HARDCODED_PROJECTS_JSON_URL variable with your raw JSON URL.', classes: 'red' });
-                      console.error("HARDCODED_PROJECTS_JSON_URL is not properly configured.");
-                      return;
-                 }
+    if (!HARDCODED_PROJECTS_JSON_URL || HARDCODED_PROJECTS_JSON_URL.includes("YOUR_RAW_GIST_URL_HERE")) {
+        M.toast({ html: 'Project JSON URL not configured.', classes: 'red' });
+        return;
+    }
 
-                 showLoader(); // Show loader while fetching
+    try {
+        const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+        const compressedText = await response.text();
 
-                 try {
-                     const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+        // Decompress from base64
+        const jsonString = LZString.decompressFromBase64(compressedText);
+        if (!jsonString) throw new Error("Decompression failed or invalid base64.");
 
-                     if (!response.ok) {
-                         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || response.status}`);
-                     }
+        const projectArray = JSON.parse(jsonString);
+        if (!Array.isArray(projectArray)) throw new Error("Decompressed content is not a valid array.");
 
-                     // This version expects UNCOMPRESSED JSON from the URL
-                     const allProjectsDataText = await response.text();
-
-                     // Attempt to parse the fetched text as JSON
-                     let fetchedProjectsArray;
-                     try {
-                         fetchedProjectsArray = JSON.parse(allProjectsDataText);
-                     } catch (e) {
-                         throw new Error('Failed to parse fetched data as JSON. Please ensure the content at the configured URL is a valid JSON array of project objects.');
-                     }
-
-                     // Validate the structure of the fetched JSON (should be an array)
-                     if (!Array.isArray(fetchedProjectsArray)) {
-                          throw new Error('Invalid JSON structure from URL. Expected a JSON array of projects.');
-                     }
-
-                     let updatedCount = 0;
-                     let errorCount = 0;
-                     let skippedCount = 0;
-
-                     // Iterate through the array and save each project
-                     fetchedProjectsArray.forEach(project => {
-                         // Validate individual project object structure
-                         // Expecting an object like { name: "Project Name", data: { data: "...", size: "...", ir: true } }
-                         if (project && typeof project === 'object' && project.name && typeof project.name === 'string' && project.name.trim() !== '' && project.data && typeof project.data === 'object' && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
-
-                             const projectName = project.name.trim();
-                             // project.data already contains the object { data, size, ir }
-                             const payload = JSON.stringify(project.data); // Stringify the 'data' object part for storage
-                             const storageKey = `tl_project_${projectName}`;
-
-                             // Use safeSetLocalStorage to save/update
-                             // safeSetLocalStorage now handles compression internally for localStorage
-                             if (safeSetLocalStorage(storageKey, payload)) {
-                                  updatedCount++;
-                             } else {
-                                 errorCount++;
-                                 console.error(`Failed to save project '${projectName}' from URL (localStorage full or save error).`);
-                                 // safeSetLocalStorage already shows a toast for full storage or compression error
-                             }
-                         } else {
-                             skippedCount++;
-                             console.error("Skipping item from URL due to invalid project object structure:", project);
-                             // Optionally show a toast for invalid individual items
-                             M.toast({ html: `Skipped an item: Invalid project data format found at the configured URL.`, classes: 'orange' });
-                         }
-                     });
-
-                     let resultMessage = `Auto update complete. Projects updated/saved: ${updatedCount}.`;
-                      if (skippedCount > 0) {
-                           resultMessage += ` Skipped invalid items: ${skippedCount}.`;
-                           M.toast({ html: resultMessage, classes: 'orange' });
-                      }
-                       if (errorCount > 0) {
-                          resultMessage += ` Save Errors: ${errorCount}. Check console for details.`;
-                          M.toast({ html: resultMessage, classes: 'red' }); // Use red for save errors
-                      } else if (updatedCount === 0 && skippedCount === 0) {
-                           resultMessage = `Auto update complete. No valid projects found at the configured URL.`;
-                           M.toast({ html: resultMessage, classes: 'orange' });
-                      } else if (errorCount === 0 && skippedCount === 0) {
-                           M.toast({ html: resultMessage, classes: 'green' }); // Green only if no errors or skips
-                      }
-
-
-                     loadProjectList(); // Refresh the project dropdown
-
-                 } catch (e) {
-                     M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
-                     console.error('Auto-fetch URL error:', e);
-                 } finally {
-                      hideLoader(); // Hide loader regardless of success or failure
-                 }
+        let updatedCount = 0;
+        for (const project of projectArray) {
+            if (project.name && project.data) {
+                const storageKey = `tl_project_${project.name}`;
+                const payload = JSON.stringify(project.data);
+                if (safeSetLocalStorage(storageKey, payload)) {
+                    updatedCount++;
+                }
             }
+        }
+
+        M.toast({ html: `Imported ${updatedCount} compressed project(s) from online source.`, classes: 'green' });
+        loadProjectList();
+    } catch (e) {
+        M.toast({ html: `Error during auto fetch/processing: ${e.message}`, classes: 'red' });
+        console.error("Auto-fetch error:", e);
+    }
+}
 
             // --- Event Listeners for External JSON Integration ---
 
