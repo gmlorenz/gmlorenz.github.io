@@ -2309,10 +2309,10 @@
         function applyDarkModePreference() {
             let isDarkMode = localStorage.getItem('darkMode');
 
-            // If no preference is stored, default to 'enabled' (dark mode)
+            // If no preference is stored, default to 'disabled' (light mode)
             if (isDarkMode === null) {
-                isDarkMode = 'enabled';
-                localStorage.setItem('darkMode', 'enabled'); // Save the default preference
+                isDarkMode = 'disabled'; // Default to light mode
+                localStorage.setItem('darkMode', 'disabled'); // Save the default preference
             }
 
             if (isDarkMode === 'enabled') {
