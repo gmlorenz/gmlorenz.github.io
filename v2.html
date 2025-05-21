@@ -1039,7 +1039,7 @@
 
             return {
                 techID: techIDValue,
-                totalPoints: totalPoints,
+                totalPoints: totalPoints, // This is the base total points for this techID in this project
                 additionalFixPoints: additionalFixPoints,
                 excessiveFixPoints: excessiveFixPoints,
                 missFixPoints: missFixPoints,
@@ -1284,6 +1284,8 @@
             allProjectsAggregatedResults = {};
             let processingErrors = [];
 
+            // 1. Collect all raw project data first
+            const allProjectsRawData = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('tl_project_')) {
@@ -1293,120 +1295,15 @@
                     if (projectDataString !== null) {
                         try {
                             const project = JSON.parse(projectDataString);
-
-                            // Ensure project object has the expected properties (data, size, ir)
                             if (project && typeof project === 'object' && 'data' in project && 'size' in project && 'ir' in project) {
-                                const raw = project.data;
-                                const size = project.size;
-                                const ir = project.ir;
-
-                                if (raw && size) {
-                                    // Ensure 'raw' is treated as a string before splitting
-                                    const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
-                                    const headerRow = rows.shift();
-
-                                    if (!headerRow) {
-                                        processingErrors.push(`Project '${projectName}': Data is empty or has no header row.`);
-                                        continue;
-                                    }
-                                    const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-                                    const fixIdIndex = headers.indexOf("FIX1_ID");
-
-                                    // Define indexes within this function's scope
-                                    const indexes = {
-                                        category: headers.indexOf("CATEGORY"),
-                                        i3qa: headers.indexOf("I3QA_CAT"),
-                                        rv1cat: headers.indexOf("RV1_CAT"),
-                                        afp1cat: headers.indexOf("AFP1_CAT"),
-                                        rv1label: headers.indexOf("RV1_LABEL"),
-                                        i3qalabel: headers.indexOf("I3QA_LABEL"),
-                                        afp2cat: headers.indexOf("AFP2_CAT"),
-                                        rv2cat: headers.indexOf("RV2_CAT")
-                                    };
-
-                                    if (fixIdIndex === -1) {
-                                        processingErrors.push(`Project '${projectName}': FIX1_ID column not found.`);
-                                        continue;
-                                    }
-
-                                    rows.forEach(row => {
-                                        const fields = row.split(/[\t,]/);
-                                        const techID = fields[fixIdIndex]?.trim().toUpperCase();
-
-                                        if (techID) {
-                                            const rowDetails = calculateRowDetails(fields, headers, size, ir);
-
-                                            if (rowDetails && Array.isArray(rowDetails.categoryPoints) && Array.isArray(rowDetails.categoryCounts)) {
-                                                if (!allProjectsAggregatedResults[techID]) {
-                                                    allProjectsAggregatedResults[techID] = {
-                                                        baseTotalPoints: 0, // Store points BEFORE multiplier for correct quality calc
-                                                        incorrectPointsValue: 0, // Value that makes points incorrect
-                                                        // Properties for direct aggregation
-                                                        additionalFixPoints: 0,
-                                                        excessiveFixPoints: 0,
-                                                        missFixPoints: 0,
-                                                        incorrectCounting: 0,
-                                                        categoryPoints: Array(9).fill(0),
-                                                        categoryCounts: Array(9).fill(0),
-                                                        // Properties calculated AFTER aggregation and multiplier
-                                                        totalPoints: 0, // Final total points after multiplier
-                                                        qualityPercentage: 0,
-                                                        bonusPercentage: 0,
-                                                        qualityBonus: 0,
-                                                        estimatedSalary: 0 // Initialize Estimated Salary
-                                                    };
-                                                }
-                                                // Aggregate raw points before any multipliers or quality adjustments
-                                                allProjectsAggregatedResults[techID].baseTotalPoints += rowDetails.rowPoints;
-
-                                                rowDetails.categoryCounts.forEach((count, index) => {
-                                                    allProjectsAggregatedResults[techID].categoryCounts[index] += count;
-                                                });
-                                                // Aggregate category points here from original calculation logic
-                                                rowDetails.categoryPoints.forEach((points, index) => { // Refined logic
-                                                    allProjectsAggregatedResults[techID].categoryPoints[index] += points;
-                                                });
-
-
-                                                if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
-                                                    allProjectsAggregatedResults[techID].additionalFixPoints++;
-                                                }
-                                                if (indexes.rv1label !== -1 && fields[indexes.rv1label] && fields[indexes.rv1label].toUpperCase().includes("E")) {
-                                                    allProjectsAggregatedResults[techID].excessiveFixPoints++;
-                                                }
-                                                if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel] && fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-                                                    allProjectsAggregatedResults[techID].missFixPoints++;
-                                                }
-                                                if (indexes.rv2label !== -1 && fields[indexes.rv2label] && fields[indexes.rv2label].toUpperCase().includes("E")) {
-                                                    allProjectsAggregatedResults[techID].excessiveFixPoints++;
-                                                }
-                                                if (indexes.rv2label !== -1 && fields[indexes.rv2label] && fields[indexes.rv2label].toUpperCase().includes("M")) {
-                                                    allProjectsAggregatedResults[techID].missFixPoints++;
-                                                }
-
-                                                let isIncorrectRow = false;
-                                                if (indexes.rv1label !== -1 && fields[indexes.rv1label] && fields[indexes.rv1label].toUpperCase().includes("I")) {
-                                                    allProjectsAggregatedResults[techID].incorrectCounting++;
-                                                    isIncorrectRow = true;
-                                                }
-                                                if (indexes.rv2label !== -1 && fields[indexes.rv2label] && fields[indexes.rv2label].toUpperCase().includes("I")) {
-                                                    allProjectsAggregatedResults[techID].incorrectCounting++;
-                                                    isIncorrectRow = true;
-                                                }
-
-                                                if (isIncorrectRow) {
-                                                    allProjectsAggregatedResults[techID].incorrectPointsValue += rowDetails.rowPoints;
-                                                }
-                                            } else {
-                                                processingErrors.push(`Project '${projectName}': Invalid row details for TECH ID '${techID}'. Skipping row.`);
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    processingErrors.push(`Project '${projectName}': Missing raw data or size.`);
-                                }
+                                allProjectsRawData.push({
+                                    name: projectName,
+                                    data: String(project.data), // Ensure data is string
+                                    size: project.size,
+                                    ir: project.ir
+                                });
                             } else {
-                                    processingErrors.push(`Project '${projectName}': Invalid project data structure.`);
+                                processingErrors.push(`Project '${projectName}': Invalid project data structure.`);
                             }
                         } catch (e) {
                             if (e instanceof SyntaxError) {
@@ -1422,27 +1319,99 @@
                 }
             }
 
+            // 2. Identify all unique TECH IDs across all projects
+            const allUniqueTechIDs = new Set();
+            allProjectsRawData.forEach(project => {
+                const rows = project.data.split(/\r?\n/).filter(r => r.trim() !== "");
+                if (rows.length > 0) {
+                    const headerRow = rows.shift();
+                    const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
+                    const fixIdIndex = headers.indexOf("FIX1_ID");
+
+                    if (fixIdIndex === -1) {
+                        // This error is already pushed above for the project, no need to duplicate for each techID within it.
+                        // processingErrors.push(`Project '${project.name}': FIX1_ID column not found.`);
+                        return;
+                    }
+
+                    rows.forEach(row => {
+                        const fields = row.split(/[\t,]/);
+                        const techID = fields[fixIdIndex]?.trim().toUpperCase();
+                        if (techID) {
+                            allUniqueTechIDs.add(techID);
+                        }
+                    });
+                }
+            });
+
+            // 3. For each unique TECH ID, aggregate results by iterating through ALL projects
+            allUniqueTechIDs.forEach(techID => {
+                // Initialize aggregated result structure for this TECH ID
+                allProjectsAggregatedResults[techID] = {
+                    baseTotalPoints: 0, // Sum of totalPoints from each project's calculateDetailsForTechIDInRaw
+                    incorrectPointsValue: 0,
+                    additionalFixPoints: 0,
+                    excessiveFixPoints: 0,
+                    missFixPoints: 0,
+                    incorrectCounting: 0,
+                    categoryPoints: Array(9).fill(0),
+                    categoryCounts: Array(9).fill(0),
+                    // These will be calculated after aggregation
+                    totalPoints: 0,
+                    qualityPercentage: 0,
+                    bonusPercentage: 0,
+                    qualityBonus: 0,
+                    estimatedSalary: 0
+                };
+
+                allProjectsRawData.forEach(project => {
+                    // Calculate details for this techID specifically within this project
+                    const projectSpecificResult = calculateDetailsForTechIDInRaw(project.data, techID, project.size, project.ir);
+
+                    if (projectSpecificResult) {
+                        // Aggregate values from projectSpecificResult into the overall aggregated result for this TECH ID
+                        allProjectsAggregatedResults[techID].baseTotalPoints += projectSpecificResult.totalPoints;
+                        allProjectsAggregatedResults[techID].incorrectPointsValue += projectSpecificResult.incorrectPointsValue;
+                        allProjectsAggregatedResults[techID].additionalFixPoints += projectSpecificResult.additionalFixPoints;
+                        allProjectsAggregatedResults[techID].excessiveFixPoints += projectSpecificResult.excessiveFixPoints;
+                        allProjectsAggregatedResults[techID].missFixPoints += projectSpecificResult.missFixPoints;
+                        allProjectsAggregatedResults[techID].incorrectCounting += projectSpecificResult.incorrectCounting;
+
+                        projectSpecificResult.categoryPoints.forEach((points, index) => {
+                            allProjectsAggregatedResults[techID].categoryPoints[index] += points;
+                        });
+                        projectSpecificResult.categoryCounts.forEach((count, index) => {
+                            allProjectsAggregatedResults[techID].categoryCounts[index] += count;
+                        });
+                    }
+                });
+
+                // Now calculate the final derived metrics for this aggregated TECH ID
+                const aggregatedResult = allProjectsAggregatedResults[techID];
+
+                // Apply multiplier to the accumulated baseTotalPoints
+                aggregatedResult.totalPoints = aggregatedResult.baseTotalPoints * multiplier;
+
+                // Quality calculation remains based on original base points, not multiplied points
+                const correctPointsAggregated = aggregatedResult.baseTotalPoints - aggregatedResult.incorrectPointsValue;
+                aggregatedResult.qualityPercentage = (aggregatedResult.baseTotalPoints > 0) ? (correctPointsAggregated / aggregatedResult.baseTotalPoints) * 100 : 0;
+
+                aggregatedResult.bonusPercentage = getBonusPercentage(aggregatedResult.qualityPercentage);
+                // Quality bonus is calculated on the base points, before the global multiplier
+                aggregatedResult.qualityBonus = aggregatedResult.baseTotalPoints * (aggregatedResult.bonusPercentage / 100);
+
+                // Estimated salary is the total points (after multiplier) plus the quality bonus (from base points)
+                aggregatedResult.estimatedSalary = aggregatedResult.totalPoints + aggregatedResult.qualityBonus;
+            });
+
             let grandTotal = 0;
             for (const techID in allProjectsAggregatedResults) {
                 if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
-                    const result = allProjectsAggregatedResults[techID];
-
-                    // Calculate final total points by applying the multiplier to the base points
-                    result.totalPoints = result.baseTotalPoints * multiplier;
-
-                    // Quality percentage is based on *base* points, not total points multiplied by multiplier/bonus
-                    const correctPoints = result.baseTotalPoints - result.incorrectPointsValue; // Use baseTotalPoints for quality calculation
-                    result.qualityPercentage = (result.baseTotalPoints > 0) ? (correctPoints / result.baseTotalPoints) * 100 : 0;
-
-                    result.bonusPercentage = getBonusPercentage(result.qualityPercentage);
-                    result.qualityBonus = result.baseTotalPoints * (result.bonusPercentage / 100); // Bonus applied to base points
-                    result.estimatedSalary = result.totalPoints + result.qualityBonus; // Calculate Estimated Salary
-
-                    grandTotal += result.totalPoints; // Grand total is for final total points (after multiplier)
+                    grandTotal += allProjectsAggregatedResults[techID].totalPoints; // Grand total sums points AFTER multiplier
                 }
             }
 
-            let tableHtml = `<h5>Totals Across All Projects (Multiplier: ${multiplier})</h5>`;
+            let tableHtml = `<h5>Totals Across All Projects (Multiplier: ${multiplier.toFixed(2)})</h5>`; // Display multiplier in title
             if (Object.keys(allProjectsAggregatedResults).length === 0) {
                 tableHtml += '<p>No TECH IDs found across all projects.</p>';
             } else {
@@ -1452,7 +1421,7 @@
                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
                     'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value', 'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %',
-                    'Quality Bonus', 'Estimated Salary' // Add Estimated Salary
+                    'Quality Bonus', 'Estimated Salary'
                 ];
 
                 aggregatedHeaders.forEach(headerText => {
@@ -1461,23 +1430,20 @@
                 tableHtml += '</tr></thead><tbody>';
 
                 Object.entries(allProjectsAggregatedResults).sort((a, b) => a[0].localeCompare(b[0])).forEach(([techID, result]) => {
-                    const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : 'quality-orange';
-                    const techIdHighlightClass = techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight'; // Apply tech-id-highlight class
+                    const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red'); // Added quality-red for < 77.50%
+                    const techIdHighlightClass = techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
 
-                    // Determine class for Quality Bonus column
                     let bonusClass = '';
                     if (result.bonusPercentage >= 100) {
                         bonusClass = 'quality-green';
-                    } else if (result.bonusPercentage >= 50) { // Example threshold, adjust as needed
+                    } else if (result.bonusPercentage > 0) { // Any positive bonus
                         bonusClass = 'quality-orange';
-                    } else if (result.bonusPercentage < 50 && result.bonusPercentage > 0) { // For low but non-zero bonus
+                    } else { // 0% bonus
                         bonusClass = 'quality-red';
-                    } else { // For 0% bonus
-                        bonusClass = 'quality-red'; // Make 0% bonus also red
                     }
 
                     tableHtml += '<tr>';
-                    tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`; // Apply highlight class
+                    tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`;
                     result.categoryPoints.forEach(total => {
                         tableHtml += `<td>${total.toFixed(2)}</td>`;
                     });
@@ -1486,13 +1452,14 @@
                     });
                     tableHtml += `<td>${result.additionalFixPoints}</td>`;
                     tableHtml += `<td>${result.excessiveFixPoints}</td>`;
+                    tableHtml += `<td>${result.missFixPoints}</td>`;
                     tableHtml += `<td>${result.incorrectCounting}</td>`;
                     tableHtml += `<td>${result.incorrectPointsValue.toFixed(2)}</td>`;
                     tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`;
                     tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td>`;
                     tableHtml += `<td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
                     tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td>`;
-                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td>`; // Apply highlight for Estimated Salary
+                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td>`;
                     tableHtml += '</tr>';
                 });
                 tableHtml += '</tbody></table>';
