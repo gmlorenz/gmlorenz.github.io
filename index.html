@@ -249,11 +249,6 @@
         .btn i.material-icons.left {
             margin-right: 8px;
         }
-        .btn i.material-icons.tiny { 
-            font-size: 1em;
-            vertical-align: sub;
-        }
-
 
         /* Specific Button Colors - Eye-Friendly Purple Theme Mapping */
         .btn.blue, .btn.blue.darken-1 { background-color: var(--primary-purple) !important; }
@@ -262,9 +257,8 @@
         .btn.green { background-color: var(--success-green) !important; }
         .btn.green:hover { background-color: #66bb6a !important; }
 
-        .btn.orange, .btn.orange.darken-2 { background-color: var(--warning-orange) !important; } 
-        .btn.orange:hover, .btn.orange.darken-2:hover { background-color: #ffa726 !important; }
-
+        .btn.orange.darken-2 { background-color: var(--warning-orange) !important; }
+        .btn.orange.darken-2:hover { background-color: #ffa726 !important; }
 
         .btn.red, .btn.red.darken-2 { background-color: var(--danger-red) !important; }
         .btn.red:hover, .btn.red.darken-2:hover { background-color: #ef5350 !important; }
@@ -277,10 +271,6 @@
 
         .btn.grey.darken-1 { background-color: #9e9e9e !important; }
         .btn.grey.darken-1:hover { background-color: #757575 !important; }
-        
-        .btn.blue-grey.darken-1 { background-color: #546e7a !important; } 
-        .btn.blue-grey.darken-1:hover { background-color: #455a64 !important; }
-
 
         /* Floating Action Button specific */
         .btn-floating.btn-large.green {
@@ -298,10 +288,10 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background-color: var(--medium-bg); 
-            color: var(--dark-text); 
+            background-color: var(--medium-bg); /* Use a neutral background */
+            color: var(--dark-text); /* Text color changes with theme */
             border-radius: 50%;
-            width: 44px; 
+            width: 44px; /* Larger touch target */
             height: 44px;
             display: flex;
             justify-content: center;
@@ -309,15 +299,15 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-            z-index: 999; 
+            z-index: 999; /* Ensure it's on top */
         }
         #dark-mode-toggle:hover {
-            background-color: var(--primary-purple-light); 
+            background-color: var(--primary-purple-light); /* Subtle hover effect */
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         body.dark-mode #dark-mode-toggle {
-            background-color: #5B4A8C; 
-            color: var(--dark-text); 
+            background-color: #5B4A8C; /* Darker background in dark mode */
+            color: var(--dark-text); /* Light icon */
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         body.dark-mode #dark-mode-toggle:hover {
@@ -346,7 +336,7 @@
             padding-bottom: 10px;
         }
         body.dark-mode #all-results h5 {
-            border-bottom-color: #555; 
+            border-bottom-color: #555; /* Darker border in dark mode */
         }
         .modal-content h5 {
             margin-bottom: 20px;
@@ -355,22 +345,22 @@
             margin-top: 15px;
             margin-bottom: 15px;
         }
-        .modal-footer a.btn, .modal-footer a.btn-flat { /* Ensure buttons in footer have margin */
+        .modal-footer a {
             margin-left: 10px;
         }
         /* Modal specific styling for dark mode */
         .modal {
-            background-color: #ffffff; 
+            background-color: #ffffff; /* Default light background */
             transition: background-color 0.3s ease;
         }
         body.dark-mode .modal {
-            background-color: #3A305D; 
+            background-color: #3A305D; /* Dark modal background */
         }
         body.dark-mode .modal .modal-content {
-            color: var(--dark-text); 
+            color: var(--dark-text); /* Light text in modal */
         }
         body.dark-mode .modal .modal-footer {
-            background-color: #443C5C; 
+            background-color: #443C5C; /* Darker footer in dark mode */
             border-top-color: #5B4A8C;
         }
 
@@ -386,7 +376,7 @@
             background-color: #ffffff;
         }
         body.dark-mode #login-modal .modal-content {
-            background-color: #3A305D; 
+            background-color: #3A305D; /* Dark mode login modal content */
         }
         #login-modal .modal-content h5 {
             margin-bottom: 30px;
@@ -417,7 +407,9 @@
             background-color: var(--primary-purple-dark) !important;
             box-shadow: 0 6px 12px rgba(0,0,0,0.25);
         }
-        
+        #logout-button {
+            margin-left: auto;
+        }
         #fullscreen-results-modal {
             position: fixed;
             top: 0;
@@ -491,7 +483,7 @@
         }
         #view-data-modal .modal-content {
             overflow-y: auto;
-            max-height: calc(100% - 70px); 
+            max-height: calc(100% - 70px);
             padding-bottom: 0;
         }
         #view-data-modal table {
@@ -525,7 +517,6 @@
             align-items: center;
             min-height: 200px;
         }
-
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -534,8 +525,8 @@
                 padding: 20px;
             }
             .btn {
-                /* margin-right: 8px; */ /* Adjusted by specific button or class */
-                /* margin-bottom: 12px; */ /* Adjusted by specific button or class */
+                margin-right: 8px;
+                margin-bottom: 12px;
             }
             .center-align {
                 margin-top: 15px;
@@ -548,7 +539,7 @@
                 max-width: 95%;
                 max-height: 95%;
             }
-            #view-data-modal { 
+            #view-data-modal {
                 max-width: 95%;
                 width: 95%;
                 height: 95%;
@@ -565,23 +556,6 @@
             #dark-mode-toggle i.material-icons {
                 font-size: 20px;
             }
-            
-             .center-align .btn { 
-                display: block;
-                width: calc(100% - 16px); 
-                margin-left: 8px;
-                margin-right: 8px;
-                margin-bottom: 12px; /* Add bottom margin for stacking */
-            }
-            .center-align .btn:last-child {
-                margin-bottom: 0;
-            }
-            /* Ensure FAB doesn't get caught by .center-align .btn rule */
-            .right-align .btn-floating {
-                display: inline-flex !important; /* Materialize default for FAB */
-                width: 56px !important; /* Materialize default */
-            }
-
         }
         /* Custom styles for Quality and Bonus */
         .quality-green {
@@ -592,8 +566,8 @@
             border-radius: 4px;
         }
         body.dark-mode .quality-green {
-            background-color: #2e7d32; 
-            color: #e8f5e9; 
+            background-color: #2e7d32; /* Darker green background */
+            color: #e8f5e9; /* Lighter text */
         }
         .quality-orange {
             background-color: #fff3e0;
@@ -603,8 +577,8 @@
             border-radius: 4px;
         }
         body.dark-mode .quality-orange {
-            background-color: #ef6c00; 
-            color: #fff3e0; 
+            background-color: #ef6c00; /* Darker orange background */
+            color: #fff3e0; /* Lighter text */
         }
         .quality-red {
             background-color: #ffebee;
@@ -614,8 +588,8 @@
             border-radius: 4px;
         }
         body.dark-mode .quality-red {
-            background-color: #c62828; 
-            color: #ffebee; 
+            background-color: #c62828; /* Darker red background */
+            color: #ffebee; /* Lighter text */
         }
         .tech-id-highlight {
             font-weight: bold;
@@ -629,8 +603,8 @@
             border-radius: 4px;
         }
         body.dark-mode .salary-highlight {
-            background-color: #5B4A8C; 
-            color: var(--dark-text); 
+            background-color: #5B4A8C; /* Darker background for salary */
+            color: var(--dark-text); /* Light text */
         }
         .tech-id-red-highlight {
             background-color: #ffebee;
@@ -785,9 +759,6 @@
             </div>
         </div>
         <div class="center-align" style="margin-top: 20px;">
-            <a href="instructions.html" target="_blank" class="btn waves-effect waves-light grey darken-1" id="instructions-button" style="margin-right: 12px;">
-                <i class="material-icons left">help_outline</i>Instructions
-            </a>
             <button class="btn waves-effect waves-light grey darken-1" id="logout-button">
                 <i class="material-icons left">logout</i>Logout / Change Role
             </button>
@@ -860,9 +831,15 @@
         const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/serhgs/project_data.json/refs/heads/main/update.json';
         const HARDCODED_TL_CODE_URL = 'https://raw.githubusercontent.com/gmlorenz/gmlorenz.github.io/refs/heads/main/projects_data.json';
         const PRICES = [
-            { "3in": 2.19, "9in": 0.99 }, { "3in": 5.86, "9in": 2.08 }, { "3in": 7.44, "9in": 2.78 },
-            { "3in": 2.29, "9in": 1.57 }, { "3in": 1.55, "9in": 0.60 }, { "3in": 1.84, "9in": 0.78 },
-            { "3in": 1.00, "9in": 1.00 }, { "3in": 3.74, "9in": 3.74 }, { "3in": 1.73, "9in": 1.73 }
+            { "3in": 2.19, "9in": 0.99 },
+            { "3in": 5.86, "9in": 2.08 },
+            { "3in": 7.44, "9in": 2.78 },
+            { "3in": 2.29, "9in": 1.57 },
+            { "3in": 1.55, "9in": 0.60 },
+            { "3in": 1.84, "9in": 0.78 },
+            { "3in": 1.00, "9in": 1.00 },
+            { "3in": 3.74, "9in": 3.74 },
+            { "3in": 1.73, "9in": 1.73 }
         ];
 
         // --- DOM Elements ---
@@ -872,11 +849,11 @@
         const techIdInput = document.getElementById('tech-id');
         const outputDiv = document.getElementById('output');
         const allResultsDiv = document.getElementById('all-results');
-        const addProjectModal = document.querySelector('#add-project-modal'); 
+        const addProjectModal = document.querySelector('#add-project-modal');
         const modalTitle = document.getElementById('modal-title');
         const saveProjectModalButton = document.getElementById('save-project-modal-button');
         const clearDataButton = document.getElementById('clear-data-button');
-        const addProjectButton = document.getElementById('add-project-button'); 
+        const addProjectButton = document.getElementById('add-project-button');
         const mainAppContent = document.getElementById('main-app-content');
         const logoutButton = document.getElementById('logout-button');
         const loginModal = document.getElementById('login-modal');
@@ -897,69 +874,123 @@
         const modalIrCheck = document.getElementById('modal-ir-check');
         const viewProjectDataButton = document.getElementById('view-project-data-button');
         const autoFetchButton = document.getElementById('auto-fetch-external-json');
-        const darkModeToggle = document.getElementById('dark-mode-toggle');
-        const calcAllProjectsBtn = document.getElementById('calculate-all-projects-button'); // Added declaration
-        const exportBtn = document.getElementById('export-button'); // Added declaration
+        const darkModeToggle = document.getElementById('dark-mode-toggle'); // New DOM element
 
-
+        // New Confirmation Modal Elements
         const confirmationModal = document.getElementById('confirmation-modal');
         const confirmationModalTitle = document.getElementById('confirmation-modal-title');
         const confirmationModalMessage = document.getElementById('confirmation-modal-message');
         const confirmationConfirmButton = document.getElementById('confirmation-confirm-button');
         const confirmationCancelButton = document.getElementById('confirmation-cancel-button');
 
+
         // --- Global State ---
-        let activeProjectData = ''; 
-        let allCalculatedResults = []; 
-        let lastResult = ''; 
-        let allProjectsAggregatedResults = {}; 
+        let activeProjectData = '';
+        let allCalculatedResults = [];
+        let lastResult = '';
+        let allProjectsAggregatedResults = {};
         let editingProjectName = null;
         let isLoggedInAsTL = false;
-        let confirmPromiseResolve = null;
+        let confirmPromiseResolve = null; // Used to resolve the promise for the custom confirm modal
 
         // --- Utility Functions ---
-        function showToast(html, classes = '') { M.toast({ html, classes }); }
-        function showLoader() { const l = document.getElementById('loader-spinner'); if (l) l.style.display = 'block'; }
-        function hideLoader() { const l = document.getElementById('loader-spinner'); if (l) l.style.display = 'none'; }
+        /**
+         * Displays a Materialize toast message.
+         * @param {string} html - The HTML content of the toast.
+         * @param {string} classes - CSS classes to apply to the toast.
+         */
+        function showToast(html, classes = '') {
+            M.toast({ html, classes });
+        }
 
+        /**
+         * Shows the loading spinner.
+         */
+        function showLoader() {
+            const loader = document.getElementById('loader-spinner');
+            if (loader) loader.style.display = 'block';
+        }
+
+        /**
+         * Hides the loading spinner.
+         */
+        function hideLoader() {
+            const loader = document.getElementById('loader-spinner');
+            if (loader) loader.style.display = 'none';
+        }
+
+        /**
+         * Safely stores data in local storage, compressing the value.
+         * @param {string} key - The storage key.
+         * @param {string} value - The value to store.
+         * @returns {boolean} - True on success, false on failure.
+         */
         function safeSetLocalStorage(key, value) {
             try {
                 const compressedValue = LZString.compressToUTF16(value);
-                if (compressedValue === null) throw new Error("Compression failed.");
+                if (compressedValue === null) {
+                    throw new Error("Compression failed.");
+                }
                 localStorage.setItem(key, compressedValue);
                 return true;
             } catch (e) {
-                showToast(e.name === 'QuotaExceededError' ? 'Local storage full!' : `Error saving to local storage: ${e.message}`, 'red');
-                console.error("Local storage save error:", e);
+                if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+                    showToast('Local storage full! Could not save project.', 'red');
+                } else {
+                    showToast(`Error saving project data to local storage. ${e.message}`, 'red');
+                    console.error("Local storage save error:", e);
+                }
                 return false;
             }
         }
 
+        /**
+         * Safely retrieves data from local storage, decompressing the value.
+         * Handles migration from uncompressed data.
+         * @param {string} key - The storage key.
+         * @returns {string|null} - The retrieved value, or null on failure.
+         */
         function safeGetLocalStorage(key) {
             try {
                 const value = localStorage.getItem(key);
-                if (value === null) return null;
+                if (value === null) {
+                    return null;
+                }
+
                 let decompressedValue = LZString.decompressFromUTF16(value);
-                if (decompressedValue !== null) return decompressedValue;
-                console.warn(`Decompression failed for key "${key}". Attempting as uncompressed.`);
-                return value; 
+                if (decompressedValue !== null) {
+                    return decompressedValue;
+                }
+
+                console.warn(`Decompression failed for key "${key}". Attempting to load as uncompressed data.`);
+                return value; // Return original value if decompression fails, might be uncompressed
             } catch (e) {
-                console.error(`Error retrieving/decompressing key "${key}":`, e);
-                showToast('Error loading data. Data might be corrupted.', 'red');
+                console.error(`Error retrieving or decompressing data for key "${key}":`, e);
+                showToast('Error loading project data. Data might be corrupted.', 'red');
                 return null;
             }
         }
 
+        /**
+         * Shows a custom confirmation modal.
+         * @param {string} message - The message to display in the modal.
+         * @param {string} [title='Confirm Action'] - The title of the modal.
+         * @returns {Promise<boolean>} - A promise that resolves to true if confirmed, false if cancelled.
+         */
         function showCustomConfirm(message, title = 'Confirm Action') {
             return new Promise(resolve => {
                 confirmationModalTitle.textContent = title;
                 confirmationModalMessage.textContent = message;
                 M.Modal.getInstance(confirmationModal).open();
-                confirmPromiseResolve = resolve;
+                confirmPromiseResolve = resolve; // Store the resolve function
             });
         }
 
         // --- UI Component Functions ---
+
+        /**
+         * Loads the project list into the dropdown selector.
+         */
         function loadProjectList() {
             projectSelector.innerHTML = '<option value="" disabled selected>Select a saved project</option>';
             for (let i = 0; i < localStorage.length; i++) {
@@ -967,647 +998,1392 @@
                 if (key.startsWith('tl_project_')) {
                     const name = key.replace('tl_project_', '');
                     const option = document.createElement('option');
-                    option.value = name; option.textContent = name;
+                    option.value = name;
+                    option.textContent = name;
                     projectSelector.appendChild(option);
                 }
             }
             M.FormSelect.init(projectSelector);
         }
 
+        /**
+         * Adds buttons to a result container.
+         * @param {HTMLElement} targetDiv - The container to add buttons to.
+         */
         function addResultButtons(targetDiv) {
             const existingButtons = targetDiv.querySelector('.result-buttons');
-            if (existingButtons) existingButtons.remove();
+            if (existingButtons) {
+                existingButtons.remove();
+            }
 
             const buttonsContainer = document.createElement('div');
             buttonsContainer.className = 'result-buttons';
 
-            if (targetDiv.id === 'output' && lastResult && lastResult.techID) { 
-                const viewDataBtn = document.createElement('button');
-                viewDataBtn.className = 'view-data-result-button tooltipped';
-                viewDataBtn.setAttribute('data-position', 'left');
-                viewDataBtn.setAttribute('data-tooltip', 'View Raw Data for this TECH ID');
-                viewDataBtn.innerHTML = '<i class="material-icons">table_chart</i>';
-                viewDataBtn.addEventListener('click', () => {
+            if (targetDiv.id === 'output' && lastResult) {
+                const viewDataButton = document.createElement('button');
+                viewDataButton.className = 'view-data-result-button';
+                viewDataButton.innerHTML = '<i class="material-icons">table_chart</i>';
+                viewDataButton.title = 'View Raw Data for this TECH ID';
+                viewDataButton.addEventListener('click', () => {
                     if (!activeProjectData || !activeProjectData.data) {
-                        showToast('No project data loaded to view details.', 'orange'); return;
+                        showToast('No data loaded for the selected project to view.', 'orange');
+                        return;
                     }
                     displayDataTableInModal(activeProjectData.data, lastResult.techID);
                 });
-                buttonsContainer.appendChild(viewDataBtn);
-                M.Tooltip.init(viewDataBtn); 
+                buttonsContainer.appendChild(viewDataButton);
             }
 
             const expandButton = document.createElement('button');
-            expandButton.className = 'expand-button tooltipped';
-            expandButton.setAttribute('data-position', 'left');
-            expandButton.setAttribute('data-tooltip', 'Expand Results');
+            expandButton.className = 'expand-button';
             expandButton.innerHTML = '<i class="material-icons">fullscreen</i>';
+            expandButton.title = 'Expand Results';
             expandButton.addEventListener('click', () => {
                 let contentToExpand = targetDiv.cloneNode(true);
                 const clonedButtonsContainer = contentToExpand.querySelector('.result-buttons');
-                if (clonedButtonsContainer) clonedButtonsContainer.remove();
+                if (clonedButtonsContainer) {
+                    clonedButtonsContainer.remove();
+                }
 
                 fullscreenResultsContent.innerHTML = '';
                 fullscreenResultsContent.appendChild(contentToExpand);
 
-                let existingCloseBtn = fullscreenResultsContent.querySelector('.close-button');
-                if(!existingCloseBtn) { 
-                    const closeBtn = document.createElement('button');
-                    closeBtn.classList.add('close-button');
-                    closeBtn.innerHTML = '<i class="material-icons">close</i>';
-                    fullscreenResultsContent.appendChild(closeBtn);
-                    closeBtn.addEventListener('click', hideFullscreenModal);
-                } else { 
-                    existingCloseBtn.removeEventListener('click', hideFullscreenModal);
-                    existingCloseBtn.addEventListener('click', hideFullscreenModal);
-                }
+                const closeButton = document.createElement('button');
+                closeButton.classList.add('close-button');
+                closeButton.innerHTML = '<i class="material-icons">close</i>';
+                closeButton.addEventListener('click', hideFullscreenModal);
+                fullscreenResultsContent.appendChild(closeButton);
+
                 fullscreenResultsModal.style.display = 'flex';
             });
             buttonsContainer.appendChild(expandButton);
-            M.Tooltip.init(expandButton); 
 
             targetDiv.prepend(buttonsContainer);
         }
-        
-        function hideFullscreenModal() {
-            fullscreenResultsModal.style.display = 'none';
-            fullscreenResultsContent.innerHTML = ''; 
+
+        /**
+         * Removes result buttons from a container.
+         * @param {HTMLElement} containerElement - The container to remove buttons from.
+         */
+        function removeResultButtons(containerElement) {
+            const existingButtonsContainer = containerElement.querySelector('.result-buttons');
+            if (existingButtonsContainer) {
+                existingButtonsContainer.remove();
+            }
         }
 
+        /**
+         * Hides the fullscreen modal.
+         */
+        function hideFullscreenModal() {
+            fullscreenResultsModal.style.display = 'none';
+            fullscreenResultsContent.innerHTML = '';
+        }
+
+        /**
+         * Displays data in the view-data-modal.
+         * @param {string} rawDataString - The raw data as a string.
+         * @param {string} [techIDFilter=''] - Optional TECH ID to filter rows by.
+         */
         function displayDataTableInModal(rawDataString, techIDFilter = '') {
-            viewDataTableContainer.innerHTML = ''; 
-            viewDataSpinner.style.display = 'flex'; 
+            viewDataTableContainer.innerHTML = '';
+            viewDataSpinner.style.display = 'flex';
 
             setTimeout(() => {
                 const rows = String(rawDataString).split(/\r?\n/).filter(r => r.trim() !== "");
+
                 if (rows.length === 0) {
-                    viewDataTableContainer.innerHTML = '<p>No data available.</p>';
+                    viewDataTableContainer.innerHTML = '<p>No data available for this project.</p>';
                 } else {
                     const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim()) || [];
-                    const headersUpperCase = headers.map(h => h.toUpperCase());
+                    const headersUpperCase = headers.map(h => h.toUpperCase()); // For internal lookup
                     const fixIdIndex = headersUpperCase.indexOf("FIX1_ID");
-                    let tableHtml = '<table class="striped responsive-table"><thead><tr>';
-                    headers.forEach(h => tableHtml += `<th>${h}</th>`);
+
+                    let tableHtml = '<table class="striped"><thead><tr>';
+
+                    headers.forEach(headerText => {
+                        tableHtml += `<th>${headerText}</th>`;
+                    });
                     tableHtml += '</tr></thead><tbody>';
+
                     let foundRows = false;
-                    const filterUpper = techIDFilter.toUpperCase();
                     rows.forEach(row => {
                         const fields = row.split(/[\t,]/).map(f => f.trim());
-                        if (techIDFilter === '' || fixIdIndex === -1 || (fields[fixIdIndex]?.toUpperCase() === filterUpper)) {
+
+                        // Apply filter if techIDFilter is provided and FIX1_ID column exists
+                        if (techIDFilter === '' || fixIdIndex === -1 || (fixIdIndex !== -1 && fields[fixIdIndex]?.toUpperCase() === techIDFilter)) {
                             foundRows = true;
                             tableHtml += '<tr>';
-                            fields.forEach(f => tableHtml += `<td>${f}</td>`);
+                            fields.forEach(field => {
+                                tableHtml += `<td>${field}</td>`;
+                            });
                             tableHtml += '</tr>';
                         }
                     });
+
                     tableHtml += '</tbody></table>';
-                    viewDataTableContainer.innerHTML = (foundRows || techIDFilter === '') ? tableHtml : `<p>No data found for TECH ID: ${techIDFilter}.</p>`;
+
+                    if (foundRows || techIDFilter === '') { // Display table if rows found or no filter applied
+                        viewDataTableContainer.innerHTML = tableHtml;
+                    } else { // No rows found for the specific TECH ID filter
+                        viewDataTableContainer.innerHTML = `<p>No data found for TECH ID: ${techIDFilter}.</p>`;
+                    }
                 }
+
                 let modalTitleText = `Data for Project: ${projectSelector.value || 'Loaded Project'}`;
-                if (techIDFilter) modalTitleText += ` (Filtered by TECH ID: ${techIDFilter})`;
+                if (techIDFilter) {
+                    modalTitleText += ` (Filtered by TECH ID: ${techIDFilter})`;
+                }
                 viewDataModalTitle.textContent = modalTitleText;
+
                 viewDataSpinner.style.display = 'none';
                 M.Modal.getInstance(viewDataModal).open();
             }, 50);
         }
 
+
+        /**
+         * Displays the data for a selected project in a modal.
+         */
         function viewProjectData() {
             const selectedProjectName = projectSelector.value;
-            if (!selectedProjectName) { showToast('Please select a project.', 'orange'); return; }
-            if (!activeProjectData || !activeProjectData.data) {
-                const storedData = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
-                if (storedData) try { activeProjectData = JSON.parse(storedData); } catch (e) { /* handled below */ }
+            if (!selectedProjectName) {
+                showToast('Please select a project to view data.', 'orange');
+                return;
             }
+
             if (!activeProjectData || !activeProjectData.data) {
-                showToast('No data loaded for the selected project.', 'orange'); return;
+                showToast('No data loaded for the selected project.', 'orange');
+                return;
             }
-            displayDataTableInModal(activeProjectData.data);
+
+            displayDataTableInModal(activeProjectData.data); // Call the reusable function without a filter
         }
 
+
+        /**
+         * Determines the bonus percentage based on quality percentage.
+         * @param {number} qualityPercentage - The calculated quality percentage.
+         * @returns {number} The bonus percentage (e.g., 0, 5, 120).
+         */
         function getBonusPercentage(qualityPercentage) {
-            if (qualityPercentage < 77.50) return 0; if (qualityPercentage >= 100.00) return 120;
+            if (qualityPercentage < 77.50) return 0;
+            if (qualityPercentage >= 100.00) return 120; // Maximum bonus
+
+            // Define the bonus structure as an array of objects for easier lookup
             const bonusTiers = [
-                { q: 77.50, b: 5 }, { q: 78.00, b: 10 }, { q: 78.50, b: 15 }, { q: 79.00, b: 20 }, { q: 79.50, b: 25 },
-                { q: 80.00, b: 30 }, { q: 80.50, b: 35 }, { q: 81.00, b: 40 }, { q: 81.50, b: 45 }, { q: 82.00, b: 50 },
-                { q: 82.50, b: 55 }, { q: 83.00, b: 57 }, { q: 83.50, b: 60 }, { q: 84.00, b: 62 }, { q: 84.50, b: 64 },
-                { q: 85.00, b: 66 }, { q: 85.50, b: 68 }, { q: 86.00, b: 70 }, { q: 86.50, b: 73 }, { q: 87.00, b: 75 },
-                { q: 87.50, b: 78 }, { q: 88.00, b: 80 }, { q: 88.50, b: 83 }, { q: 89.00, b: 85 }, { q: 89.50, b: 87 },
-                { q: 90.00, b: 88 }, { q: 90.50, b: 90 }, { q: 91.00, b: 91 }, { q: 91.50, b: 93 }, { q: 92.00, b: 94 },
-                { q: 92.50, b: 95 }, { q: 93.00, b: 96 }, { q: 93.50, b: 97 }, { q: 94.00, b: 98 }, { q: 94.50, b: 99 },
-                { q: 95.00, b: 100 }, { q: 95.50, b: 102 }, { q: 96.00, b: 104 }, { q: 96.50, b: 106 }, { q: 97.00, b: 108 },
-                { q: 97.50, b: 110 }, { q: 98.00, b: 112 }, { q: 98.50, b: 114 }, { q: 99.00, b: 116 }, { q: 99.50, b: 118 }
+                { quality: 77.50, bonus: 5 },
+                { quality: 78.00, bonus: 10 },
+                { quality: 78.50, bonus: 15 },
+                { quality: 79.00, bonus: 20 },
+                { quality: 79.50, bonus: 25 },
+                { quality: 80.00, bonus: 30 },
+                { quality: 80.50, bonus: 35 },
+                { quality: 81.00, bonus: 40 },
+                { quality: 81.50, bonus: 45 },
+                { quality: 82.00, bonus: 50 },
+                { quality: 82.50, bonus: 55 },
+                { quality: 83.00, bonus: 57 },
+                { quality: 83.50, bonus: 60 },
+                { quality: 84.00, bonus: 62 },
+                { quality: 84.50, bonus: 64 },
+                { quality: 85.00, bonus: 66 },
+                { quality: 85.50, bonus: 68 },
+                { quality: 86.00, bonus: 70 },
+                { quality: 86.50, bonus: 73 },
+                { quality: 87.00, bonus: 75 },
+                { quality: 87.50, bonus: 78 },
+                { quality: 88.00, bonus: 80 },
+                { quality: 88.50, bonus: 83 },
+                { quality: 89.00, bonus: 85 },
+                { quality: 89.50, bonus: 87 },
+                { quality: 90.00, bonus: 88 },
+                { quality: 90.50, bonus: 90 },
+                { quality: 91.00, bonus: 91 },
+                { quality: 91.50, bonus: 93 },
+                { quality: 92.00, bonus: 94 },
+                { quality: 92.50, bonus: 95 },
+                { quality: 93.00, bonus: 96 },
+                { quality: 93.50, bonus: 97 },
+                { quality: 94.00, bonus: 98 },
+                { quality: 94.50, bonus: 99 },
+                { quality: 95.00, bonus: 100 },
+                { quality: 95.50, bonus: 102 },
+                { quality: 96.00, bonus: 104 },
+                { quality: 96.50, bonus: 106 },
+                { quality: 97.00, bonus: 108 },
+                { quality: 97.50, bonus: 110 },
+                { quality: 98.00, bonus: 112 },
+                { quality: 98.50, bonus: 114 },
+                { quality: 99.00, bonus: 116 },
+                { quality: 99.50, bonus: 118 }
             ];
-            for (let i = bonusTiers.length - 1; i >= 0; i--) if (qualityPercentage >= bonusTiers[i].q) return bonusTiers[i].b;
-            return 0;
+
+            // Iterate from the highest quality to find the matching tier
+            for (let i = bonusTiers.length - 1; i >= 0; i--) {
+                if (qualityPercentage >= bonusTiers[i].quality) {
+                    return bonusTiers[i].bonus;
+                }
+            }
+            return 0; // Default for anything below 77.50%
         }
 
+        /**
+         * Calculates points and counts for a single row of raw data.
+         * @param {string[]} fields - The fields of the row.
+         * @param {string[]} headers - The headers of the data.
+         * @param {string} size - The project size (3in or 9in).
+         * @param {boolean} ir - Whether the IR multiplier is applied.
+         * @returns {object} - An object containing row points, category counts, and category points.
+         */
         function calculateRowDetails(fields, headers, size, ir) {
-            const catCols = ["CATEGORY", "I3QA_CAT", "RV1_CAT", "AFP1_CAT", "AFP2_CAT", "RV2_CAT"];
+            const indexes = {
+                category: headers.indexOf("CATEGORY"),
+                i3qa: headers.indexOf("I3QA_CAT"),
+                rv1cat: headers.indexOf("RV1_CAT"),
+                afp1cat: headers.indexOf("AFP1_CAT"),
+                rv1label: headers.indexOf("RV1_LABEL"),
+                i3qalabel: headers.indexOf("I3QA_LABEL"),
+                afp2cat: headers.indexOf("AFP2_CAT"),
+                rv2cat: headers.indexOf("RV2_CAT")
+            };
+
             let rowPoints = 0;
             let categoryCounts = Array(9).fill(0);
             let categoryPoints = Array(9).fill(0);
-            catCols.forEach(colName => {
-                const idx = headers.indexOf(colName); // Headers are already uppercase
+
+            [indexes.category, indexes.i3qa, indexes.rv1cat, indexes.afp1cat, indexes.afp2cat, indexes.rv2cat].forEach(idx => {
                 if (idx !== -1 && fields[idx]) {
                     const val = parseInt(fields[idx].trim());
                     if (!isNaN(val) && val >= 1 && val <= 9) {
                         const price = PRICES[val - 1][size];
-                        if (typeof price !== 'number') { console.warn(`Invalid price for ${colName} ${val}, size ${size}`); return; }
-                        const currentCatPoints = price * (ir ? 2 : 1);
-                        rowPoints += currentCatPoints;
+                        const rowMultiplier = ir ? 2 : 1;
+                        const currentCategoryPoints = price * rowMultiplier;
+                        rowPoints += currentCategoryPoints;
                         categoryCounts[val - 1]++;
-                        categoryPoints[val - 1] += currentCatPoints;
+                        categoryPoints[val - 1] += currentCategoryPoints;
                     }
                 }
             });
+
             return { rowPoints, categoryCounts, categoryPoints };
         }
 
+        /**
+         * Calculates points, counts, and details for a single TECH ID within raw data.
+         * @param {string} raw - The raw data string.
+         * @param {string} techIDValue - The TECH ID to calculate for.
+         * @param {string} size - The project size.
+         * @param {boolean} ir - Whether the IR multiplier is applied.
+         * @returns {object|null} - The calculation results, or null if FIX1_ID is missing.
+         */
         function calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir) {
+            // Ensure 'raw' is treated as a string before splitting
             const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
-            if (rows.length === 0) return null;
             const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-            const idx = {
-                fixId: headers.indexOf("FIX1_ID"), afp1stat: headers.indexOf("AFP1_STAT"),
-                rv1lbl: headers.indexOf("RV1_LABEL"), i3qalbl: headers.indexOf("I3QA_LABEL"), rv2lbl: headers.indexOf("RV2_LABEL"),
-                rv1cat: headers.indexOf("RV1_CAT"), rv2cat: headers.indexOf("RV2_CAT")
+            const indexes = {
+                fixId: headers.indexOf("FIX1_ID"),
+                afp1stat: headers.indexOf("AFP1_STAT"),
+                rv1label: headers.indexOf("RV1_LABEL"),
+                i3qalabel: headers.indexOf("I3QA_LABEL"),
+                rv2label: headers.indexOf("RV2_LABEL"),
+                category: headers.indexOf("CATEGORY"),
+                i3qa: headers.indexOf("I3QA_CAT"),
+                rv1cat: headers.indexOf("RV1_CAT"), // Column index for RV1_CAT
+                afp1cat: headers.indexOf("AFP1_CAT"),
+                afp2cat: headers.indexOf("AFP2_CAT"),
+                rv2cat: headers.indexOf("RV2_CAT") // Column index for RV2_CAT
             };
-            if (idx.fixId === -1) { console.error("FIX1_ID column not found in headers:", headers); return null; }
 
-            let totalPoints = 0, addFix = 0, excFix = 0, missFix = 0, incCnt = 0, incPtsVal = 0;
-            const aggCatPts = Array(9).fill(0), aggCatCnts = Array(9).fill(0);
-            const techIDUpper = techIDValue.toUpperCase();
-            const matchedRows = rows.filter(row => row.split(/[\t,]/)[idx.fixId]?.trim().toUpperCase() === techIDUpper);
-            if (matchedRows.length === 0) return null;
+            if (indexes.fixId === -1) {
+                return null;
+            }
 
-            matchedRows.forEach(row => {
-                const fields = row.split(/[\t,]/).map(f => f.trim());
-                const rowDetails = calculateRowDetails(fields, headers, size, ir);
-                totalPoints += rowDetails.rowPoints;
-                rowDetails.categoryCounts.forEach((c, i) => aggCatCnts[i] += c);
-                rowDetails.categoryPoints.forEach((p, i) => aggCatPts[i] += p);
+            let totalPoints = 0;
+            let additionalFixPoints = 0;
+            let excessiveFixPoints = 0;
+            let missFixPoints = 0;
+            let incorrectCounting = 0;
+            let incorrectPointsValue = 0;
+            const categoryPoints = Array(9).fill(0);
+            const categoryCounts = Array(9).fill(0);
 
-                if (idx.rv1lbl !== -1 && fields[idx.rv1lbl]) {
-                    const lbl = fields[idx.rv1lbl].toUpperCase();
-                    if (lbl.includes("E")) excFix++; if (lbl.includes("M")) missFix++;
-                    if (lbl.includes("I")) {
-                        incCnt++;
-                        if (idx.rv1cat !== -1 && fields[idx.rv1cat]) {
-                            const cat = parseInt(fields[idx.rv1cat]);
-                            if (!isNaN(cat) && cat >= 1 && cat <= 9) {
-                                const price = PRICES[cat - 1][size];
-                                if (typeof price === 'number') incPtsVal += price * (ir ? 2 : 1);
-                            }
-                        }
-                    }
-                }
-                if (idx.i3qalbl !== -1 && fields[idx.i3qalbl]?.toUpperCase().includes("M")) missFix++;
-                if (idx.rv2lbl !== -1 && fields[idx.rv2lbl]) {
-                    const lbl = fields[idx.rv2lbl].toUpperCase();
-                    if (lbl.includes("E")) excFix++; if (lbl.includes("M")) missFix++;
-                    if (lbl.includes("I")) {
-                        incCnt++;
-                        if (idx.rv2cat !== -1 && fields[idx.rv2cat]) {
-                            const cat = parseInt(fields[idx.rv2cat]);
-                            if (!isNaN(cat) && cat >= 1 && cat <= 9) {
-                                const price = PRICES[cat - 1][size];
-                                if (typeof price === 'number') incPtsVal += price * (ir ? 2 : 1);
-                            }
-                        }
-                    }
-                }
-                if (idx.afp1stat !== -1 && fields[idx.afp1stat]?.toUpperCase() === "AA") addFix++;
+            const matched = rows.filter(row => {
+                const fields = row.split(/[\t,]/);
+                return fields[indexes.fixId]?.trim().toUpperCase() === techIDValue;
             });
 
-            const correctPts = totalPoints - incPtsVal;
-            const qualPerc = (totalPoints > 0) ? Math.max(0, (correctPts / totalPoints) * 100) : 0;
-            const bonusPerc = getBonusPercentage(qualPerc);
-            const qualBonus = totalPoints * (bonusPerc / 100);
-            const estSalary = totalPoints + qualBonus;
+            matched.forEach(row => {
+                const fields = row.split(/[\t,]/);
+                
+                // Existing logic for counts (excessive, miss, incorrectCounting)
+                if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
+                    if (fields[indexes.rv1label].toUpperCase().includes("E")) {
+                        excessiveFixPoints++;
+                    }
+                    if (fields[indexes.rv1label].toUpperCase().includes("M")) {
+                        missFixPoints++;
+                    }
+                    if (fields[indexes.rv1label].toUpperCase().includes("I")) {
+                        incorrectCounting++;
+                    }
+                }
+                if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
+                    if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
+                        missFixPoints++;
+                    }
+                }
+                if (indexes.rv2label !== -1 && fields[indexes.rv2label]) {
+                    if (fields[indexes.rv2label].toUpperCase().includes("E")) {
+                        excessiveFixPoints++;
+                    }
+                    if (fields[indexes.rv2label].toUpperCase().includes("M")) {
+                        missFixPoints++;
+                    }
+                    if (fields[indexes.rv2label].toUpperCase().includes("I")) {
+                        incorrectCounting++;
+                    }
+                }
+
+                if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
+                    additionalFixPoints++;
+                }
+
+                const rowDetails = calculateRowDetails(fields, headers, size, ir);
+                totalPoints += rowDetails.rowPoints;
+                rowDetails.categoryCounts.forEach((count, index) => {
+                    categoryCounts[index] += count;
+                });
+                rowDetails.categoryPoints.forEach((points, index) => {
+                    categoryPoints[index] += points;
+                });
+
+                // --- START DEBUG LOGGING FOR INCORRECT POINTS VALUE ---
+                console.log(`--- Processing row for TECH ID: ${techIDValue} ---`);
+                console.log(`Row fields:`, fields);
+                console.log(`rowDetails.categoryPoints (points per category in this row, already IR-multiplied if applicable):`, rowDetails.categoryPoints);
+                console.log(`Initial incorrectPointsValue for this row: ${incorrectPointsValue}`);
+
+                const rowMultiplier = ir ? 2 : 1; // Get the row's IR multiplier, as it applies to the whole row's pricing
+
+                // CORRECTED LOGIC FOR INCORRECT POINTS VALUE:
+                // Only add points for the specific category that is marked 'I', calculating its value directly
+                if (indexes.rv1label !== -1 && fields[indexes.rv1label]?.toUpperCase().includes("I")) {
+                    console.log(`RV1_LABEL contains 'I'. Checking RV1_CAT.`);
+                    const rv1CatValue = parseInt(fields[indexes.rv1cat]?.trim()); // Get the actual category number (1-9)
+                    console.log(`RV1_CAT value: ${rv1CatValue}, RV1_CAT column index: ${indexes.rv1cat}`);
+                    if (indexes.rv1cat !== -1 && !isNaN(rv1CatValue) && rv1CatValue >= 1 && rv1CatValue <= 9) {
+                        const basePrice = PRICES[rv1CatValue - 1][size]; // Get base price for this specific category and size
+                        if (basePrice !== undefined && !isNaN(basePrice)) {
+                            const pointsForThisIncorrectCat = basePrice * rowMultiplier; // Apply the row's IR multiplier
+                            console.log(`Adding ${pointsForThisIncorrectCat.toFixed(2)} (from RV1_CAT ${rv1CatValue}, base: ${basePrice.toFixed(2)}, multiplier: ${rowMultiplier}) to incorrectPointsValue.`);
+                            incorrectPointsValue += pointsForThisIncorrectCat;
+                        } else {
+                            console.warn(`DEBUG: Invalid base price for RV1_CAT ${rv1CatValue} and size ${size}. Skipping incorrect points for this entry.`);
+                        }
+                    } else {
+                        console.warn(`DEBUG: Invalid RV1_CAT value (${rv1CatValue}) or index (${indexes.rv1cat}). Skipping incorrect points for RV1_LABEL 'I'.`);
+                    }
+                }
+                if (indexes.rv2label !== -1 && fields[indexes.rv2label]?.toUpperCase().includes("I")) {
+                    console.log(`RV2_LABEL contains 'I'. Checking RV2_CAT.`);
+                    const rv2CatValue = parseInt(fields[indexes.rv2cat]?.trim()); // Get the actual category number (1-9)
+                    console.log(`RV2_CAT value: ${rv2CatValue}, RV2_CAT column index: ${indexes.rv2cat}`);
+                    if (indexes.rv2cat !== -1 && !isNaN(rv2CatValue) && rv2CatValue >= 1 && rv2CatValue <= 9) {
+                        const basePrice = PRICES[rv2CatValue - 1][size]; // Get base price for this specific category and size
+                        if (basePrice !== undefined && !isNaN(basePrice)) {
+                            const pointsForThisIncorrectCat = basePrice * rowMultiplier; // Apply the row's IR multiplier
+                            console.log(`Adding ${pointsForThisIncorrectCat.toFixed(2)} (from RV2_CAT ${rv2CatValue}, base: ${basePrice.toFixed(2)}, multiplier: ${rowMultiplier}) to incorrectPointsValue.`);
+                            incorrectPointsValue += pointsForThisIncorrectCat;
+                        } else {
+                            console.warn(`DEBUG: Invalid base price for RV2_CAT ${rv2CatValue} and size ${size}. Skipping incorrect points for this entry.`);
+                        }
+                    } else {
+                        console.warn(`DEBUG: Invalid RV2_CAT value (${rv2CatValue}) or index (${indexes.rv2cat}). Skipping incorrect points for RV2_LABEL 'I'.`);
+                    }
+                }
+                // If there were RV3_LABEL/RV3_CAT, similar logic would apply here.
+                console.log(`Updated incorrectPointsValue for this row: ${incorrectPointsValue.toFixed(2)}`);
+                console.log(`--- End row processing ---`);
+                // --- END DEBUG LOGGING ---
+            });
+
+            const correctPoints = totalPoints - incorrectPointsValue;
+            const qualityPercentage = (totalPoints > 0) ? (correctPoints / totalPoints) * 100 : 0;
+            const bonusPercentage = getBonusPercentage(qualityPercentage); // Use the new function
+            const qualityBonus = totalPoints * (bonusPercentage / 100); // Calculate bonus based on percentage
+            const estimatedSalary = totalPoints + qualityBonus; // Calculate Estimated Salary
 
             return {
-                techID: techIDValue, totalPoints, additionalFixPoints: addFix, excessiveFixPoints: excFix,
-                missFixPoints: missFix, incorrectCounting: incCnt, incorrectPointsValue: incPtsVal,
-                qualityPercentage: qualPerc, bonusPercentage: bonusPerc, qualityBonus: qualBonus,
-                estimatedSalary: estSalary, categoryPoints: aggCatPts, categoryCounts: aggCatCnts
+                techID: techIDValue,
+                totalPoints: totalPoints, // This is the base total points for this techID in this project
+                additionalFixPoints: additionalFixPoints,
+                excessiveFixPoints: excessiveFixPoints,
+                missFixPoints: missFixPoints,
+                incorrectCounting: incorrectCounting,
+                incorrectPointsValue: incorrectPointsValue,
+                qualityPercentage: qualityPercentage,
+                bonusPercentage: bonusPercentage, // Store the bonus percentage for display/export
+                qualityBonus: qualityBonus,
+                estimatedSalary: estimatedSalary, // Add Estimated Salary
+                categoryPoints: categoryPoints,
+                categoryCounts: categoryCounts
             };
         }
 
         // --- Main Functions ---
+
+        /**
+         * Saves a project to local storage.  Handles both adding and editing.
+         */
         function saveProject() {
             const name = projectNameInput.value.trim();
             const data = rawDataInput.value.trim();
             const size = modalSizeSelect.value;
             const ir = modalIrCheck.checked;
-            if (!name || !data) { showToast('Project name and data are required.', 'red'); return; }
+
+            if (!name || !data) {
+                showToast('Please enter a project name and data.', 'red');
+                return;
+            }
+
+            // Ensure the payload is consistently { data: string, size: string, ir: boolean }
             const payload = JSON.stringify({ data, size, ir });
-            const key = `tl_project_${name}`;
-            if (editingProjectName && editingProjectName !== name) localStorage.removeItem(`tl_project_${editingProjectName}`);
-            if (safeSetLocalStorage(key, payload)) {
+            const storageKey = `tl_project_${name}`;
+
+            if (editingProjectName && editingProjectName !== name) {
+                localStorage.removeItem(`tl_project_${editingProjectName}`);
+            }
+
+            if (safeSetLocalStorage(storageKey, payload)) {
                 showToast(`Project '${name}' saved!`, 'green');
-                loadProjectList(); M.Modal.getInstance(addProjectModal).close();
-                projectNameInput.value = ''; rawDataInput.value = ''; modalSizeSelect.value = '3in'; modalIrCheck.checked = false;
-                M.FormSelect.init(modalSizeSelect); M.updateTextFields(); editingProjectName = null;
+                loadProjectList();
+                M.Modal.getInstance(addProjectModal).close();
+                projectNameInput.value = '';
+                rawDataInput.value = '';
+                modalSizeSelect.value = '3in';
+                modalIrCheck.checked = false;
+                M.FormSelect.init(modalSizeSelect);
+                M.updateTextFields();
+                editingProjectName = null;
             }
         }
 
+        /**
+         * Deletes the selected project from local storage.
+         */
         async function deleteSelectedProject() {
             const selected = projectSelector.value;
-            if (!selected) { showToast('No project selected.', 'orange'); return; }
-            if (await showCustomConfirm(`Delete project '${selected}'? This cannot be undone.`, 'Delete Project')) {
+            if (!selected) {
+                showToast('No project selected.', 'red');
+                return;
+            }
+
+            const confirmed = await showCustomConfirm(`Are you sure you want to delete project '${selected}'?`, 'Delete Project');
+            if (confirmed) {
                 localStorage.removeItem(`tl_project_${selected}`);
                 showToast(`Project '${selected}' deleted.`, 'orange');
-                loadProjectList(); activeProjectData = ''; outputDiv.innerHTML = ''; allResultsDiv.innerHTML = '';
-                allCalculatedResults = []; lastResult = ''; allProjectsAggregatedResults = {}; techIdInput.value = '';
-                if (editingProjectName === selected || projectNameInput.value === selected) {
-                    projectNameInput.value = ''; rawDataInput.value = ''; modalSizeSelect.value = '3in'; modalIrCheck.checked = false;
-                    M.FormSelect.init(modalSizeSelect); M.updateTextFields(); editingProjectName = null;
-                }
-                projectSelector.value = ""; M.FormSelect.init(projectSelector);
+                loadProjectList();
+                activeProjectData = '';
+                outputDiv.textContent = '';
+                allResultsDiv.innerHTML = '';
+                allCalculatedResults = [];
+                lastResult = '';
+                allProjectsAggregatedResults = {};
+                editingProjectName = null;
             }
         }
 
+        /**
+         * Calculates and displays the results for a single TECH ID search.
+         */
         function searchTechID() {
-            const techIDVal = techIdInput.value.trim();
-            if (!activeProjectData || !activeProjectData.data) { outputDiv.innerHTML = '<p>Please load a project first.</p>'; addResultButtons(outputDiv); return; }
-            if (!techIDVal) { outputDiv.innerHTML = '<p>Please enter a TECH ID.</p>'; addResultButtons(outputDiv); return; }
-            outputDiv.innerHTML = ''; allResultsDiv.innerHTML = ''; lastResult = '';
-            const result = calculateDetailsForTechIDInRaw(activeProjectData.data, techIDVal, activeProjectData.size, activeProjectData.ir);
+            const raw = activeProjectData?.data;
+            const techIDValue = techIdInput.value.trim().toUpperCase();
+            const size = activeProjectData?.size;
+            const ir = activeProjectData?.ir;
+
+            outputDiv.innerHTML = '';
+            allResultsDiv.innerHTML = '';
+            lastResult = '';
+            allCalculatedResults = [];
+            allProjectsAggregatedResults = {};
+
+            if (!raw || !techIDValue || !size) {
+                outputDiv.innerHTML = '<p>Please load a project first and enter a TECH ID to search.</p>';
+                addResultButtons(outputDiv);
+                return;
+            }
+
+            const result = calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir);
+
             if (result) {
-                const hlClass = result.techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
-                let html = `<h5>Results for TECH ID: <span class="${hlClass}">${result.techID}</span> (Project: ${projectSelector.value})</h5>`;
-                html += `<p><strong>Total Points: ${result.totalPoints.toFixed(2)}</strong></p><table class="striped responsive-table"><thead><tr><th>Metric</th><th>Value</th><th>Count/N/A</th></tr></thead><tbody>`;
-                result.categoryPoints.forEach((pts, i) => html += `<tr><td>CAT ${i + 1} Points</td><td>${pts.toFixed(2)}</td><td>${result.categoryCounts[i]}</td></tr>`);
-                html += `<tr><td>Additional FixPoints</td><td>N/A</td><td>${result.additionalFixPoints}</td></tr>`;
-                html += `<tr><td>Excessive FixPoints</td><td>N/A</td><td>${result.excessiveFixPoints}</td></tr>`;
-                html += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`;
-                html += `<tr><td>Incorrect Counting</td><td>N/A</td><td>${result.incorrectCounting}</td></tr>`;
-                html += `<tr><td>Incorrect Points Value</td><td>${result.incorrectPointsValue.toFixed(2)}</td><td>N/A</td></tr>`;
-                html += `<tr><td>Quality %</td><td>${result.qualityPercentage.toFixed(2)}%</td><td>N/A</td></tr>`;
-                html += `<tr><td>Bonus %</td><td>${result.bonusPercentage.toFixed(2)}%</td><td>N/A</td></tr>`;
-                html += `<tr><td>Quality Bonus</td><td>${result.qualityBonus.toFixed(2)}</td><td>N/A</td></tr>`;
-                html += `<tr><td class="salary-highlight">Estimated Salary</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td><td class="salary-highlight">N/A</td></tr>`;
-                html += '</tbody></table>'; outputDiv.innerHTML = html; lastResult = result;
+                // Determine Tech ID highlight class
+                const techIdHighlightClass = result.techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
+
+                let outputHtml = `<h5>Search Results for TECH ID: <span class="${techIdHighlightClass}">${result.techID}</span></h5>`;
+                outputHtml += `<p><strong>Project Total Points: ${result.totalPoints.toFixed(2)}</strong></p>`;
+                outputHtml += '<table class="striped"><thead><tr>';
+                outputHtml += '<th>Metric</th><th>Value</th><th>Count/N/A</th>';
+                outputHtml += '</tr></thead><tbody>';
+
+                result.categoryPoints.forEach((total, i) => {
+                    outputHtml += `<tr><td>CAT ${i + 1}</td><td>${total.toFixed(2)}</td><td>${result.categoryCounts[i]}</td></tr>`;
+                });
+
+                outputHtml += `<tr><td>Additional FixPoints</td><td>N/A</td><td>${result.additionalFixPoints}</td></tr>`;
+                outputHtml += `<tr><td>Excessive FixPoints</td><td>N/A</td><td>${result.excessiveFixPoints}</td></tr>`;
+                outputHtml += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`;
+                outputHtml += `<tr><td>Incorrect Counting</td><td>N/A</td><td>${result.incorrectCounting}</td></tr>`;
+                outputHtml += `<tr><td>Incorrect Points Value</td><td>${result.incorrectPointsValue.toFixed(2)}</td><td>N/A</td></tr>`;
+                outputHtml += `<tr><td>Total Points</td><td>${result.totalPoints.toFixed(2)}</td><td>N/A</td></tr>`; // Reordered
+                outputHtml += `<tr><td>Quality Percentage</td><td>${result.qualityPercentage.toFixed(2)}%</td><td>N/A</td></tr>`;
+                outputHtml += `<tr><td>Bonus Percentage</td><td>${result.bonusPercentage.toFixed(2)}%</td><td>N/A</td></tr>`; // Display bonus percentage
+                outputHtml += `<tr><td>Quality Bonus</td><td>${result.qualityBonus.toFixed(2)}</td><td>N/A</td></tr>`;
+                outputHtml += `<tr><td class="salary-highlight">Estimated Salary</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td><td class="salary-highlight">N/A</td></tr>`; // Display Estimated Salary
+                outputHtml += '</tbody></table>';
+
+                outputDiv.innerHTML = outputHtml;
+                lastResult = result;
             } else {
-                outputDiv.innerHTML = `<p>TECH ID '${techIDVal}' not found or error in project '${projectSelector.value}'.</p>`; lastResult = '';
+                outputDiv.innerHTML = `<p>TECH ID '${techIDValue}' not found or error in data in the loaded project.</p>`;
             }
             addResultButtons(outputDiv);
         }
 
+        /**
+         * Calculates and displays the total points for all TECH IDs in the loaded project.
+         */
         function calculateAllTechIDs() {
-            if (!activeProjectData || !activeProjectData.data) { allResultsDiv.innerHTML = '<p>Load a project first.</p>'; addResultButtons(allResultsDiv); return; }
-            const { data, size, ir } = activeProjectData;
-            const rows = String(data).split(/\r?\n/).filter(r => r.trim() !== "");
-            if (rows.length === 0) { allResultsDiv.innerHTML = '<p>No data rows in project.</p>'; addResultButtons(allResultsDiv); return; }
+            const raw = activeProjectData?.data;
+            const size = activeProjectData?.size;
+            const ir = activeProjectData?.ir;
+
+            if (!raw || !size) {
+                allResultsDiv.innerHTML = '<p>Please load a project first.</p>';
+                allCalculatedResults = [];
+                allProjectsAggregatedResults = {};
+                addResultButtons(allResultsDiv);
+                return;
+            }
+
+            // Ensure 'raw' is treated as a string before splitting
+            const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
             const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
-            const fixIdIdx = headers.indexOf("FIX1_ID");
-            if (fixIdIdx === -1) { allResultsDiv.innerHTML = '<p>FIX1_ID column not found.</p>'; addResultButtons(allResultsDiv); return; }
-            const techIDs = new Set(rows.map(r => r.split(/[\t,]/)[fixIdIdx]?.trim().toUpperCase()).filter(id => id));
-            if (techIDs.size === 0) { allResultsDiv.innerHTML = '<p>No TECH IDs found.</p>'; addResultButtons(allResultsDiv); return; }
+            const fixIdIndex = headers.indexOf("FIX1_ID");
+
+            if (fixIdIndex === -1) {
+                allResultsDiv.innerHTML = '<p>Error: FIX1_ID column not found in the loaded project.</p>';
+                allCalculatedResults = [];
+                allProjectsAggregatedResults = {};
+                addResultButtons(allResultsDiv);
+                return;
+            }
+
+            const techIDs = new Set();
+            rows.forEach(row => {
+                const fields = row.split(/[\t,]/);
+                const techID = fields[fixIdIndex]?.trim().toUpperCase();
+                if (techID) {
+                    techIDs.add(techID);
+                }
+            });
 
             allCalculatedResults = [];
-            let tableHtml = `<table class="striped responsive-table"><thead><tr><th>TECH ID</th>`;
-            Array.from({ length: 9 }).forEach((_, i) => tableHtml += `<th>CAT ${i + 1} Pts</th><th>CAT ${i + 1} Cnt</th>`);
-            tableHtml += `<th>Add.Fix</th><th>Exc.Fix</th><th>Miss.Fix</th><th>Inc.Cnt</th><th>Inc.PtsVal</th><th>Total Pts</th><th>Qual.%</th><th>Bonus%</th><th>Qual.Bonus</th><th>Est.Salary</th></tr></thead><tbody>`;
-            techIDs.forEach(id => {
-                const res = calculateDetailsForTechIDInRaw(data, id, size, ir); // Pass original data string
-                if (res) {
-                    allCalculatedResults.push(res);
-                    const qClass = res.qualityPercentage === 100 ? 'ql-grn' : (res.qualityPercentage >= 77.5 ? 'ql-org' : 'ql-red');
-                    const bClass = res.bonusPercentage >= 100 ? 'ql-grn' : (res.bonusPercentage > 0 ? 'ql-org' : 'ql-red');
-                    const idClass = id.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
-                    tableHtml += `<tr><td class="${idClass}">${id}</td>`;
-                    res.categoryPoints.forEach((p, i) => tableHtml += `<td>${p.toFixed(2)}</td><td>${res.categoryCounts[i]}</td>`);
-                    tableHtml += `<td>${res.additionalFixPoints}</td><td>${res.excessiveFixPoints}</td><td>${res.missFixPoints}</td><td>${res.incorrectCounting}</td><td>${res.incorrectPointsValue.toFixed(2)}</td>`;
-                    tableHtml += `<td><b>${res.totalPoints.toFixed(2)}</b></td><td class="${qClass}">${res.qualityPercentage.toFixed(2)}%</td><td class="${bClass}">${res.bonusPercentage.toFixed(2)}%</td><td class="${bClass}">${res.qualityBonus.toFixed(2)}</td><td class="salary-highlight">${res.estimatedSalary.toFixed(2)}</td></tr>`;
+            let tableHtml = '<table class="striped"><thead><tr>';
+
+            const tableHeaders = [
+                'TECH ID',
+                ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
+                ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
+                'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value',
+                'Total Points',
+                'Quality %', 'Bonus %',
+                'Quality Bonus', 'Estimated Salary'
+            ];
+
+            tableHeaders.forEach(headerText => {
+                tableHtml += `<th>${headerText}</th>`;
+            });
+            tableHtml += '</tr></thead><tbody>';
+
+            techIDs.forEach(techID => {
+                const result = calculateDetailsForTechIDInRaw(raw, techID, size, ir);
+                if (result) {
+                    allCalculatedResults.push(result);
+                    const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red');
+                    const techIdHighlightClass = result.techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
+
+                    let bonusClass = '';
+                    if (result.bonusPercentage >= 100) {
+                        bonusClass = 'quality-green';
+                    } else if (result.bonusPercentage > 0) {
+                        bonusClass = 'quality-orange';
+                    } else {
+                        bonusClass = 'quality-red';
+                    }
+
+                    tableHtml += '<tr>';
+                    tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`;
+                    result.categoryPoints.forEach(total => {
+                        tableHtml += `<td>${total.toFixed(2)}</td>`;
+                    });
+                    result.categoryCounts.forEach(count => {
+                        tableHtml += `<td>${count}</td>`;
+                    });
+                    tableHtml += `<td>${result.additionalFixPoints}</td>`;
+                    tableHtml += `<td>${result.excessiveFixPoints}</td>`;
+                    tableHtml += `<td>${result.missFixPoints}</td>`;
+                    tableHtml += `<td>${result.incorrectCounting}</td>`;
+                    tableHtml += `<td>${result.incorrectPointsValue.toFixed(2)}</td>`;
+                    tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`;
+                    tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td>`;
+                    tableHtml += `<td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
+                    tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td>`;
+                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td>`;
+                    tableHtml += '</tr>';
                 }
             });
             tableHtml += '</tbody></table>';
-            allResultsDiv.innerHTML = `<h5>Results for Project: ${projectSelector.value}</h5>${tableHtml}`;
-            outputDiv.innerHTML = ''; lastResult = ''; allProjectsAggregatedResults = {}; addResultButtons(allResultsDiv);
+
+            allResultsDiv.innerHTML = `<h5>Results for Loaded Project</h5>${tableHtml}`;
+            outputDiv.textContent = '';
+            allProjectsAggregatedResults = {};
+            addResultButtons(allResultsDiv);
         }
-        
+
+        /**
+         * Calculates and displays the total points across all projects.
+         */
         function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
-            if (isNaN(multiplier) || multiplier < 0) { showToast('Multiplier must be non-negative.', 'red'); return; }
-            allProjectsAggregatedResults = {}; let errors = [];
-            const projects = [];
+            allProjectsAggregatedResults = {};
+            let processingErrors = [];
+
+            // 1. Collect all raw project data first
+            const allProjectsRawData = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('tl_project_')) {
-                    const stored = safeGetLocalStorage(key);
-                    if (stored) try { projects.push({ name: key.replace('tl_project_', ''), ...JSON.parse(stored) }); } catch (e) { errors.push(`Error parsing ${key}`); }
+                    const projectName = key.replace('tl_project_', '');
+                    const projectDataString = safeGetLocalStorage(key);
+
+                    if (projectDataString !== null) {
+                        try {
+                            const project = JSON.parse(projectDataString);
+                            if (project && typeof project === 'object' && 'data' in project && 'size' in project && 'ir' in project) {
+                                allProjectsRawData.push({
+                                    name: projectName,
+                                    data: String(project.data), // Ensure data is string
+                                    size: project.size,
+                                    ir: project.ir
+                                });
+                            } else {
+                                processingErrors.push(`Project '${projectName}': Invalid project data structure.`);
+                            }
+                        } catch (e) {
+                            if (e instanceof SyntaxError) {
+                                processingErrors.push(`Project '${projectName}': Error parsing project data (invalid JSON format) - ${e.message}`);
+                            } else {
+                                processingErrors.push(`Project '${projectName}': Error processing data - ${e.message}`);
+                            }
+                            console.error(`Error processing project '${projectName}':`, e);
+                        }
+                    } else {
+                        processingErrors.push(`Project '${projectName}': Could not retrieve data from local storage.`);
+                    }
                 }
             }
-            if (projects.length === 0) { allResultsDiv.innerHTML = '<p>No projects found.</p>'; addResultButtons(allResultsDiv); M.Modal.getInstance(document.getElementById('multiplier-modal')).close(); return; }
-            const allTechs = new Set();
-            projects.forEach(p => {
-                const rows = String(p.data).split(/\r?\n/).filter(r => r.trim() !== "");
+
+            // 2. Identify all unique TECH IDs across all projects
+            const allUniqueTechIDs = new Set();
+            allProjectsRawData.forEach(project => {
+                const rows = project.data.split(/\r?\n/).filter(r => r.trim() !== "");
                 if (rows.length > 0) {
-                    const hdrs = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase());
-                    const idIdx = hdrs?.indexOf("FIX1_ID");
-                    if (idIdx !== -1) rows.forEach(r => { const id = r.split(/[\t,]/)[idIdx]?.trim().toUpperCase(); if (id) allTechs.add(id); });
+                    const headerRow = rows.shift();
+                    const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
+                    const fixIdIndex = headers.indexOf("FIX1_ID");
+
+                    if (fixIdIndex === -1) {
+                        return;
+                    }
+
+                    rows.forEach(row => {
+                        const fields = row.split(/[\t,]/);
+                        const techID = fields[fixIdIndex]?.trim().toUpperCase();
+                        if (techID) {
+                            allUniqueTechIDs.add(techID);
+                        }
+                    });
                 }
             });
-            if (allTechs.size === 0) { allResultsDiv.innerHTML = '<p>No TECH IDs across projects.</p>'; addResultButtons(allResultsDiv); M.Modal.getInstance(document.getElementById('multiplier-modal')).close(); return; }
 
-            allTechs.forEach(id => {
-                let baseSum = 0, incPtsSum = 0, addFixSum = 0, excFixSum = 0, missFixSum = 0, incCntSum = 0;
-                let catPtsSum = Array(9).fill(0), catCntsSum = Array(9).fill(0);
-                projects.forEach(p => {
-                    const res = calculateDetailsForTechIDInRaw(p.data, id, p.size, p.ir);
-                    if (res) {
-                        baseSum += res.totalPoints; incPtsSum += res.incorrectPointsValue; addFixSum += res.additionalFixPoints;
-                        excFixSum += res.excessiveFixPoints; missFixSum += res.missFixPoints; incCntSum += res.incorrectCounting;
-                        res.categoryPoints.forEach((pts, i) => catPtsSum[i] += pts);
-                        res.categoryCounts.forEach((cnt, i) => catCntsSum[i] += cnt);
+            // 3. For each unique TECH ID, aggregate results by iterating through ALL projects
+            allUniqueTechIDs.forEach(techID => {
+                // Initialize aggregated result structure for this TECH ID
+                allProjectsAggregatedResults[techID] = {
+                    baseTotalPoints: 0,
+                    incorrectPointsValue: 0,
+                    additionalFixPoints: 0,
+                    excessiveFixPoints: 0,
+                    missFixPoints: 0,
+                    incorrectCounting: 0,
+                    categoryPoints: Array(9).fill(0),
+                    categoryCounts: Array(9).fill(0),
+                    totalPoints: 0,
+                    qualityPercentage: 0,
+                    bonusPercentage: 0,
+                    qualityBonus: 0,
+                    estimatedSalary: 0
+                };
+
+                allProjectsRawData.forEach(project => {
+                    // Calculate details for this techID specifically within this project
+                    const projectSpecificResult = calculateDetailsForTechIDInRaw(project.data, techID, project.size, project.ir);
+
+                    if (projectSpecificResult) {
+                        // Aggregate values from projectSpecificResult into the overall aggregated result for this TECH ID
+                        allProjectsAggregatedResults[techID].baseTotalPoints += projectSpecificResult.totalPoints;
+                        allProjectsAggregatedResults[techID].incorrectPointsValue += projectSpecificResult.incorrectPointsValue;
+                        allProjectsAggregatedResults[techID].additionalFixPoints += projectSpecificResult.additionalFixPoints;
+                        allProjectsAggregatedResults[techID].excessiveFixPoints += projectSpecificResult.excessiveFixPoints;
+                        allProjectsAggregatedResults[techID].missFixPoints += projectSpecificResult.missFixPoints;
+                        allProjectsAggregatedResults[techID].incorrectCounting += projectSpecificResult.incorrectCounting;
+
+                        projectSpecificResult.categoryPoints.forEach((points, index) => {
+                            allProjectsAggregatedResults[techID].categoryPoints[index] += points;
+                        });
+                        projectSpecificResult.categoryCounts.forEach((count, index) => {
+                            allProjectsAggregatedResults[techID].categoryCounts[index] += count;
+                        });
                     }
                 });
-                const totalWithMult = baseSum * multiplier;
-                const qualPerc = (baseSum > 0) ? Math.max(0, ((baseSum - incPtsSum) / baseSum) * 100) : 0;
-                const bonusPerc = getBonusPercentage(qualPerc);
-                const qualBonus = baseSum * (bonusPerc / 100);
-                allProjectsAggregatedResults[id] = {
-                    techID: id, baseTotalPointsSum: baseSum, incorrectPointsValueSum: incPtsSum, additionalFixPointsSum: addFixSum,
-                    excessiveFixPointsSum: excFixSum, missFixPointsSum: missFixSum, incorrectCountingSum: incCntSum,
-                    categoryPointsSum: catPtsSum, categoryCountsSum: catCntsSum, totalPointsWithMultiplier: totalWithMult,
-                    qualityPercentage: qualPerc, bonusPercentage: bonusPerc, qualityBonus, estimatedSalary: totalWithMult + qualBonus
-                };
+
+                // Now calculate the final derived metrics for this aggregated TECH ID
+                const aggregatedResult = allProjectsAggregatedResults[techID];
+
+                // Apply multiplier to the accumulated baseTotalPoints
+                aggregatedResult.totalPoints = aggregatedResult.baseTotalPoints * multiplier;
+
+                // Quality calculation remains based on original base points, not multiplied points
+                const correctPointsAggregated = aggregatedResult.baseTotalPoints - aggregatedResult.incorrectPointsValue;
+                aggregatedResult.qualityPercentage = (aggregatedResult.baseTotalPoints > 0) ? (correctPointsAggregated / aggregatedResult.baseTotalPoints) * 100 : 0;
+
+                aggregatedResult.bonusPercentage = getBonusPercentage(aggregatedResult.qualityPercentage);
+                // Quality bonus is calculated on the base points, before the global multiplier
+                aggregatedResult.qualityBonus = aggregatedResult.baseTotalPoints * (aggregatedResult.bonusPercentage / 100);
+
+                // Estimated salary is the total points (after multiplier) plus the quality bonus (from base points)
+                aggregatedResult.estimatedSalary = aggregatedResult.totalPoints + aggregatedResult.qualityBonus;
             });
 
-            let grandTotal = Object.values(allProjectsAggregatedResults).reduce((sum, r) => sum + r.totalPointsWithMultiplier, 0);
+            let grandTotal = 0;
+            for (const techID in allProjectsAggregatedResults) {
+                if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
+                    grandTotal += allProjectsAggregatedResults[techID].totalPoints; // Grand total sums points AFTER multiplier
+                }
+            }
+
             let tableHtml = `<h5>Totals Across All Projects (Multiplier: ${multiplier.toFixed(2)})</h5>`;
-            tableHtml += `<table class="striped responsive-table"><thead><tr><th>TECH ID</th>`;
-            Array.from({ length: 9 }).forEach((_, i) => tableHtml += `<th>CAT ${i + 1} Pts Sum</th><th>CAT ${i + 1} Cnt Sum</th>`);
-            tableHtml += `<th>Add.FixSum</th><th>Exc.FixSum</th><th>Miss.FixSum</th><th>Inc.CntSum</th><th>Inc.PtsValSum</th><th>BaseTotalSum</th><th>Total(w/Mult)</th><th>Qual%</th><th>Bonus%</th><th>Qual.Bonus</th><th>Est.Salary</th></tr></thead><tbody>`;
-            Object.values(allProjectsAggregatedResults).sort((a,b)=>a.techID.localeCompare(b.techID)).forEach(r => {
-                 const qClass = r.qualityPercentage === 100 ? 'ql-grn' : (r.qualityPercentage >= 77.5 ? 'ql-org' : 'ql-red');
-                 const bClass = r.bonusPercentage >= 100 ? 'ql-grn' : (r.bonusPercentage > 0 ? 'ql-org' : 'ql-red');
-                 const idClass = r.techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
-                tableHtml += `<tr><td class="${idClass}">${r.techID}</td>`;
-                r.categoryPointsSum.forEach((p, i) => tableHtml += `<td>${p.toFixed(2)}</td><td>${r.categoryCountsSum[i]}</td>`);
-                tableHtml += `<td>${r.additionalFixPointsSum}</td><td>${r.excessiveFixPointsSum}</td><td>${r.missFixPointsSum}</td><td>${r.incorrectCountingSum}</td><td>${r.incorrectPointsValueSum.toFixed(2)}</td>`;
-                tableHtml += `<td>${r.baseTotalPointsSum.toFixed(2)}</td><td><b>${r.totalPointsWithMultiplier.toFixed(2)}</b></td><td class="${qClass}">${r.qualityPercentage.toFixed(2)}%</td><td class="${bClass}">${r.bonusPercentage.toFixed(2)}%</td><td class="${bClass}">${r.qualityBonus.toFixed(2)}</td><td class="salary-highlight">${r.estimatedSalary.toFixed(2)}</td></tr>`;
-            });
-            tableHtml += `</tbody></table><h4 style="margin-top:20px;">Team Total (w/ Multiplier): ${grandTotal.toFixed(2)}</h4>`;
-            if (errors.length > 0) tableHtml += `<div class="card red lighten-4" style="margin-top:20px;"><div class="card-content red-text text-darken-4"><p><strong>Warnings:</strong> ${errors.join(', ')}</p></div></div>`;
-            allResultsDiv.innerHTML = tableHtml; outputDiv.innerHTML = ''; allCalculatedResults = []; addResultButtons(allResultsDiv);
+            if (Object.keys(allProjectsAggregatedResults).length === 0) {
+                tableHtml += '<p>No TECH IDs found across all projects.</p>';
+            } else {
+                tableHtml += '<table class="striped"><thead><tr>';
+                const aggregatedHeaders = [
+                    'TECH ID',
+                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
+                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
+                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value', 'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %',
+                    'Quality Bonus', 'Estimated Salary'
+                ];
+
+                aggregatedHeaders.forEach(headerText => {
+                    tableHtml += `<th>${headerText}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+
+                Object.entries(allProjectsAggregatedResults).sort((a, b) => a[0].localeCompare(b[0])).forEach(([techID, result]) => {
+                    const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red');
+                    const techIdHighlightClass = techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
+
+                    let bonusClass = '';
+                    if (result.bonusPercentage >= 100) {
+                        bonusClass = 'quality-green';
+                    } else if (result.bonusPercentage > 0) {
+                        bonusClass = 'quality-orange';
+                    } else {
+                        bonusClass = 'quality-red';
+                    }
+
+                    tableHtml += '<tr>';
+                    tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`;
+                    result.categoryPoints.forEach(total => {
+                        tableHtml += `<td>${total.toFixed(2)}</td>`;
+                    });
+                    result.categoryCounts.forEach(count => {
+                        tableHtml += `<td>${count}</td>`;
+                    });
+                    tableHtml += `<td>${result.additionalFixPoints}</td>`;
+                    tableHtml += `<td>${result.excessiveFixPoints}</td>`;
+                    tableHtml += `<td>${result.missFixPoints}</td>`;
+                    tableHtml += `<td>${result.incorrectCounting}</td>`;
+                    tableHtml += `<td>${result.incorrectPointsValue.toFixed(2)}</td>`;
+                    tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`;
+                    tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td>`;
+                    tableHtml += `<td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
+                    tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td>`;
+                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td>`;
+                    tableHtml += '</tr>';
+                });
+                tableHtml += '</tbody></table>';
+                tableHtml += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
+            }
+
+            if (processingErrors.length > 0) {
+                tableHtml += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
+                processingErrors.forEach(error => {
+                    tableHtml += `<li>${error}</li>`;
+                });
+                tableHtml += '</ul></div></div>';
+            }
+
+            allResultsDiv.innerHTML = tableHtml;
+            outputDiv.textContent = '';
+            allCalculatedResults = [];
+            addResultButtons(allResultsDiv);
+
             M.Modal.getInstance(document.getElementById('multiplier-modal')).close();
         }
 
-        function exportToCsv(filename, data, type) {
-            if (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'object' && Object.keys(data).length === 0)) {
-                showToast('No data to export.', 'red'); return;
+        /**
+         * Exports data to a CSV file.
+         * @param {string} filename - The name of the CSV file.
+         * @param {object[]|object} data - The data to export.
+         */
+        function exportToCsv(filename, data) {
+            if (!data || (Array.isArray(data) && data.length === 0)) {
+                showToast('No data to export.', 'red');
+                return;
             }
-            let csv = "", hdrs = [], rws = [];
-            if (type === 'single' && data.techID) {
-                hdrs = ['Metric', 'Value', 'Count/N/A'];
-                rws.push([`TECH ID`, `${data.techID}`, `N/A`]);
-                data.categoryPoints.forEach((pts, i) => rws.push([`CAT ${i+1} Pts`, `${pts.toFixed(2)}`, `${data.categoryCounts[i]}`]));
-                ['additionalFixPoints', 'excessiveFixPoints', 'missFixPoints', 'incorrectCounting'].forEach(k => rws.push([k, 'N/A', data[k]]));
-                ['incorrectPointsValue', 'totalPoints', 'qualityBonus', 'estimatedSalary'].forEach(k => rws.push([k, data[k].toFixed(2), 'N/A']));
-                ['qualityPercentage', 'bonusPercentage'].forEach(k => rws.push([k, `${data[k].toFixed(2)}%`, 'N/A']));
-            } else if (type === 'perProject' && Array.isArray(data)) {
-                hdrs = ['TECH ID', ...Array(9).fill(0).map((_,i)=>`CAT ${i+1} Pts`), ...Array(9).fill(0).map((_,i)=>`CAT ${i+1} Cnt`), 'Add.Fix', 'Exc.Fix', 'Miss.Fix', 'Inc.Cnt', 'Inc.PtsVal', 'Total Pts', 'Qual.%', 'Bonus%', 'Qual.Bonus', 'Est.Salary'];
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            let headers = [];
+
+            if (Array.isArray(data)) { // This handles the 'Per Project Total' and 'All Projects Total' data
+                headers = [
+                    'TECH ID',
+                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
+                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
+                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value', 'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %',
+                    'Quality Bonus', 'Estimated Salary'
+                ];
+            } else { // This handles the single 'Search Results for TECH ID' data
+                headers = ['Metric', 'Value', 'Count/N/A'];
+            }
+
+            csvContent += headers.join(",") + "\n";
+
+            if (Array.isArray(data)) {
                 data.forEach(item => {
-                    let r = [item.techID]; item.categoryPoints.forEach(p=>r.push(p.toFixed(2))); item.categoryCounts.forEach(c=>r.push(c));
-                    r.push(item.additionalFixPoints, item.excessiveFixPoints, item.missFixPoints, item.incorrectCounting, item.incorrectPointsValue.toFixed(2), item.totalPoints.toFixed(2), `${item.qualityPercentage.toFixed(2)}%`, `${item.bonusPercentage.toFixed(2)}%`, item.qualityBonus.toFixed(2), item.estimatedSalary.toFixed(2));
-                    rws.push(r);
+                    let row = [];
+                    row.push(item.techID);
+                    item.categoryPoints.forEach(points => row.push(points.toFixed(2)));
+                    item.categoryCounts.forEach(count => row.push(count));
+                    row.push(item.additionalFixPoints);
+                    row.push(item.excessiveFixPoints);
+                    row.push(item.missFixPoints);
+                    row.push(item.incorrectCounting);
+                    row.push(item.incorrectPointsValue.toFixed(2));
+                    row.push(item.totalPoints.toFixed(2));
+                    row.push(item.qualityPercentage.toFixed(2) + '%');
+                    row.push(item.bonusPercentage.toFixed(2) + '%');
+                    row.push(item.qualityBonus.toFixed(2));
+                    row.push(item.estimatedSalary.toFixed(2));
+                    csvContent += row.join(",") + "\n";
                 });
-            } else if (type === 'allProjectsAggregated' && typeof data === 'object') {
-                hdrs = ['TECH ID', ...Array(9).fill(0).map((_,i)=>`CAT ${i+1} Pts Sum`), ...Array(9).fill(0).map((_,i)=>`CAT ${i+1} Cnt Sum`), 'Add.FixSum', 'Exc.FixSum', 'Miss.FixSum', 'Inc.CntSum', 'Inc.PtsValSum', 'BaseTotalSum', 'Total(w/Mult)', 'Qual.%', 'Bonus%', 'Qual.Bonus', 'Est.Salary'];
-                Object.values(data).forEach(item => {
-                    let r = [item.techID]; item.categoryPointsSum.forEach(p=>r.push(p.toFixed(2))); item.categoryCountsSum.forEach(c=>r.push(c));
-                    r.push(item.additionalFixPointsSum, item.excessiveFixPointsSum, item.missFixPointsSum, item.incorrectCountingSum, item.incorrectPointsValueSum.toFixed(2), item.baseTotalPointsSum.toFixed(2), item.totalPointsWithMultiplier.toFixed(2), `${item.qualityPercentage.toFixed(2)}%`, `${item.bonusPercentage.toFixed(2)}%`, item.qualityBonus.toFixed(2), item.estimatedSalary.toFixed(2));
-                    rws.push(r);
+            } else {
+                csvContent += `"Total Points",${data.totalPoints.toFixed(2)},N/A\n`;
+                data.categoryPoints.forEach((total, i) => {
+                    csvContent += `"CAT ${i + 1}",${total.toFixed(2)},${data.categoryCounts[i]}\n`;
                 });
-            } else { showToast('No valid data for export.', 'red'); return; }
-            csv += hdrs.join(",") + "\n";
-            rws.forEach(rA => csv += rA.map(f => `"${String(f).replace(/"/g, '""')}"`).join(",") + "\n");
-            const link = document.createElement("a"); link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + csv));
-            link.setAttribute("download", filename); document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            showToast('CSV exported!', 'green');
+                csvContent += `"Additional FixPoints",${data.additionalFixPoints},N/A\n`;
+                csvContent += `"Excessive FixPoints",${data.excessiveFixPoints},N/A\n`;
+                csvContent += `"Miss FixPoints",${data.missFixPoints},N/A\n`;
+                csvContent += `"Incorrect Counting",${data.incorrectCounting},N/A\n`;
+                csvContent += `"Incorrect Points Value",${data.incorrectPointsValue.toFixed(2)},N/A\n`;
+                csvContent += `"Quality Percentage",${data.qualityPercentage.toFixed(2)}%,N/A\n`;
+                csvContent += `"Bonus Percentage",${data.bonusPercentage.toFixed(2)}%,N/A\n`;
+                csvContent += `"Quality Bonus",${data.qualityBonus.toFixed(2)},N/A\n`;
+                csvContent += `"Estimated Salary",${data.estimatedSalary.toFixed(2)},N/A\n`;
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV exported successfully!', 'green');
         }
 
+        /**
+         * Fetches and updates projects from an external JSON URL.
+         */
         async function autoFetchExternalJson() {
-            showLoader(); showToast('Updating projects online...', 'blue');
+            showLoader();
+            showToast('Attempting to update projects online...', 'blue');
             try {
-                const resp = await fetch(HARDCODED_PROJECTS_JSON_URL);
-                if (!resp.ok) throw new Error(`HTTP ${resp.status} - ${resp.statusText}`);
-                const compTxt = await resp.text(); if (!compTxt) throw new Error("Fetched data empty.");
-                const decompTxt = LZString.decompressFromBase64(compTxt);
-                if (!decompTxt) throw new Error("Decompression failed or data invalid.");
-                const extData = JSON.parse(decompTxt);
-                if (!extData || typeof extData !== 'object') throw new Error("External data not a valid JSON object.");
-                let upd = 0, add = 0;
-                if (extData.projects && Array.isArray(extData.projects)) {
-                    extData.projects.forEach(p => {
-                        if (p.name && typeof p.data === 'object' && p.data && 'data' in p.data && 'size' in p.data && typeof p.data.ir === 'boolean') {
-                            const key = `tl_project_${p.name}`, newPayload = JSON.stringify(p.data);
-                            const oldStr = safeGetLocalStorage(key); let oldParsed = null;
-                            if (oldStr) try { oldParsed = JSON.parse(oldStr); } catch(e){}
-                            if (!oldParsed || JSON.stringify(oldParsed) !== newPayload) {
-                                if (safeSetLocalStorage(key, newPayload)) { if (oldParsed) upd++; else add++; }
+                const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const compressedText = await response.text();
+                const decompressedText = LZString.decompressFromBase64(compressedText);
+
+                if (decompressedText === null) {
+                    throw new Error("Decompression failed. Data might not be LZString compressed (Base64) or is corrupted.");
+                }
+
+                // The external JSON is expected to be an array of objects,
+                // where each object is like: { name: "ProjectName", data: { data: "raw_data_string", size: "3in", ir: false } }
+                const externalProjects = JSON.parse(decompressedText);
+
+                let updatedCount = 0;
+                let addedCount = 0;
+
+                if (!Array.isArray(externalProjects)) {
+                    throw new Error("External JSON is not an array of projects.");
+                }
+
+                for (const project of externalProjects) {
+                    // Expect project to be { name: "...", data: { data: "...", size: "...", ir: "..." } }
+                    // So, project.data is actually the object we want to save in local storage.
+                    if (project.name && typeof project.data === 'object' && project.data !== null && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
+                        const storageKey = `tl_project_${project.name}`;
+                        const newPayload = JSON.stringify(project.data); // Stringify the nested project.data object directly
+
+                        const existingStoredString = safeGetLocalStorage(storageKey);
+                        let existingParsedData = null;
+
+                        if (existingStoredString) {
+                            try {
+                                existingParsedData = JSON.parse(existingStoredString);
+                            } catch (parseError) {
+                                console.warn(`Error parsing existing project '${project.name}' from local storage during auto-fetch comparison:`, parseError);
+                                existingParsedData = null; // Treat as different to force update
                             }
-                        } else console.warn("Skipping invalid project from online:", p);
-                    });
-                    showToast(`Projects: Added ${add}, Updated ${upd}.`, 'green'); loadProjectList();
-                } else showToast('No "projects" array in online data.', 'orange');
-                // Placeholder for notifications if feature is re-added
-                if (extData.notifications) console.log("Notifications found:", extData.notifications.length);
-            } catch (e) { showToast(`Failed to update: ${e.message}`, 'red'); console.error("Auto-fetch error:", e); }
-            finally { hideLoader(); }
+                        }
+
+                        // Compare the new payload string with the existing parsed data's stringified version
+                        if (existingParsedData && JSON.stringify(existingParsedData) === newPayload) {
+                            // Project exists and is identical, do nothing
+                        } else {
+                            if (safeSetLocalStorage(storageKey, newPayload)) {
+                                if (existingParsedData) {
+                                    updatedCount++;
+                                } else {
+                                    addedCount++;
+                                }
+                            }
+                        }
+                    } else {
+                        console.warn("Skipping invalid project entry from online source (missing name or valid data object):", project);
+                    }
+                }
+                loadProjectList();
+                showToast(`Projects updated! Added: ${addedCount}, Updated: ${updatedCount}`, 'green');
+
+            } catch (e) {
+                let errorMessage = `Failed to update projects: ${e.message}`;
+                if (e instanceof SyntaxError) {
+                    errorMessage = `Failed to update projects: The fetched data is not valid JSON after decompression. Please check the source URL and data format.`;
+                } else if (e.message.includes("Decompression failed")) {
+                    errorMessage = `Failed to update projects: The fetched data could not be decompressed. It might not be LZString Base64 compressed or is corrupted.`;
+                }
+                showToast(errorMessage, 'red');
+                console.error("Auto-fetch error:", e);
+            } finally {
+                hideLoader();
+            }
         }
 
-        async function verifyTlLoginCode(code) {
-            if (!code) return false;
+        /**
+         * Verifies the TL login code.
+         * @param {string} enteredCode - The code entered by the user.
+         * @returns {Promise<boolean>} - A promise that resolves to true if the code is correct, false otherwise.
+         */
+        async function verifyTlLoginCode(enteredCode) {
             try {
-                const r = await fetch(HARDCODED_TL_CODE_URL); if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                const d = await r.json(); return d.code === code;
-            } catch (e) { showToast(`Error verifying TL code: ${e.message}`, 'red'); console.error("TL code fetch error:", e); return false; }
+                const response = await fetch(HARDCODED_TL_CODE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const tlCodeData = await response.json();
+                return tlCodeData.code === enteredCode;
+            } catch (e) {
+                showToast(`Error fetching TL login code: ${e.message}`, 'red');
+                console.error("TL code fetch error:", e);
+                return false;
+            }
         }
 
+        /**
+         * Updates button visibility based on the user's login role.
+         */
         function updateButtonVisibility() {
-            const tlOnly = [addProjectButton, document.getElementById('edit-project'), document.getElementById('delete-project'), document.getElementById('copy-all-projects-json')];
-            const allRoles = [viewProjectDataButton, document.getElementById('search-button'), document.getElementById('calculate-all-button'), calcAllProjectsBtn, exportBtn, clearDataButton, autoFetchButton, document.getElementById('instructions-button'), logoutButton]; // Use declared const
-            tlOnly.forEach(b => { if(b) b.style.display = isLoggedInAsTL ? '' : 'none';});
-            allRoles.forEach(b => { if(b) b.style.display = '';});
-            if (addProjectButton) addProjectButton.style.display = isLoggedInAsTL ? 'block' : 'none'; // FAB specific
+            const tlButtons = [
+                document.getElementById('add-project-button'),
+                document.getElementById('edit-project'),
+                document.getElementById('delete-project'),
+                document.getElementById('copy-all-projects-json')
+            ];
+
+            tlButtons.forEach(button => {
+                if (button) {
+                    button.style.display = isLoggedInAsTL ? 'inline-block' : 'none';
+                }
+            });
+
+            // These buttons are always visible for both roles
+            document.getElementById('calculate-all-button').style.display = 'inline-block';
+            document.getElementById('calculate-all-projects-button').style.display = 'inline-block';
+            document.getElementById('export-button').style.display = 'inline-block';
+            document.getElementById('search-button').style.display = 'inline-block';
+            document.getElementById('view-project-data-button').style.display = 'inline-block';
+            document.getElementById('auto-fetch-external-json').style.display = 'inline-block';
+            document.getElementById('clear-data-button').style.display = 'inline-block';
         }
 
         // --- Event Listeners ---
+
         document.getElementById('search-button').addEventListener('click', searchTechID);
         document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
-        
-        // Use the declared const calcAllProjectsBtn here
-        if(calcAllProjectsBtn) {
-            calcAllProjectsBtn.addEventListener('click', () => {
-                const multiplierModalInstance = M.Modal.getInstance(document.getElementById('multiplier-modal'));
-                if (multiplierModalInstance) multiplierModalInstance.open();
-            });
-        }
-        
-        if(applyMultiplierButton) applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
-        
-        projectSelector.addEventListener('change', () => {
-            const name = projectSelector.value;
-            if (!name) {
-                activeProjectData = ''; outputDiv.innerHTML = ''; allResultsDiv.innerHTML = '';
-                if (isLoggedInAsTL) { projectNameInput.value = ''; rawDataInput.value = ''; modalSizeSelect.value = '3in'; modalIrCheck.checked = false; M.FormSelect.init(modalSizeSelect); M.updateTextFields(); editingProjectName = null; }
-                return;
-            }
-            const stored = safeGetLocalStorage(`tl_project_${name}`);
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (typeof parsed.data !== 'string' || typeof parsed.size !== 'string' || typeof parsed.ir !== 'boolean') throw new Error("Invalid project structure.");
-                    activeProjectData = parsed; showToast(`Project '${name}' loaded.`, 'blue');
-                    outputDiv.innerHTML = ''; allResultsDiv.innerHTML = ''; lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {};
-                    if (isLoggedInAsTL) {
-                        projectNameInput.value = name; rawDataInput.value = parsed.data; modalSizeSelect.value = parsed.size; modalIrCheck.checked = parsed.ir;
-                        M.updateTextFields(); M.FormSelect.init(modalSizeSelect); editingProjectName = name;
-                    }
-                } catch (e) { showToast(`Error parsing '${name}': ${e.message}`, 'red'); activeProjectData = ''; }
-            } else { activeProjectData = ''; showToast(`Could not load '${name}'.`, 'red'); }
+        document.getElementById('calculate-all-projects-button').addEventListener('click', () => {
+            M.Modal.getInstance(document.getElementById('multiplier-modal')).open();
         });
+        applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
+        projectSelector.addEventListener('change', () => {
+            const selectedProjectName = projectSelector.value;
+            const projectDataString = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
 
-        const editProjectBtn = document.getElementById('edit-project'); // Declare here if not already global
-        if(editProjectBtn) editProjectBtn.addEventListener('click', () => {
-            if (!isLoggedInAsTL) return; const name = projectSelector.value;
-            if (!name) { showToast('Select project to edit.', 'orange'); return; }
-            // Ensure activeProjectData is for the selected project. The projectSelector.onchange should handle this.
-            if (activeProjectData && activeProjectData.data && activeProjectData.size && typeof activeProjectData.ir === 'boolean' && (editingProjectName === name || projectNameInput.value === name)) { 
-                // If form is already populated for this project (e.g. by onchange), just open.
-                // Otherwise, (re)populate.
-                if (projectNameInput.value !== name) { // Repopulate if form doesn't match
-                    projectNameInput.value = name; 
-                    rawDataInput.value = activeProjectData.data; 
-                    modalSizeSelect.value = activeProjectData.size; 
-                    modalIrCheck.checked = activeProjectData.ir;
-                    M.updateTextFields(); 
+            if (projectDataString) {
+                try {
+                    activeProjectData = JSON.parse(projectDataString);
+                    showToast(`Project '${selectedProjectName}' loaded.`, 'blue');
+                    outputDiv.textContent = '';
+                    allResultsDiv.innerHTML = '';
+                    lastResult = '';
+                    allCalculatedResults = [];
+                    allProjectsAggregatedResults = {};
+                    if (isLoggedInAsTL) {
+                        // Ensure rawDataInput gets the string content, not a nested object
+                        rawDataInput.value = activeProjectData.data;
+                        projectNameInput.value = selectedProjectName;
+                        modalSizeSelect.value = activeProjectData.size;
+                        modalIrCheck.checked = activeProjectData.ir;
+                        M.updateTextFields();
+                        M.FormSelect.init(modalSizeSelect);
+                        editingProjectName = selectedProjectName;
+                    }
+                } catch (e) {
+                    showToast(`Error parsing project data for '${selectedProjectName}'. Data might be corrupted or in an old format. Try clearing local storage.`, 'red');
+                    console.error("Project data parse error:", e);
+                    activeProjectData = '';
+                }
+            } else {
+                activeProjectData = '';
+                outputDiv.textContent = '';
+                allResultsDiv.innerHTML = '';
+                lastResult = '';
+                allCalculatedResults = [];
+                allProjectsAggregatedResults = {};
+                if (isLoggedInAsTL) {
+                    projectNameInput.value = '';
+                    rawDataInput.value = '';
+                    modalSizeSelect.value = '3in';
+                    modalIrCheck.checked = false;
+                    M.updateTextFields();
                     M.FormSelect.init(modalSizeSelect);
                 }
-                modalTitle.textContent = 'Edit Project'; saveProjectModalButton.textContent = 'Update Project';
-                editingProjectName = name; M.Modal.getInstance(addProjectModal).open();
-            } else { 
-                const stored = safeGetLocalStorage(`tl_project_${name}`);
-                let projectToEdit = null;
-                if(stored) try {projectToEdit = JSON.parse(stored);} catch(e){projectToEdit = null;}
-                
-                if (projectToEdit && typeof projectToEdit.data === 'string' && typeof projectToEdit.size === 'string' && typeof projectToEdit.ir === 'boolean') {
-                     activeProjectData = projectToEdit; // Update activeProjectData
-                     projectNameInput.value = name; rawDataInput.value = projectToEdit.data; modalSizeSelect.value = projectToEdit.size; modalIrCheck.checked = projectToEdit.ir;
-                     M.updateTextFields(); M.FormSelect.init(modalSizeSelect);
-                     modalTitle.textContent = 'Edit Project'; saveProjectModalButton.textContent = 'Update Project';
-                     editingProjectName = name; M.Modal.getInstance(addProjectModal).open();
-                } else {
-                    showToast('Error loading project data for editing. Try re-selecting.', 'red');
-                }
+                editingProjectName = null;
             }
         });
 
-        if(document.getElementById('delete-project')) document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
-        if(addProjectButton) addProjectButton.addEventListener('click', () => { // FAB
-            if (!isLoggedInAsTL) return;
-            modalTitle.textContent = 'Add New Project'; saveProjectModalButton.textContent = 'Save Project';
-            projectNameInput.value = ''; rawDataInput.value = ''; modalSizeSelect.value = '3in'; modalIrCheck.checked = false;
-            M.updateTextFields(); M.FormSelect.init(modalSizeSelect); editingProjectName = null;
+        document.getElementById('edit-project').addEventListener('click', () => {
+            const selectedProjectName = projectSelector.value;
+            if (!selectedProjectName) {
+                showToast('Please select a project to edit.', 'red');
+                return;
+            }
+            const projectDataString = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
+            if (projectDataString) {
+                try {
+                    const project = JSON.parse(projectDataString);
+                    projectNameInput.value = selectedProjectName;
+                    rawDataInput.value = project.data; // This assumes project.data is directly the string
+                    modalSizeSelect.value = project.size;
+                    modalIrCheck.checked = project.ir;
+                    M.updateTextFields();
+                    M.FormSelect.init(modalSizeSelect);
+                    modalTitle.textContent = 'Edit Project';
+                    saveProjectModalButton.textContent = 'Update Project';
+                    editingProjectName = selectedProjectName;
+                    M.Modal.getInstance(addProjectModal).open();
+                } catch (e) {
+                     showToast(`Error loading project data for editing '${selectedProjectName}'. Data might be corrupted. Try re-saving.`, 'red');
+                     console.error("Edit project data load error:", e);
+                }
+            } else {
+                showToast('Error: Could not load project data for editing.', 'red');
+            }
         });
-        if(saveProjectModalButton) saveProjectModalButton.addEventListener('click', saveProject);
-        if(clearDataButton) clearDataButton.addEventListener('click', async () => {
-            if (await showCustomConfirm('Clear ALL saved projects? Cannot be undone.', 'Clear All Data')) {
-                let keys = []; for (let i=0; i<localStorage.length; i++) if(localStorage.key(i).startsWith('tl_project_')) keys.push(localStorage.key(i));
-                keys.forEach(k => localStorage.removeItem(k));
-                loadProjectList(); activeProjectData = ''; outputDiv.innerHTML = ''; allResultsDiv.innerHTML = '';
-                allCalculatedResults = []; lastResult = ''; allProjectsAggregatedResults = {}; techIdInput.value = '';
-                projectNameInput.value = ''; rawDataInput.value = ''; M.updateTextFields(); projectSelector.value = ""; M.FormSelect.init(projectSelector);
+
+        document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
+
+        addProjectModal.addEventListener('click', (event) => {
+            if (event.target && event.target.id === 'add-project-button') {
+                modalTitle.textContent = 'Add New Project';
+                saveProjectModalButton.textContent = 'Save Project';
+                projectNameInput.value = '';
+                rawDataInput.value = '';
+                modalSizeSelect.value = '3in';
+                modalIrCheck.checked = false;
+                M.updateTextFields();
+                M.FormSelect.init(modalSizeSelect);
+                editingProjectName = null;
+            }
+        });
+
+        saveProjectModalButton.addEventListener('click', saveProject);
+        clearDataButton.addEventListener('click', async () => {
+            const confirmed = await showCustomConfirm('Are you sure you want to clear ALL saved projects from local storage? This action cannot be undone.', 'Clear All Data');
+            if (confirmed) {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tl_project_')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+                loadProjectList();
+                activeProjectData = '';
+                outputDiv.textContent = '';
+                allResultsDiv.innerHTML = '';
+                allCalculatedResults = [];
+                lastResult = '';
+                allProjectsAggregatedResults = {};
                 showToast('All projects cleared!', 'green');
             }
         });
 
-        if(exportBtn) exportBtn.addEventListener('click', () => { // Use declared const
-            let data, type, fname;
-            if (Object.keys(allProjectsAggregatedResults).length > 0) { data = allProjectsAggregatedResults; type = 'allProjectsAggregated'; fname = 'all_projects_summary'; }
-            else if (allCalculatedResults.length > 0) { data = allCalculatedResults; type = 'perProject'; fname = `${(projectSelector.value || 'current').replace(/[^a-z0-9]/gi, '_')}_summary`; }
-            else if (lastResult && lastResult.techID) { data = lastResult; type = 'single'; fname = `tech_${lastResult.techID}_${(projectSelector.value || 'proj').replace(/[^a-z0-9]/gi, '_')}`; }
-            else { showToast('No results to export.', 'orange'); return; }
-            exportToCsv(`${fname}.csv`, data, type);
+        document.getElementById('export-button').addEventListener('click', () => {
+            if (Object.keys(allProjectsAggregatedResults).length > 0) {
+                exportToCsv('all_projects_summary.csv', Object.values(allProjectsAggregatedResults));
+            } else if (allCalculatedResults.length > 0) {
+                exportToCsv('per_project_summary.csv', allCalculatedResults);
+            } else if (lastResult) {
+                exportToCsv(`tech_id_${lastResult.techID}_details.csv`, lastResult);
+            } else {
+                showToast('No results to export. Please perform a calculation first.', 'red');
+            }
         });
 
-        const copyAllProjectsJsonBtn = document.getElementById('copy-all-projects-json'); // Declare if not global
-        if(copyAllProjectsJsonBtn) copyAllProjectsJsonBtn.addEventListener('click', () => {
-            if (!isLoggedInAsTL) return; let projects = []; let hasProj = false;
-            for (let i=0; i<localStorage.length; i++) {
+        document.getElementById('copy-all-projects-json').addEventListener('click', () => {
+            const allProjectsDataForExport = [];
+            for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('tl_project_')) {
-                    hasProj = true; const name = key.replace('tl_project_', ''); const stored = safeGetLocalStorage(key);
-                    if (stored) try { projects.push({ name, data: JSON.parse(stored) }); } catch (e) { console.error(`Corrupt ${key}`); showToast(`Corrupt ${name}`, 'red'); return; }
+                    const projectName = key.replace('tl_project_', '');
+                    const projectDataString = safeGetLocalStorage(key);
+                    if (projectDataString !== null) {
+                        try {
+                            const projectData = JSON.parse(projectDataString);
+                            allProjectsDataForExport.push({
+                                name: projectName,
+                                data: projectData
+                            });
+                        } catch (e) {
+                            console.error(`Error parsing project JSON for key ${key} during copy:`, e);
+                            showToast(`Error copying project '${projectName}'. Data might be corrupted.`, 'red');
+                        }
+                    }
                 }
             }
-            if (!hasProj) { showToast('No projects to copy.', 'orange'); return; }
-            const exportObj = { projects }; 
+
+            if (allProjectsDataForExport.length === 0) {
+                showToast('No saved projects found to copy.', 'orange');
+                return;
+            }
+
             try {
-                const comp = LZString.compressToBase64(JSON.stringify(exportObj));
-                navigator.clipboard.writeText(comp).then(() => showToast('Projects data (for online update) copied!', 'green'), () => showToast('Copy failed.', 'red'));
-            } catch (e) { showToast('Compression error.', 'red'); console.error(e); }
+                const jsonString = JSON.stringify(allProjectsDataForExport);
+                const compressed = LZString.compressToBase64(jsonString);
+
+                console.log("--- DEBUG: Copy All Projects Data ---");
+                console.log("Decompressed JSON string to be copied (should be array of objects):", jsonString);
+                console.log("Compressed Base64 string to be copied:", compressed);
+                console.log("-------------------------------------");
+
+                navigator.clipboard.writeText(compressed).then(() => {
+                    showToast('All project data (compressed) copied to clipboard!', 'green');
+                }).catch(err => {
+                    showToast('Failed to copy to clipboard.', 'red');
+                    console.error('Failed to copy text: ', err);
+                });
+            } catch (e) {
+                showToast('Compression or stringify error during copy.', 'red');
+                console.error('Copy compression error:', e);
+            }
         });
 
-        if(autoFetchButton) autoFetchButton.addEventListener('click', autoFetchExternalJson);
+        document.getElementById('auto-fetch-external-json').addEventListener('click', autoFetchExternalJson);
+
         loginRoleSelect.addEventListener('change', () => {
-            tlCodeInputDiv.style.display = loginRoleSelect.value === 'tl' ? 'block' : 'none';
-            if(loginRoleSelect.value === 'tl') tlLoginCodeInput.setAttribute('required', 'required'); else tlLoginCodeInput.removeAttribute('required');
+            if (loginRoleSelect.value === 'tl') {
+                tlCodeInputDiv.style.display = 'block';
+                tlLoginCodeInput.setAttribute('required', 'required');
+            } else {
+                tlCodeInputDiv.style.display = 'none';
+                tlLoginCodeInput.removeAttribute('required');
+            }
             M.updateTextFields();
         });
-        loginButtonElement.addEventListener('click', async () => {
-            showLoader(); const role = loginRoleSelect.value;
-            if (!role) { showToast('Select a role.', 'orange'); hideLoader(); return; }
-            if (role === 'tl') {
-                const code = tlLoginCodeInput.value; if (!code) { showToast('Enter TL Code.', 'orange'); hideLoader(); return; }
-                if (await verifyTlLoginCode(code)) {
-                    isLoggedInAsTL = true; showToast('Logged in as TL!', 'green');
-                    M.Modal.getInstance(loginModal).close(); mainAppContent.style.display = 'block';
-                    loadProjectList(); updateButtonVisibility();
-                } else { showToast('Incorrect TL code.', 'red'); isLoggedInAsTL = false; }
-            } else { // Tech
-                isLoggedInAsTL = false; showToast('Logged in as Tech!', 'green');
-                M.Modal.getInstance(loginModal).close(); mainAppContent.style.display = 'block';
-                loadProjectList(); updateButtonVisibility();
-            }
-            hideLoader();
-        });
-        if(logoutButton) logoutButton.addEventListener('click', () => {
-            isLoggedInAsTL = false; showToast('Logged out.', 'blue'); mainAppContent.style.display = 'none';
-            outputDiv.innerHTML = ''; allResultsDiv.innerHTML = ''; lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {}; activeProjectData = ''; techIdInput.value = '';
-            loginRoleSelect.value = ''; tlLoginCodeInput.value = ''; tlCodeInputDiv.style.display = 'none';
-            M.FormSelect.init(loginRoleSelect); M.updateTextFields();
-            M.Modal.getInstance(loginModal)?.open();
-        });
-        if(fullscreenCloseButton) fullscreenCloseButton.addEventListener('click', hideFullscreenModal);
-        fullscreenResultsModal.addEventListener('click', e => { if (e.target === fullscreenResultsModal) hideFullscreenModal(); });
-        if(viewProjectDataButton) viewProjectDataButton.addEventListener('click', viewProjectData);
 
-        function applyDarkModePreference() {
-            let mode = localStorage.getItem('darkMode') || 'disabled';
-            document.body.classList.toggle('dark-mode', mode === 'enabled');
-            darkModeToggle.querySelector('i').textContent = mode === 'enabled' ? 'brightness_4' : 'brightness_high';
-        }
-        darkModeToggle.addEventListener('click', () => {
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'disabled' : 'enabled');
-            applyDarkModePreference();
+        loginButtonElement.addEventListener('click', async () => {
+            const selectedRole = loginRoleSelect.value;
+            if (selectedRole === 'tl') {
+                const enteredCode = tlLoginCodeInput.value;
+                if (await verifyTlLoginCode(enteredCode)) {
+                    isLoggedInAsTL = true;
+                    showToast('Logged in as TL!', 'green');
+                    M.Modal.getInstance(loginModal).close();
+                    mainAppContent.style.display = 'block';
+                    loadProjectList();
+                    updateButtonVisibility();
+                } else {
+                    showToast('Incorrect TL code. Please try again.', 'red');
+                    isLoggedInAsTL = false;
+                }
+            } else {
+                isLoggedInAsTL = false;
+                showToast('Logged in as Tech!', 'green');
+                M.Modal.getInstance(loginModal).close();
+                mainAppContent.style.display = 'block';
+                loadProjectList();
+                updateButtonVisibility();
+            }
         });
+
+        logoutButton.addEventListener('click', () => {
+            isLoggedInAsTL = false;
+            showToast('Logged out. Select role to continue.', 'blue');
+            mainAppContent.style.display = 'none';
+            outputDiv.textContent = '';
+            allResultsDiv.innerHTML = '';
+            lastResult = '';
+            allCalculatedResults = [];
+            allProjectsAggregatedResults = {};
+            loginRoleSelect.value = '';
+            tlLoginCodeInput.value = '';
+            tlCodeInputDiv.style.display = 'none';
+            M.FormSelect.init(loginRoleSelect);
+            M.updateTextFields();
+            M.Modal.getInstance(loginModal).open();
+        });
+
+        fullscreenCloseButton.addEventListener('click', () => {
+            M.Modal.getInstance(fullscreenResultsModal).close();
+        });
+
+        fullscreenResultsModal.addEventListener('click', (event) => {
+            if (event.target === fullscreenResultsModal) {
+                hideFullscreenModal();
+            }
+        });
+        if (viewProjectDataButton) {
+             viewProjectDataButton.addEventListener('click', viewProjectData);
+        }
+
+        // --- Dark Mode Logic ---
+        function applyDarkModePreference() {
+            let isDarkMode = localStorage.getItem('darkMode');
+
+            // If no preference is stored, default to 'disabled' (light mode)
+            if (isDarkMode === null) {
+                isDarkMode = 'disabled'; // Default to light mode
+                localStorage.setItem('darkMode', 'disabled'); // Save the default preference
+            }
+
+            if (isDarkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+                darkModeToggle.querySelector('i').textContent = 'brightness_4'; // Moon icon
+            } else {
+                document.body.classList.remove('dark-mode');
+                darkModeToggle.querySelector('i').textContent = 'brightness_high'; // Sun icon
+            }
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'disabled');
+            } else {
+                localStorage.setItem('darkMode', 'enabled');
+            }
+            applyDarkModePreference(); // Apply the new preference immediately
+        });
+
+        // --- Initialization ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.style.display = 'none'; 
+            document.body.style.display = 'none';
+
+            // Apply dark mode preference on load
             applyDarkModePreference();
-            M.Modal.init(document.querySelectorAll('.modal'), { dismissible: false }); 
-            
-            confirmationConfirmButton.addEventListener('click', () => { if (confirmPromiseResolve) { confirmPromiseResolve(true); confirmPromiseResolve = null; }});
-            confirmationCancelButton.addEventListener('click', () => { if (confirmPromiseResolve) { confirmPromiseResolve(false); confirmPromiseResolve = null; }});
-            M.FormSelect.init(projectSelector); M.FormSelect.init(loginRoleSelect); M.FormSelect.init(modalSizeSelect);
-            M.updateTextFields(); M.Tooltip.init(document.querySelectorAll('.tooltipped')); 
-            const loginInst = M.Modal.getInstance(loginModal);
+
+            // Initialize all modals
+            M.Modal.init(document.querySelectorAll('.modal'), {
+                dismissible: false,
+                onOpenEnd: (modalEl) => {
+                    if (modalEl.id === 'add-project-modal') {
+                        M.textareaAutoResize(document.getElementById('raw-data'));
+                    }
+                }
+            });
+
+            // Set up event listeners for the new confirmation modal buttons
+            confirmationConfirmButton.addEventListener('click', () => {
+                if (confirmPromiseResolve) {
+                    confirmPromiseResolve(true);
+                    confirmPromiseResolve = null; // Clear the resolve function
+                }
+            });
+
+            confirmationCancelButton.addEventListener('click', () => {
+                if (confirmPromiseResolve) {
+                    confirmPromiseResolve(false);
+                    confirmPromiseResolve = null; // Clear the resolve function
+                }
+            });
+
+
+            M.FormSelect.init(projectSelector);
+            M.FormSelect.init(loginRoleSelect);
+            M.FormSelect.init(modalSizeSelect);
+
+
+            const loginModalInstance = M.Modal.getInstance(loginModal);
+
             document.body.style.display = 'block';
-            if (loginInst) loginInst.open(); else console.error("Login modal init failed.");
+
+            if (loginModalInstance) {
+                loginModalInstance.open();
+            } else {
+                console.error("Login modal not found or not initialized by Materialize.");
+                mainAppContent.style.display = 'block';
+                loadProjectList();
+                updateButtonVisibility();
+            }
         });
     </script>
 </body>
