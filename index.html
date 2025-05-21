@@ -271,6 +271,9 @@
 
         .btn.grey.darken-1 { background-color: #9e9e9e !important; }
         .btn.grey.darken-1:hover { background-color: #757575 !important; }
+        .btn.grey { background-color: #bdbdbd !important; color: #424242 !important} /* Added for cancel button */
+        .btn.grey:hover { background-color: #9e9e9e !important; } /* Added for cancel button */
+
 
         /* Floating Action Button specific */
         .btn-floating.btn-large.green {
@@ -749,12 +752,13 @@
                     <div class="input-field col s6">
                         <label>
                             <input type="checkbox" id="modal-ir-check" />
-                            <span>IR Multiplier</span>
+                            <span>IR Additive (1.5pts)</span>
                         </label>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <a href="#!" class="modal-close btn grey">Cancel</a>
                 <a href="#!" class="modal-close btn green" id="save-project-modal-button">Save Project</a>
             </div>
         </div>
@@ -1172,54 +1176,23 @@
 
             // Define the bonus structure as an array of objects for easier lookup
             const bonusTiers = [
-                { quality: 77.50, bonus: 5 },
-                { quality: 78.00, bonus: 10 },
-                { quality: 78.50, bonus: 15 },
-                { quality: 79.00, bonus: 20 },
-                { quality: 79.50, bonus: 25 },
-                { quality: 80.00, bonus: 30 },
-                { quality: 80.50, bonus: 35 },
-                { quality: 81.00, bonus: 40 },
-                { quality: 81.50, bonus: 45 },
-                { quality: 82.00, bonus: 50 },
-                { quality: 82.50, bonus: 55 },
-                { quality: 83.00, bonus: 57 },
-                { quality: 83.50, bonus: 60 },
-                { quality: 84.00, bonus: 62 },
-                { quality: 84.50, bonus: 64 },
-                { quality: 85.00, bonus: 66 },
-                { quality: 85.50, bonus: 68 },
-                { quality: 86.00, bonus: 70 },
-                { quality: 86.50, bonus: 73 },
-                { quality: 87.00, bonus: 75 },
-                { quality: 87.50, bonus: 78 },
-                { quality: 88.00, bonus: 80 },
-                { quality: 88.50, bonus: 83 },
-                { quality: 89.00, bonus: 85 },
-                { quality: 89.50, bonus: 87 },
-                { quality: 90.00, bonus: 88 },
-                { quality: 90.50, bonus: 90 },
-                { quality: 91.00, bonus: 91 },
-                { quality: 91.50, bonus: 93 },
-                { quality: 92.00, bonus: 94 },
-                { quality: 92.50, bonus: 95 },
-                { quality: 93.00, bonus: 96 },
-                { quality: 93.50, bonus: 97 },
-                { quality: 94.00, bonus: 98 },
-                { quality: 94.50, bonus: 99 },
-                { quality: 95.00, bonus: 100 },
-                { quality: 95.50, bonus: 102 },
-                { quality: 96.00, bonus: 104 },
-                { quality: 96.50, bonus: 106 },
-                { quality: 97.00, bonus: 108 },
-                { quality: 97.50, bonus: 110 },
-                { quality: 98.00, bonus: 112 },
-                { quality: 98.50, bonus: 114 },
-                { quality: 99.00, bonus: 116 },
-                { quality: 99.50, bonus: 118 }
+                { quality: 77.50, bonus: 5 }, { quality: 78.00, bonus: 10 }, { quality: 78.50, bonus: 15 },
+                { quality: 79.00, bonus: 20 }, { quality: 79.50, bonus: 25 }, { quality: 80.00, bonus: 30 },
+                { quality: 80.50, bonus: 35 }, { quality: 81.00, bonus: 40 }, { quality: 81.50, bonus: 45 },
+                { quality: 82.00, bonus: 50 }, { quality: 82.50, bonus: 55 }, { quality: 83.00, bonus: 57 },
+                { quality: 83.50, bonus: 60 }, { quality: 84.00, bonus: 62 }, { quality: 84.50, bonus: 64 },
+                { quality: 85.00, bonus: 66 }, { quality: 85.50, bonus: 68 }, { quality: 86.00, bonus: 70 },
+                { quality: 86.50, bonus: 73 }, { quality: 87.00, bonus: 75 }, { quality: 87.50, bonus: 78 },
+                { quality: 88.00, bonus: 80 }, { quality: 88.50, bonus: 83 }, { quality: 89.00, bonus: 85 },
+                { quality: 89.50, bonus: 87 }, { quality: 90.00, bonus: 88 }, { quality: 90.50, bonus: 90 },
+                { quality: 91.00, bonus: 91 }, { quality: 91.50, bonus: 93 }, { quality: 92.00, bonus: 94 },
+                { quality: 92.50, bonus: 95 }, { quality: 93.00, bonus: 96 }, { quality: 93.50, bonus: 97 },
+                { quality: 94.00, bonus: 98 }, { quality: 94.50, bonus: 99 }, { quality: 95.00, bonus: 100 },
+                { quality: 95.50, bonus: 102 }, { quality: 96.00, bonus: 104 }, { quality: 96.50, bonus: 106 },
+                { quality: 97.00, bonus: 108 }, { quality: 97.50, bonus: 110 }, { quality: 98.00, bonus: 112 },
+                { quality: 98.50, bonus: 114 }, { quality: 99.00, bonus: 116 }, { quality: 99.50, bonus: 118 }
             ];
 
-            // Iterate from the highest quality to find the matching tier
             for (let i = bonusTiers.length - 1; i >= 0; i--) {
                 if (qualityPercentage >= bonusTiers[i].quality) {
                     return bonusTiers[i].bonus;
@@ -1233,7 +1206,7 @@
          * @param {string[]} fields - The fields of the row.
          * @param {string[]} headers - The headers of the data.
          * @param {string} size - The project size (3in or 9in).
-         * @param {boolean} ir - Whether the IR multiplier is applied.
+         * @param {boolean} ir - Whether the IR additive points are applied.
          * @returns {object} - An object containing row points, category counts, and category points.
          */
         function calculateRowDetails(fields, headers, size, ir) {
@@ -1242,8 +1215,8 @@
                 i3qa: headers.indexOf("I3QA_CAT"),
                 rv1cat: headers.indexOf("RV1_CAT"),
                 afp1cat: headers.indexOf("AFP1_CAT"),
-                rv1label: headers.indexOf("RV1_LABEL"),
-                i3qalabel: headers.indexOf("I3QA_LABEL"),
+                rv1label: headers.indexOf("RV1_LABEL"), // Not directly used for points here, but good to have if logic changes
+                i3qalabel: headers.indexOf("I3QA_LABEL"), // Same as above
                 afp2cat: headers.indexOf("AFP2_CAT"),
                 rv2cat: headers.indexOf("RV2_CAT")
             };
@@ -1256,9 +1229,13 @@
                 if (idx !== -1 && fields[idx]) {
                     const val = parseInt(fields[idx].trim());
                     if (!isNaN(val) && val >= 1 && val <= 9) {
-                        const price = PRICES[val - 1][size];
-                        const rowMultiplier = ir ? 2 : 1;
-                        const currentCategoryPoints = price * rowMultiplier;
+                        const price = PRICES[val - 1][size]; // This is the base price for the category and size
+                        let currentCategoryPoints = price;    // Start with the base price
+
+                        if (ir) {
+                            currentCategoryPoints += 1.5; // Add 1.5 if IR is active for the project
+                        }
+                        
                         rowPoints += currentCategoryPoints;
                         categoryCounts[val - 1]++;
                         categoryPoints[val - 1] += currentCategoryPoints;
@@ -1274,11 +1251,10 @@
          * @param {string} raw - The raw data string.
          * @param {string} techIDValue - The TECH ID to calculate for.
          * @param {string} size - The project size.
-         * @param {boolean} ir - Whether the IR multiplier is applied.
+         * @param {boolean} ir - Whether the IR additive points are applied.
          * @returns {object|null} - The calculation results, or null if FIX1_ID is missing.
          */
-        function calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir) {
-            // Ensure 'raw' is treated as a string before splitting
+        function calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir) { // 'ir' is passed from activeProjectData.ir
             const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
             const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
             const indexes = {
@@ -1289,10 +1265,10 @@
                 rv2label: headers.indexOf("RV2_LABEL"),
                 category: headers.indexOf("CATEGORY"),
                 i3qa: headers.indexOf("I3QA_CAT"),
-                rv1cat: headers.indexOf("RV1_CAT"), // Column index for RV1_CAT
+                rv1cat: headers.indexOf("RV1_CAT"),
                 afp1cat: headers.indexOf("AFP1_CAT"),
                 afp2cat: headers.indexOf("AFP2_CAT"),
-                rv2cat: headers.indexOf("RV2_CAT") // Column index for RV2_CAT
+                rv2cat: headers.indexOf("RV2_CAT")
             };
 
             if (indexes.fixId === -1) {
@@ -1316,120 +1292,81 @@
             matched.forEach(row => {
                 const fields = row.split(/[\t,]/);
                 
-                // Existing logic for counts (excessive, miss, incorrectCounting)
                 if (indexes.rv1label !== -1 && fields[indexes.rv1label]) {
-                    if (fields[indexes.rv1label].toUpperCase().includes("E")) {
-                        excessiveFixPoints++;
-                    }
-                    if (fields[indexes.rv1label].toUpperCase().includes("M")) {
-                        missFixPoints++;
-                    }
-                    if (fields[indexes.rv1label].toUpperCase().includes("I")) {
-                        incorrectCounting++;
-                    }
+                    if (fields[indexes.rv1label].toUpperCase().includes("E")) excessiveFixPoints++;
+                    if (fields[indexes.rv1label].toUpperCase().includes("M")) missFixPoints++;
+                    if (fields[indexes.rv1label].toUpperCase().includes("I")) incorrectCounting++;
                 }
                 if (indexes.i3qalabel !== -1 && fields[indexes.i3qalabel]) {
-                    if (fields[indexes.i3qalabel].toUpperCase().includes("M")) {
-                        missFixPoints++;
-                    }
+                    if (fields[indexes.i3qalabel].toUpperCase().includes("M")) missFixPoints++;
                 }
                 if (indexes.rv2label !== -1 && fields[indexes.rv2label]) {
-                    if (fields[indexes.rv2label].toUpperCase().includes("E")) {
-                        excessiveFixPoints++;
-                    }
-                    if (fields[indexes.rv2label].toUpperCase().includes("M")) {
-                        missFixPoints++;
-                    }
-                    if (fields[indexes.rv2label].toUpperCase().includes("I")) {
-                        incorrectCounting++;
-                    }
+                    if (fields[indexes.rv2label].toUpperCase().includes("E")) excessiveFixPoints++;
+                    if (fields[indexes.rv2label].toUpperCase().includes("M")) missFixPoints++;
+                    if (fields[indexes.rv2label].toUpperCase().includes("I")) incorrectCounting++;
                 }
 
                 if (indexes.afp1stat !== -1 && fields[indexes.afp1stat] && fields[indexes.afp1stat].toUpperCase() === "AA") {
                     additionalFixPoints++;
                 }
 
-                const rowDetails = calculateRowDetails(fields, headers, size, ir);
+                const rowDetails = calculateRowDetails(fields, headers, size, ir); // 'ir' is passed here
                 totalPoints += rowDetails.rowPoints;
-                rowDetails.categoryCounts.forEach((count, index) => {
-                    categoryCounts[index] += count;
-                });
-                rowDetails.categoryPoints.forEach((points, index) => {
-                    categoryPoints[index] += points;
-                });
-
-                // --- START DEBUG LOGGING FOR INCORRECT POINTS VALUE ---
-                console.log(`--- Processing row for TECH ID: ${techIDValue} ---`);
-                console.log(`Row fields:`, fields);
-                console.log(`rowDetails.categoryPoints (points per category in this row, already IR-multiplied if applicable):`, rowDetails.categoryPoints);
-                console.log(`Initial incorrectPointsValue for this row: ${incorrectPointsValue}`);
-
-                const rowMultiplier = ir ? 2 : 1; // Get the row's IR multiplier, as it applies to the whole row's pricing
-
-                // CORRECTED LOGIC FOR INCORRECT POINTS VALUE:
-                // Only add points for the specific category that is marked 'I', calculating its value directly
+                rowDetails.categoryCounts.forEach((count, index) => categoryCounts[index] += count);
+                rowDetails.categoryPoints.forEach((points, index) => categoryPoints[index] += points);
+                
+                // UPDATED LOGIC FOR INCORRECT POINTS VALUE:
                 if (indexes.rv1label !== -1 && fields[indexes.rv1label]?.toUpperCase().includes("I")) {
-                    console.log(`RV1_LABEL contains 'I'. Checking RV1_CAT.`);
-                    const rv1CatValue = parseInt(fields[indexes.rv1cat]?.trim()); // Get the actual category number (1-9)
-                    console.log(`RV1_CAT value: ${rv1CatValue}, RV1_CAT column index: ${indexes.rv1cat}`);
+                    const rv1CatValue = parseInt(fields[indexes.rv1cat]?.trim());
                     if (indexes.rv1cat !== -1 && !isNaN(rv1CatValue) && rv1CatValue >= 1 && rv1CatValue <= 9) {
-                        const basePrice = PRICES[rv1CatValue - 1][size]; // Get base price for this specific category and size
+                        const basePrice = PRICES[rv1CatValue - 1][size];
                         if (basePrice !== undefined && !isNaN(basePrice)) {
-                            const pointsForThisIncorrectCat = basePrice * rowMultiplier; // Apply the row's IR multiplier
-                            console.log(`Adding ${pointsForThisIncorrectCat.toFixed(2)} (from RV1_CAT ${rv1CatValue}, base: ${basePrice.toFixed(2)}, multiplier: ${rowMultiplier}) to incorrectPointsValue.`);
+                            let pointsForThisIncorrectCat = basePrice;
+                            if (ir) { // Apply additional 1.5 if project is IR
+                                pointsForThisIncorrectCat += 1.5;
+                            }
                             incorrectPointsValue += pointsForThisIncorrectCat;
-                        } else {
-                            console.warn(`DEBUG: Invalid base price for RV1_CAT ${rv1CatValue} and size ${size}. Skipping incorrect points for this entry.`);
                         }
-                    } else {
-                        console.warn(`DEBUG: Invalid RV1_CAT value (${rv1CatValue}) or index (${indexes.rv1cat}). Skipping incorrect points for RV1_LABEL 'I'.`);
                     }
                 }
                 if (indexes.rv2label !== -1 && fields[indexes.rv2label]?.toUpperCase().includes("I")) {
-                    console.log(`RV2_LABEL contains 'I'. Checking RV2_CAT.`);
-                    const rv2CatValue = parseInt(fields[indexes.rv2cat]?.trim()); // Get the actual category number (1-9)
-                    console.log(`RV2_CAT value: ${rv2CatValue}, RV2_CAT column index: ${indexes.rv2cat}`);
+                    const rv2CatValue = parseInt(fields[indexes.rv2cat]?.trim());
                     if (indexes.rv2cat !== -1 && !isNaN(rv2CatValue) && rv2CatValue >= 1 && rv2CatValue <= 9) {
-                        const basePrice = PRICES[rv2CatValue - 1][size]; // Get base price for this specific category and size
+                        const basePrice = PRICES[rv2CatValue - 1][size];
                         if (basePrice !== undefined && !isNaN(basePrice)) {
-                            const pointsForThisIncorrectCat = basePrice * rowMultiplier; // Apply the row's IR multiplier
-                            console.log(`Adding ${pointsForThisIncorrectCat.toFixed(2)} (from RV2_CAT ${rv2CatValue}, base: ${basePrice.toFixed(2)}, multiplier: ${rowMultiplier}) to incorrectPointsValue.`);
+                            let pointsForThisIncorrectCat = basePrice;
+                            if (ir) { // Apply additional 1.5 if project is IR
+                                pointsForThisIncorrectCat += 1.5;
+                            }
                             incorrectPointsValue += pointsForThisIncorrectCat;
-                        } else {
-                            console.warn(`DEBUG: Invalid base price for RV2_CAT ${rv2CatValue} and size ${size}. Skipping incorrect points for this entry.`);
                         }
-                    } else {
-                        console.warn(`DEBUG: Invalid RV2_CAT value (${rv2CatValue}) or index (${indexes.rv2cat}). Skipping incorrect points for RV2_LABEL 'I'.`);
                     }
                 }
-                // If there were RV3_LABEL/RV3_CAT, similar logic would apply here.
-                console.log(`Updated incorrectPointsValue for this row: ${incorrectPointsValue.toFixed(2)}`);
-                console.log(`--- End row processing ---`);
-                // --- END DEBUG LOGGING ---
             });
 
             const correctPoints = totalPoints - incorrectPointsValue;
             const qualityPercentage = (totalPoints > 0) ? (correctPoints / totalPoints) * 100 : 0;
-            const bonusPercentage = getBonusPercentage(qualityPercentage); // Use the new function
-            const qualityBonus = totalPoints * (bonusPercentage / 100); // Calculate bonus based on percentage
-            const estimatedSalary = totalPoints + qualityBonus; // Calculate Estimated Salary
+            const bonusPercentage = getBonusPercentage(qualityPercentage);
+            const qualityBonus = totalPoints * (bonusPercentage / 100);
+            const estimatedSalary = totalPoints + qualityBonus;
 
             return {
                 techID: techIDValue,
-                totalPoints: totalPoints, // This is the base total points for this techID in this project
+                totalPoints: totalPoints,
                 additionalFixPoints: additionalFixPoints,
                 excessiveFixPoints: excessiveFixPoints,
                 missFixPoints: missFixPoints,
                 incorrectCounting: incorrectCounting,
                 incorrectPointsValue: incorrectPointsValue,
                 qualityPercentage: qualityPercentage,
-                bonusPercentage: bonusPercentage, // Store the bonus percentage for display/export
+                bonusPercentage: bonusPercentage,
                 qualityBonus: qualityBonus,
-                estimatedSalary: estimatedSalary, // Add Estimated Salary
+                estimatedSalary: estimatedSalary,
                 categoryPoints: categoryPoints,
                 categoryCounts: categoryCounts
             };
         }
+
 
         // --- Main Functions ---
 
@@ -1447,7 +1384,6 @@
                 return;
             }
 
-            // Ensure the payload is consistently { data: string, size: string, ir: boolean }
             const payload = JSON.stringify({ data, size, ir });
             const storageKey = `tl_project_${name}`;
 
@@ -1518,7 +1454,6 @@
             const result = calculateDetailsForTechIDInRaw(raw, techIDValue, size, ir);
 
             if (result) {
-                // Determine Tech ID highlight class
                 const techIdHighlightClass = result.techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
 
                 let outputHtml = `<h5>Search Results for TECH ID: <span class="${techIdHighlightClass}">${result.techID}</span></h5>`;
@@ -1536,11 +1471,11 @@
                 outputHtml += `<tr><td>Miss FixPoints</td><td>N/A</td><td>${result.missFixPoints}</td></tr>`;
                 outputHtml += `<tr><td>Incorrect Counting</td><td>N/A</td><td>${result.incorrectCounting}</td></tr>`;
                 outputHtml += `<tr><td>Incorrect Points Value</td><td>${result.incorrectPointsValue.toFixed(2)}</td><td>N/A</td></tr>`;
-                outputHtml += `<tr><td>Total Points</td><td>${result.totalPoints.toFixed(2)}</td><td>N/A</td></tr>`; // Reordered
+                outputHtml += `<tr><td>Total Points</td><td>${result.totalPoints.toFixed(2)}</td><td>N/A</td></tr>`;
                 outputHtml += `<tr><td>Quality Percentage</td><td>${result.qualityPercentage.toFixed(2)}%</td><td>N/A</td></tr>`;
-                outputHtml += `<tr><td>Bonus Percentage</td><td>${result.bonusPercentage.toFixed(2)}%</td><td>N/A</td></tr>`; // Display bonus percentage
+                outputHtml += `<tr><td>Bonus Percentage</td><td>${result.bonusPercentage.toFixed(2)}%</td><td>N/A</td></tr>`;
                 outputHtml += `<tr><td>Quality Bonus</td><td>${result.qualityBonus.toFixed(2)}</td><td>N/A</td></tr>`;
-                outputHtml += `<tr><td class="salary-highlight">Estimated Salary</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td><td class="salary-highlight">N/A</td></tr>`; // Display Estimated Salary
+                outputHtml += `<tr><td class="salary-highlight">Estimated Salary</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td><td class="salary-highlight">N/A</td></tr>`;
                 outputHtml += '</tbody></table>';
 
                 outputDiv.innerHTML = outputHtml;
@@ -1567,7 +1502,6 @@
                 return;
             }
 
-            // Ensure 'raw' is treated as a string before splitting
             const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
             const headers = rows.shift()?.split(/[\t,]/).map(h => h.trim().toUpperCase()) || [];
             const fixIdIndex = headers.indexOf("FIX1_ID");
@@ -1625,12 +1559,8 @@
 
                     tableHtml += '<tr>';
                     tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`;
-                    result.categoryPoints.forEach(total => {
-                        tableHtml += `<td>${total.toFixed(2)}</td>`;
-                    });
-                    result.categoryCounts.forEach(count => {
-                        tableHtml += `<td>${count}</td>`;
-                    });
+                    result.categoryPoints.forEach(total => tableHtml += `<td>${total.toFixed(2)}</td>`);
+                    result.categoryCounts.forEach(count => tableHtml += `<td>${count}</td>`);
                     tableHtml += `<td>${result.additionalFixPoints}</td>`;
                     tableHtml += `<td>${result.excessiveFixPoints}</td>`;
                     tableHtml += `<td>${result.missFixPoints}</td>`;
@@ -1660,21 +1590,19 @@
             allProjectsAggregatedResults = {};
             let processingErrors = [];
 
-            // 1. Collect all raw project data first
             const allProjectsRawData = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('tl_project_')) {
                     const projectName = key.replace('tl_project_', '');
                     const projectDataString = safeGetLocalStorage(key);
-
                     if (projectDataString !== null) {
                         try {
                             const project = JSON.parse(projectDataString);
                             if (project && typeof project === 'object' && 'data' in project && 'size' in project && 'ir' in project) {
                                 allProjectsRawData.push({
                                     name: projectName,
-                                    data: String(project.data), // Ensure data is string
+                                    data: String(project.data),
                                     size: project.size,
                                     ir: project.ir
                                 });
@@ -1682,20 +1610,15 @@
                                 processingErrors.push(`Project '${projectName}': Invalid project data structure.`);
                             }
                         } catch (e) {
-                            if (e instanceof SyntaxError) {
-                                processingErrors.push(`Project '${projectName}': Error parsing project data (invalid JSON format) - ${e.message}`);
-                            } else {
-                                processingErrors.push(`Project '${projectName}': Error processing data - ${e.message}`);
-                            }
+                            processingErrors.push(`Project '${projectName}': Error processing data - ${e.message}`);
                             console.error(`Error processing project '${projectName}':`, e);
                         }
                     } else {
-                        processingErrors.push(`Project '${projectName}': Could not retrieve data from local storage.`);
+                        processingErrors.push(`Project '${projectName}': Could not retrieve data.`);
                     }
                 }
             }
 
-            // 2. Identify all unique TECH IDs across all projects
             const allUniqueTechIDs = new Set();
             allProjectsRawData.forEach(project => {
                 const rows = project.data.split(/\r?\n/).filter(r => r.trim() !== "");
@@ -1703,86 +1626,49 @@
                     const headerRow = rows.shift();
                     const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
                     const fixIdIndex = headers.indexOf("FIX1_ID");
-
-                    if (fixIdIndex === -1) {
-                        return;
-                    }
-
+                    if (fixIdIndex === -1) return;
                     rows.forEach(row => {
                         const fields = row.split(/[\t,]/);
                         const techID = fields[fixIdIndex]?.trim().toUpperCase();
-                        if (techID) {
-                            allUniqueTechIDs.add(techID);
-                        }
+                        if (techID) allUniqueTechIDs.add(techID);
                     });
                 }
             });
 
-            // 3. For each unique TECH ID, aggregate results by iterating through ALL projects
             allUniqueTechIDs.forEach(techID => {
-                // Initialize aggregated result structure for this TECH ID
                 allProjectsAggregatedResults[techID] = {
-                    baseTotalPoints: 0,
-                    incorrectPointsValue: 0,
-                    additionalFixPoints: 0,
-                    excessiveFixPoints: 0,
-                    missFixPoints: 0,
-                    incorrectCounting: 0,
-                    categoryPoints: Array(9).fill(0),
-                    categoryCounts: Array(9).fill(0),
-                    totalPoints: 0,
-                    qualityPercentage: 0,
-                    bonusPercentage: 0,
-                    qualityBonus: 0,
-                    estimatedSalary: 0
+                    baseTotalPoints: 0, incorrectPointsValue: 0, additionalFixPoints: 0,
+                    excessiveFixPoints: 0, missFixPoints: 0, incorrectCounting: 0,
+                    categoryPoints: Array(9).fill(0), categoryCounts: Array(9).fill(0),
+                    totalPoints: 0, qualityPercentage: 0, bonusPercentage: 0,
+                    qualityBonus: 0, estimatedSalary: 0
                 };
 
                 allProjectsRawData.forEach(project => {
-                    // Calculate details for this techID specifically within this project
                     const projectSpecificResult = calculateDetailsForTechIDInRaw(project.data, techID, project.size, project.ir);
-
                     if (projectSpecificResult) {
-                        // Aggregate values from projectSpecificResult into the overall aggregated result for this TECH ID
                         allProjectsAggregatedResults[techID].baseTotalPoints += projectSpecificResult.totalPoints;
                         allProjectsAggregatedResults[techID].incorrectPointsValue += projectSpecificResult.incorrectPointsValue;
                         allProjectsAggregatedResults[techID].additionalFixPoints += projectSpecificResult.additionalFixPoints;
                         allProjectsAggregatedResults[techID].excessiveFixPoints += projectSpecificResult.excessiveFixPoints;
                         allProjectsAggregatedResults[techID].missFixPoints += projectSpecificResult.missFixPoints;
                         allProjectsAggregatedResults[techID].incorrectCounting += projectSpecificResult.incorrectCounting;
-
-                        projectSpecificResult.categoryPoints.forEach((points, index) => {
-                            allProjectsAggregatedResults[techID].categoryPoints[index] += points;
-                        });
-                        projectSpecificResult.categoryCounts.forEach((count, index) => {
-                            allProjectsAggregatedResults[techID].categoryCounts[index] += count;
-                        });
+                        projectSpecificResult.categoryPoints.forEach((points, index) => allProjectsAggregatedResults[techID].categoryPoints[index] += points);
+                        projectSpecificResult.categoryCounts.forEach((count, index) => allProjectsAggregatedResults[techID].categoryCounts[index] += count);
                     }
                 });
 
-                // Now calculate the final derived metrics for this aggregated TECH ID
                 const aggregatedResult = allProjectsAggregatedResults[techID];
-
-                // Apply multiplier to the accumulated baseTotalPoints
                 aggregatedResult.totalPoints = aggregatedResult.baseTotalPoints * multiplier;
-
-                // Quality calculation remains based on original base points, not multiplied points
                 const correctPointsAggregated = aggregatedResult.baseTotalPoints - aggregatedResult.incorrectPointsValue;
                 aggregatedResult.qualityPercentage = (aggregatedResult.baseTotalPoints > 0) ? (correctPointsAggregated / aggregatedResult.baseTotalPoints) * 100 : 0;
-
                 aggregatedResult.bonusPercentage = getBonusPercentage(aggregatedResult.qualityPercentage);
-                // Quality bonus is calculated on the base points, before the global multiplier
                 aggregatedResult.qualityBonus = aggregatedResult.baseTotalPoints * (aggregatedResult.bonusPercentage / 100);
-
-                // Estimated salary is the total points (after multiplier) plus the quality bonus (from base points)
                 aggregatedResult.estimatedSalary = aggregatedResult.totalPoints + aggregatedResult.qualityBonus;
             });
 
             let grandTotal = 0;
-            for (const techID in allProjectsAggregatedResults) {
-                if (allProjectsAggregatedResults.hasOwnProperty(techID)) {
-                    grandTotal += allProjectsAggregatedResults[techID].totalPoints; // Grand total sums points AFTER multiplier
-                }
-            }
+            Object.values(allProjectsAggregatedResults).forEach(result => grandTotal += result.totalPoints);
 
             let tableHtml = `<h5>Totals Across All Projects (Multiplier: ${multiplier.toFixed(2)})</h5>`;
             if (Object.keys(allProjectsAggregatedResults).length === 0) {
@@ -1790,50 +1676,30 @@
             } else {
                 tableHtml += '<table class="striped"><thead><tr>';
                 const aggregatedHeaders = [
-                    'TECH ID',
-                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
+                    'TECH ID', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
-                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value', 'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %',
-                    'Quality Bonus', 'Estimated Salary'
+                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value',
+                    'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %', 'Quality Bonus', 'Estimated Salary'
                 ];
-
-                aggregatedHeaders.forEach(headerText => {
-                    tableHtml += `<th>${headerText}</th>`;
-                });
+                aggregatedHeaders.forEach(headerText => tableHtml += `<th>${headerText}</th>`);
                 tableHtml += '</tr></thead><tbody>';
 
                 Object.entries(allProjectsAggregatedResults).sort((a, b) => a[0].localeCompare(b[0])).forEach(([techID, result]) => {
                     const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red');
                     const techIdHighlightClass = techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
-
-                    let bonusClass = '';
-                    if (result.bonusPercentage >= 100) {
-                        bonusClass = 'quality-green';
-                    } else if (result.bonusPercentage > 0) {
-                        bonusClass = 'quality-orange';
-                    } else {
-                        bonusClass = 'quality-red';
-                    }
+                    let bonusClass = result.bonusPercentage >= 100 ? 'quality-green' : (result.bonusPercentage > 0 ? 'quality-orange' : 'quality-red');
 
                     tableHtml += '<tr>';
                     tableHtml += `<td class="${techIdHighlightClass}">${techID}</td>`;
-                    result.categoryPoints.forEach(total => {
-                        tableHtml += `<td>${total.toFixed(2)}</td>`;
-                    });
-                    result.categoryCounts.forEach(count => {
-                        tableHtml += `<td>${count}</td>`;
-                    });
-                    tableHtml += `<td>${result.additionalFixPoints}</td>`;
-                    tableHtml += `<td>${result.excessiveFixPoints}</td>`;
-                    tableHtml += `<td>${result.missFixPoints}</td>`;
-                    tableHtml += `<td>${result.incorrectCounting}</td>`;
-                    tableHtml += `<td>${result.incorrectPointsValue.toFixed(2)}</td>`;
-                    tableHtml += `<td>${result.totalPoints.toFixed(2)}</td>`;
+                    result.categoryPoints.forEach(total => tableHtml += `<td>${total.toFixed(2)}</td>`);
+                    result.categoryCounts.forEach(count => tableHtml += `<td>${count}</td>`);
+                    tableHtml += `<td>${result.additionalFixPoints}</td><td>${result.excessiveFixPoints}</td>`;
+                    tableHtml += `<td>${result.missFixPoints}</td><td>${result.incorrectCounting}</td>`;
+                    tableHtml += `<td>${result.incorrectPointsValue.toFixed(2)}</td><td>${result.totalPoints.toFixed(2)}</td>`;
                     tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td>`;
                     tableHtml += `<td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
                     tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td>`;
-                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td>`;
-                    tableHtml += '</tr>';
+                    tableHtml += `<td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td></tr>`;
                 });
                 tableHtml += '</tbody></table>';
                 tableHtml += `<h4 style="margin-top: 20px;">Team Total Points: ${grandTotal.toFixed(2)} points</h4>`;
@@ -1841,9 +1707,7 @@
 
             if (processingErrors.length > 0) {
                 tableHtml += '<div class="card red lighten-5"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings/Errors</span><ul>';
-                processingErrors.forEach(error => {
-                    tableHtml += `<li>${error}</li>`;
-                });
+                processingErrors.forEach(error => tableHtml += `<li>${error}</li>`);
                 tableHtml += '</ul></div></div>';
             }
 
@@ -1851,9 +1715,9 @@
             outputDiv.textContent = '';
             allCalculatedResults = [];
             addResultButtons(allResultsDiv);
-
             M.Modal.getInstance(document.getElementById('multiplier-modal')).close();
         }
+
 
         /**
          * Exports data to a CSV file.
@@ -1869,15 +1733,14 @@
             let csvContent = "data:text/csv;charset=utf-8,";
             let headers = [];
 
-            if (Array.isArray(data)) { // This handles the 'Per Project Total' and 'All Projects Total' data
+            if (Array.isArray(data)) {
                 headers = [
-                    'TECH ID',
-                    ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
+                    'TECH ID', ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Points`),
                     ...Array.from({ length: 9 }, (_, i) => `CAT ${i + 1} Count`),
-                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value', 'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %',
-                    'Quality Bonus', 'Estimated Salary'
+                    'Additional FixPoints', 'Excessive FixPoints', 'Miss FixPoints', 'Incorrect Counting', 'Incorrect Points Value',
+                    'Total Points (w/ Multiplier)', 'Quality %', 'Bonus %', 'Quality Bonus', 'Estimated Salary'
                 ];
-            } else { // This handles the single 'Search Results for TECH ID' data
+            } else {
                 headers = ['Metric', 'Value', 'Count/N/A'];
             }
 
@@ -1885,31 +1748,25 @@
 
             if (Array.isArray(data)) {
                 data.forEach(item => {
-                    let row = [];
-                    row.push(item.techID);
-                    item.categoryPoints.forEach(points => row.push(points.toFixed(2)));
-                    item.categoryCounts.forEach(count => row.push(count));
-                    row.push(item.additionalFixPoints);
-                    row.push(item.excessiveFixPoints);
-                    row.push(item.missFixPoints);
-                    row.push(item.incorrectCounting);
-                    row.push(item.incorrectPointsValue.toFixed(2));
-                    row.push(item.totalPoints.toFixed(2));
-                    row.push(item.qualityPercentage.toFixed(2) + '%');
-                    row.push(item.bonusPercentage.toFixed(2) + '%');
-                    row.push(item.qualityBonus.toFixed(2));
-                    row.push(item.estimatedSalary.toFixed(2));
+                    let row = [
+                        item.techID, ...item.categoryPoints.map(p => p.toFixed(2)),
+                        ...item.categoryCounts, item.additionalFixPoints, item.excessiveFixPoints,
+                        item.missFixPoints, item.incorrectCounting, item.incorrectPointsValue.toFixed(2),
+                        item.totalPoints.toFixed(2), item.qualityPercentage.toFixed(2) + '%',
+                        item.bonusPercentage.toFixed(2) + '%', item.qualityBonus.toFixed(2),
+                        item.estimatedSalary.toFixed(2)
+                    ];
                     csvContent += row.join(",") + "\n";
                 });
-            } else {
+            } else { // Single result
                 csvContent += `"Total Points",${data.totalPoints.toFixed(2)},N/A\n`;
                 data.categoryPoints.forEach((total, i) => {
                     csvContent += `"CAT ${i + 1}",${total.toFixed(2)},${data.categoryCounts[i]}\n`;
                 });
-                csvContent += `"Additional FixPoints",${data.additionalFixPoints},N/A\n`;
-                csvContent += `"Excessive FixPoints",${data.excessiveFixPoints},N/A\n`;
-                csvContent += `"Miss FixPoints",${data.missFixPoints},N/A\n`;
-                csvContent += `"Incorrect Counting",${data.incorrectCounting},N/A\n`;
+                csvContent += `"Additional FixPoints",N/A,${data.additionalFixPoints}\n`; // Corrected output order
+                csvContent += `"Excessive FixPoints",N/A,${data.excessiveFixPoints}\n`;
+                csvContent += `"Miss FixPoints",N/A,${data.missFixPoints}\n`;
+                csvContent += `"Incorrect Counting",N/A,${data.incorrectCounting}\n`;
                 csvContent += `"Incorrect Points Value",${data.incorrectPointsValue.toFixed(2)},N/A\n`;
                 csvContent += `"Quality Percentage",${data.qualityPercentage.toFixed(2)}%,N/A\n`;
                 csvContent += `"Bonus Percentage",${data.bonusPercentage.toFixed(2)}%,N/A\n`;
@@ -1935,79 +1792,45 @@
             showToast('Attempting to update projects online...', 'blue');
             try {
                 const response = await fetch(HARDCODED_PROJECTS_JSON_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const compressedText = await response.text();
                 const decompressedText = LZString.decompressFromBase64(compressedText);
+                if (decompressedText === null) throw new Error("Decompression failed.");
 
-                if (decompressedText === null) {
-                    throw new Error("Decompression failed. Data might not be LZString compressed (Base64) or is corrupted.");
-                }
-
-                // The external JSON is expected to be an array of objects,
-                // where each object is like: { name: "ProjectName", data: { data: "raw_data_string", size: "3in", ir: false } }
                 const externalProjects = JSON.parse(decompressedText);
+                if (!Array.isArray(externalProjects)) throw new Error("External JSON is not an array.");
 
-                let updatedCount = 0;
-                let addedCount = 0;
-
-                if (!Array.isArray(externalProjects)) {
-                    throw new Error("External JSON is not an array of projects.");
-                }
-
+                let updatedCount = 0, addedCount = 0;
                 for (const project of externalProjects) {
-                    // Expect project to be { name: "...", data: { data: "...", size: "...", ir: "..." } }
-                    // So, project.data is actually the object we want to save in local storage.
-                    if (project.name && typeof project.data === 'object' && project.data !== null && 'data' in project.data && 'size' in project.data && 'ir' in project.data) {
+                    if (project.name && typeof project.data === 'object' && project.data !== null &&
+                        'data' in project.data && 'size' in project.data && 'ir' in project.data) {
                         const storageKey = `tl_project_${project.name}`;
-                        const newPayload = JSON.stringify(project.data); // Stringify the nested project.data object directly
-
+                        const newPayload = JSON.stringify(project.data);
                         const existingStoredString = safeGetLocalStorage(storageKey);
                         let existingParsedData = null;
-
                         if (existingStoredString) {
-                            try {
-                                existingParsedData = JSON.parse(existingStoredString);
-                            } catch (parseError) {
-                                console.warn(`Error parsing existing project '${project.name}' from local storage during auto-fetch comparison:`, parseError);
-                                existingParsedData = null; // Treat as different to force update
-                            }
+                            try { existingParsedData = JSON.parse(existingStoredString); }
+                            catch (parseError) { console.warn(`Error parsing existing project '${project.name}' during auto-fetch:`, parseError); }
                         }
-
-                        // Compare the new payload string with the existing parsed data's stringified version
-                        if (existingParsedData && JSON.stringify(existingParsedData) === newPayload) {
-                            // Project exists and is identical, do nothing
-                        } else {
+                        if (!existingParsedData || JSON.stringify(existingParsedData) !== newPayload) {
                             if (safeSetLocalStorage(storageKey, newPayload)) {
-                                if (existingParsedData) {
-                                    updatedCount++;
-                                } else {
-                                    addedCount++;
-                                }
+                                if (existingParsedData) updatedCount++; else addedCount++;
                             }
                         }
                     } else {
-                        console.warn("Skipping invalid project entry from online source (missing name or valid data object):", project);
+                        console.warn("Skipping invalid project entry from online source:", project);
                     }
                 }
                 loadProjectList();
                 showToast(`Projects updated! Added: ${addedCount}, Updated: ${updatedCount}`, 'green');
-
             } catch (e) {
-                let errorMessage = `Failed to update projects: ${e.message}`;
-                if (e instanceof SyntaxError) {
-                    errorMessage = `Failed to update projects: The fetched data is not valid JSON after decompression. Please check the source URL and data format.`;
-                } else if (e.message.includes("Decompression failed")) {
-                    errorMessage = `Failed to update projects: The fetched data could not be decompressed. It might not be LZString Base64 compressed or is corrupted.`;
-                }
-                showToast(errorMessage, 'red');
+                showToast(`Failed to update projects: ${e.message}`, 'red');
                 console.error("Auto-fetch error:", e);
             } finally {
                 hideLoader();
             }
         }
+
 
         /**
          * Verifies the TL login code.
@@ -2046,15 +1869,18 @@
                 }
             });
 
-            // These buttons are always visible for both roles
-            document.getElementById('calculate-all-button').style.display = 'inline-block';
-            document.getElementById('calculate-all-projects-button').style.display = 'inline-block';
-            document.getElementById('export-button').style.display = 'inline-block';
-            document.getElementById('search-button').style.display = 'inline-block';
-            document.getElementById('view-project-data-button').style.display = 'inline-block';
-            document.getElementById('auto-fetch-external-json').style.display = 'inline-block';
-            document.getElementById('clear-data-button').style.display = 'inline-block';
+            // These buttons are always visible for both roles if they exist
+            const commonButtons = [
+                'calculate-all-button', 'calculate-all-projects-button', 'export-button',
+                'search-button', 'view-project-data-button', 'auto-fetch-external-json',
+                'clear-data-button'
+            ];
+            commonButtons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'inline-block';
+            });
         }
+
 
         // --- Event Listeners ---
 
@@ -2064,6 +1890,7 @@
             M.Modal.getInstance(document.getElementById('multiplier-modal')).open();
         });
         applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
+
         projectSelector.addEventListener('change', () => {
             const selectedProjectName = projectSelector.value;
             const projectDataString = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
@@ -2072,40 +1899,27 @@
                 try {
                     activeProjectData = JSON.parse(projectDataString);
                     showToast(`Project '${selectedProjectName}' loaded.`, 'blue');
-                    outputDiv.textContent = '';
-                    allResultsDiv.innerHTML = '';
-                    lastResult = '';
-                    allCalculatedResults = [];
-                    allProjectsAggregatedResults = {};
+                    outputDiv.textContent = ''; allResultsDiv.innerHTML = '';
+                    lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {};
                     if (isLoggedInAsTL) {
-                        // Ensure rawDataInput gets the string content, not a nested object
                         rawDataInput.value = activeProjectData.data;
                         projectNameInput.value = selectedProjectName;
                         modalSizeSelect.value = activeProjectData.size;
                         modalIrCheck.checked = activeProjectData.ir;
-                        M.updateTextFields();
-                        M.FormSelect.init(modalSizeSelect);
+                        M.updateTextFields(); M.FormSelect.init(modalSizeSelect);
                         editingProjectName = selectedProjectName;
                     }
                 } catch (e) {
-                    showToast(`Error parsing project data for '${selectedProjectName}'. Data might be corrupted or in an old format. Try clearing local storage.`, 'red');
-                    console.error("Project data parse error:", e);
-                    activeProjectData = '';
+                    showToast(`Error parsing project data for '${selectedProjectName}'.`, 'red');
+                    console.error("Project data parse error:", e); activeProjectData = '';
                 }
             } else {
-                activeProjectData = '';
-                outputDiv.textContent = '';
-                allResultsDiv.innerHTML = '';
-                lastResult = '';
-                allCalculatedResults = [];
-                allProjectsAggregatedResults = {};
+                activeProjectData = ''; outputDiv.textContent = ''; allResultsDiv.innerHTML = '';
+                lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {};
                 if (isLoggedInAsTL) {
-                    projectNameInput.value = '';
-                    rawDataInput.value = '';
-                    modalSizeSelect.value = '3in';
-                    modalIrCheck.checked = false;
-                    M.updateTextFields();
-                    M.FormSelect.init(modalSizeSelect);
+                    projectNameInput.value = ''; rawDataInput.value = '';
+                    modalSizeSelect.value = '3in'; modalIrCheck.checked = false;
+                    M.updateTextFields(); M.FormSelect.init(modalSizeSelect);
                 }
                 editingProjectName = null;
             }
@@ -2114,25 +1928,23 @@
         document.getElementById('edit-project').addEventListener('click', () => {
             const selectedProjectName = projectSelector.value;
             if (!selectedProjectName) {
-                showToast('Please select a project to edit.', 'red');
-                return;
+                showToast('Please select a project to edit.', 'red'); return;
             }
             const projectDataString = safeGetLocalStorage(`tl_project_${selectedProjectName}`);
             if (projectDataString) {
                 try {
                     const project = JSON.parse(projectDataString);
                     projectNameInput.value = selectedProjectName;
-                    rawDataInput.value = project.data; // This assumes project.data is directly the string
+                    rawDataInput.value = project.data;
                     modalSizeSelect.value = project.size;
                     modalIrCheck.checked = project.ir;
-                    M.updateTextFields();
-                    M.FormSelect.init(modalSizeSelect);
+                    M.updateTextFields(); M.FormSelect.init(modalSizeSelect);
                     modalTitle.textContent = 'Edit Project';
                     saveProjectModalButton.textContent = 'Update Project';
                     editingProjectName = selectedProjectName;
                     M.Modal.getInstance(addProjectModal).open();
                 } catch (e) {
-                     showToast(`Error loading project data for editing '${selectedProjectName}'. Data might be corrupted. Try re-saving.`, 'red');
+                     showToast(`Error loading project data for editing '${selectedProjectName}'.`, 'red');
                      console.error("Edit project data load error:", e);
                 }
             } else {
@@ -2142,37 +1954,30 @@
 
         document.getElementById('delete-project').addEventListener('click', deleteSelectedProject);
 
-        addProjectModal.addEventListener('click', (event) => {
-            if (event.target && event.target.id === 'add-project-button') {
-                modalTitle.textContent = 'Add New Project';
-                saveProjectModalButton.textContent = 'Save Project';
-                projectNameInput.value = '';
-                rawDataInput.value = '';
-                modalSizeSelect.value = '3in';
-                modalIrCheck.checked = false;
-                M.updateTextFields();
-                M.FormSelect.init(modalSizeSelect);
-                editingProjectName = null;
-            }
+        addProjectButton.addEventListener('click', () => { // Changed from modal to button directly
+            modalTitle.textContent = 'Add New Project';
+            saveProjectModalButton.textContent = 'Save Project';
+            projectNameInput.value = ''; rawDataInput.value = '';
+            modalSizeSelect.value = '3in'; modalIrCheck.checked = false;
+            M.updateTextFields(); M.FormSelect.init(modalSizeSelect);
+            editingProjectName = null;
+            // Instance should already be initialized, opening directly
+            // M.Modal.getInstance(addProjectModal).open(); // This line is fine if modal is already init
         });
 
+
         saveProjectModalButton.addEventListener('click', saveProject);
+
         clearDataButton.addEventListener('click', async () => {
-            const confirmed = await showCustomConfirm('Are you sure you want to clear ALL saved projects from local storage? This action cannot be undone.', 'Clear All Data');
+            const confirmed = await showCustomConfirm('Are you sure you want to clear ALL saved projects? This cannot be undone.', 'Clear All Data');
             if (confirmed) {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
                     const key = localStorage.key(i);
-                    if (key.startsWith('tl_project_')) {
-                        localStorage.removeItem(key);
-                    }
+                    if (key.startsWith('tl_project_')) localStorage.removeItem(key);
                 }
-                loadProjectList();
-                activeProjectData = '';
-                outputDiv.textContent = '';
-                allResultsDiv.innerHTML = '';
-                allCalculatedResults = [];
-                lastResult = '';
-                allProjectsAggregatedResults = {};
+                loadProjectList(); activeProjectData = '';
+                outputDiv.textContent = ''; allResultsDiv.innerHTML = '';
+                allCalculatedResults = []; lastResult = ''; allProjectsAggregatedResults = {};
                 showToast('All projects cleared!', 'green');
             }
         });
@@ -2185,7 +1990,7 @@
             } else if (lastResult) {
                 exportToCsv(`tech_id_${lastResult.techID}_details.csv`, lastResult);
             } else {
-                showToast('No results to export. Please perform a calculation first.', 'red');
+                showToast('No results to export.', 'red');
             }
         });
 
@@ -2198,189 +2003,142 @@
                     const projectDataString = safeGetLocalStorage(key);
                     if (projectDataString !== null) {
                         try {
-                            const projectData = JSON.parse(projectDataString);
-                            allProjectsDataForExport.push({
-                                name: projectName,
-                                data: projectData
-                            });
+                            allProjectsDataForExport.push({ name: projectName, data: JSON.parse(projectDataString) });
                         } catch (e) {
                             console.error(`Error parsing project JSON for key ${key} during copy:`, e);
-                            showToast(`Error copying project '${projectName}'. Data might be corrupted.`, 'red');
+                            showToast(`Error copying project '${projectName}'.`, 'red');
                         }
                     }
                 }
             }
-
             if (allProjectsDataForExport.length === 0) {
-                showToast('No saved projects found to copy.', 'orange');
-                return;
+                showToast('No saved projects to copy.', 'orange'); return;
             }
-
             try {
-                const jsonString = JSON.stringify(allProjectsDataForExport);
-                const compressed = LZString.compressToBase64(jsonString);
-
-                console.log("--- DEBUG: Copy All Projects Data ---");
-                console.log("Decompressed JSON string to be copied (should be array of objects):", jsonString);
-                console.log("Compressed Base64 string to be copied:", compressed);
-                console.log("-------------------------------------");
-
-                navigator.clipboard.writeText(compressed).then(() => {
-                    showToast('All project data (compressed) copied to clipboard!', 'green');
-                }).catch(err => {
-                    showToast('Failed to copy to clipboard.', 'red');
-                    console.error('Failed to copy text: ', err);
-                });
+                const compressed = LZString.compressToBase64(JSON.stringify(allProjectsDataForExport));
+                navigator.clipboard.writeText(compressed)
+                    .then(() => showToast('All project data (compressed) copied!', 'green'))
+                    .catch(err => { showToast('Failed to copy.', 'red'); console.error('Copy fail: ', err); });
             } catch (e) {
-                showToast('Compression or stringify error during copy.', 'red');
-                console.error('Copy compression error:', e);
+                showToast('Compression error during copy.', 'red'); console.error('Copy compression error:', e);
             }
         });
 
         document.getElementById('auto-fetch-external-json').addEventListener('click', autoFetchExternalJson);
 
         loginRoleSelect.addEventListener('change', () => {
-            if (loginRoleSelect.value === 'tl') {
-                tlCodeInputDiv.style.display = 'block';
-                tlLoginCodeInput.setAttribute('required', 'required');
-            } else {
-                tlCodeInputDiv.style.display = 'none';
-                tlLoginCodeInput.removeAttribute('required');
-            }
+            tlCodeInputDiv.style.display = loginRoleSelect.value === 'tl' ? 'block' : 'none';
+            if (loginRoleSelect.value === 'tl') tlLoginCodeInput.setAttribute('required', 'required');
+            else tlLoginCodeInput.removeAttribute('required');
             M.updateTextFields();
         });
 
         loginButtonElement.addEventListener('click', async () => {
             const selectedRole = loginRoleSelect.value;
             if (selectedRole === 'tl') {
-                const enteredCode = tlLoginCodeInput.value;
-                if (await verifyTlLoginCode(enteredCode)) {
-                    isLoggedInAsTL = true;
-                    showToast('Logged in as TL!', 'green');
-                    M.Modal.getInstance(loginModal).close();
-                    mainAppContent.style.display = 'block';
-                    loadProjectList();
-                    updateButtonVisibility();
+                if (await verifyTlLoginCode(tlLoginCodeInput.value)) {
+                    isLoggedInAsTL = true; showToast('Logged in as TL!', 'green');
+                    M.Modal.getInstance(loginModal).close(); mainAppContent.style.display = 'block';
+                    loadProjectList(); updateButtonVisibility();
                 } else {
-                    showToast('Incorrect TL code. Please try again.', 'red');
-                    isLoggedInAsTL = false;
+                    showToast('Incorrect TL code.', 'red'); isLoggedInAsTL = false;
                 }
-            } else {
-                isLoggedInAsTL = false;
-                showToast('Logged in as Tech!', 'green');
-                M.Modal.getInstance(loginModal).close();
-                mainAppContent.style.display = 'block';
-                loadProjectList();
-                updateButtonVisibility();
+            } else if (selectedRole === 'tech') { // Explicitly check for 'tech'
+                isLoggedInAsTL = false; showToast('Logged in as Tech!', 'green');
+                M.Modal.getInstance(loginModal).close(); mainAppContent.style.display = 'block';
+                loadProjectList(); updateButtonVisibility();
+            } else { // No role selected or invalid role
+                 showToast('Please select a role.', 'orange');
             }
         });
 
+
         logoutButton.addEventListener('click', () => {
-            isLoggedInAsTL = false;
-            showToast('Logged out. Select role to continue.', 'blue');
+            isLoggedInAsTL = false; showToast('Logged out.', 'blue');
             mainAppContent.style.display = 'none';
-            outputDiv.textContent = '';
-            allResultsDiv.innerHTML = '';
-            lastResult = '';
-            allCalculatedResults = [];
-            allProjectsAggregatedResults = {};
-            loginRoleSelect.value = '';
-            tlLoginCodeInput.value = '';
+            outputDiv.textContent = ''; allResultsDiv.innerHTML = '';
+            lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {};
+            loginRoleSelect.value = ''; tlLoginCodeInput.value = '';
             tlCodeInputDiv.style.display = 'none';
-            M.FormSelect.init(loginRoleSelect);
-            M.updateTextFields();
+            M.FormSelect.init(loginRoleSelect); M.updateTextFields();
             M.Modal.getInstance(loginModal).open();
         });
 
-        fullscreenCloseButton.addEventListener('click', () => {
-            M.Modal.getInstance(fullscreenResultsModal).close();
-        });
+        if (fullscreenCloseButton) { // Ensure button exists
+            fullscreenCloseButton.addEventListener('click', hideFullscreenModal);
+        }
 
         fullscreenResultsModal.addEventListener('click', (event) => {
-            if (event.target === fullscreenResultsModal) {
-                hideFullscreenModal();
-            }
+            if (event.target === fullscreenResultsModal) hideFullscreenModal();
         });
+
         if (viewProjectDataButton) {
              viewProjectDataButton.addEventListener('click', viewProjectData);
         }
 
         // --- Dark Mode Logic ---
         function applyDarkModePreference() {
-            let isDarkMode = localStorage.getItem('darkMode');
-
-            // If no preference is stored, default to 'disabled' (light mode)
-            if (isDarkMode === null) {
-                isDarkMode = 'disabled'; // Default to light mode
-                localStorage.setItem('darkMode', 'disabled'); // Save the default preference
+            let isDarkMode = localStorage.getItem('darkMode') || 'disabled'; // Default to disabled
+            if (localStorage.getItem('darkMode') === null) {
+                 localStorage.setItem('darkMode', 'disabled');
             }
 
             if (isDarkMode === 'enabled') {
                 document.body.classList.add('dark-mode');
-                darkModeToggle.querySelector('i').textContent = 'brightness_4'; // Moon icon
+                darkModeToggle.querySelector('i').textContent = 'brightness_4';
             } else {
                 document.body.classList.remove('dark-mode');
-                darkModeToggle.querySelector('i').textContent = 'brightness_high'; // Sun icon
+                darkModeToggle.querySelector('i').textContent = 'brightness_high';
             }
         }
 
         darkModeToggle.addEventListener('click', () => {
-            if (document.body.classList.contains('dark-mode')) {
-                localStorage.setItem('darkMode', 'disabled');
-            } else {
-                localStorage.setItem('darkMode', 'enabled');
-            }
-            applyDarkModePreference(); // Apply the new preference immediately
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'disabled' : 'enabled');
+            applyDarkModePreference();
         });
 
         // --- Initialization ---
-
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.style.display = 'none';
-
-            // Apply dark mode preference on load
+            document.body.style.display = 'none'; // Prevent FOUC
             applyDarkModePreference();
 
-            // Initialize all modals
             M.Modal.init(document.querySelectorAll('.modal'), {
-                dismissible: false,
+                dismissible: false, // Default for most, login modal might be exception
                 onOpenEnd: (modalEl) => {
                     if (modalEl.id === 'add-project-modal') {
                         M.textareaAutoResize(document.getElementById('raw-data'));
                     }
+                    // Make login modal dismissible by clicking outside if needed
+                    if (modalEl.id === 'login-modal') {
+                         // loginModalInstance.options.dismissible = true; // Or set in init
+                    }
                 }
             });
+             // Make login modal specifically not dismissible by default as per original code
+            const loginModalInstance = M.Modal.getInstance(loginModal);
+            if (loginModalInstance) {
+                loginModalInstance.options.dismissible = false;
+            }
 
-            // Set up event listeners for the new confirmation modal buttons
+
             confirmationConfirmButton.addEventListener('click', () => {
-                if (confirmPromiseResolve) {
-                    confirmPromiseResolve(true);
-                    confirmPromiseResolve = null; // Clear the resolve function
-                }
+                if (confirmPromiseResolve) { confirmPromiseResolve(true); confirmPromiseResolve = null; }
             });
-
             confirmationCancelButton.addEventListener('click', () => {
-                if (confirmPromiseResolve) {
-                    confirmPromiseResolve(false);
-                    confirmPromiseResolve = null; // Clear the resolve function
-                }
+                if (confirmPromiseResolve) { confirmPromiseResolve(false); confirmPromiseResolve = null; }
             });
-
 
             M.FormSelect.init(projectSelector);
             M.FormSelect.init(loginRoleSelect);
             M.FormSelect.init(modalSizeSelect);
-
-
-            const loginModalInstance = M.Modal.getInstance(loginModal);
-
-            document.body.style.display = 'block';
+            
+            document.body.style.display = 'block'; // Show body after init
 
             if (loginModalInstance) {
                 loginModalInstance.open();
             } else {
                 console.error("Login modal not found or not initialized by Materialize.");
-                mainAppContent.style.display = 'block';
+                mainAppContent.style.display = 'block'; // Fallback if login modal fails
                 loadProjectList();
                 updateButtonVisibility();
             }
