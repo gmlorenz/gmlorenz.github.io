@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker v10.2 (Button Action Debug)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
+        .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
+        h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
+        h2 { font-size: 1.3em; }
+        h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        .action-bar { margin-bottom: 15px; display: flex; gap: 10px; }
+        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+        .btn-lg { padding: 7px 12px; font-size: 0.9em; }
+        .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
+        .btn-group-toggle:hover { background-color: #95a5a6;}
+        .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
+        .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
+        .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
+        .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
+        .btn-release { background-color: #9b59b6; color: white; font-size:0.85em; padding: 5px 10px; } .btn-release:hover { background-color: #8e44ad; }
+        .btn-day-start { background-color: #007bff; color: white; } 
+        .btn-day-start:hover { background-color: #0056b3; }
+        .btn-day-end { background-color: #fd7e14; color: white; } 
+        .btn-day-end:hover { background-color: #c85e08; }
+        .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
+        #projectFormModal .modal-content { max-width: 480px; } 
+        #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;} 
+        .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+        #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
+        #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
+        #newProjectForm button[type="submit"] { margin-top: 12px; }
+        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; } 
+        #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
+        #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+        #projectTable td.wrap-text { white-space: normal; } 
+        #projectTable input[type="text"].assigned-to-input, #projectTable textarea.tech-notes-input { width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
+        #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
+        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
+        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
+        .hidden-group-row { display: none; }
+        .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
+        .fix1-row { background-color: #e6ffe6 !important; } 
+        .fix2-row { background-color: #ffe6f2 !important; } 
+        .fix3-row { background-color: #e6e6ff !important; } 
+        .fix4-row { background-color: #fff5e6 !important; } 
+        #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover { background-color: #d0e0f0 !important; }
+        .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
+        .status-available { background-color: #3498db; } .status-inprogressday1 { background-color: #f39c12; }
+        .status-day1ended_awaitingnext { background-color: #f39c12; } .status-inprogressday2 { background-color: #f39c12; }
+        .status-completed { background-color: #2ecc71; }
+        #tlDashboardContent { margin-top:15px; }
+        .dashboard-batch-item { border: 1px solid #bdc3c7; padding: 10px; margin-bottom: 10px; background-color: #fff; border-radius: 4px; }
+        .dashboard-batch-item h4 { margin-top: 0; margin-bottom: 8px; font-size: 1.05em; color: #34495e;}
+        .dashboard-batch-item p { margin: 3px 0; font-size: 0.9em;}
+        .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
+        .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Project Tracker v10.2 (Button Action Debug)</h1>
+        <div class="action-bar">
+            <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Project(s)</button>
+            <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 TL Dashboard</button>
+        </div>
+
+        <div id="projectFormModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="closeProjectFormBtn">&times;</span>
+                <h2>Add New Project(s)</h2>
+                <form id="newProjectForm">
+                    <label for="fixCategorySelect">Fix Category:</label>
+                    <select id="fixCategorySelect" required><option value="Fix1">Fix1</option><option value="Fix2">Fix2</option><option value="Fix3">Fix3</option><option value="Fix4">Fix4</option></select>
+                    <label for="numRows">Number of Tasks/Rows:</label>
+                    <input type="number" id="numRows" value="1" min="1" required>
+                    <label for="baseProjectName">Base Project Name/ID:</label>
+                    <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
+                    <label for="areaTaskBase">Base Name for Area/Task (e.g., Section; blank for 'AreaXX'):</label>
+                    <input type="text" id="areaTaskBase" placeholder="Default: 'Area01', 'Area02'...">
+                    <label for="gsd">GSD:</label>
+                    <select id="gsd" required><option value="3in">3in</option><option value="9in">9in</option></select>
+                    <button type="submit" class="btn btn-success">Add Project(s)</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="tlDashboardModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="closeTlDashboardBtn">&times;</span>
+                <h2>👑 Team Lead Dashboard</h2>
+                <div id="tlDashboardContent"></div>
+            </div>
+        </div>
+        
+        <h3>📌 Project Details</h3>
+        <table id="projectTable">
+            <thead>
+                <tr>
+                    <th>Fix</th><th style="min-width: 150px;">Base Name</th><th style="min-width: 80px;">Area/Task</th><th>GSD</th>
+                    <th style="min-width: 80px;">Assigned</th><th style="min-width: 120px;">Status</th>
+                    <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
+                    <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
+                    <th>Total(m)</th><th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="projectTableBody"></tbody>
+        </table>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        // --- Firebase Configuration - THIS IS YOUR ACTUAL CONFIG - VERIFY IT ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyADB1W9YKaU6DFqGyjivsADJOhuIRY0eZ0",
+          authDomain: "project-tracker-fddb1.firebaseapp.com",
+          projectId: "project-tracker-fddb1",
+          storageBucket: "project-tracker-fddb1.firebasestorage.app",
+          messagingSenderId: "698282455986",
+          appId: "1:698282455986:web:f31fa7830148dc47076aab",
+          measurementId: "G-6D2Z9ZWEN1"
+        };
+
+        // Initialize Firebase
+        let app;
+        let db; 
+
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore(); 
+            console.log("Firebase initialized successfully!");
+        } catch (e) {
+            console.error("CRITICAL: Error initializing Firebase: ", e);
+            alert("CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Please check console and Firebase configuration.");
+        }
+
+        const DEFAULT_PIN = "1234";
+        const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4"];
+        const STATUS_ORDER = { 'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3, 'InProgressDay2': 4, 'Completed': 5 };
+        const NUM_TABLE_COLUMNS = 15; 
+
+        let openAddNewProjectBtn, openTlDashboardBtn, projectFormModal, tlDashboardModal, 
+            closeProjectFormBtn, closeTlDashboardBtn, newProjectForm, projectTableBody, 
+            tlDashboardContentElement;
+
+        let projects = []; 
+        let groupVisibilityState = {}; 
+
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+        function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
+        function calculateDurationMs(startTime, endTime) {
+            let startMillis = startTime; let endMillis = endTime;
+            if (startTime && typeof startTime.toMillis === 'function') startMillis = startTime.toMillis();
+            if (endTime && typeof endTime.toMillis === 'function') endMillis = endTime.toMillis();
+            else if (typeof startTime === 'number' && typeof endTime === 'number') { /* proceed */ }
+            else if (startTime && typeof startTime.toMillis === 'function' && typeof endTime === 'number') endMillis = endTime;
+            else if (typeof startTime === 'number' && endTime && typeof endTime.toMillis === 'function') startMillis = startTime;
+            return (!startMillis || !endMillis || endMillis < startMillis) ? null : endMillis - startMillis;
+        }
+
+        function initializeFirebaseAndLoadData() {
+            if (!db) { console.error("Firestore not initialized in initializeFirebaseAndLoadData. Cannot load data."); alert("ERROR: Database connection failed. App cannot load data."); projects = []; refreshAllViews(); return; }
+            console.log("Setting up Firebase listener for 'projects' collection...");
+            db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
+              .onSnapshot((querySnapshot) => {
+                const firebaseProjects = [];
+                querySnapshot.forEach((doc) => { firebaseProjects.push({ id: doc.id, ...doc.data() }); });
+                projects = firebaseProjects;
+                console.log("Projects data updated from Firebase:", projects.length, "items");
+                projects.forEach(p => { const groupStateKey = `${p.batchId}_${p.fixCategory}`; if (groupVisibilityState[groupStateKey] === undefined) { groupVisibilityState[groupStateKey] = { isExpanded: true }; } });
+                refreshAllViews();
+            }, (error) => {
+                console.error("Error fetching projects from Firebase (onSnapshot): ", error); // This is where your error appears
+                alert("Error fetching projects. Check console (e.g., missing Firestore indexes or permission issues).");
+                projects = []; refreshAllViews();
+            });
+        }
+        
+        function setupDOMReferences() { 
+            console.log("DEBUG: setupDOMReferences called"); 
+            openAddNewProjectBtn = document.getElementById('openAddNewProjectBtn');
+            openTlDashboardBtn = document.getElementById('openTlDashboardBtn');
+            projectFormModal = document.getElementById('projectFormModal');
+            tlDashboardModal = document.getElementById('tlDashboardModal');
+            closeProjectFormBtn = document.getElementById('closeProjectFormBtn');
+            closeTlDashboardBtn = document.getElementById('closeTlDashboardBtn');
+            newProjectForm = document.getElementById('newProjectForm');
+            projectTableBody = document.getElementById('projectTableBody');
+            tlDashboardContentElement = document.getElementById('tlDashboardContent');
+            if (!openAddNewProjectBtn) console.error("DEBUG: openAddNewProjectBtn not found");
+            if (!newProjectForm) console.error("DEBUG: newProjectForm not found");
+        }
+
+        function attachEventListeners() { 
+            console.log("DEBUG: attachEventListeners called"); 
+            if (openAddNewProjectBtn) openAddNewProjectBtn.onclick = () => { console.log("DEBUG: Open Add Project modal clicked."); projectFormModal.style.display = 'block'; };
+            else console.error("DEBUG: openAddNewProjectBtn listener not attached");
+
+            if (closeProjectFormBtn) closeProjectFormBtn.onclick = () => { console.log("DEBUG: Close Add Project modal clicked."); projectFormModal.style.display = 'none'; };
+            
+            if (openTlDashboardBtn) {
+                openTlDashboardBtn.onclick = () => {
+                    console.log("DEBUG: Open TL Dashboard modal clicked.");
+                    const pin = prompt("Enter PIN to access TL Dashboard:", "");
+                    if (pin === DEFAULT_PIN) { console.log("DEBUG: PIN correct."); tlDashboardModal.style.display = 'block'; renderTLDashboard(); } 
+                    else if (pin !== null) { alert("Incorrect PIN."); }
+                };
+            } else console.error("DEBUG: openTlDashboardBtn listener not attached");
+
+            if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { console.log("DEBUG: Close TL Dashboard modal clicked."); tlDashboardModal.style.display = 'none'; };
+            
+            if (window) {
+                window.onclick = (event) => {
+                    if (event.target == projectFormModal) projectFormModal.style.display = 'none';
+                    if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
+                };
+            }
+            if (newProjectForm) {
+                 newProjectForm.addEventListener('submit', handleAddProjectSubmit);
+                 console.log("DEBUG: Submit listener attached to newProjectForm"); 
+            } else {
+                console.error("DEBUG: Cannot attach submit listener: newProjectForm not found.");
+            }
+        }
+
+        async function handleAddProjectSubmit(e) { 
+            e.preventDefault();
+            console.log("handleAddProjectSubmit CALLED"); 
+            if (!db) { alert("CRITICAL: Database (db) is not initialized! Cannot add projects."); console.error("Database (db) object is not available in handleAddProjectSubmit."); return; }
+
+            const fixCategory = document.getElementById('fixCategorySelect').value;
+            const numRows = parseInt(document.getElementById('numRows').value, 10) || 1;
+            const baseProjectNameVal = document.getElementById('baseProjectName').value;
+            const areaTaskBaseInput = document.getElementById('areaTaskBase').value.trim();
+            const gsd = document.getElementById('gsd').value;
+            console.log("DEBUG Form Values in handleAddProjectSubmit:", { fixCategory, numRows, baseProjectNameVal, areaTaskBaseInput, gsd });
+
+
+            const currentBatchId = "batch_" + generateId(); 
+            const batchCreationTimestamp = firebase.firestore.FieldValue.serverTimestamp(); 
+
+            try {
+                const fbBatch = db.batch(); 
+                console.log(`DEBUG: Preparing to add ${numRows} tasks to batch ${currentBatchId}`); 
+                for (let i = 1; i <= numRows; i++) {
+                    const areaPrefix = areaTaskBaseInput || "Area"; 
+                    const formattedIndex = String(i).padStart(2, '0'); 
+                    const currentAreaTask = `${areaPrefix}${formattedIndex}`;
+                    const newProjectData = {
+                        batchId: currentBatchId, creationTimestamp: batchCreationTimestamp, 
+                        fixCategory: fixCategory, baseProjectName: baseProjectNameVal,
+                        areaTask: currentAreaTask, gsd: gsd, assignedTo: "", techNotes: "", status: 'Available',
+                        startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
+                        startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, releasedToNextStage: false
+                    };
+                    const docRef = db.collection("projects").doc(); 
+                    fbBatch.set(docRef, newProjectData);
+                    console.log(`DEBUG: Task ${currentAreaTask} added to Firestore batch object.`); 
+                }
+                console.log("DEBUG: Attempting to commit Firebase batch to Firestore..."); 
+                await fbBatch.commit(); 
+                console.log(`${numRows} new project(s) successfully committed to Firebase.`);
+            } catch (error) {
+                console.error("Error adding projects to Firebase (inside catch block): ", error); 
+                alert("Error adding projects. Please check the console for details. Ensure Firestore rules allow writes to the 'projects' collection.");
+            }
+            projectFormModal.style.display = 'none';
+        }
+
+        function getManageableBatches() { /* ... same logic ... */ 
+            const allBatchesInfo = {}; projects.forEach(p => { if (!allBatchesInfo[p.batchId]) { allBatchesInfo[p.batchId] = { batchId: p.batchId, baseProjectName: p.baseProjectName, tasksByFix: {} }; } if (!allBatchesInfo[p.batchId].tasksByFix[p.fixCategory]) { allBatchesInfo[p.batchId].tasksByFix[p.fixCategory] = []; } allBatchesInfo[p.batchId].tasksByFix[p.fixCategory].push(p); }); return Object.values(allBatchesInfo);
+        }
+
+        function renderTLDashboard() { /* ... same logic with console logs for button clicks ... */ 
+            tlDashboardContentElement.innerHTML = ''; const manageableBatches = getManageableBatches(); if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p style="font-size:0.9em; color: #7f8c8d;">No project batches found.</p>'; return; }
+            manageableBatches.forEach(batch => {
+                const batchDiv = document.createElement('div'); batchDiv.classList.add('dashboard-batch-item'); const title = document.createElement('h4'); title.textContent = `Batch: ${batch.baseProjectName} (ID: ${batch.batchId.split('_')[1]})`; batchDiv.appendChild(title); const stagesPresentP = document.createElement('p'); stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)).join(', ')}`; batchDiv.appendChild(stagesPresentP); const releaseActionsDiv = document.createElement('div'); releaseActionsDiv.classList.add('dashboard-batch-actions-release'); let latestFixCategoryForBatch = ""; let allTasksInLatestStageReadyForRelease = false; let alreadyReleasedFromLatestStage = true; 
+                FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => { if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) { latestFixCategoryForBatch = fixCat; alreadyReleasedFromLatestStage = batch.tasksByFix[fixCat].every(t => t.releasedToNextStage); if (!alreadyReleasedFromLatestStage) { allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat].every(t => t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext');}}});
+                if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) { const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch); if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) { const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIdx + 1]; const releaseBtn = document.createElement('button'); releaseBtn.textContent = `Release to ${nextFixCategory}`; releaseBtn.classList.add('btn', 'btn-release'); if (!allTasksInLatestStageReadyForRelease) { releaseBtn.disabled = true; releaseBtn.title = `Not all tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended'.`; } releaseBtn.onclick = () => {console.log(`DEBUG: Release btn clicked for batch ${batch.batchId} from ${latestFixCategoryForBatch}`); releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);}; releaseActionsDiv.appendChild(releaseBtn); }} else if (alreadyReleasedFromLatestStage && latestFixCategoryForBatch && FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch) < FIX_CATEGORIES_ORDER.length -1) { const releasedInfoP = document.createElement('p'); releasedInfoP.innerHTML = `<small><em>(Batch released from ${latestFixCategoryForBatch})</em></small>`; releaseActionsDiv.appendChild(releasedInfoP); } batchDiv.appendChild(releaseActionsDiv);
+                const deleteActionsDiv = document.createElement('div'); deleteActionsDiv.classList.add('dashboard-batch-actions-delete'); FIX_CATEGORIES_ORDER.forEach(fixCat => { if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) { const deleteFixBtn = document.createElement('button'); deleteFixBtn.textContent = `Delete ${fixCat} Tasks`; deleteFixBtn.classList.add('btn', 'btn-danger'); deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName}' (Batch ID: ${batch.batchId.split('_')[1]})?`)) { console.log(`DEBUG: Delete ${fixCat} tasks for ${batch.batchId}`); deleteSpecificFixTasksForBatch(batch.batchId, fixCat); }}; deleteActionsDiv.appendChild(deleteFixBtn); }});
+                const deleteAllBtn = document.createElement('button'); deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch'; deleteAllBtn.classList.add('btn', 'btn-danger'); deleteAllBtn.onclick = () => { if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName}' (Batch ID: ${batch.batchId.split('_')[1]})?`)) { console.log(`DEBUG: Delete ALL for ${batch.batchId}`); deleteProjectBatch(batch.batchId); }}; deleteActionsDiv.appendChild(deleteAllBtn); batchDiv.appendChild(deleteActionsDiv); tlDashboardContentElement.appendChild(batchDiv);
+            });
+        }
+            
+        async function releaseBatchToNextFix(batchId, currentFixCategory, nextFixCategory) { /* ... same, includes try/catch ... */ 
+            if (!db) { alert("Database not initialized!"); return; } try { const sourceTasksSnapshot = await db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", currentFixCategory).where("releasedToNextStage", "==", false).get(); if (sourceTasksSnapshot.empty) { alert("No tasks found for this batch in the current stage to release, or they may have already been released."); refreshAllViews(); return; } const sourceBatchTasks = []; sourceTasksSnapshot.forEach(doc => sourceBatchTasks.push({id: doc.id, ...doc.data()})); const allReadyForRelease = sourceBatchTasks.every(p => p.status === 'Completed' || p.status === 'Day1Ended_AwaitingNext'); if (!allReadyForRelease) { alert(`Not all tasks in batch ID ${batchId} for ${currentFixCategory} are 'Completed' or 'Day 1 Ended'. Cannot release.`); return; } const releaseTimestamp = firebase.firestore.FieldValue.serverTimestamp(); const fbBatch = db.batch(); for (const sourceTask of sourceBatchTasks) { const q = db.collection("projects").where("batchId", "==", sourceTask.batchId).where("areaTask", "==", sourceTask.areaTask).where("fixCategory", "==", nextFixCategory); const existingNextStageTaskSnapshot = await q.get(); if (existingNextStageTaskSnapshot.empty) { const newTaskData = { batchId: sourceTask.batchId, creationTimestamp: releaseTimestamp, fixCategory: nextFixCategory, baseProjectName: sourceTask.baseProjectName, areaTask: sourceTask.areaTask, gsd: sourceTask.gsd, assignedTo: sourceTask.assignedTo, techNotes: "", status: 'Available', startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, releasedToNextStage: false }; const newDocRef = db.collection("projects").doc(); fbBatch.set(newDocRef, newTaskData); } const sourceDocRef = db.collection("projects").doc(sourceTask.id); fbBatch.update(sourceDocRef, { releasedToNextStage: true }); } await fbBatch.commit(); console.log(`Batch ${batchId} (${currentFixCategory}) released to ${nextFixCategory} in Firebase.`); } catch (error) { console.error("Error releasing batch to Firebase:", error); alert("Error releasing batch. Check console for details."); }
+        }
+
+        async function deleteProjectBatch(batchIdToDelete) { /* ... same, includes try/catch ... */ 
+            if (!db) { alert("Database not initialized!"); return; } try { const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).get(); if (querySnapshot.empty) { console.log(`No projects found for batch ${batchIdToDelete} to delete.`); return; } const fbBatch = db.batch(); querySnapshot.forEach(doc => fbBatch.delete(doc.ref)); await fbBatch.commit(); console.log(`Batch ${batchIdToDelete} deleted from Firebase.`); } catch (error) { console.error(`Error deleting batch ${batchIdToDelete}:`, error); alert("Error deleting batch. Check console.");}
+        }
+
+        async function deleteSpecificFixTasksForBatch(batchIdToDelete, fixCategoryToDelete) { /* ... same, includes try/catch ... */ 
+             if (!db) { alert("Database not initialized!"); return; } try { const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).where("fixCategory", "==", fixCategoryToDelete).get(); if (querySnapshot.empty) { console.log(`No ${fixCategoryToDelete} tasks found for batch ${batchIdToDelete} to delete.`); return; } const fbBatch = db.batch(); querySnapshot.forEach(doc => fbBatch.delete(doc.ref)); await fbBatch.commit(); console.log(`${fixCategoryToDelete} tasks for batch ${batchIdToDelete} deleted from Firebase.`); } catch (error) { console.error(`Error deleting ${fixCategoryToDelete} for batch ${batchIdToDelete}:`, error); alert("Error deleting specific fix tasks. Check console.");}
+        }
+
+        function renderProjects() { /* ... same rendering logic as v10, with DEBUG in action button onClicks ... */ 
+            projects.sort((a, b) => { if (a.batchId < b.batchId) return -1; if (a.batchId > b.batchId) return 1; const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory); const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory); if (fixOrderA < fixOrderB) return -1; if (fixOrderA > fixOrderB) return 1; if (a.areaTask < b.areaTask) return -1; if (a.areaTask > b.areaTask) return 1; const statusAVal = STATUS_ORDER[a.status] || 99; const statusBVal = STATUS_ORDER[b.status] || 99; if (statusAVal < statusBVal) return -1; if (statusAVal > statusBVal) return 1; let tsA = a.creationTimestamp; let tsB = b.creationTimestamp; if (tsA && typeof tsA.toMillis === 'function') tsA = tsA.toMillis(); if (tsB && typeof tsB.toMillis === 'function') tsB = tsB.toMillis(); if (tsA > tsB) return -1; if (tsA < tsB) return 1; return 0; });
+            projectTableBody.innerHTML = '';
+            let currentBatchIdForDisplay = null; let currentFixCategoryForHeader = null;
+            projects.forEach(project => {
+                if (project.batchId !== currentBatchIdForDisplay) { if (currentBatchIdForDisplay !== null) { const separatorRow = projectTableBody.insertRow(); const separatorCell = separatorRow.insertCell(); separatorCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString()); separatorRow.classList.add('overall-project-separator'); } currentBatchIdForDisplay = project.batchId; currentFixCategoryForHeader = null; const batchHeaderRow = projectTableBody.insertRow(); batchHeaderRow.classList.add('batch-header-row'); const batchHeaderCell = batchHeaderRow.insertCell(); batchHeaderCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString()); batchHeaderCell.textContent = `Project Batch: ${project.baseProjectName} (ID: ${project.batchId.split('_')[1]})`; }
+                if (project.fixCategory !== currentFixCategoryForHeader) { currentFixCategoryForHeader = project.fixCategory; const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`; if (groupVisibilityState[groupStateKey] === undefined) { groupVisibilityState[groupStateKey] = { isExpanded: true }; } const groupHeaderRow = projectTableBody.insertRow(); groupHeaderRow.classList.add('fix-group-header'); const groupHeaderCell = groupHeaderRow.insertCell(); groupHeaderCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString()); const toggleBtn = document.createElement('button'); toggleBtn.classList.add('btn', 'btn-group-toggle'); toggleBtn.textContent = groupVisibilityState[groupStateKey].isExpanded ? '−' : '+'; toggleBtn.title = groupVisibilityState[groupStateKey].isExpanded ? `Collapse ${currentFixCategoryForHeader}` : `Expand ${currentFixCategoryForHeader}`; const headerTextNode = document.createTextNode(`${currentFixCategoryForHeader} `); groupHeaderCell.appendChild(headerTextNode); groupHeaderCell.appendChild(toggleBtn); groupHeaderCell.onclick = (e) => { console.log(`DEBUG: Group header for ${currentFixCategoryForHeader} of batch ${project.batchId} clicked.`); if (e.target === toggleBtn || e.target === groupHeaderCell || groupHeaderCell.contains(e.target) ) { groupVisibilityState[groupStateKey].isExpanded = !groupVisibilityState[groupStateKey].isExpanded; renderProjects(); }}; }
+                const row = projectTableBody.insertRow(); const currentGroupStateKeyForRow = `${project.batchId}_${project.fixCategory}`; if (!groupVisibilityState[currentGroupStateKeyForRow]?.isExpanded) { row.classList.add('hidden-group-row');} if (project.fixCategory) row.classList.add(`${project.fixCategory.toLowerCase()}-row`);
+                row.insertCell().textContent = project.fixCategory;
+                const baseNameCell = row.insertCell(); baseNameCell.textContent = project.baseProjectName; baseNameCell.classList.add('wrap-text');
+                row.insertCell().textContent = project.areaTask; row.insertCell().textContent = project.gsd;
+                const assignedToCell = row.insertCell(); const assignedToInput = document.createElement('input'); assignedToInput.type = 'text'; assignedToInput.value = project.assignedTo || ''; assignedToInput.placeholder = 'ID'; assignedToInput.classList.add('assigned-to-input'); 
+                assignedToInput.onchange = async (event) => { const newVal = event.target.value; console.log(`DEBUG: AssignedTo changed for ${project.id} to ${newVal}`); try { if(db && project.id) await db.collection("projects").doc(project.id).update({ assignedTo: newVal }); else console.warn("DB or project.id missing for assignedTo update")} catch (error) { console.error("Error updating assignedTo for " + project.id + ":", error); }}; 
+                assignedToCell.appendChild(assignedToInput);
+                const statusCell = row.insertCell(); const statusSpan = document.createElement('span'); statusSpan.classList.add('status'); let statusText = project.status.replace(/([A-Z])(?=[a-z0-9_])/g, ' $1').trim(); if (project.status === "Day1Ended_AwaitingNext") statusText = "Day 1 Ended"; statusSpan.textContent = statusText; statusSpan.classList.add(`status-${project.status.toLowerCase()}`); statusCell.appendChild(statusSpan);
+                const timeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+                let d1s = project.startTimeDay1; let d1f = project.finishTimeDay1; let d2s = project.startTimeDay2; let d2f = project.finishTimeDay2;
+                if (d1s && typeof d1s.toDate === 'function') d1s = d1s.toDate(); if (d1f && typeof d1f.toDate === 'function') d1f = d1f.toDate();
+                if (d2s && typeof d2s.toDate === 'function') d2s = d2s.toDate(); if (d2f && typeof d2f.toDate === 'function') d2f = d2f.toDate();
+                row.insertCell().textContent = d1s ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = d1f ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = formatMillisToMinutes(project.durationDay1Ms);
+                row.insertCell().textContent = d2s ? d2s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = d2f ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms);
+                const totalTimeMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0); row.insertCell().textContent = formatMillisToMinutes(totalTimeMs > 0 ? totalTimeMs : null);
+                const techNotesCell = row.insertCell(); const techNotesInput = document.createElement('textarea'); techNotesInput.value = project.techNotes || ''; techNotesInput.placeholder = 'Notes'; techNotesInput.classList.add('tech-notes-input'); techNotesInput.rows = 1; 
+                techNotesInput.onchange = async (event) => { const newVal = event.target.value; console.log(`DEBUG: TechNotes changed for ${project.id}`); try { if(db && project.id) await db.collection("projects").doc(project.id).update({ techNotes: newVal });  else console.warn("DB or project.id missing for techNotes update")} catch (error) { console.error("Error updating techNotes for " + project.id + ":", error); }};
+                techNotesCell.appendChild(techNotesInput);
+                const actionsCell = row.insertCell(); const btnContainer = document.createElement('div');
+                const sD1 = document.createElement('button'); sD1.textContent = 'S D1'; sD1.classList.add('btn','btn-day-start'); sD1.disabled = project.status !== 'Available'; sD1.onclick = () => {console.log(`DEBUG: S D1 clicked for project ID: ${project.id}, Current Status: ${project.status}`); updateProjectState(project.id, 'startDay1');}; btnContainer.appendChild(sD1);
+                const eD1 = document.createElement('button'); eD1.textContent = 'E D1'; eD1.classList.add('btn','btn-day-end'); eD1.disabled = project.status !== 'InProgressDay1'; eD1.onclick = () => {console.log(`DEBUG: E D1 clicked for project ID: ${project.id}, Current Status: ${project.status}`); updateProjectState(project.id, 'endDay1');}; btnContainer.appendChild(eD1);
+                const sD2 = document.createElement('button'); sD2.textContent = 'S D2'; sD2.classList.add('btn','btn-day-start'); sD2.disabled = project.status !== 'Day1Ended_AwaitingNext'; sD2.onclick = () => {console.log(`DEBUG: S D2 clicked for project ID: ${project.id}, Current Status: ${project.status}`); updateProjectState(project.id, 'startDay2');}; btnContainer.appendChild(sD2);
+                const eD2 = document.createElement('button'); eD2.textContent = 'E D2'; eD2.classList.add('btn','btn-day-end'); eD2.disabled = project.status !== 'InProgressDay2'; eD2.onclick = () => {console.log(`DEBUG: E D2 clicked for project ID: ${project.id}, Current Status: ${project.status}`); updateProjectState(project.id, 'endDay2');}; btnContainer.appendChild(eD2);
+                const done = document.createElement('button'); done.textContent = 'Done'; done.classList.add('btn','btn-mark-done'); done.disabled = project.status === 'Completed'; done.onclick = () => {console.log(`DEBUG: Done clicked for project ID: ${project.id}, Current Status: ${project.status}`); updateProjectState(project.id, 'markDone');}; btnContainer.appendChild(done);
+                actionsCell.appendChild(btnContainer);
+            });
+        }
+        
+        async function updateProjectState(projectId, action) {
+            console.log(`DEBUG: updateProjectState CALLED - Project ID: ${projectId}, Action: ${action}`); // DEBUG
+            if (!db) { alert("Database not initialized! Cannot update state."); console.error("DEBUG: DB not initialized in updateProjectState"); return; }
+            if (!projectId) { console.error("DEBUG: Update failed: projectId is missing in updateProjectState."); alert("Error: Cannot update project, ID is missing."); return; }
+
+            const projectRef = db.collection("projects").doc(projectId);
+            let currentProjectData;
+
+            try {
+                console.log(`DEBUG: Fetching document from Firestore: projects/${projectId}`); 
+                const doc = await projectRef.get();
+                if (!doc.exists) {
+                    console.error("Project not found in Firebase for update:", projectId);
+                    alert(`Error: Project with ID ${projectId} not found for update.`);
+                    return;
+                }
+                currentProjectData = doc.data();
+                console.log("DEBUG: Fetched currentProjectData for update:", currentProjectData); 
+            } catch(error) {
+                console.error("Error fetching project before update:", error);
+                alert("Error fetching project details for update. Check console.");
+                return;
+            }
+
+            const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+            const clientNowMillis = Date.now(); 
+            let updatedFields = {};
+
+            switch (action) {
+                case 'startDay1':
+                    console.log(`DEBUG: Action 'startDay1', current status from Firestore: ${currentProjectData.status}`); 
+                    if (currentProjectData.status === 'Available') {
+                        updatedFields = { status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null };
+                        console.log("DEBUG: updatedFields for startDay1:", updatedFields); 
+                    } else { console.warn(`DEBUG: Condition not met for startDay1. Current status: ${currentProjectData.status}`); }
+                    break;
+                case 'endDay1':
+                    console.log(`DEBUG: Action 'endDay1', current status from Firestore: ${currentProjectData.status}`);
+                    if (currentProjectData.status === 'InProgressDay1' && currentProjectData.startTimeDay1) {
+                        updatedFields = { status: 'Day1Ended_AwaitingNext', finishTimeDay1: serverTimestamp, durationDay1Ms: calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis) };
+                        console.log("DEBUG: updatedFields for endDay1:", updatedFields);
+                    } else { console.warn(`DEBUG: Condition not met for endDay1. Current status: ${currentProjectData.status}`); }
+                    break;
+                case 'startDay2':
+                    console.log(`DEBUG: Action 'startDay2', current status from Firestore: ${currentProjectData.status}`);
+                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') {
+                        updatedFields = { status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null };
+                        console.log("DEBUG: updatedFields for startDay2:", updatedFields);
+                    } else { console.warn(`DEBUG: Condition not met for startDay2. Current status: ${currentProjectData.status}`); }
+                    break;
+                case 'endDay2':
+                    console.log(`DEBUG: Action 'endDay2', current status from Firestore: ${currentProjectData.status}`);
+                    if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) {
+                        updatedFields = { status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) };
+                        console.log("DEBUG: updatedFields for endDay2:", updatedFields);
+                    } else { console.warn(`DEBUG: Condition not met for endDay2. Current status: ${currentProjectData.status}`); }
+                    break;
+                case 'markDone':
+                    console.log(`DEBUG: Action 'markDone', current status from Firestore: ${currentProjectData.status}`);
+                    if (currentProjectData.status !== 'Completed') {
+                        updatedFields.status = 'Completed';
+                        if (currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { 
+                            updatedFields.finishTimeDay1 = serverTimestamp; 
+                            updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis);
+                        }
+                        if (currentProjectData.startTimeDay2 && !currentProjectData.finishTimeDay2) { 
+                            updatedFields.finishTimeDay2 = serverTimestamp; 
+                            updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
+                        }
+                        console.log("DEBUG: updatedFields for markDone:", updatedFields);
+                    } else { console.warn(`DEBUG: Condition not met for markDone. Current status: ${currentProjectData.status}`); }
+                    break;
+                default:
+                    console.log("DEBUG: Unknown action in updateProjectState:", action); return;
+            }
+
+            if (Object.keys(updatedFields).length > 0) {
+                try {
+                    console.log(`DEBUG: Attempting to update Firestore for project ${projectId} with:`, updatedFields); 
+                    await projectRef.update(updatedFields);
+                    console.log(`Project ${projectId} action ${action} updated successfully in Firebase.`);
+                } catch (error) {
+                    console.error(`Error updating project ${projectId} for action ${action} in Firestore:`, error); 
+                    alert(`Error updating project. Action: ${action}. See console.`);
+                }
+            } else {
+                console.log(`DEBUG: No fields to update for action ${action} on project ${projectId}. Status was: ${currentProjectData ? currentProjectData.status : 'unknown'}`); 
+            }
+        }
+
+        function refreshAllViews() { renderProjects(); if (tlDashboardModal && tlDashboardModal.style.display === 'block') { renderTLDashboard(); } }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed."); 
+            setupDOMReferences(); 
+            initializeFirebaseAndLoadData(); 
+            attachEventListeners(); 
+        });
+    </script>
+</body>
+</html>
