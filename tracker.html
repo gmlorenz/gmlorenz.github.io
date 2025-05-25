@@ -148,8 +148,11 @@
                 </thead>
                 <tbody id="projectTableBody"></tbody>
             </table>
-        </div> </div> <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <script>
         // CRITICAL SECURITY WARNING: Your Firebase API keys are exposed here.
@@ -243,7 +246,6 @@
         function initializeFirebaseAndLoadData() {
             if (!db) { console.error("Firestore (db) not initialized. Cannot load data."); alert("ERROR: Database connection failed. App cannot load data."); projects = []; refreshAllViews(); return; }
             
-            // Detach any existing listener before attaching a new one
             if (firestoreListenerUnsubscribe) {
                 firestoreListenerUnsubscribe();
                 console.log("Previous Firestore listener detached.");
@@ -251,7 +253,6 @@
 
             loadGroupVisibilityState();
             try {
-                // Assign the listener to the global variable so it can be detached
                 firestoreListenerUnsubscribe = db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
                   .onSnapshot((querySnapshot) => {
                     const firebaseProjects = [];
@@ -338,6 +339,25 @@
 
 
         // ------ NEW Firebase Authentication Logic ------
+        
+        // <<< MODIFICATION START - YOUR EMAIL LIST INTEGRATED >>>
+        const ALLOWED_EMAILS = [
+            "ev.jeave10733@gmail.com",
+            "noppus25@gmail.com",
+            "ev.allanpaul.alforque@gmail.com",
+            "ev.jaysonaliser@gmail.com",
+            "ev.negelroloma@gmail.com",
+            "ev.lorens.ebrado@gmail.com",
+            "ev.villajos4426@gmail.com",
+            "ev.joana4475@gmail.com",
+            "ev.vinceaprilpitogo@gmail.com",
+            "ev.hyacinthhortelano@gmail.com",
+            "ev.arjohnabapo@gmail.com",
+            "ev.johnvincent4472@gmail.com",
+            "ev.sergsembrano@gmail.com"
+        ];
+        // <<< MODIFICATION END >>>
+
         function setupAuthRelatedDOMReferences() {
             signInBtn = document.getElementById('signInBtn');
             signOutBtn = document.getElementById('signOutBtn');
@@ -352,89 +372,154 @@
         function setupAuthEventListeners() {
             const provider = new firebase.auth.GoogleAuthProvider();
 
-            signInBtn.addEventListener('click', () => {
-                if (!auth) { console.error("Auth not initialized"); return; }
-                auth.signInWithPopup(provider)
-                    .then((result) => {
-                        console.log("User signed in: ", result.user.displayName);
-                        // onAuthStateChanged will handle UI updates
-                    })
-                    .catch((error) => {
-                        console.error("Sign-in error: ", error);
-                        alert("Error signing in: " + error.message + "\nMake sure pop-ups are enabled for this site.");
-                    });
-            });
+            if (signInBtn) { 
+                signInBtn.addEventListener('click', () => {
+                    if (!auth) { console.error("Auth not initialized"); return; }
+                    auth.signInWithPopup(provider)
+                        .then((result) => {
+                            console.log("Sign-in attempt successful for: ", result.user.email);
+                        })
+                        .catch((error) => {
+                            console.error("Sign-in error: ", error);
+                            let errorMessage = "Error signing in: " + error.message;
+                            if (error.code === 'auth/popup-closed-by-user') {
+                                errorMessage = "Sign-in process was cancelled. Please try again.";
+                            } else if (error.code === 'auth/cancelled-popup-request') {
+                                errorMessage = "Sign-in process was interrupted. Please try again.";
+                            } else if (error.code === 'auth/popup-blocked') {
+                                errorMessage = "Sign-in pop-up was blocked by the browser. Please allow pop-ups for this site and try again.";
+                            }
+                            alert(errorMessage);
+                            if (loadingAuthMessageDiv && signInBtn && userInfoDisplayDiv && appContentDiv) { 
+                                userInfoDisplayDiv.style.display = 'none';
+                                signInBtn.style.display = 'block';
+                                appContentDiv.style.display = 'none';
+                                loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
+                                loadingAuthMessageDiv.style.display = 'block';
+                            }
+                        });
+                });
+            } else {
+                console.error("Sign-in button not found during event listener setup.");
+            }
 
-            signOutBtn.addEventListener('click', () => {
-                if (!auth) { console.error("Auth not initialized"); return; }
-                auth.signOut()
-                    .then(() => {
-                        console.log("User signed out.");
-                        // onAuthStateChanged will handle UI updates
-                    })
-                    .catch((error) => {
-                        console.error("Sign-out error: ", error);
-                        alert("Error signing out: " + error.message);
-                    });
-            });
+            if (signOutBtn) { 
+                signOutBtn.addEventListener('click', () => {
+                    if (!auth) { console.error("Auth not initialized"); return; }
+                    auth.signOut()
+                        .then(() => {
+                            console.log("User signed out successfully by clicking button.");
+                        })
+                        .catch((error) => {
+                            console.error("Sign-out error: ", error);
+                            alert("Error signing out: " + error.message);
+                        });
+                });
+            } else {
+                console.error("Sign-out button not found during event listener setup.");
+            }
         }
 
         function initializeAppComponents() {
-            // This function initializes the core tracker application components
             if (!isAppInitialized) {
                 console.log("Initializing app components (DOM refs, event listeners, Firestore data)...");
-                setupDOMReferences(); // For the tracker app's own elements
-                attachEventListeners(); // For the tracker app's functionality
-                initializeFirebaseAndLoadData(); // Start loading data from Firestore
+                setupDOMReferences(); 
+                attachEventListeners(); 
+                initializeFirebaseAndLoadData(); 
                 isAppInitialized = true;
             } else {
                 console.log("App components already initialized or re-initializing data load.");
-                // If app was already initialized, re-initializing data might be desired if rules change or user context is important
                 initializeFirebaseAndLoadData(); 
             }
         }
 
-        // Main Auth State Change Handler
-        if (auth) { // Only set up listener if auth initialized correctly
+        if (auth) { 
             auth.onAuthStateChanged((user) => {
+                if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv) {
+                    console.error("One or more critical UI elements for auth state change not found. Attempting to re-acquire.");
+                    setupAuthRelatedDOMReferences(); 
+                    if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv) {
+                        console.error("Still unable to find critical UI elements. Aborting UI update for auth state change.");
+                        return; 
+                    }
+                }
+
                 if (user) {
-                    // User is signed in
-                    console.log("Auth state changed: User is SIGNED IN - ", user.displayName, user.email);
-                    userNameP.textContent = user.displayName || "Name not available";
-                    userEmailP.textContent = user.email || "Email not available";
-                    userPhotoImg.src = user.photoURL || "default-user.png"; // Provide a default image path if needed
+                    const userEmailLower = user.email ? user.email.toLowerCase() : ""; 
+                    if (user.email && ALLOWED_EMAILS.map(email => email.toLowerCase()).includes(userEmailLower)) {
+                        console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
+                        userNameP.textContent = user.displayName || "Name not available";
+                        userEmailP.textContent = user.email || "Email not available";
+                        userPhotoImg.src = user.photoURL || "default-user.png"; 
 
-                    userInfoDisplayDiv.style.display = 'flex';
-                    signInBtn.style.display = 'none';
-                    loadingAuthMessageDiv.style.display = 'none'; // Hide "Please sign in" message
-                    appContentDiv.style.display = 'block'; // Show the main app
+                        userInfoDisplayDiv.style.display = 'flex';
+                        signInBtn.style.display = 'none';
+                        loadingAuthMessageDiv.style.display = 'none'; 
+                        appContentDiv.style.display = 'block'; 
 
-                    initializeAppComponents();
+                        initializeAppComponents();
+                    } else {
+                        console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
+                        alert("Access Denied: Your email address (" + (user.email || "N/A") + ") is not authorized to use this application.");
+                        
+                        auth.signOut().then(() => {
+                            console.log("Unauthorized user automatically signed out.");
+                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Please sign in with an authorized account.</p>';
+                            userNameP.textContent = '';
+                            userEmailP.textContent = '';
+                            userPhotoImg.src = '';
+                            userInfoDisplayDiv.style.display = 'none';
+                            signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none';
+                            loadingAuthMessageDiv.style.display = 'block';
+
+                            projects = [];
+                            if (projectTableBody) projectTableBody.innerHTML = ''; 
+                            if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
+                            if (firestoreListenerUnsubscribe) {
+                                firestoreListenerUnsubscribe();
+                                firestoreListenerUnsubscribe = null;
+                                console.log("Firestore listener detached for unauthorized user sign out.");
+                            }
+                            isAppInitialized = false; 
+                        }).catch(error => {
+                            console.error("Error signing out unauthorized user:", error);
+                            userNameP.textContent = '';
+                            userEmailP.textContent = '';
+                            userPhotoImg.src = '';
+                            userInfoDisplayDiv.style.display = 'none';
+                            signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none';
+                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Error during sign out. Please refresh.</p>';
+                            loadingAuthMessageDiv.style.display = 'block';
+                        });
+                    }
 
                 } else {
-                    // User is signed out
                     console.log("Auth state changed: User is SIGNED OUT");
-                    if (userNameP) userNameP.textContent = ''; // Check if elements exist before updating
-                    if (userEmailP) userEmailP.textContent = '';
-                    if (userPhotoImg) userPhotoImg.src = '';
+                    userNameP.textContent = ''; 
+                    userEmailP.textContent = '';
+                    userPhotoImg.src = '';
 
-                    if (userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-                    if (signInBtn) signInBtn.style.display = 'block';
-                    if (appContentDiv) appContentDiv.style.display = 'none'; // Hide the main app
-                    if (loadingAuthMessageDiv) loadingAuthMessageDiv.style.display = 'block'; // Show "Please sign in"
+                    userInfoDisplayDiv.style.display = 'none';
+                    signInBtn.style.display = 'block';
+                    appContentDiv.style.display = 'none'; 
                     
-                    // Clean up when user signs out
+                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
+                         loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
+                    }
+                    loadingAuthMessageDiv.style.display = 'block'; 
+                    
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = ''; 
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                     
-                    // Detach Firestore listener if it exists
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
-                        firestoreListenerUnsubscribe = null; // Reset it
+                        firestoreListenerUnsubscribe = null; 
                         console.log("Firestore listener detached on sign out.");
                     }
-                    isAppInitialized = false; // Reset app initialization flag
+                    isAppInitialized = false; 
                     console.log("App content hidden, project data cleared, and Firestore listener detached.");
                 }
             });
@@ -447,14 +532,13 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM fully loaded.");
-            setupAuthRelatedDOMReferences(); // Get references to auth UI elements
+            setupAuthRelatedDOMReferences(); 
 
             if (auth) { 
-                setupAuthEventListeners(); // Set up click handlers for sign-in/out buttons
+                setupAuthEventListeners(); 
                 console.log("Auth UI and event listeners set up.");
             } else {
                 console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
-                // Display a more prominent error if auth isn't ready
                 const authContainer = document.getElementById('auth-container');
                 if (authContainer) {
                     const errorDiv = document.createElement('div');
@@ -462,8 +546,6 @@
                     authContainer.prepend(errorDiv);
                 }
             }
-            // The onAuthStateChanged listener (set up above if auth is available) will handle the initial
-            // show/hide of the app content based on the current auth state.
         });
     </script>
 </body>
