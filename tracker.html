@@ -42,11 +42,14 @@
         .btn-day-end:hover { background-color: #c85e08; }
         .btn-warning { background-color: #f39c12; color: white; }
         .btn-warning:hover { background-color: #e67e22; }
+        .btn-info { background-color: #17a2b8; color: white; } /* Added for Settings button */
+        .btn-info:hover { background-color: #138496; }
         .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
         #projectFormModal .modal-content { max-width: 480px; }
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
+        #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;} /* New modal style */
         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
@@ -92,6 +95,14 @@
             min-width: 100px; /* Adjusted min-width for better display */
             margin-left: 5px; /* Add some spacing */
         }
+        /* Styles for Settings Modal */
+        #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
+        #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
+        #allowedEmailsList li:last-child { border-bottom: none; }
+        #allowedEmailsList li button { background-color: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8em;}
+        #allowedEmailsList li button:hover { background-color: #c82333; }
+        #addEmailInput { width: calc(100% - 110px); padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
+        .settings-input-group { display: flex; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -117,7 +128,7 @@
             <div class="action-bar">
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 TL Dashboard</button>
-            </div>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ Settings</button> </div>
 
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
@@ -142,6 +153,20 @@
                     <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Team Lead Dashboard</h2>
                     <div id="tlDashboardContent"></div>
+                </div>
+            </div>
+
+            <div id="settingsModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" id="closeSettingsBtn">&times;</span>
+                    <h2>⚙️ Application Settings</h2>
+                    <h3>Manage Allowed User Emails</h3>
+                    <ul id="allowedEmailsList">
+                        </ul>
+                    <div class="settings-input-group">
+                        <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
+                        <button id="addEmailBtn" class="btn btn-success">Add Email</button>
+                    </div>
                 </div>
             </div>
 
@@ -188,6 +213,12 @@
         // DOM elements for app state
         let appContentDiv, loadingAuthMessageDiv;
 
+        // NEW: Hardcoded PIN for TL Dashboard
+        const TL_DASHBOARD_PIN = "1234";
+
+        // NEW: Reference for the allowed emails document in Firestore
+        const ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails"; // A common pattern: collection/document
+        let allowedEmailsFromFirestore = []; // This will hold the dynamic list of allowed emails
 
         try {
             if (typeof firebase === 'undefined' || typeof firebase.initializeApp === 'undefined') {
@@ -206,6 +237,9 @@
             auth = firebase.auth(); 
 
             console.log("Firebase initialized successfully (App, Firestore, Auth)!");
+            // Initialize allowedEmailsFromFirestore by fetching it
+            fetchAllowedEmails(); 
+
         } catch (e) {
             console.error("CRITICAL: Error initializing Firebase: ", e.message);
             const loadingMsgDiv = document.getElementById('loading-auth-message');
@@ -222,9 +256,9 @@
         // NEW: Updated column count to include Break column
         const NUM_TABLE_COLUMNS = 16; 
 
-        let openAddNewProjectBtn, openTlDashboardBtn, projectFormModal, tlDashboardModal,
-            closeProjectFormBtn, closeTlDashboardBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement;
+        let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
+            closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn; // New elements for settings
 
         let projects = [];
         let groupVisibilityState = {};
@@ -254,6 +288,42 @@
         }
         function saveGroupVisibilityState() { 
             try { localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState)); } catch (lsError) { console.error("Error saving group visibility state to localStorage:", lsError); alert("Warning: Could not save your group visibility preferences.");}
+        }
+
+        async function fetchAllowedEmails() {
+            if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); return; }
+            try {
+                const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
+                const docSnap = await docRef.get();
+                if (docSnap.exists) {
+                    allowedEmailsFromFirestore = docSnap.data().emails || [];
+                    console.log("Allowed emails fetched from Firestore:", allowedEmailsFromFirestore);
+                } else {
+                    console.log("No allowed emails document found. Initializing with an empty array.");
+                    allowedEmailsFromFirestore = [];
+                    // Optionally, create the document with the initial list if it doesn't exist
+                    // await docRef.set({ emails: [] }); 
+                }
+            } catch (error) {
+                console.error("Error fetching allowed emails:", error);
+                alert("Error fetching allowed emails from settings. Check console. Error: " + error.message);
+                allowedEmailsFromFirestore = []; // Fallback to empty on error
+            }
+        }
+
+        async function updateAllowedEmailsInFirestore(newEmailsArray) {
+            if (!db) { alert("Database not initialized! Cannot update allowed emails."); return false; }
+            const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
+            try {
+                await docRef.set({ emails: newEmailsArray });
+                allowedEmailsFromFirestore = newEmailsArray; // Update local state
+                console.log("Allowed emails updated in Firestore.");
+                return true;
+            } catch (error) {
+                console.error("Error updating allowed emails in Firestore:", error);
+                alert("Error saving allowed emails. Error: " + error.message + "\n\nEnsure your Firebase Security Rules permit writes to 'settings/allowedEmails' for authenticated users.");
+                return false;
+            }
         }
 
         function initializeFirebaseAndLoadData() {
@@ -296,14 +366,23 @@
         function setupDOMReferences() {
             openAddNewProjectBtn = document.getElementById('openAddNewProjectBtn');
             openTlDashboardBtn = document.getElementById('openTlDashboardBtn');
+            openSettingsBtn = document.getElementById('openSettingsBtn'); // New reference
             projectFormModal = document.getElementById('projectFormModal');
             tlDashboardModal = document.getElementById('tlDashboardModal');
+            settingsModal = document.getElementById('settingsModal'); // New reference
             closeProjectFormBtn = document.getElementById('closeProjectFormBtn');
             closeTlDashboardBtn = document.getElementById('closeTlDashboardBtn');
+            closeSettingsBtn = document.getElementById('closeSettingsBtn'); // New reference
             newProjectForm = document.getElementById('newProjectForm');
             projectTableBody = document.getElementById('projectTableBody');
             tlDashboardContentElement = document.getElementById('tlDashboardContent');
-            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal) console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
+            allowedEmailsList = document.getElementById('allowedEmailsList'); // New reference
+            addEmailInput = document.getElementById('addEmailInput'); // New reference
+            addEmailBtn = document.getElementById('addEmailBtn'); // New reference
+
+            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn) {
+                console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
+            }
         }
 
         function attachEventListeners() {
@@ -312,16 +391,27 @@
             
             if (openTlDashboardBtn) { 
                 openTlDashboardBtn.onclick = () => {
-                    if (tlDashboardModal) { tlDashboardModal.style.display = 'block'; renderTLDashboard(); }
-                    else console.error("Cannot open TL Dashboard: tlDashboardModal is null.");
+                    const pin = prompt("Enter PIN to access TL Dashboard:");
+                    if (pin === TL_DASHBOARD_PIN) {
+                        if (tlDashboardModal) { tlDashboardModal.style.display = 'block'; renderTLDashboard(); }
+                        else console.error("Cannot open TL Dashboard: tlDashboardModal is null.");
+                    } else {
+                        alert("Incorrect PIN. Access Denied.");
+                    }
                 };
             }
             if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { if (tlDashboardModal) tlDashboardModal.style.display = 'none'; };
-            
+
+            // NEW: Event listeners for Settings
+            if (openSettingsBtn) openSettingsBtn.onclick = () => { if (settingsModal) { settingsModal.style.display = 'block'; renderAllowedEmailsList(); } else console.error("Cannot open Settings modal: settingsModal is null."); };
+            if (closeSettingsBtn) closeSettingsBtn.onclick = () => { if (settingsModal) settingsModal.style.display = 'none'; };
+            if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
+
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
                     if (projectFormModal && event.target == projectFormModal) projectFormModal.style.display = 'none';
                     if (tlDashboardModal && event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
+                    if (settingsModal && event.target == settingsModal) settingsModal.style.display = 'none'; // New modal close
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -836,7 +926,7 @@
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent'; 
                 const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = project.status !== 'Available' || isOriginalReassignedTask; sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn); 
-                const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn); 
+                const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn); 
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn); 
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn); 
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn); 
@@ -980,31 +1070,74 @@
         }
 
         function refreshAllViews() { 
-            try { renderProjects(); if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard(); } catch (e) { console.error("Error during refreshAllViews:", e); alert("Error refreshing view. Error: " + e.message); }
+            try { 
+                renderProjects(); 
+                if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard(); 
+                if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList(); // Re-render settings list
+            } catch (e) { 
+                console.error("Error during refreshAllViews:", e); 
+                alert("Error refreshing view. Error: " + e.message); 
+            }
         }
         
+        // NEW: Functions for managing allowed emails
+        async function renderAllowedEmailsList() {
+            if (!allowedEmailsList) { console.error("allowedEmailsList element not found."); return; }
+            await fetchAllowedEmails(); // Ensure the latest list is fetched
+            allowedEmailsList.innerHTML = '';
+            if (allowedEmailsFromFirestore.length === 0) {
+                allowedEmailsList.innerHTML = '<li>No allowed emails configured.</li>';
+                return;
+            }
+
+            allowedEmailsFromFirestore.forEach(email => {
+                const li = document.createElement('li');
+                li.textContent = email;
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove';
+                removeBtn.onclick = () => handleRemoveEmail(email);
+                li.appendChild(removeBtn);
+                allowedEmailsList.appendChild(li);
+            });
+        }
+
+        async function handleAddEmail() {
+            if (!addEmailInput) { console.error("addEmailInput element not found."); return; }
+            const newEmail = addEmailInput.value.trim().toLowerCase();
+            if (!newEmail || !newEmail.includes('@')) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+
+            if (allowedEmailsFromFirestore.includes(newEmail)) {
+                alert("This email is already in the allowed list.");
+                return;
+            }
+
+            const updatedEmails = [...allowedEmailsFromFirestore, newEmail].sort();
+            const success = await updateAllowedEmailsInFirestore(updatedEmails);
+            if (success) {
+                addEmailInput.value = ''; // Clear input
+                renderAllowedEmailsList(); // Re-render the list
+            }
+        }
+
+        async function handleRemoveEmail(emailToRemove) {
+            if (confirm(`Are you sure you want to remove ${emailToRemove} from the allowed list?`)) {
+                const updatedEmails = allowedEmailsFromFirestore.filter(email => email !== emailToRemove);
+                const success = await updateAllowedEmailsInFirestore(updatedEmails);
+                if (success) {
+                    renderAllowedEmailsList(); // Re-render the list
+                }
+            }
+        }
         // ------ End of existing tracker code ------
 
 
         // ------ NEW Firebase Authentication Logic ------
         
-        // <<< MODIFICATION START - YOUR EMAIL LIST INTEGRATED >>>
-        const ALLOWED_EMAILS = [
-            "ev.jeave10733@gmail.com",
-            "noppus25@gmail.com",
-            "ev.allanpaul.alforque@gmail.com",
-            "ev.jaysonaliser@gmail.com",
-            "ev.negelroloma@gmail.com",
-            "ev.lorens.ebrado@gmail.com",
-            "ev.villajos4426@gmail.com",
-            "ev.joana4475@gmail.com",
-            "ev.vinceaprilpitogo@gmail.com",
-            "ev.hyacinthhortelano@gmail.com",
-            "ev.arjohnabapo@gmail.com",
-            "ev.johnvincent4472@gmail.com",
-            "ev.sergsembrano@gmail.com"
-        ];
-        // <<< MODIFICATION END >>>
+        // The ALLOWED_EMAILS list will now be dynamically loaded from Firestore
+        // const ALLOWED_EMAILS = []; // This line is now effectively handled by allowedEmailsFromFirestore
 
         function setupAuthRelatedDOMReferences() {
             signInBtn = document.getElementById('signInBtn');
@@ -1015,6 +1148,7 @@
             userPhotoImg = document.getElementById('userPhoto');
             appContentDiv = document.getElementById('app-content');
             loadingAuthMessageDiv = document.getElementById('loading-auth-message');
+            openSettingsBtn = document.getElementById('openSettingsBtn'); // Ensure this is referenced here too for display logic
         }
 
         function setupAuthEventListeners() {
@@ -1082,19 +1216,21 @@
         }
 
         if (auth) { 
-            auth.onAuthStateChanged((user) => {
-                if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv) {
+            auth.onAuthStateChanged(async (user) => { // Made async to await fetchAllowedEmails()
+                if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                     console.error("One or more critical UI elements for auth state change not found. Attempting to re-acquire.");
                     setupAuthRelatedDOMReferences(); 
-                    if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv) {
+                    if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                         console.error("Still unable to find critical UI elements. Aborting UI update for auth state change.");
                         return; 
                     }
                 }
 
                 if (user) {
+                    // Ensure allowed emails are fetched before checking
+                    await fetchAllowedEmails(); 
                     const userEmailLower = user.email ? user.email.toLowerCase() : ""; 
-                    if (user.email && ALLOWED_EMAILS.map(email => email.toLowerCase()).includes(userEmailLower)) {
+                    if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
                         console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
                         userNameP.textContent = user.displayName || "Name not available";
                         userEmailP.textContent = user.email || "Email not available";
@@ -1104,6 +1240,7 @@
                         signInBtn.style.display = 'none';
                         loadingAuthMessageDiv.style.display = 'none'; 
                         appContentDiv.style.display = 'block'; 
+                        openSettingsBtn.style.display = 'block'; // Show settings button for authorized users
 
                         initializeAppComponents();
                     } else {
@@ -1120,6 +1257,7 @@
                             signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none';
                             loadingAuthMessageDiv.style.display = 'block';
+                            openSettingsBtn.style.display = 'none'; // Hide settings button
 
                             projects = [];
                             if (projectTableBody) projectTableBody.innerHTML = ''; 
@@ -1140,6 +1278,7 @@
                             appContentDiv.style.display = 'none';
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Error during sign out. Please refresh.</p>';
                             loadingAuthMessageDiv.style.display = 'block';
+                            openSettingsBtn.style.display = 'none'; // Hide settings button
                         });
                     }
 
@@ -1152,6 +1291,7 @@
                     userInfoDisplayDiv.style.display = 'none';
                     signInBtn.style.display = 'block';
                     appContentDiv.style.display = 'none'; 
+                    openSettingsBtn.style.display = 'none'; // Hide settings button
                     
                     if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
                          loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
@@ -1161,6 +1301,7 @@
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = ''; 
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Clear settings list
                     
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
