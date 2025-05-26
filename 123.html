@@ -257,146 +257,125 @@
             font-weight: 600;
         }
 
-        /* Project Table */
+        /* Project Table (Reverted to original structure with minor tweaks) */
         #projectTable {
             width: 100%;
-            border-collapse: separate; /* Use separate to allow border-radius on cells */
-            border-spacing: 0; /* Remove default spacing */
-            margin-top: 20px;
-            font-size: 0.9em;
-            background-color: var(--card-background);
-            border-radius: 10px;
-            overflow: hidden; /* Ensures rounded corners apply */
-            box-shadow: var(--shadow-medium);
+            border-collapse: collapse; /* Reverted to collapse */
+            margin-top: 15px;
+            font-size: 0.8em;
+            background-color: var(--card-background); /* Added for consistent background */
+            box-shadow: var(--shadow-light); /* Added subtle shadow */
+            border-radius: 5px; /* Added for subtle round corners */
+            overflow: hidden; /* Important for rounded corners on scrollable table */
         }
         #projectTable th, #projectTable td {
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px 12px;
+            border: 1px solid #ddd; /* Original border style */
+            padding: 3px 5px; /* Original padding */
             text-align: left;
             vertical-align: middle;
             white-space: nowrap;
         }
         #projectTable thead th {
-            background-color: var(--header-bg);
-            color: var(--header-text);
-            font-weight: 600;
+            background-color: #34495e; /* Original header background */
+            color: white;
+            font-weight: bold;
             position: sticky;
             top: 0;
             z-index: 10;
-            text-transform: uppercase;
-            font-size: 0.85em;
-            letter-spacing: 0.5px;
         }
-        #projectTable tbody tr:last-child td {
-            border-bottom: none; /* No border for the last row */
-        }
-        #projectTable th:first-child, #projectTable td:first-child { border-left: none; }
-        #projectTable th:last-child, #projectTable td:last-child { border-right: none; }
-        #projectTable th:first-child { border-top-left-radius: 10px; }
-        #projectTable th:last-child { border-top-right-radius: 10px; }
-
         #projectTable td.wrap-text { white-space: normal; }
         #projectTable input[type="text"].assigned-to-input,
         #projectTable textarea.tech-notes-input {
-            width: calc(100% - 10px);
-            padding: 5px;
+            width: calc(100% - 6px); /* Original width calculation */
+            padding: 2px; /* Original padding */
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 2px;
             box-sizing: border-box;
-            font-size: 0.9em;
-            background-color: #fdfdfd;
-            transition: border-color 0.2s ease;
+            font-size: 1em; /* Original font size */
+            background-color: #fff;
         }
-        #projectTable input[type="text"].assigned-to-input:focus,
-        #projectTable textarea.tech-notes-input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
-        }
-        #projectTable textarea.tech-notes-input { resize: vertical; min-height: 24px; line-height: 1.4; }
+        #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
 
         .batch-header-row td {
-            background-color: #5d6d7e !important;
+            background-color: #6c757d !important;
             color: white;
-            font-size: 1.2em;
-            font-weight: 700;
+            font-size: 1.1em;
+            font-weight: bold;
             text-align: left;
-            padding: 10px 12px;
-            border-top: 2px solid #5d6d7e !important;
-            border-bottom: 2px solid #5d6d7e !important;
-            margin-top: 15px; /* Add some margin above the batch header */
+            padding: 6px 8px;
         }
         .fix-group-header td {
-            background-color: #ced4da !important;
-            color: #343a40;
-            font-size: 1.1em;
-            font-weight: 600;
+            background-color: #adb5bd !important;
+            color: #212529;
+            font-size: 1.0em;
+            font-weight: bold;
             text-align: left;
-            padding: 8px 12px;
+            padding: 4px 8px;
             cursor: pointer;
             padding-left: 30px;
-            border-top: 1px solid #aeb8c3 !important;
-            border-bottom: 1px solid #aeb8c3 !important;
-            display: flex;
-            align-items: center;
         }
-        .fix-group-header .btn-group-toggle {
-            background-color: #6c757d;
+        .fix-group-header .btn-group-toggle { /* Style for the toggle button inside header */
+            background-color: #7f8c8d;
             margin-right: 10px;
-            order: -1; /* Place button before text */
+            order: -1;
+            min-width: 25px; /* Adjust as needed */
+            padding: 2px 6px; /* Adjust as needed */
+            font-size: 0.9em; /* Adjust as needed */
+            box-shadow: none; /* Remove button shadow inside header */
         }
-        .fix-group-header .btn-group-toggle:hover { background-color: #5a6268; }
+        .fix-group-header .btn-group-toggle:hover {
+            background-color: #95a5a6;
+            transform: none; /* Prevent translateY on hover for toggle button */
+            box-shadow: none;
+        }
 
         .hidden-group-row { display: none; }
         .overall-project-separator td {
-            height: 20px !important;
-            background-color: var(--background-color) !important;
+            height: 10px !important;
+            background-color: #e9ecef !important;
             border: none !important;
             padding: 0 !important;
         }
-        #projectTable td.duration-column, #projectTable td.total-duration-column {
-            font-weight: 600;
-            color: var(--primary-color);
-        }
+        #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
         #projectTable td.total-duration-column {
             color: white;
-            background-color: var(--primary-color);
-            border-radius: 4px;
-            padding: 5px 8px;
-            display: inline-block;
-            min-width: 40px;
-            text-align: center;
+            font-weight: bold;
+            background-color: #e74c3c;
+            /* Keep original small inline badge look if desired, or remove padding/display for full cell background */
+            padding: 2px 5px; /* Adjusted slightly from original padding for badge */
+            border-radius: 3px; /* Added for small badge */
+            display: inline-block; /* Added for small badge */
         }
-        .fix1-row { background-color: #e6ffe6; } /* Light Green */
-        .fix2-row { background-color: #ffe6f2; } /* Light Pink */
-        .fix3-row { background-color: #e6f7ff; } /* Light Blue */
-        .fix4-row { background-color: #fff0e6; } /* Light Orange */
-        .reassigned-task-highlight { background-color: #FFFDE7 !important; border-left: 4px solid var(--warning-color); }
+        .fix1-row { background-color: #e6ffe6; }
+        .fix2-row { background-color: #ffe6f2; }
+        .fix3-row { background-color: #e6e6ff; }
+        .fix4-row { background-color: #fff5e6; }
+        .reassigned-task-highlight { background-color: #FFF9C4 !important; }
         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover {
-            background-color: #e9f5ff !important;
-            box-shadow: inset 3px 0 0 var(--primary-color);
+            background-color: #d0e0f0 !important; /* Original hover color */
+            box-shadow: none; /* Remove left border shadow from previous version */
         }
-        
-        /* Status Badges */
+
+        /* Status Badges (kept mostly same as previous enhanced, but smaller to fit table) */
         .status {
-            padding: 6px 10px;
-            border-radius: 20px;
+            padding: 4px 8px; /* Slightly smaller padding */
+            border-radius: 15px; /* Smaller radius */
             color: white;
-            font-weight: 600;
+            font-weight: 600; /* Maintained bold */
             text-align: center;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85em;
-            min-width: 90px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.8em; /* Slightly smaller font size */
+            min-width: 70px; /* Adjusted minimum width */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow */
         }
         .status-available { background-color: #3498db; }
         .status-inprogressday1 { background-color: #f39c12; }
         .status-day1ended_awaitingnext { background-color: #f39c12; }
-        .status-inprogressday2 { background-color: #e67e22; } /* Slightly different orange for Day2 */
+        .status-inprogressday2 { background-color: #e67e22; }
         .status-completed { background-color: #2ecc71; }
-        .status-reassigned_techabsent { background-color: #B0BEC5; color: #455A64; } /* Grey with darker text */
+        .status-reassigned_techabsent { background-color: #B0BEC5; color: #455A64; }
 
         /* TL Dashboard */
         #tlDashboardContent { margin-top:20px; }
@@ -427,18 +406,18 @@
         
         /* Break Select */
         .break-select {
-            padding: 5px 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 0.85em;
-            min-width: 120px;
-            margin-right: 8px;
-            background-color: #fdfdfd;
-            appearance: none; /* Remove default select arrow */
+            padding: 2px 5px; /* Original padding */
+            border: 1px solid #ccc; /* Original border */
+            border-radius: 3px; /* Original border-radius */
+            font-size: 0.8em; /* Original font size */
+            min-width: 100px; /* Original min-width */
+            margin-left: 5px; /* Original margin-left */
+            background-color: #fff; /* Reverted background color */
+            appearance: none; /* Keep custom arrow */
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.8L146.2%20209.6%205.4%2069.8c-3.1-3.1-8.2-3.1-11.3%200-3.1%203.1-3.1%208.2%200%2011.3l145.4%20145.4c3.1%203.1%208.2%203.1%2011.3%200l145.4-145.4c3.1-3.1%203.1-8.2%200-11.3C295.2%2066.7%20290.1%2066.7%20287%2069.8z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
-            background-position: right 8px top 50%;
-            background-size: 10px auto;
+            background-position: right 5px top 50%;
+            background-size: 8px auto;
         }
         .break-select:focus {
             border-color: var(--primary-color);
@@ -511,26 +490,26 @@
                 margin-bottom: 5px;
             }
             #projectTable th, #projectTable td {
-                padding: 8px 6px;
-                font-size: 0.75em;
+                padding: 6px 4px; /* Reduced padding for smaller screens */
+                font-size: 0.7em; /* Smaller font size for table content */
             }
             #projectTable input, #projectTable textarea, .break-select {
-                font-size: 0.7em;
-                padding: 3px;
+                font-size: 0.65em; /* Even smaller font for inputs */
+                padding: 2px;
             }
             .status {
-                padding: 4px 6px;
-                font-size: 0.7em;
+                padding: 3px 5px;
+                font-size: 0.65em;
                 min-width: unset;
             }
             .btn {
-                padding: 5px 10px;
-                font-size: 0.7em;
-                min-width: 40px;
+                padding: 4px 8px;
+                font-size: 0.65em;
+                min-width: 30px;
             }
             .batch-header-row td, .fix-group-header td {
-                font-size: 0.9em;
-                padding: 8px;
+                font-size: 0.8em;
+                padding: 6px;
             }
         }
     </style>
