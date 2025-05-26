@@ -69,15 +69,34 @@
         h2 { font-size: 1.3em; }
         h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
         .action-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; } /* Added flex-wrap */
-        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+        .btn { 
+            padding: 2px 5px; /* Reduced padding for smaller buttons */
+            border: none; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-size: 0.7em; /* Smaller font size */
+            transition: background-color 0.3s ease; 
+            margin: 1px; /* Reduced margin */
+            min-width: 40px; /* Smaller min-width */
+            text-align: center; 
+            vertical-align: middle;
+        }
         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
-        .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
+        .btn-group-toggle { 
+            min-width: 25px; 
+            padding: 2px 6px; 
+            font-size: 0.8em; /* Slightly smaller for group toggle */
+            margin-left: 10px; 
+            background-color: #7f8c8d; 
+            color:white; 
+        }
         .btn-group-toggle:hover { background-color: #95a5a6;}
         .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
         .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
         .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
         .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
-        .btn-release { background-color: #9b59b6; color: white; font-size:0.85em; padding: 5px 10px; } .btn-release:hover { background-color: #8e44ad; }
+        .btn-release { background-color: #9b59b6; color: white; font-size:0.8em; padding: 3px 8px; } /* Slightly smaller for release */
+        .btn-release:hover { background-color: #8e44ad; }
         .btn-day-start { background-color: #007bff; color: white; }
         .btn-day-start:hover { background-color: #0056b3; }
         .btn-day-end { background-color: #fd7e14; color: white; }
@@ -107,7 +126,7 @@
         #projectTable { 
             width: 100%; /* Important: Make table width 100% to fill container */
             border-collapse: collapse; 
-            font-size: 0.8em; 
+            font-size: 0.75em; /* Slightly smaller overall table font size */
             /* Removed table-layout: fixed; here to allow browser to calculate widths more flexibly */
             /* Min-width to ensure table doesn't get too small before scrolling */
             min-width: 1200px; /* Adjust this value based on your content and desired minimum size */
@@ -115,7 +134,7 @@
         /* Default for all table cells: allow wrapping unless specified */
         #projectTable th, #projectTable td { 
             border: 1px solid #ddd; 
-            padding: 3px 5px; 
+            padding: 2px 3px; /* Significantly reduced padding for tight rows */
             text-align: left; 
             vertical-align: middle; 
             white-space: normal; /* Changed to normal to allow wrapping by default */
@@ -129,38 +148,52 @@
             top: 0; 
             z-index: 10;
             white-space: nowrap; /* Keep header text on single line */
+            line-height: 1.2; /* Reduce line height for headers */
         }
         /* Specific overrides for columns that need to stay on one line */
         #projectTable td.duration-column,
         #projectTable td.total-duration-column {
             white-space: nowrap; /* Keep duration numbers on single line */
             text-align: center; /* Center the numbers for readability */
-            min-width: 50px; /* Give a min-width to prevent severe squishing */
+            min-width: 45px; /* Give a min-width to prevent severe squishing, adjusted */
+            line-height: 1.2; /* Adjust line height for numbers */
         }
 
         /* Input/textarea within table cells */
-        #projectTable input[type="text"].assigned-to-input, 
-        #projectTable textarea.tech-notes-input { 
+        #projectTable input[type="text"].assigned-to-input { 
             width: calc(100% - 6px); /* Full width minus padding/border */
-            padding: 2px; 
+            padding: 1px; /* Reduced input padding */
             border: 1px solid #ccc; 
             border-radius: 2px; 
             box-sizing: border-box; 
-            font-size: 1em; 
+            font-size: 0.9em; /* Slightly smaller input font */
             background-color: #fff; 
+            height: 18px; /* Fixed height for inputs */
+            line-height: 1.2; /* Adjust line height */
         }
-        #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
+        #projectTable textarea.tech-notes-input { 
+            width: calc(100% - 6px); 
+            padding: 1px; /* Reduced textarea padding */
+            border: 1px solid #ccc; 
+            border-radius: 2px; 
+            box-sizing: border-box; 
+            font-size: 0.9em; /* Slightly smaller textarea font */
+            background-color: #fff; 
+            resize: vertical; 
+            min-height: 18px; /* Minimum height for textarea */
+            max-height: 40px; /* Optional: Max height to prevent overly tall rows */
+            line-height: 1.2; /* Adjust line height */
+        }
 
-        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
-        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
+        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.0em; /* Slightly smaller for batch header */ font-weight: bold; text-align: left; padding: 4px 6px; } /* Reduced padding */
+        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 0.95em; /* Slightly smaller for group header */ font-weight: bold; text-align: left; padding: 3px 5px; /* Reduced padding */ cursor:pointer; padding-left: 30px; }
         .hidden-group-row { display: none; }
-        .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
+        .overall-project-separator td { height: 5px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; } /* Reduced separator height */
         #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
         #projectTable td.total-duration-column { 
             color: white; 
             font-weight: bold; 
             background-color: #e74c3c; 
-            /* Removed fixed widths here, relying on min-width and flex to adapt */
         } 
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
@@ -168,12 +201,12 @@
         .fix4-row { background-color: #fff5e6; }
         .reassigned-task-highlight { background-color: #FFF9C4 !important; }
         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover { background-color: #d0e0f0 !important; }
-        .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
+        .status { padding: 1px 3px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.85em; /* Smaller status text */ line-height: 1.2;}
         .status-available { background-color: #3498db; }
         .status-inprogressday1 { background-color: #f39c12; }
         .status-day1ended_awaitingnext { background-color: #f39c12; } 
         .status-inprogressday2 { background-color: #f39c12; }
-        .status-inprogressday3 { background-color: #8e44ad; } /* NEW: Day 3 Status Style */
+        .status-inprogressday3 { background-color: #8e44ad; } 
         .status-completed { background-color: #2ecc71; }
         .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
         #tlDashboardContent { margin-top:15px; }
@@ -183,12 +216,13 @@
         .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
         .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
         .break-select {
-            padding: 2px 5px;
+            padding: 1px 3px; /* Reduced padding for select */
             border: 1px solid #ccc;
             border-radius: 3px;
-            font-size: 0.8em;
-            min-width: 100px; 
-            margin-left: 5px; 
+            font-size: 0.8em; /* Smaller font for select */
+            min-width: 80px; /* Adjusted min-width for select */
+            margin-left: 2px; /* Reduced margin */
+            height: 20px; /* Fixed height to match inputs */
         }
         /* Styles for Settings Modal */
         #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
@@ -197,10 +231,9 @@
         #allowedEmailsList li button { background-color: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8em;}
         #allowedEmailsList li button:hover { background-color: #c82333; }
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
-        .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} /* Added align-items */
+        .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} 
 
         /* NEW: Styles for Day 3 columns - Hide them by controlling display of headers/cells */
-        /* This is simpler without colgroup if we're using auto table-layout */
         .day3-column-header, 
         .day3-column-cell {
             display: table-cell; /* Default display */
@@ -212,33 +245,62 @@
         }
 
         /* Additional min-width for important columns to prevent squishing even in auto-layout */
+        /* These min-widths are crucial for horizontal scrolling to work effectively */
         #projectTable th:nth-child(2), /* Project Name */
         #projectTable td:nth-child(2) {
-            min-width: 150px; /* Minimum width for project name */
+            min-width: 130px; /* Minimum width for project name, adjusted */
         }
         #projectTable th:nth-child(5), /* Assigned Tech */
         #projectTable td:nth-child(5) {
-            min-width: 80px; /* Minimum width for assigned tech */
+            min-width: 70px; /* Minimum width for assigned tech, adjusted */
         }
         #projectTable th:nth-child(6), /* Status */
         #projectTable td:nth-child(6) {
-            min-width: 100px; /* Minimum width for status */
+            min-width: 90px; /* Minimum width for status, adjusted */
         }
-        #projectTable th:nth-child(14), /* Total(m) */
+        #projectTable th:nth-child(7), /* D1 Start */
+        #projectTable td:nth-child(7),
+        #projectTable th:nth-child(8), /* D1 End */
+        #projectTable td:nth-child(8),
+        #projectTable th:nth-child(10), /* D2 Start */
+        #projectTable td:nth-child(10),
+        #projectTable th:nth-child(11), /* D2 End */
+        #projectTable td:nth-child(11),
+        /* Day 3 times */
+        #projectTable th:nth-child(13), /* D3 Start */
+        #projectTable td:nth-child(13),
+        #projectTable th:nth-child(14), /* D3 End */
         #projectTable td:nth-child(14) {
-            min-width: 60px; /* Ensure Total(m) maintains reasonable width */
+            min-width: 55px; /* Minimum width for time columns */
         }
-        #projectTable th:nth-child(15), /* Break(m) */
+
+        #projectTable th:nth-child(9), /* D1 Dur(m) */
+        #projectTable td:nth-child(9),
+        #projectTable th:nth-child(12), /* D2 Dur(m) */
+        #projectTable td:nth-child(12),
+        #projectTable th:nth-child(15), /* D3 Dur(m) */
         #projectTable td:nth-child(15) {
-            min-width: 60px; /* Ensure Break(m) maintains reasonable width */
+            min-width: 45px; /* Minimum width for duration columns */
+            text-align: center;
         }
-        #projectTable th:nth-child(16), /* Tech Notes */
+
+        #projectTable th:nth-child(16), /* Total(m) */
         #projectTable td:nth-child(16) {
-            min-width: 120px; /* Ensure Tech Notes maintains reasonable width */
+            min-width: 50px; /* Ensure Total(m) maintains reasonable width */
+            text-align: center;
         }
-        #projectTable th:nth-child(17), /* Actions */
+        #projectTable th:nth-child(17), /* Break(m) */
         #projectTable td:nth-child(17) {
-            min-width: 150px; /* Ensure Actions maintains reasonable width */
+            min-width: 50px; /* Ensure Break(m) maintains reasonable width */
+            text-align: center;
+        }
+        #projectTable th:nth-child(18), /* Tech Notes */
+        #projectTable td:nth-child(18) {
+            min-width: 110px; /* Ensure Tech Notes maintains reasonable width */
+        }
+        #projectTable th:nth-child(19), /* Actions */
+        #projectTable td:nth-child(19) {
+            min-width: 140px; /* Ensure Actions maintains reasonable width */
         }
 
     </style>
