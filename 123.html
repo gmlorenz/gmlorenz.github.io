@@ -1049,9 +1049,8 @@
                     const batchHeaderRow = projectTableBody.insertRow(); 
                     batchHeaderRow.classList.add('batch-header-row'); 
                     const batchHeaderCell = batchHeaderRow.insertCell(); 
-                    const colspan = overallDay3Visibility ? 19 : 16;
-                    batchHeaderCell.setAttribute('colspan', colspan.toString());
-                    groupHeaderCell.setAttribute('colspan', colspan.toString());
+                    batchHeaderCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString()); 
+                    batchHeaderCell.textContent = `Project Batch: ${project.baseProjectName || 'Unknown'} (ID: ${project.batchId.split('_')[1] || 'N/A'})`; 
                 } 
                 
                 if (project.fixCategory !== currentFixCategoryForHeader) { 
