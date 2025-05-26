@@ -127,7 +127,7 @@
         .dashboard-batch-item p { margin: 3px 0; font-size: 0.9em;}
         .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
         .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
-        .break-select {
+        .additional-minutes-select { /* Renamed from .break-select for clarity, though class name in HTML might still be break-select for minimal changes if preferred */
             padding: 2px 5px;
             border: 1px solid #ccc;
             border-radius: 3px;
@@ -220,8 +220,7 @@
                         <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
                         <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
                         <th>Total(m)</th>
-                        <th>Break(m)</th>
-                        <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
+                        <th style="min-width: 100px;">Additional(m)</th> <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="projectTableBody"></tbody>
@@ -293,7 +292,7 @@
             'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3,
             'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6
         };
-        const NUM_TABLE_COLUMNS = 16;
+        const NUM_TABLE_COLUMNS = 16; // Check if this needs adjustment if columns changed
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
@@ -340,10 +339,7 @@
                 } else {
                     console.log("No allowed emails document found. Initializing with an empty array. Adding default email.");
                     allowedEmailsFromFirestore = [];
-                    // Add your default email here if the document doesn't exist yet
-                    allowedEmailsFromFirestore.push("ev.lorens.ebrado@gmail.com");
-                    // Optionally, you might want to save this initial state to Firestore
-                    // await updateAllowedEmailsInFirestore(allowedEmailsFromFirestore); // Uncomment this if you want it saved automatically on first run
+                    allowedEmailsFromFirestore.push("ev.lorens.ebrado@gmail.com"); // Default admin email
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
@@ -388,6 +384,7 @@
                             if (groupVisibilityState[groupStateKey] === undefined) {
                                 groupVisibilityState[groupStateKey] = { isExpanded: true };
                             }
+                            // 'breakDurationMinutes' now stores additional minutes. Default to 0 if undefined.
                             if (p.breakDurationMinutes === undefined) {
                                 p.breakDurationMinutes = 0;
                             }
@@ -420,7 +417,6 @@
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
 
-            // Re-acquire auth DOM elements here as they've moved or might be null initially
             signInBtn = document.getElementById('signInBtn');
             signOutBtn = document.getElementById('signOutBtn');
             userInfoDisplayDiv = document.getElementById('user-info-display');
@@ -467,7 +463,6 @@
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
             else console.error("Cannot attach submit listener: newProjectForm not found.");
 
-            // Auth event listeners need to be attached here as well
             setupAuthEventListeners();
         }
 
@@ -519,7 +514,7 @@
                         lastModifiedTimestamp: batchCreationTimestamp,
                         isReassigned: false,
                         originalProjectId: null,
-                        breakDurationMinutes: 0
+                        breakDurationMinutes: 0 // This field now stores additional minutes, initialized to 0
                     };
                     const docRef = db.collection("projects").doc();
                     fbBatch.set(docRef, newProjectData);
@@ -679,7 +674,7 @@
                             lastModifiedTimestamp: releaseTimestamp,
                             isReassigned: false,
                             originalProjectId: sourceTask.id,
-                            breakDurationMinutes: 0
+                            breakDurationMinutes: 0 // This field now stores additional minutes
                         };
                         const newDocRef = db.collection("projects").doc();
                         fbBatch.set(newDocRef, newTaskData);
@@ -881,16 +876,24 @@
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms);
 
+                // MODIFIED LOGIC FOR TOTAL DURATION
                 let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
-                let breakInMs = (project.breakDurationMinutes || 0) * 60 * 1000;
+                let additionalMinutesValue = project.breakDurationMinutes || 0; // 'breakDurationMinutes' field now stores additional minutes
+                let additionalInMs = additionalMinutesValue * 60 * 1000;
 
-                let finalTotalDurationMs = totalRawDurationMs > 0 ? Math.max(0, totalRawDurationMs - breakInMs) : null;
+                let finalTotalDurationMs = totalRawDurationMs + additionalInMs;
+                // If no raw duration and no additional minutes, show N/A or 0, else show calculated total
+                if (totalRawDurationMs === 0 && additionalMinutesValue === 0) {
+                    finalTotalDurationMs = null;
+                }
 
                 const totalDurationCell = row.insertCell();
                 totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
                 totalDurationCell.classList.add('total-duration-column');
 
-                row.insertCell().textContent = project.breakDurationMinutes || 0;
+                // This cell now displays "Additional(m)" value
+                row.insertCell().textContent = additionalMinutesValue;
+
 
                 const techNotesCell = row.insertCell();
                 const techNotesInput = document.createElement('textarea');
@@ -916,59 +919,55 @@
                 const actionsCell = row.insertCell();
                 const btnContainer = document.createElement('div');
 
-                const breakSelect = document.createElement('select');
-                breakSelect.classList.add('break-select');
-                breakSelect.id = `breakSelect_${project.id}`;
+                // MODIFIED SELECT FOR ADDITIONAL MINUTES
+                const additionalMinutesSelect = document.createElement('select');
+                additionalMinutesSelect.classList.add('additional-minutes-select'); // You can use this new class or keep 'break-select'
+                additionalMinutesSelect.id = `additionalMinutesSelect_${project.id}`;
 
                 let defaultOption = document.createElement('option');
                 defaultOption.value = '0';
-                defaultOption.textContent = 'No Break';
-                breakSelect.appendChild(defaultOption);
+                defaultOption.textContent = '0 mins Add';
+                additionalMinutesSelect.appendChild(defaultOption);
 
-                let option15Min = document.createElement('option');
-                option15Min.value = '15';
-                option15Min.textContent = '15 mins Break';
-                breakSelect.appendChild(option15Min);
-
-                let option60Min = document.createElement('option');
-                option60Min.value = '60';
-                option60Min.textContent = '1 hr Break';
-                breakSelect.appendChild(option60Min);
-
-                let option90Min = document.createElement('option');
-                option90Min.value = '90';
-                option90Min.textContent = '1 hr 30 mins Break';
-                breakSelect.appendChild(option90Min);
-
+                // Example options for additional minutes
+                [15, 30, 45, 60, 75, 90, 105, 120].forEach(mins => {
+                    let option = document.createElement('option');
+                    option.value = mins.toString();
+                    option.textContent = `${mins} mins Add`;
+                    additionalMinutesSelect.appendChild(option);
+                });
+                
+                // 'project.breakDurationMinutes' field is used to store additional minutes
                 if (typeof project.breakDurationMinutes === 'number') {
-                    breakSelect.value = project.breakDurationMinutes.toString();
+                    additionalMinutesSelect.value = project.breakDurationMinutes.toString();
                 } else {
-                    breakSelect.value = '0';
+                    additionalMinutesSelect.value = '0'; // Default to 0 if not set
                 }
 
-                breakSelect.onchange = async (event) => {
-                    const selectedBreakMinutes = parseInt(event.target.value, 10);
+                additionalMinutesSelect.onchange = async (event) => {
+                    const selectedAdditionalMinutes = parseInt(event.target.value, 10);
                     if (!db || !project.id) {
-                        alert("Error: Cannot save break. DB or ID missing.");
+                        alert("Error: Cannot save additional minutes. DB or ID missing.");
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
                         return;
                     }
                     try {
+                        // Update 'breakDurationMinutes' field in Firestore, which now represents additional minutes
                         await db.collection("projects").doc(project.id).update({
-                            breakDurationMinutes: selectedBreakMinutes,
+                            breakDurationMinutes: selectedAdditionalMinutes,
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        console.log(`Updated break for ${project.id} to ${selectedBreakMinutes} minutes.`);
+                        console.log(`Updated additional minutes for ${project.id} to ${selectedAdditionalMinutes} minutes.`);
                     } catch (error) {
-                        console.error("Error updating break duration:", error);
-                        alert("Error saving Break Duration. Error: " + error.message);
+                        console.error("Error updating additional minutes:", error);
+                        alert("Error saving Additional Minutes. Error: " + error.message);
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
                     }
                 };
-                btnContainer.appendChild(breakSelect);
+                btnContainer.appendChild(additionalMinutesSelect);
+
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent';
-                // START D1 button enabled if not reassigned, and status is Available, Day1Ended_AwaitingNext, InProgressDay2, or Completed
                 const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = isOriginalReassignedTask || !(project.status === 'Available' || project.status === 'Day1Ended_AwaitingNext' || project.status === 'InProgressDay2' || project.status === 'Completed'); sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn);
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn);
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn);
@@ -1000,7 +999,6 @@
 
             switch (action) {
                 case 'startDay1':
-                    // Allow starting Day 1 from various states, resetting previous times
                     if (currentProjectData.status === 'Available' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2' || currentProjectData.status === 'Completed') {
                         updatedFields = {
                             ...updatedFields,
@@ -1008,9 +1006,9 @@
                             startTimeDay1: serverTimestamp,
                             finishTimeDay1: null,
                             durationDay1Ms: null,
-                            startTimeDay2: null, // Reset Day 2 times
-                            finishTimeDay2: null, // Reset Day 2 times
-                            durationDay2Ms: null // Reset Day 2 times
+                            startTimeDay2: null, 
+                            finishTimeDay2: null, 
+                            durationDay2Ms: null 
                         };
                     } else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`);
                     break;
@@ -1037,10 +1035,19 @@
                             updatedFields.finishTimeDay2 = serverTimestamp;
                             updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
                         }
-                        if (!currentProjectData.startTimeDay2) {
-                            updatedFields.durationDay2Ms = null;
+                        if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2) { // If neither day started, don't auto-fill times
+                            // No times to fill
+                        } else if (!currentProjectData.startTimeDay2 && currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { // Only D1 started
+                            updatedFields.finishTimeDay1 = serverTimestamp;
+                            updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis);
+                        } else if (currentProjectData.startTimeDay1 && currentProjectData.finishTimeDay1 && !currentProjectData.startTimeDay2) {
+                             // D1 was completed, D2 never started. Ensure D2 values are null.
+                            updatedFields.startTimeDay2 = null;
                             updatedFields.finishTimeDay2 = null;
+                            updatedFields.durationDay2Ms = null;
                         }
+
+
                     } else console.warn(`Cannot 'markDone'. Status: ${currentProjectData.status}`);
                     break;
                 default:
@@ -1101,7 +1108,7 @@
                     isReassigned: true,
                     originalProjectId: originalProjectData.id,
                     releasedToNextStage: false,
-                    breakDurationMinutes: 0
+                    breakDurationMinutes: 0 // This field now stores additional minutes
                 };
                 const newProjectRef = db.collection("projects").doc();
                 batch.set(newProjectRef, newProjectEntryData);
@@ -1109,7 +1116,6 @@
                 const originalProjectRef = db.collection("projects").doc(originalProjectData.id);
                 const originalTaskUpdateData = {
                     status: 'Reassigned_TechAbsent',
-                    //techNotes: "Re-Assigned",
                     lastModifiedTimestamp: serverTimestamp
                 };
                 batch.update(originalProjectRef, originalTaskUpdateData);
@@ -1163,7 +1169,7 @@
                 return;
             }
 
-            if (allowedEmailsFromFirestore.includes(newEmail)) {
+            if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(newEmail)) {
                 alert("This email is already in the allowed list.");
                 return;
             }
@@ -1258,7 +1264,7 @@
                 isAppInitialized = true;
             } else {
                 console.log("App components already initialized or re-initializing data load.");
-                initializeFirebaseAndLoadData();
+                initializeFirebaseAndLoadData(); // Re-attach listener if needed (e.g., after sign-out/sign-in)
             }
         }
 
@@ -1266,7 +1272,7 @@
             auth.onAuthStateChanged(async (user) => {
                 if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                     console.error("One or more critical UI elements for auth state change not found. Attempting to re-acquire.");
-                    setupAuthRelatedDOMReferences();
+                    setupAuthRelatedDOMReferences(); // Should be covered by setupDOMReferences if called correctly
                     if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                         console.error("Still unable to find critical UI elements. Aborting UI update for auth state change.");
                         return;
@@ -1274,8 +1280,9 @@
                 }
 
                 if (user) {
-                    await fetchAllowedEmails();
+                    await fetchAllowedEmails(); // Ensure emails are fetched before checking
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
+
                     if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
                         console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
                         userNameP.textContent = user.displayName || "Name not available";
@@ -1286,7 +1293,7 @@
                         signInBtn.style.display = 'none';
                         loadingAuthMessageDiv.style.display = 'none';
                         appContentDiv.style.display = 'block';
-                        openSettingsBtn.style.display = 'block';
+                        openSettingsBtn.style.display = 'block'; // Show settings for allowed users
 
                         initializeAppComponents();
                     } else {
@@ -1303,9 +1310,9 @@
                             signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none';
                             loadingAuthMessageDiv.style.display = 'block';
-                            openSettingsBtn.style.display = 'none';
+                            openSettingsBtn.style.display = 'none'; // Hide settings
 
-                            projects = [];
+                            projects = []; // Clear data
                             if (projectTableBody) projectTableBody.innerHTML = '';
                             if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                             if (firestoreListenerUnsubscribe) {
@@ -1313,22 +1320,19 @@
                                 firestoreListenerUnsubscribe = null;
                                 console.log("Firestore listener detached for unauthorized user sign out.");
                             }
-                            isAppInitialized = false;
+                            isAppInitialized = false; // Reset app init state
                         }).catch(error => {
                             console.error("Error signing out unauthorized user:", error);
-                            userNameP.textContent = '';
-                            userEmailP.textContent = '';
-                            userPhotoImg.src = '';
-                            userInfoDisplayDiv.style.display = 'none';
-                            signInBtn.style.display = 'block';
-                            appContentDiv.style.display = 'none';
+                            // Fallback UI state
+                            userNameP.textContent = ''; userEmailP.textContent = ''; userPhotoImg.src = '';
+                            userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none'; loadingAuthMessageDiv.style.display = 'block';
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Error during sign out. Please refresh.</p>';
-                            loadingAuthMessageDiv.style.display = 'block';
                             openSettingsBtn.style.display = 'none';
                         });
                     }
 
-                } else {
+                } else { // User is signed out
                     console.log("Auth state changed: User is SIGNED OUT");
                     userNameP.textContent = '';
                     userEmailP.textContent = '';
@@ -1337,24 +1341,25 @@
                     userInfoDisplayDiv.style.display = 'none';
                     signInBtn.style.display = 'block';
                     appContentDiv.style.display = 'none';
-                    openSettingsBtn.style.display = 'none';
+                    openSettingsBtn.style.display = 'none'; // Hide settings
 
-                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
+                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { // Don't overwrite access denied message
                          loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                     }
                     loadingAuthMessageDiv.style.display = 'block';
 
+                    // Clear data and listeners
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = '';
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Clear settings modal content too
 
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
                         firestoreListenerUnsubscribe = null;
                         console.log("Firestore listener detached on sign out.");
                     }
-                    isAppInitialized = false;
+                    isAppInitialized = false; // Reset app init state
                     console.log("App content hidden, project data cleared, and Firestore listener detached.");
                 }
             });
@@ -1367,10 +1372,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM fully loaded.");
-            setupDOMReferences(); // Call setupDOMReferences first to get all elements
-            // setupAuthRelatedDOMReferences() is now effectively called by setupDOMReferences
-            // setupAuthEventListeners() is now called by attachEventListeners()
-            attachEventListeners(); // Then attach all event listeners
+            // DOM references are setup once here. Auth state changes will handle visibility and data loading.
+            setupDOMReferences();
+            attachEventListeners(); // Attach general event listeners. Auth listeners are inside setupAuthEventListeners.
+                                    // Auth state listener (onAuthStateChanged) will trigger initializeAppComponents if user is valid.
         });
     </script>
 </body>
