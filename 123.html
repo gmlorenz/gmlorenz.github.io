@@ -375,6 +375,83 @@
     vertical-align: middle !important;
 }
 
+/* Styles for the new switch button */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin-left: 10px; /* Space from label */
+  vertical-align: middle;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.dashboard-toggle-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+.dashboard-toggle-group label {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
 </style>
 </head>
 <body>
@@ -400,7 +477,6 @@
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> 
-                <button id="toggleDay3ColumnsBtn" class="btn btn-info btn-lg">Toggle Day 3 Columns</button>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -425,6 +501,13 @@
                 <div class="modal-content">
                     <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Project Settings</h2>
+                    <div class="dashboard-toggle-group">
+                        <label for="enableDay3FixToggle">Enable Day 3 Fix Columns:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="enableDay3FixToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                     <div id="tlDashboardContent"></div>
                 </div>
             </div>
@@ -534,7 +617,7 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, toggleDay3ColumnsBtn; // Added toggleDay3ColumnsBtn
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, enableDay3FixToggle; // Renamed toggleDay3ColumnsBtn to enableDay3FixToggle
 
         let projects = [];
         let groupVisibilityState = {};
@@ -565,7 +648,6 @@
                 const savedState = localStorage.getItem('projectTrackerGroupVisibility'); 
                 if (savedState) groupVisibilityState = JSON.parse(savedState); 
                 else groupVisibilityState = {}; 
-                // Ensure isDay3Expanded is set for existing groups, defaults to false (removed individual Day3 state here)
             } catch (e) { 
                 console.error("Error parsing group visibility state from localStorage:", e); 
                 groupVisibilityState = {}; 
@@ -644,7 +726,7 @@
                         if (p && p.batchId && p.fixCategory) { 
                             const groupStateKey = `${p.batchId}_${p.fixCategory}`; 
                             if (groupVisibilityState[groupStateKey] === undefined) {
-                                groupVisibilityState[groupStateKey] = { isExpanded: true }; // No longer needs isDay3Expanded per group
+                                groupVisibilityState[groupStateKey] = { isExpanded: true };
                             }
                             if (p.breakDurationMinutes === undefined) {
                                 p.breakDurationMinutes = 0; 
@@ -681,9 +763,9 @@
             allowedEmailsList = document.getElementById('allowedEmailsList'); 
             addEmailInput = document.getElementById('addEmailInput'); 
             addEmailBtn = document.getElementById('addEmailBtn'); 
-            toggleDay3ColumnsBtn = document.getElementById('toggleDay3ColumnsBtn'); // Get new button
-
-            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn || !toggleDay3ColumnsBtn) {
+            enableDay3FixToggle = document.getElementById('enableDay3FixToggle'); // Get the new switch button
+            
+            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !settingsModal || !closeProjectFormBtn || !closeTlDashboardBtn || !closeSettingsBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !allowedEmailsList || !addEmailInput || !addEmailBtn || !openSettingsBtn || !enableDay3FixToggle) { // Added enableDay3FixToggle to check
                 console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
             }
         }
@@ -696,7 +778,12 @@
                 openTlDashboardBtn.onclick = () => {
                     const pin = prompt("Enter PIN to access Project Settings:");
                     if (pin === TL_DASHBOARD_PIN) {
-                        if (tlDashboardModal) { tlDashboardModal.style.display = 'block'; renderTLDashboard(); }
+                        if (tlDashboardModal) { 
+                            // Set the checkbox state when opening the modal
+                            if (enableDay3FixToggle) enableDay3FixToggle.checked = showDay3Globally;
+                            tlDashboardModal.style.display = 'block'; 
+                            renderTLDashboard(); 
+                        }
                         else console.error("Cannot open Project Settings: tlDashboardModal is null.");
                     } else {
                         alert("Incorrect PIN. Access Denied. ");
@@ -720,13 +807,13 @@
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { if (settingsModal) settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
 
-            // New: Toggle Day 3 Columns button event listener
-            if (toggleDay3ColumnsBtn) {
-                toggleDay3ColumnsBtn.onclick = () => {
-                    showDay3Globally = !showDay3Globally;
+            // New: Day 3 Toggle switch event listener inside the modal
+            if (enableDay3FixToggle) {
+                enableDay3FixToggle.addEventListener('change', () => {
+                    showDay3Globally = enableDay3FixToggle.checked;
                     saveDay3GlobalVisibilityState();
                     renderProjects(); // Re-render to apply the global visibility change
-                };
+                });
             }
 
             if (typeof window !== 'undefined') {
@@ -822,9 +909,16 @@
 
         function renderTLDashboard() { 
             if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); return; } 
-            tlDashboardContentElement.innerHTML = ''; 
+            tlDashboardContentElement.innerHTML = ''; // Clear existing content
+            
+            // Re-append the toggle group to ensure it's always at the top of TL Dashboard content
+            const toggleGroup = document.querySelector('.dashboard-toggle-group');
+            if (toggleGroup && tlDashboardContentElement.parentNode === document.querySelector('.modal-content')) { // Ensure it's the correct parent
+                tlDashboardContentElement.parentNode.prepend(toggleGroup);
+            }
+
             const manageableBatches = getManageableBatches(); 
-            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found.</p>'; return; } 
+            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML += '<p>No project batches found.</p>'; return; } // Appended, not replaced
             
             manageableBatches.forEach(batch => { 
                 if (!batch || !batch.batchId) return; 
@@ -1024,10 +1118,10 @@
                     if (fixOrderA < fixOrderB) return -1; 
                     if (fixOrderA > fixOrderB) return 1; 
                     
-                    if ((a.areaTask || "") < (b.areaTask || "")) return -1; 
-                    if ((a.areaTask || "") > (b.areaTask || "")) return 1; 
+                    if ((a.areaTask || "") < (b.areaTask || "") ) return -1; 
+                    if ((a.areaTask || "") > (b.areaTask || "") ) return 1; 
                     
-                    if ((a.areaTask || "") === (b.areaTask || "")) { 
+                    if ((a.areaTask || "") === (b.areaTask || "") ) { 
                         let tsA_create = a.creationTimestamp; 
                         let tsB_create = b.creationTimestamp; 
                         if (tsA_create && typeof tsA_create.toMillis === 'function') tsA_create = tsA_create.toMillis(); 
@@ -1049,7 +1143,7 @@
             let currentBatchIdForDisplay = null; 
             let currentFixCategoryForHeader = null; 
             
-            // Determine overall Day 3 visibility for the table headers and colgroup based on global state
+            // Apply Day 3 visibility to header cells based on global state
             const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
             day3HeaderCells.forEach(th => {
                 if (showDay3Globally) {
@@ -1058,11 +1152,9 @@
                     th.classList.add('hide-day3-column');
                 }
             });
-            // Update the text on the toggle button
-            if (toggleDay3ColumnsBtn) {
-                toggleDay3ColumnsBtn.textContent = showDay3Globally ? 'Hide Day 3 Columns' : 'Show Day 3 Columns';
-                toggleDay3ColumnsBtn.classList.toggle('btn-warning', showDay3Globally);
-                toggleDay3ColumnsBtn.classList.toggle('btn-info', !showDay3Globally);
+            // Update the state of the toggle button if it exists
+            if (enableDay3FixToggle) {
+                enableDay3FixToggle.checked = showDay3Globally;
             }
 
 
@@ -1082,7 +1174,7 @@
                 if (project.fixCategory !== currentFixCategoryForHeader) { 
                     currentFixCategoryForHeader = project.fixCategory; 
                     const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`; 
-                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true }; // No longer needs isDay3Expanded per group
+                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true }; 
                     
                     const groupHeaderRow = projectTableBody.insertRow(); 
                     groupHeaderRow.classList.add('fix-group-header'); 
@@ -1097,8 +1189,6 @@
                     
                     groupHeaderCell.appendChild(document.createTextNode(`${currentFixCategoryForHeader} `)); 
                     groupHeaderCell.appendChild(toggleBtn); 
-
-                    // Removed Day 3 Toggle Button from here
 
                     groupHeaderCell.onclick = (e) => { 
                         if (e.target === toggleBtn || e.target === groupHeaderCell || groupHeaderCell.contains(e.target)) { 
@@ -1158,7 +1248,7 @@
                 const timeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true }; 
                 let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, 
                     d2s = project.startTimeDay2, d2f = project.finishTimeDay2,
-                    d3s = project.startTimeDay3, d3f = project.finishTimeDay3; // NEW: Day 3
+                    d3s = project.startTimeDay3, d3f = project.finishTimeDay3; 
                 try { 
                     if (d1s && typeof d1s.toDate === 'function') d1s = d1s.toDate(); 
                     else if (d1s) d1s = new Date(d1s); 
@@ -1172,15 +1262,13 @@
                     if (d2f && typeof d2f.toDate === 'function') d2f = d2f.toDate(); 
                     else if (d2f) d2f = new Date(d2f); 
                     else d2f = null; 
-                    // NEW: Day 3 Date Parsing
                     if (d3s && typeof d3s.toDate === 'function') d3s = d3s.toDate(); 
                     else if (d3s) d3s = new Date(d3s); 
                     else d3s = null; 
                     if (d3f && typeof d3f.toDate === 'function') d3f = d3f.toDate(); 
                     else if (d3f) d3f = new Date(d3f); 
                     else d3f = null; 
-                    // END NEW
-                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = d3s = d3f = null; } // NEW: Reset d3 dates too
+                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = d3s = d3f = null; } 
                 
                 row.insertCell().textContent = d1s && !isNaN(d1s) ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = d1f && !isNaN(d1f) ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
@@ -1189,7 +1277,7 @@
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms); 
                 
-                // NEW: Day 3 Cells and Visibility based on global state
+                // Day 3 Cells and Visibility based on global state
                 const d3sCell = row.insertCell();
                 const d3fCell = row.insertCell();
                 const d3DurCell = row.insertCell();
@@ -1208,9 +1296,8 @@
                     d3fCell.classList.remove('hide-day3-column');
                     d3DurCell.classList.remove('hide-day3-column');
                 }
-                // END NEW
 
-                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0); // NEW: Include Day 3
+                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0); 
                 let breakInMs = (project.breakDurationMinutes || 0) * 60 * 1000; 
 
                 let finalTotalDurationMs = totalRawDurationMs > 0 ? Math.max(0, totalRawDurationMs - breakInMs) : null;
@@ -1302,14 +1389,13 @@
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn); 
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn); 
                 
-                // NEW: Day 3 Buttons
+                // Day 3 Buttons
                 const sD3btn = document.createElement('button'); 
                 sD3btn.textContent = 'Start D3'; 
                 sD3btn.classList.add('btn','btn-day-start'); 
-                // Enable if Day 2 is ended or Day 1 ended and Day 2 was skipped
-                sD3btn.disabled = !((project.status === 'Completed' && project.durationDay2Ms !== null) || // Completed Day 2
-                                    (project.status === 'Day1Ended_AwaitingNext' && project.durationDay1Ms !== null) || // Day 1 ended, no Day 2
-                                    (project.status === 'InProgressDay2' && project.durationDay2Ms === null)) || // Currently in Day 2, allow to mark D2 done and then start D3
+                sD3btn.disabled = !((project.status === 'Completed' && project.durationDay2Ms !== null) || 
+                                    (project.status === 'Day1Ended_AwaitingNext' && project.durationDay1Ms !== null) || 
+                                    (project.status === 'InProgressDay2' && project.durationDay2Ms === null)) || 
                                     isOriginalReassignedTask || project.startTimeDay3 !== null; 
 
                 sD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay3'); }; 
@@ -1321,7 +1407,6 @@
                 eD3btn.disabled = project.startTimeDay3 === null || isOriginalReassignedTask || project.finishTimeDay3 !== null; 
                 eD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay3'); }; 
                 btnContainer.appendChild(eD3btn); 
-                // END NEW
 
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn); 
                 btnContainer.appendChild(breakSelect); 
@@ -1352,7 +1437,7 @@
             
             switch (action) { 
                 case 'startDay1': 
-                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; // NEW: Reset Day 3 fields
+                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; 
                     else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay1': 
@@ -1360,24 +1445,20 @@
                     else console.warn(`Cannot 'endDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'startDay2': 
-                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; // NEW: Reset Day 3 fields
+                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; 
                     else console.warn(`Cannot 'startDay2'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay2': 
                     if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) }; 
                     else console.warn(`Cannot 'endDay2'. Status: ${currentProjectData.status}`); 
                     break; 
-                // NEW: Day 3 Cases
+                // Day 3 Cases
                 case 'startDay3':
-                    // To start Day 3, Day 1 and optionally Day 2 should be completed.
-                    // If status is InProgressDay2, we assume they implicitly end Day2 then start Day3
                     if (currentProjectData.status === 'Completed' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2') {
-                        // If coming from InProgressDay2, ensure Day 2 is marked complete
                         if (currentProjectData.status === 'InProgressDay2' && !currentProjectData.finishTimeDay2) {
                             updatedFields.finishTimeDay2 = serverTimestamp;
                             updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
                         }
-                        // If coming from Day1Ended, and Day2 was skipped (no startTimeDay2), mark Day2 as null explicitly
                         if (currentProjectData.status === 'Day1Ended_AwaitingNext' && !currentProjectData.startTimeDay2) {
                             updatedFields.startTimeDay2 = null;
                             updatedFields.finishTimeDay2 = null;
@@ -1390,7 +1471,6 @@
                     if (currentProjectData.status === 'InProgressDay3' && currentProjectData.startTimeDay3) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay3: serverTimestamp, durationDay3Ms: calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis) };
                     else console.warn(`Cannot 'endDay3'. Status: ${currentProjectData.status}`);
                     break;
-                // END NEW
                 case 'markDone': 
                     if (currentProjectData.status !== 'Completed') { 
                         updatedFields.status = 'Completed'; 
@@ -1406,7 +1486,7 @@
                             updatedFields.durationDay2Ms = null; 
                             updatedFields.finishTimeDay2 = null; 
                         } 
-                        // NEW: Mark Day 3 Done
+                        // Mark Day 3 Done
                         if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) { 
                             updatedFields.finishTimeDay3 = serverTimestamp; 
                             updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis); 
@@ -1415,7 +1495,6 @@
                             updatedFields.durationDay3Ms = null; 
                             updatedFields.finishTimeDay3 = null; 
                         } 
-                        // END NEW
                     } else console.warn(`Cannot 'markDone'. Status: ${currentProjectData.status}`); 
                     break; 
                 default: 
@@ -1507,7 +1586,11 @@
         function refreshAllViews() { 
             try { 
                 renderProjects(); 
-                if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard(); 
+                // Only render TL Dashboard content if the modal is open, but always update the toggle state.
+                // The renderTLDashboard function now takes care of prepending the toggle element.
+                if (tlDashboardModal && tlDashboardModal.style.display === 'block') {
+                    renderTLDashboard(); 
+                }
                 if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList(); 
             } catch (e) { 
                 console.error("Error during refreshAllViews:", e); 
