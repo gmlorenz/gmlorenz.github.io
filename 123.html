@@ -96,12 +96,61 @@
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
         #newProjectForm button[type="submit"] { margin-top: 12px; }
-        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; table-layout: fixed; } /* Added table-layout: fixed; */
-        #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
-        #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
-        #projectTable td.wrap-text { white-space: normal; }
-        #projectTable input[type="text"].assigned-to-input, #projectTable textarea.tech-notes-input { width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
+
+        /* Container for horizontal scrolling */
+        .table-responsive-container {
+            overflow-x: auto; /* Enables horizontal scrolling */
+            -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS */
+            margin-top: 15px; /* Apply margin here instead of table */
+        }
+
+        #projectTable { 
+            width: 100%; /* Important: Make table width 100% to fill container */
+            border-collapse: collapse; 
+            font-size: 0.8em; 
+            /* Removed table-layout: fixed; here to allow browser to calculate widths more flexibly */
+            /* Min-width to ensure table doesn't get too small before scrolling */
+            min-width: 1200px; /* Adjust this value based on your content and desired minimum size */
+        }
+        /* Default for all table cells: allow wrapping unless specified */
+        #projectTable th, #projectTable td { 
+            border: 1px solid #ddd; 
+            padding: 3px 5px; 
+            text-align: left; 
+            vertical-align: middle; 
+            white-space: normal; /* Changed to normal to allow wrapping by default */
+            word-wrap: break-word; /* Ensures long words break if needed */
+        }
+        #projectTable thead th { 
+            background-color: #34495e; 
+            color: white; 
+            font-weight: bold; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10;
+            white-space: nowrap; /* Keep header text on single line */
+        }
+        /* Specific overrides for columns that need to stay on one line */
+        #projectTable td.duration-column,
+        #projectTable td.total-duration-column {
+            white-space: nowrap; /* Keep duration numbers on single line */
+            text-align: center; /* Center the numbers for readability */
+            min-width: 50px; /* Give a min-width to prevent severe squishing */
+        }
+
+        /* Input/textarea within table cells */
+        #projectTable input[type="text"].assigned-to-input, 
+        #projectTable textarea.tech-notes-input { 
+            width: calc(100% - 6px); /* Full width minus padding/border */
+            padding: 2px; 
+            border: 1px solid #ccc; 
+            border-radius: 2px; 
+            box-sizing: border-box; 
+            font-size: 1em; 
+            background-color: #fff; 
+        }
         #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
+
         .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
         .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
         .hidden-group-row { display: none; }
@@ -111,8 +160,7 @@
             color: white; 
             font-weight: bold; 
             background-color: #e74c3c; 
-            white-space: normal; /* Allow text to wrap */
-            /* Removed fixed widths here, as colgroup handles it more reliably */
+            /* Removed fixed widths here, relying on min-width and flex to adapt */
         } 
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
@@ -151,21 +199,46 @@
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
         .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} /* Added align-items */
 
-        /* NEW: Styles for Day 3 columns - Hide them using colgroup classes */
-        /* These styles will be toggled by JavaScript */
-        .col-day3.hidden-col {
-            width: 0 !important;
-            min-width: 0 !important;
-            max-width: 0 !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            overflow: hidden !important; /* Prevents content from showing when width is 0 */
-            visibility: hidden !important; /* Ensures no visual residue */
+        /* NEW: Styles for Day 3 columns - Hide them by controlling display of headers/cells */
+        /* This is simpler without colgroup if we're using auto table-layout */
+        .day3-column-header, 
+        .day3-column-cell {
+            display: table-cell; /* Default display */
         }
-        /* Ensure cells associated with hidden cols are also not displayed */
-        .day3-column-header.hidden-cell, 
-        .day3-column-cell.hidden-cell {
+
+        /* Class added by JS to hide Day 3 columns */
+        .hide-day3-column {
             display: none !important;
+        }
+
+        /* Additional min-width for important columns to prevent squishing even in auto-layout */
+        #projectTable th:nth-child(2), /* Project Name */
+        #projectTable td:nth-child(2) {
+            min-width: 150px; /* Minimum width for project name */
+        }
+        #projectTable th:nth-child(5), /* Assigned Tech */
+        #projectTable td:nth-child(5) {
+            min-width: 80px; /* Minimum width for assigned tech */
+        }
+        #projectTable th:nth-child(6), /* Status */
+        #projectTable td:nth-child(6) {
+            min-width: 100px; /* Minimum width for status */
+        }
+        #projectTable th:nth-child(14), /* Total(m) */
+        #projectTable td:nth-child(14) {
+            min-width: 60px; /* Ensure Total(m) maintains reasonable width */
+        }
+        #projectTable th:nth-child(15), /* Break(m) */
+        #projectTable td:nth-child(15) {
+            min-width: 60px; /* Ensure Break(m) maintains reasonable width */
+        }
+        #projectTable th:nth-child(16), /* Tech Notes */
+        #projectTable td:nth-child(16) {
+            min-width: 120px; /* Ensure Tech Notes maintains reasonable width */
+        }
+        #projectTable th:nth-child(17), /* Actions */
+        #projectTable td:nth-child(17) {
+            min-width: 150px; /* Ensure Actions maintains reasonable width */
         }
 
     </style>
@@ -235,26 +308,24 @@
             </div>
 
             <h3>📌 Team123 Project Tracker</h3>
-            <table id="projectTable">
-                <colgroup>
-                    <col style="width: 4%;"> <col style="width: 13%;"> <col style="width: 5%;"> <col style="width: 4%;"> <col style="width: 8%;"> <col style="width: 8%;"> <col style="width: 6%;"> <col style="width: 6%;"> <col style="width: 5%;"> <col style="width: 6%;"> <col style="width: 6%;"> <col style="width: 5%;"> <col class="col-day3" style="width: 6%;"> <col class="col-day3" style="width: 6%;"> <col class="col-day3" style="width: 5%;"> <col style="width: 5.5%;"> <col style="width: 5.5%;"> <col style="width: 10%;"> <col style="width: 10%;"> </colgroup>
-                <thead>
-                    <tr>
-                        <th>Fix</th><th style="min-width: 150px;">Project Name</th><th style="min-width: 80px;">Area</th><th>GSD</th>
-                        <th style="min-width: 80px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
-                        <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
-                        <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
-                        <th class="day3-column-header">D3 Start</th>
-                        <th class="day3-column-header">D3 End</th>
-                        <th class="day3-column-header">D3 Dur(m)</th>
-                        <th>Total(m)</th>
-                        <th>Break(m)</th> 
-                        <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="projectTableBody"></tbody>
-            </table>
-        </div>
+            <div class="table-responsive-container"> <table id="projectTable">
+                    <thead>
+                        <tr>
+                            <th>Fix</th><th>Project Name</th><th>Area</th><th>GSD</th>
+                            <th>Assigned Tech</th><th>Status</th>
+                            <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
+                            <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
+                            <th class="day3-column-header">D3 Start</th>
+                            <th class="day3-column-header">D3 End</th>
+                            <th class="day3-column-header">D3 Dur(m)</th>
+                            <th>Total(m)</th>
+                            <th>Break(m)</th> 
+                            <th>Tech Notes</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectTableBody"></tbody>
+                </table>
+            </div> </div>
     </div>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -825,23 +896,13 @@
                 }
             }
 
-            // Apply visibility to <col> elements
-            const day3ColElements = document.querySelectorAll('#projectTable col.col-day3');
-            day3ColElements.forEach(col => {
-                if (overallDay3Visibility) {
-                    col.classList.remove('hidden-col');
-                } else {
-                    col.classList.add('hidden-col');
-                }
-            });
-
             // Apply visibility to header cells
             const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
             day3HeaderCells.forEach(th => {
                 if (overallDay3Visibility) {
-                    th.classList.remove('hidden-cell');
+                    th.classList.remove('hide-day3-column');
                 } else {
-                    th.classList.add('hidden-cell');
+                    th.classList.add('hide-day3-column');
                 }
             });
 
@@ -994,15 +1055,15 @@
                 d3DurCell.textContent = formatMillisToMinutes(project.durationDay3Ms);
 
                 // Apply visibility to individual cells based on overallDay3Visibility
-                // Use a class to hide cells in coordination with colgroup.
+                // Use a class to hide cells.
                 if (!overallDay3Visibility) { 
-                    d3sCell.classList.add('hidden-cell');
-                    d3fCell.classList.add('hidden-cell');
-                    d3DurCell.classList.add('hidden-cell');
+                    d3sCell.classList.add('hide-day3-column');
+                    d3fCell.classList.add('hide-day3-column');
+                    d3DurCell.classList.add('hide-day3-column');
                 } else {
-                    d3sCell.classList.remove('hidden-cell'); 
-                    d3fCell.classList.remove('hidden-cell');
-                    d3DurCell.classList.remove('hidden-cell');
+                    d3sCell.classList.remove('hide-day3-column'); 
+                    d3fCell.classList.remove('hide-day3-column');
+                    d3DurCell.classList.remove('hide-day3-column');
                 }
                 // END NEW
 
