@@ -399,7 +399,9 @@
             <div class="action-bar">
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
-                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> </div>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> 
+                <button id="toggleDay3ColumnsBtn" class="btn btn-info btn-lg">Toggle Day 3 Columns</button>
+            </div>
 
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
@@ -487,7 +489,7 @@
         // DOM elements for app state
         let appContentDiv, loadingAuthMessageDiv;
 
-        // NEW: Hardcoded PIN for TL Dashboard
+        // NEW: Hardcoded PIN for TL Dashboard and User Settings
         const TL_DASHBOARD_PIN = "1234";
 
         // NEW: Reference for the allowed emails document in Firestore
@@ -532,12 +534,13 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn; 
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, toggleDay3ColumnsBtn; // Added toggleDay3ColumnsBtn
 
         let projects = [];
         let groupVisibilityState = {};
         let isAppInitialized = false; 
         let firestoreListenerUnsubscribe = null; 
+        let showDay3Globally = false; // New global state for Day 3 column visibility
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
         function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
@@ -562,19 +565,26 @@
                 const savedState = localStorage.getItem('projectTrackerGroupVisibility'); 
                 if (savedState) groupVisibilityState = JSON.parse(savedState); 
                 else groupVisibilityState = {}; 
-                // Ensure isDay3Expanded is set for existing groups, defaults to false
-                for (const key in groupVisibilityState) {
-                    if (groupVisibilityState.hasOwnProperty(key) && groupVisibilityState[key].isDay3Expanded === undefined) {
-                        groupVisibilityState[key].isDay3Expanded = false;
-                    }
-                }
+                // Ensure isDay3Expanded is set for existing groups, defaults to false (removed individual Day3 state here)
             } catch (e) { 
                 console.error("Error parsing group visibility state from localStorage:", e); 
                 groupVisibilityState = {}; 
             }
+            // Load global Day 3 visibility state
+            const savedDay3GlobalState = localStorage.getItem('projectTrackerDay3GlobalVisibility');
+            if (savedDay3GlobalState !== null) {
+                showDay3Globally = JSON.parse(savedDay3GlobalState);
+            } else {
+                showDay3Globally = false; // Default to hidden
+            }
         }
+
         function saveGroupVisibilityState() { 
             try { localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState)); } catch (lsError) { console.error("Error saving group visibility state to localStorage:", lsError); alert("Warning: Could not save your group visibility preferences.");}
+        }
+
+        function saveDay3GlobalVisibilityState() {
+            try { localStorage.setItem('projectTrackerDay3GlobalVisibility', JSON.stringify(showDay3Globally)); } catch (lsError) { console.error("Error saving Day 3 global visibility state to localStorage:", lsError); }
         }
 
         async function fetchAllowedEmails() {
@@ -623,7 +633,7 @@
                 console.log("Previous Firestore listener detached.");
             }
 
-            loadGroupVisibilityState();
+            loadGroupVisibilityState(); // Load both group and global Day 3 visibility
             try {
                 db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
                   .onSnapshot((querySnapshot) => {
@@ -634,7 +644,7 @@
                         if (p && p.batchId && p.fixCategory) { 
                             const groupStateKey = `${p.batchId}_${p.fixCategory}`; 
                             if (groupVisibilityState[groupStateKey] === undefined) {
-                                groupVisibilityState[groupStateKey] = { isExpanded: true, isDay3Expanded: false }; // Initialize Day 3 state here too
+                                groupVisibilityState[groupStateKey] = { isExpanded: true }; // No longer needs isDay3Expanded per group
                             }
                             if (p.breakDurationMinutes === undefined) {
                                 p.breakDurationMinutes = 0; 
@@ -671,8 +681,9 @@
             allowedEmailsList = document.getElementById('allowedEmailsList'); 
             addEmailInput = document.getElementById('addEmailInput'); 
             addEmailBtn = document.getElementById('addEmailBtn'); 
+            toggleDay3ColumnsBtn = document.getElementById('toggleDay3ColumnsBtn'); // Get new button
 
-            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn) {
+            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn || !toggleDay3ColumnsBtn) {
                 console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
             }
         }
@@ -694,9 +705,29 @@
             }
             if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { if (tlDashboardModal) tlDashboardModal.style.display = 'none'; };
 
-            if (openSettingsBtn) openSettingsBtn.onclick = () => { if (settingsModal) { settingsModal.style.display = 'block'; renderAllowedEmailsList(); } else console.error("Cannot open Settings modal: settingsModal is null."); };
+            // Modified: Add PIN check for User Settings
+            if (openSettingsBtn) { 
+                openSettingsBtn.onclick = () => {
+                    const pin = prompt("Enter PIN to access User Settings:");
+                    if (pin === TL_DASHBOARD_PIN) {
+                        if (settingsModal) { settingsModal.style.display = 'block'; renderAllowedEmailsList(); }
+                        else console.error("Cannot open Settings modal: settingsModal is null.");
+                    } else {
+                        alert("Incorrect PIN. Access Denied.");
+                    }
+                };
+            }
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { if (settingsModal) settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
+
+            // New: Toggle Day 3 Columns button event listener
+            if (toggleDay3ColumnsBtn) {
+                toggleDay3ColumnsBtn.onclick = () => {
+                    showDay3Globally = !showDay3Globally;
+                    saveDay3GlobalVisibilityState();
+                    renderProjects(); // Re-render to apply the global visibility change
+                };
+            }
 
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
@@ -1018,27 +1049,22 @@
             let currentBatchIdForDisplay = null; 
             let currentFixCategoryForHeader = null; 
             
-            // Determine overall Day 3 visibility for the table headers and colgroup
-            let overallDay3Visibility = false;
-            for (const key in groupVisibilityState) {
-                if (groupVisibilityState.hasOwnProperty(key)) {
-                    const group = groupVisibilityState[key];
-                    if (group.isExpanded && group.isDay3Expanded) {
-                        overallDay3Visibility = true;
-                        break;
-                    }
-                }
-            }
-
-            // Apply visibility to header cells
+            // Determine overall Day 3 visibility for the table headers and colgroup based on global state
             const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
             day3HeaderCells.forEach(th => {
-                if (overallDay3Visibility) {
+                if (showDay3Globally) {
                     th.classList.remove('hide-day3-column');
                 } else {
                     th.classList.add('hide-day3-column');
                 }
             });
+            // Update the text on the toggle button
+            if (toggleDay3ColumnsBtn) {
+                toggleDay3ColumnsBtn.textContent = showDay3Globally ? 'Hide Day 3 Columns' : 'Show Day 3 Columns';
+                toggleDay3ColumnsBtn.classList.toggle('btn-warning', showDay3Globally);
+                toggleDay3ColumnsBtn.classList.toggle('btn-info', !showDay3Globally);
+            }
+
 
             projectsToRender.forEach(project => { 
                 if (!project || !project.id || !project.batchId || !project.fixCategory) { console.warn("Skipping malformed project:", project); return; } 
@@ -1056,7 +1082,7 @@
                 if (project.fixCategory !== currentFixCategoryForHeader) { 
                     currentFixCategoryForHeader = project.fixCategory; 
                     const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`; 
-                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true, isDay3Expanded: false }; 
+                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true }; // No longer needs isDay3Expanded per group
                     
                     const groupHeaderRow = projectTableBody.insertRow(); 
                     groupHeaderRow.classList.add('fix-group-header'); 
@@ -1072,24 +1098,8 @@
                     groupHeaderCell.appendChild(document.createTextNode(`${currentFixCategoryForHeader} `)); 
                     groupHeaderCell.appendChild(toggleBtn); 
 
-                    // NEW: Day 3 Toggle Button
-                    const day3ToggleBtn = document.createElement('button');
-                    day3ToggleBtn.classList.add('btn', 'btn-group-toggle');
-                    day3ToggleBtn.style.marginLeft = '10px';
-                    const isDay3Expanded = groupVisibilityState[groupStateKey]?.isDay3Expanded === true;
-                    day3ToggleBtn.textContent = isDay3Expanded ? 'Hide Day3' : 'Show Day3';
-                    day3ToggleBtn.title = isDay3Expanded ? `Hide Day 3 times for ${currentFixCategoryForHeader}` : `Show Day 3 times for ${currentFixCategoryForHeader}`;
-                    day3ToggleBtn.onclick = (e) => {
-                        e.stopPropagation(); // Prevent the group header click event from firing
-                        if (groupVisibilityState[groupStateKey]) {
-                            groupVisibilityState[groupStateKey].isDay3Expanded = !groupVisibilityState[groupStateKey].isDay3Expanded;
-                            saveGroupVisibilityState();
-                            renderProjects(); // Re-render to apply visibility changes
-                        }
-                    };
-                    groupHeaderCell.appendChild(day3ToggleBtn);
-                    // END NEW
-                    
+                    // Removed Day 3 Toggle Button from here
+
                     groupHeaderCell.onclick = (e) => { 
                         if (e.target === toggleBtn || e.target === groupHeaderCell || groupHeaderCell.contains(e.target)) { 
                             if (groupVisibilityState[groupStateKey]) { 
@@ -1179,7 +1189,7 @@
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms); 
                 
-                // NEW: Day 3 Cells and Visibility
+                // NEW: Day 3 Cells and Visibility based on global state
                 const d3sCell = row.insertCell();
                 const d3fCell = row.insertCell();
                 const d3DurCell = row.insertCell();
@@ -1188,9 +1198,8 @@
                 d3fCell.textContent = d3f && !isNaN(d3f) ? d3f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 d3DurCell.textContent = formatMillisToMinutes(project.durationDay3Ms);
 
-                // Apply visibility to individual cells based on overallDay3Visibility
-                // Use a class to hide cells.
-                if (!overallDay3Visibility) { 
+                // Apply visibility to individual cells based on showDay3Globally
+                if (!showDay3Globally) { 
                     d3sCell.classList.add('hide-day3-column');
                     d3fCell.classList.add('hide-day3-column');
                     d3DurCell.classList.add('hide-day3-column');
