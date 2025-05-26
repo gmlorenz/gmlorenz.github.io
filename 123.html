@@ -8,69 +8,67 @@
         body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
 
-        /* Styles for Auth Section */
+        /* Styles for Auth Section - Adjusted for integration into action-bar */
         #auth-container {
-            padding: 10px; /* Adjusted padding */
-            text-align: right; /* Aligned to the right */
-            position: absolute; /* Positioned absolutely */
-            top: 10px; /* From the top */
-            right: 10px; /* From the right */
-            z-index: 999; /* Ensure it's on top */
-            width: auto; /* Allow width to be determined by content */
-            max-width: 300px; /* Max width to prevent it from getting too wide */
+            display: flex; /* Use flexbox to align internal elements */
+            align-items: center; /* Vertically align items */
+            gap: 10px; /* Space between user info and sign out button */
+            margin-left: auto; /* Push auth section to the right within action-bar */
+            padding: 0; /* Remove padding as it's now inside action-bar */
         }
         #auth-container h2 {
-            font-size: 1.3em;
-            display: inline-block; /* Display inline to align with button */
-            vertical-align: middle; /* Vertical alignment */
+            font-size: 1.1em; /* Smaller heading for top corner */
+            margin: 0; /* Remove margin */
             color: #333;
+            white-space: nowrap; /* Prevent wrapping */
+            margin-right: 10px; /* Space between title and sign-in button */
         }
         #user-info-display {
-            display: inline-block; /* Display inline to align with button */
-            vertical-align: middle; /* Vertical alignment */
-            gap: 5px; /* Reduced gap */
-            flex-wrap: wrap;
-            margin-left: 10px; /* Add some space from left */
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap; /* Prevent wrapping of user info */
         }
         #user-info-display img {
             border-radius: 50%;
-            width: 30px; /* Smaller photo */
+            width: 30px;
             height: 30px;
             border: 2px solid #ddd;
             object-fit: cover;
-            vertical-align: middle; /* Vertical alignment */
         }
         #user-info-display .user-details p {
             margin: 0;
-            font-size: 0.9em; /* Smaller font size */
-            display: inline-block; /* Display inline */
-            vertical-align: middle; /* Vertical alignment */
-            margin-left: 5px; /* Space between photo and text */
+            font-size: 0.9em;
         }
         #user-info-display .user-details p:first-child {
             font-weight: bold;
         }
         #signInBtn, #signOutBtn {
-            padding: 5px 10px; /* Smaller buttons */
-            font-size: 0.9em; /* Smaller font */
+            padding: 5px 10px;
+            font-size: 0.9em;
             cursor: pointer;
             border: none;
             border-radius: 4px;
             transition: background-color 0.3s ease;
-            vertical-align: middle; /* Vertical alignment */
-            margin-left: 10px; /* Space from other elements */
         }
         #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
 
         /* Initially hide app content and show loading/auth message */
         #app-content { display: none; }
-        #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Adjusted margin-top */
+        #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
 
         h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
         h2 { font-size: 1.3em; }
         h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
-        .action-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; } /* Added flex-wrap */
+        .action-bar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; /* Allows items to wrap to the next line */
+            align-items: center; /* Vertically align items in the action bar */
+            justify-content: space-between; /* Distribute space between groups of buttons */
+        }
         .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
         .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
@@ -149,28 +147,29 @@
 </head>
 <body>
     <div class="container">
-        <div id="auth-container">
-            <div> <h2>Team123 - Project Tracker</h2>
-                <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
-            </div>
-            <div id="user-info-display"> <img id="userPhoto" src="" alt="User Photo">
-                <div class="user-details">
-                    <p id="userName"></p>
-                    <p id="userEmail"></p>
-                </div>
-                <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
-            </div>
-        </div>
         <div id="loading-auth-message">
             <p>Please sign in to access the Project Tracker.</p>
         </div>
 
         <div id="app-content">
-            <h1></h1>
+            <h1>Team123 - Project Tracker</h1>
             <div class="action-bar">
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
-                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> </div>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
+
+                <div id="auth-container">
+                    <div id="user-info-display" style="display: none;">
+                        <img id="userPhoto" src="" alt="User Photo">
+                        <div class="user-details">
+                            <p id="userName"></p>
+                            <p id="userEmail"></p>
+                        </div>
+                        <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
+                    </div>
+                    <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+                </div>
+            </div>
 
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
@@ -421,8 +420,19 @@
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
 
-            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn) {
-                console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
+            // Re-acquire auth DOM elements here as they've moved or might be null initially
+            signInBtn = document.getElementById('signInBtn');
+            signOutBtn = document.getElementById('signOutBtn');
+            userInfoDisplayDiv = document.getElementById('user-info-display');
+            userNameP = document.getElementById('userName');
+            userEmailP = document.getElementById('userEmail');
+            userPhotoImg = document.getElementById('userPhoto');
+            appContentDiv = document.getElementById('app-content');
+            loadingAuthMessageDiv = document.getElementById('loading-auth-message');
+
+
+            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn || !signInBtn || !signOutBtn || !userInfoDisplayDiv || !userNameP || !userEmailP || !userPhotoImg || !appContentDiv || !loadingAuthMessageDiv) {
+                console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found after setupDOMReferences!");
             }
         }
 
@@ -456,6 +466,9 @@
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
             else console.error("Cannot attach submit listener: newProjectForm not found.");
+
+            // Auth event listeners need to be attached here as well
+            setupAuthEventListeners();
         }
 
         async function handleAddProjectSubmit(e) {
@@ -954,9 +967,9 @@
                 };
                 btnContainer.appendChild(breakSelect);
 
-
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent';
-                const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = project.status !== 'Available' || isOriginalReassignedTask; sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn);
+                // START D1 button enabled if not reassigned, and status is Available, Day1Ended_AwaitingNext, InProgressDay2, or Completed
+                const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = isOriginalReassignedTask || !(project.status === 'Available' || project.status === 'Day1Ended_AwaitingNext' || project.status === 'InProgressDay2' || project.status === 'Completed'); sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn);
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn);
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn);
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn);
@@ -987,8 +1000,19 @@
 
             switch (action) {
                 case 'startDay1':
-                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null };
-                    else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`);
+                    // Allow starting Day 1 from various states, resetting previous times
+                    if (currentProjectData.status === 'Available' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2' || currentProjectData.status === 'Completed') {
+                        updatedFields = {
+                            ...updatedFields,
+                            status: 'InProgressDay1',
+                            startTimeDay1: serverTimestamp,
+                            finishTimeDay1: null,
+                            durationDay1Ms: null,
+                            startTimeDay2: null, // Reset Day 2 times
+                            finishTimeDay2: null, // Reset Day 2 times
+                            durationDay2Ms: null // Reset Day 2 times
+                        };
+                    } else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`);
                     break;
                 case 'endDay1':
                     if (currentProjectData.status === 'InProgressDay1' && currentProjectData.startTimeDay1) updatedFields = { ...updatedFields, status: 'Day1Ended_AwaitingNext', finishTimeDay1: serverTimestamp, durationDay1Ms: calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis) };
@@ -1343,20 +1367,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM fully loaded.");
-            setupAuthRelatedDOMReferences();
-
-            if (auth) {
-                setupAuthEventListeners();
-                console.log("Auth UI and event listeners set up.");
-            } else {
-                console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
-                    authContainer.prepend(errorDiv);
-                }
-            }
+            setupDOMReferences(); // Call setupDOMReferences first to get all elements
+            // setupAuthRelatedDOMReferences() is now effectively called by setupDOMReferences
+            // setupAuthEventListeners() is now called by attachEventListeners()
+            attachEventListeners(); // Then attach all event listeners
         });
     </script>
 </body>
