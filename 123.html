@@ -96,7 +96,7 @@
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
         #newProjectForm button[type="submit"] { margin-top: 12px; }
-        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; table-layout: fixed; } /* Added table-layout: fixed; */
         #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
         #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
         #projectTable td.wrap-text { white-space: normal; }
@@ -112,10 +112,8 @@
             font-weight: bold; 
             background-color: #e74c3c; 
             white-space: normal; /* Allow text to wrap */
-            width: 60px; /* Example fixed width, adjust as needed */
-            min-width: 60px; /* Ensure it doesn't shrink too much */
-            max-width: 80px; /* Prevent it from getting too wide */
-        }
+            /* Removed fixed widths here, as colgroup handles it more reliably */
+        } 
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
@@ -152,14 +150,24 @@
         #allowedEmailsList li button:hover { background-color: #c82333; }
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
         .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} /* Added align-items */
-        /* NEW: Styles for Day 3 columns */
-        .day3-column-header, .day3-column-cell {
-            display: table-cell; /* Default for table cells */
+
+        /* NEW: Styles for Day 3 columns - Hide them using colgroup classes */
+        /* These styles will be toggled by JavaScript */
+        .col-day3.hidden-col {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            overflow: hidden !important; /* Prevents content from showing when width is 0 */
+            visibility: hidden !important; /* Ensures no visual residue */
         }
-        /* Hide Day 3 columns by default */
-        .day3-column-header, .day3-column-cell {
-            display: none;
+        /* Ensure cells associated with hidden cols are also not displayed */
+        .day3-column-header.hidden-cell, 
+        .day3-column-cell.hidden-cell {
+            display: none !important;
         }
+
     </style>
 </head>
 <body>
@@ -228,6 +236,8 @@
 
             <h3>📌 Team123 Project Tracker</h3>
             <table id="projectTable">
+                <colgroup>
+                    <col style="width: 4%;"> <col style="width: 13%;"> <col style="width: 5%;"> <col style="width: 4%;"> <col style="width: 8%;"> <col style="width: 8%;"> <col style="width: 6%;"> <col style="width: 6%;"> <col style="width: 5%;"> <col style="width: 6%;"> <col style="width: 6%;"> <col style="width: 5%;"> <col class="col-day3" style="width: 6%;"> <col class="col-day3" style="width: 6%;"> <col class="col-day3" style="width: 5%;"> <col style="width: 5.5%;"> <col style="width: 5.5%;"> <col style="width: 10%;"> <col style="width: 10%;"> </colgroup>
                 <thead>
                     <tr>
                         <th>Fix</th><th style="min-width: 150px;">Project Name</th><th style="min-width: 80px;">Area</th><th>GSD</th>
@@ -803,6 +813,38 @@
             let currentBatchIdForDisplay = null; 
             let currentFixCategoryForHeader = null; 
             
+            // Determine overall Day 3 visibility for the table headers and colgroup
+            let overallDay3Visibility = false;
+            for (const key in groupVisibilityState) {
+                if (groupVisibilityState.hasOwnProperty(key)) {
+                    const group = groupVisibilityState[key];
+                    if (group.isExpanded && group.isDay3Expanded) {
+                        overallDay3Visibility = true;
+                        break;
+                    }
+                }
+            }
+
+            // Apply visibility to <col> elements
+            const day3ColElements = document.querySelectorAll('#projectTable col.col-day3');
+            day3ColElements.forEach(col => {
+                if (overallDay3Visibility) {
+                    col.classList.remove('hidden-col');
+                } else {
+                    col.classList.add('hidden-col');
+                }
+            });
+
+            // Apply visibility to header cells
+            const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
+            day3HeaderCells.forEach(th => {
+                if (overallDay3Visibility) {
+                    th.classList.remove('hidden-cell');
+                } else {
+                    th.classList.add('hidden-cell');
+                }
+            });
+
             projectsToRender.forEach(project => { 
                 if (!project || !project.id || !project.batchId || !project.fixCategory) { console.warn("Skipping malformed project:", project); return; } 
                 
@@ -951,11 +993,16 @@
                 d3fCell.textContent = d3f && !isNaN(d3f) ? d3f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 d3DurCell.textContent = formatMillisToMinutes(project.durationDay3Ms);
 
-                const isDay3Visible = groupVisibilityState[currentGroupStateKeyForRow]?.isDay3Expanded === true;
-                if (!isDay3Visible) {
-                    d3sCell.style.display = 'none';
-                    d3fCell.style.display = 'none';
-                    d3DurCell.style.display = 'none';
+                // Apply visibility to individual cells based on overallDay3Visibility
+                // Use a class to hide cells in coordination with colgroup.
+                if (!overallDay3Visibility) { 
+                    d3sCell.classList.add('hidden-cell');
+                    d3fCell.classList.add('hidden-cell');
+                    d3DurCell.classList.add('hidden-cell');
+                } else {
+                    d3sCell.classList.remove('hidden-cell'); 
+                    d3fCell.classList.remove('hidden-cell');
+                    d3DurCell.classList.remove('hidden-cell');
                 }
                 // END NEW
 
@@ -1077,29 +1124,6 @@
                 const reassignBtn = document.createElement('button'); reassignBtn.textContent = 'Re-Assign'; reassignBtn.classList.add('btn', 'btn-warning'); reassignBtn.title = 'Re-assign task by creating a new entry.'; reassignBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; reassignBtn.onclick = () => { const currentProjectData = projects.find(p => p.id === project.id); if (currentProjectData) handleReassignment(currentProjectData); else alert("Error: Could not retrieve task data for re-assignment."); }; btnContainer.appendChild(reassignBtn); 
                 actionsCell.appendChild(btnContainer); 
             });
-
-            // NEW: Show/hide Day 3 columns based on group visibility state
-            const headerCells = document.querySelectorAll('#projectTable thead th');
-            const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
-            
-            headerCells.forEach(th => {
-                const isDay3Header = th.classList.contains('day3-column-header');
-                if (isDay3Header) {
-                    let shouldBeVisible = false;
-                    // Check if any visible group has Day 3 expanded
-                    for (const key in groupVisibilityState) {
-                        if (groupVisibilityState.hasOwnProperty(key)) {
-                            const group = groupVisibilityState[key];
-                            if (group.isExpanded && group.isDay3Expanded) {
-                                shouldBeVisible = true;
-                                break;
-                            }
-                        }
-                    }
-                    th.style.display = shouldBeVisible ? 'table-cell' : 'none';
-                }
-            });
-            // End NEW
         }
 
         async function updateProjectState(projectId, action) { 
@@ -1140,6 +1164,8 @@
                     break; 
                 // NEW: Day 3 Cases
                 case 'startDay3':
+                    // To start Day 3, Day 1 and optionally Day 2 should be completed.
+                    // If status is InProgressDay2, we assume they implicitly end Day2 then start Day3
                     if (currentProjectData.status === 'Completed' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2') {
                         // If coming from InProgressDay2, ensure Day 2 is marked complete
                         if (currentProjectData.status === 'InProgressDay2' && !currentProjectData.finishTimeDay2) {
