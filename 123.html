@@ -100,18 +100,17 @@
         #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
         #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
         #projectTable td.wrap-text { white-space: normal; }
-        #projectTable input[type="text"].assigned-to-input, 
+        #projectTable select.assigned-to-select, /* Changed from input[type="text"].assigned-to-input */
         #projectTable textarea.tech-notes-input,
         #projectTable input[type="number"].additional-minutes-input { 
             width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff; 
         }
-        #projectTable input[type="number"].additional-minutes-input { width: 60px; text-align: right;} /* Specific style for additional minutes input */
+        #projectTable input[type="number"].additional-minutes-input { width: 60px; text-align: right;} 
         #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
         .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
         .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
         .hidden-group-row { display: none; }
         .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
-        #projectTable td.duration-column { color: #0056b3; font-weight: bold; } /* This class might no longer be used if D1/D2 Dur columns are hidden */
         #projectTable td.total-duration-column { color: white; font-weight: bold; background-color: #e74c3c; }
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
@@ -132,7 +131,7 @@
         .dashboard-batch-item p { margin: 3px 0; font-size: 0.9em;}
         .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
         .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
-        .break-select { /* This is for the break selection dropdown in Actions column */
+        .break-select { 
             padding: 2px 5px;
             border: 1px solid #ccc;
             border-radius: 3px;
@@ -140,7 +139,6 @@
             min-width: 100px; 
             margin-left: 5px;
         }
-        /* Styles for Settings Modal */
         #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
         #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
         #allowedEmailsList li:last-child { border-bottom: none; }
@@ -221,8 +219,10 @@
                 <thead>
                     <tr>
                         <th>Fix</th><th style="min-width: 150px;">Project Name</th><th style="min-width: 80px;">Area</th><th>GSD</th>
-                        <th style="min-width: 80px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
-                        <th>D1 Start</th><th>D1 End</th><th>D2 Start</th><th>D2 End</th><th>Total(m)</th>
+                        <th style="min-width: 110px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
+                        <th>D1 Start</th><th>D1 End</th>
+                        <th>D2 Start</th><th>D2 End</th>
+                        <th>Total(m)</th>
                         <th style="min-width: 80px;">Additional(m)</th> 
                         <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
                     </tr>
@@ -250,16 +250,22 @@
 
         let app;
         let db;
-        let auth; // Firebase Auth instance
+        let auth; 
 
-        // DOM elements for Auth
         let signInBtn, signOutBtn, userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg;
-        // DOM elements for app state
         let appContentDiv, loadingAuthMessageDiv;
 
         const TL_DASHBOARD_PIN = "1234";
         const ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails";
         let allowedEmailsFromFirestore = []; 
+
+        // NEW: List of Tech IDs
+        const TECH_IDS = [
+            "4232JD", "7248AA", "4426KV", "4472JS", "7236LE", 
+            "4475JT", "7039NO", "7231NR", "7240HH", "7247JA", 
+            "7249SS", "7244AA", "7312VP"
+        ];
+        TECH_IDS.sort(); // Keep them sorted for the dropdown
 
         try {
             if (typeof firebase === 'undefined' || typeof firebase.initializeApp === 'undefined') {
@@ -292,8 +298,7 @@
             'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3,
             'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6
         };
-        // Adjusted NUM_TABLE_COLUMNS since two columns (D1 Dur, D2 Dur) are removed
-        const NUM_TABLE_COLUMNS = 14; // Original 16 - 2 = 14. This is used for colspan in headers.
+        const NUM_TABLE_COLUMNS = 14; 
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
@@ -337,11 +342,11 @@
                 if (docSnap.exists) {
                     allowedEmailsFromFirestore = docSnap.data().emails || [];
                 } else {
-                    allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Default if not set
+                    allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; 
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
-                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Fallback default
+                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; 
             }
         }
 
@@ -492,23 +497,18 @@
                 if (!batch || !batch.batchId) return;
                 const batchDiv = document.createElement('div');
                 batchDiv.classList.add('dashboard-batch-item');
-
                 const title = document.createElement('h4');
                 title.textContent = `Batch: ${batch.baseProjectName || 'Unknown'} (ID: ${batch.batchId.split('_')[1] || 'N/A'})`;
                 batchDiv.appendChild(title);
-
                 const stagesPresentP = document.createElement('p');
                 const presentFixCategories = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
                 stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${presentFixCategories.join(', ') || 'None'}`;
                 batchDiv.appendChild(stagesPresentP);
-
                 const releaseActionsDiv = document.createElement('div');
                 releaseActionsDiv.classList.add('dashboard-batch-actions-release');
-
                 let latestFixCategoryForBatch = "";
                 let allTasksInLatestStageReadyForRelease = false;
                 let alreadyReleasedFromLatestStage = true;
-
                 if (batch.tasksByFix) {
                     FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
                         if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) {
@@ -522,7 +522,6 @@
                         }
                     });
                 }
-
                 if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) {
                     const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch);
                     if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) {
@@ -543,10 +542,8 @@
                     releaseActionsDiv.appendChild(releasedInfoP);
                 }
                 batchDiv.appendChild(releaseActionsDiv);
-
                 const deleteActionsDiv = document.createElement('div');
                 deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
-
                 if (batch.tasksByFix) {
                     FIX_CATEGORIES_ORDER.forEach(fixCat => {
                         if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
@@ -558,7 +555,6 @@
                         }
                     });
                 }
-
                 const deleteAllBtn = document.createElement('button');
                 deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch';
                 deleteAllBtn.classList.add('btn', 'btn-danger');
@@ -573,24 +569,18 @@
             if (!db) { alert("Database not initialized!"); return; }
             try {
                 const sourceTasksSnapshot = await db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", currentFixCategory).where("releasedToNextStage", "==", false).get();
-                if (sourceTasksSnapshot.empty) { alert("No active tasks found for this batch in the current stage to release, or they may have already been released."); refreshAllViews(); return; }
-
+                if (sourceTasksSnapshot.empty) { alert("No active tasks to release."); refreshAllViews(); return; }
                 const sourceBatchTasks = [];
                 sourceTasksSnapshot.forEach(doc => { const data = doc.data(); if (data.status !== 'Reassigned_TechAbsent') sourceBatchTasks.push({id: doc.id, ...data }); });
-
-                if (sourceBatchTasks.length === 0) { alert("No active tasks found for this batch in the current stage to release after filtering."); refreshAllViews(); return; }
-
+                if (sourceBatchTasks.length === 0) { alert("No active tasks to release after filtering."); refreshAllViews(); return; }
                 const allReadyForRelease = sourceBatchTasks.every(p => p && (p.status === 'Completed' || p.status === 'Day1Ended_AwaitingNext'));
-                if (!allReadyForRelease) { alert(`Not all active tasks in batch ID ${batchId} for ${currentFixCategory} are 'Completed' or 'Day 1 Ended'. Cannot release.`); return; }
-
+                if (!allReadyForRelease) { alert(`Not all active tasks in ${currentFixCategory} are ready. Cannot release.`); return; }
                 const releaseTimestamp = firebase.firestore.FieldValue.serverTimestamp();
                 const fbBatch = db.batch();
-
                 for (const sourceTask of sourceBatchTasks) {
                     if (!sourceTask || !sourceTask.id) continue;
                     const q = db.collection("projects").where("batchId", "==", sourceTask.batchId).where("areaTask", "==", sourceTask.areaTask).where("fixCategory", "==", nextFixCategory);
                     const existingNextStageTaskSnapshot = await q.get();
-
                     if (existingNextStageTaskSnapshot.empty) {
                         const newReleasedTaskData = {
                             batchId: sourceTask.batchId, creationTimestamp: sourceTask.creationTimestamp, fixCategory: nextFixCategory,
@@ -600,8 +590,7 @@
                             startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                             releasedToNextStage: false, lastModifiedTimestamp: releaseTimestamp,
                             isReassigned: false, originalProjectId: sourceTask.id,
-                            breakDurationMinutes: 0, 
-                            additionalMinutesManual: 0 
+                            breakDurationMinutes: 0, additionalMinutesManual: 0 
                         };
                         fbBatch.set(db.collection("projects").doc(), newReleasedTaskData);
                     }
@@ -612,34 +601,24 @@
         }
 
         async function deleteProjectBatch(batchIdToDelete) { 
-            if (!db) { alert("Database not initialized!"); return; }
-            if (!batchIdToDelete) { alert("Error: No Batch ID provided for deletion."); return; }
+            if (!db || !batchIdToDelete) return;
             try {
                 const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).get();
-                if (querySnapshot.empty) { console.log(`No projects for batch ${batchIdToDelete} to delete.`); return; }
+                if (querySnapshot.empty) return;
                 const fbBatch = db.batch();
                 querySnapshot.forEach(doc => fbBatch.delete(doc.ref));
                 await fbBatch.commit();
-                console.log(`Batch ${batchIdToDelete} deleted.`);
-            } catch (error) {
-                console.error(`Error deleting batch ${batchIdToDelete}:`, error);
-                alert("Error deleting batch. Error: " + error.message);
-            }
+            } catch (error) { console.error(`Error deleting batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
         }
         async function deleteSpecificFixTasksForBatch(batchIdToDelete, fixCategoryToDelete) { 
-            if (!db) { alert("Database not initialized!"); return; }
-            if (!batchIdToDelete || !fixCategoryToDelete) { alert("Error: Missing Batch ID or Fix Category."); return; }
+            if (!db || !batchIdToDelete || !fixCategoryToDelete) return;
             try {
                 const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).where("fixCategory", "==", fixCategoryToDelete).get();
-                if (querySnapshot.empty) { console.log(`No ${fixCategoryToDelete} tasks for batch ${batchIdToDelete} to delete.`); return; }
+                if (querySnapshot.empty) return;
                 const fbBatch = db.batch();
                 querySnapshot.forEach(doc => fbBatch.delete(doc.ref));
                 await fbBatch.commit();
-                console.log(`${fixCategoryToDelete} tasks for batch ${batchIdToDelete} deleted.`);
-            } catch (error) {
-                console.error(`Error deleting ${fixCategoryToDelete} for batch ${batchIdToDelete}:`, error);
-                alert("Error deleting specific fix tasks. Error: " + error.message);
-            }
+            } catch (error) { console.error(`Error deleting ${fixCategoryToDelete} for batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
         }
 
         function renderProjects() {
@@ -649,20 +628,15 @@
 
             projectsToRender.sort((a, b) => { 
                 if (!a || !b) return 0;
-                if ((a.batchId || "") < (b.batchId || "")) return -1;
-                if ((a.batchId || "") > (b.batchId || "")) return 1;
-                const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory || "");
-                const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory || "");
-                if (fixOrderA < fixOrderB) return -1;
-                if (fixOrderA > fixOrderB) return 1;
-                if ((a.areaTask || "") < (b.areaTask || "")) return -1;
-                if ((a.areaTask || "") > (b.areaTask || "")) return 1;
+                if ((a.batchId || "") < (b.batchId || "")) return -1; if ((a.batchId || "") > (b.batchId || "")) return 1;
+                const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory || ""); const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory || "");
+                if (fixOrderA < fixOrderB) return -1; if (fixOrderA > fixOrderB) return 1;
+                if ((a.areaTask || "") < (b.areaTask || "")) return -1; if ((a.areaTask || "") > (b.areaTask || "")) return 1;
                 if ((a.areaTask || "") === (b.areaTask || "")) {
                     let tsA_create = a.creationTimestamp; let tsB_create = b.creationTimestamp;
                     if (tsA_create && typeof tsA_create.toMillis === 'function') tsA_create = tsA_create.toMillis();
                     if (tsB_create && typeof tsB_create.toMillis === 'function') tsB_create = tsB_create.toMillis();
-                    tsA_create = typeof tsA_create === 'number' ? tsA_create : 0;
-                    tsB_create = typeof tsB_create === 'number' ? tsB_create : 0;
+                    tsA_create = typeof tsA_create === 'number' ? tsA_create : 0; tsB_create = typeof tsB_create === 'number' ? tsB_create : 0;
                     if (tsA_create > tsB_create) return -1; if (tsA_create < tsB_create) return 1;
                 }
                 const statusAVal = STATUS_ORDER[a.status || ""] || 99; const statusBVal = STATUS_ORDER[b.status || ""] || 99;
@@ -713,17 +687,48 @@
                 row.insertCell().textContent = project.areaTask || 'N/A';
                 row.insertCell().textContent = project.gsd || 'N/A';
 
+                // MODIFIED: Assigned Tech - Changed to Select Dropdown
                 const assignedToCell = row.insertCell(); 
-                const assignedToInput = document.createElement('input'); assignedToInput.type = 'text';
-                assignedToInput.value = project.assignedTo || ''; assignedToInput.placeholder = 'ID';
-                assignedToInput.classList.add('assigned-to-input'); assignedToInput.disabled = project.status === 'Reassigned_TechAbsent';
-                assignedToInput.onchange = async (event) => {
-                    const newVal = event.target.value.trim();
-                    if (!db || !project.id) { alert("DB or ID missing."); event.target.value = project.assignedTo || ''; return; }
-                    try { await db.collection("projects").doc(project.id).update({ assignedTo: newVal, lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                    } catch (error) { console.error("Error updating assignedTo:", error); alert("Error: " + error.message); event.target.value = project.assignedTo || '';}
+                const assignedToSelect = document.createElement('select'); 
+                assignedToSelect.classList.add('assigned-to-select'); // New class for styling if needed
+                assignedToSelect.disabled = project.status === 'Reassigned_TechAbsent';
+
+                // Add a default "unassigned" option
+                const unassignedOption = document.createElement('option');
+                unassignedOption.value = ""; 
+                unassignedOption.textContent = "Select Tech ID";
+                assignedToSelect.appendChild(unassignedOption);
+
+                // Populate with Tech IDs
+                TECH_IDS.forEach(techId => {
+                    const option = document.createElement('option');
+                    option.value = techId;
+                    option.textContent = techId;
+                    assignedToSelect.appendChild(option);
+                });
+                
+                assignedToSelect.value = project.assignedTo || ""; // Set current value
+
+                assignedToSelect.onchange = async (event) => {
+                    const newTechId = event.target.value;
+                    if (!db || !project.id) { 
+                        alert("DB or ID missing."); 
+                        event.target.value = project.assignedTo || ''; 
+                        return; 
+                    }
+                    try { 
+                        await db.collection("projects").doc(project.id).update({ 
+                            assignedTo: newTechId, 
+                            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                        });
+                        project.assignedTo = newTechId; // Update local project data immediately
+                    } catch (error) { 
+                        console.error("Error updating assignedTo:", error); 
+                        alert("Error: " + error.message); 
+                        event.target.value = project.assignedTo || ''; // Revert on error
+                    }
                 };
-                assignedToCell.appendChild(assignedToInput);
+                assignedToCell.appendChild(assignedToSelect);
 
                 const statusCell = row.insertCell(); 
                 const statusSpan = document.createElement('span'); statusSpan.classList.add('status');
@@ -744,43 +749,31 @@
 
                 row.insertCell().textContent = d1s && !isNaN(d1s) ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = d1f && !isNaN(d1f) ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
-                // REMOVED: row.insertCell().textContent = formatMillisToMinutes(project.durationDay1Ms);
                 row.insertCell().textContent = d2s && !isNaN(d2s) ? d2s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
-                // REMOVED: row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms);
 
-                // TOTAL DURATION CALCULATION 
                 let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
                 let breakToSubtractMs = (project.breakDurationMinutes || 0) * 60000; 
                 let additionalManualMs = (project.additionalMinutesManual || 0) * 60000; 
-
                 let durationAfterBreakMs = Math.max(0, totalRawDurationMs - breakToSubtractMs);
                 let finalTotalDurationMs = durationAfterBreakMs + additionalManualMs;
-                
                 if (totalRawDurationMs === 0 && (project.breakDurationMinutes || 0) === 0 && (project.additionalMinutesManual || 0) === 0) {
                     finalTotalDurationMs = null; 
                 }
-
                 const totalDurationCell = row.insertCell();
                 totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
                 totalDurationCell.classList.add('total-duration-column');
 
-                // ADDITIONAL MINUTES INPUT CELL 
                 const additionalMinutesCell = row.insertCell();
                 const additionalMinutesInput = document.createElement('input');
-                additionalMinutesInput.type = 'number';
-                additionalMinutesInput.min = '0';
+                additionalMinutesInput.type = 'number'; additionalMinutesInput.min = '0';
                 additionalMinutesInput.value = project.additionalMinutesManual || 0;
                 additionalMinutesInput.classList.add('additional-minutes-input');
                 additionalMinutesInput.title = "Manually add minutes to total";
                 additionalMinutesInput.disabled = project.status === 'Reassigned_TechAbsent';
                 additionalMinutesInput.onchange = async (event) => {
                     const newAdditionalMins = Math.max(0, parseInt(event.target.value, 10) || 0); 
-                    if (!db || !project.id) { 
-                        alert("Error: Cannot save additional minutes. DB or ID missing."); 
-                        event.target.value = project.additionalMinutesManual || 0; 
-                        return; 
-                    }
+                    if (!db || !project.id) { event.target.value = project.additionalMinutesManual || 0; return; }
                     try {
                         await db.collection("projects").doc(project.id).update({
                             additionalMinutesManual: newAdditionalMins,
@@ -795,18 +788,12 @@
                                 let currentAdditionalMs = newAdditionalMins * 60000;
                                 let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
                                 let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
-                                if (currentTotalRawMs === 0 && (project.breakDurationMinutes || 0) === 0 && newAdditionalMins === 0) {
-                                    currentFinalTotalMs = null;
-                                }
+                                if (currentTotalRawMs === 0 && (project.breakDurationMinutes || 0) === 0 && newAdditionalMins === 0) { currentFinalTotalMs = null; }
                                 totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
                                 project.additionalMinutesManual = newAdditionalMins; 
                             }
                         }
-                    } catch (error) {
-                        console.error("Error updating additionalMinutesManual:", error);
-                        alert("Error saving Additional Minutes. Error: " + error.message);
-                        event.target.value = project.additionalMinutesManual || 0; 
-                    }
+                    } catch (error) { event.target.value = project.additionalMinutesManual || 0; }
                 };
                 additionalMinutesCell.appendChild(additionalMinutesInput);
 
@@ -816,36 +803,26 @@
                 techNotesInput.id = `techNotes_${project.id}`; techNotesInput.disabled = project.status === 'Reassigned_TechAbsent';
                 techNotesInput.onchange = async (event) => {
                     const newVal = event.target.value;
-                    if (!db || !project.id) { alert("DB or ID missing."); event.target.value = project.techNotes || ''; return; }
+                    if (!db || !project.id) { event.target.value = project.techNotes || ''; return; }
                     try { await db.collection("projects").doc(project.id).update({ techNotes: newVal, lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                    } catch (error) { console.error("Error updating techNotes:", error); alert("Error: " + error.message); event.target.value = project.techNotes || ''; }
+                    } catch (error) { event.target.value = project.techNotes || ''; }
                 };
                 techNotesCell.appendChild(techNotesInput);
 
                 const actionsCell = row.insertCell();
                 const btnContainer = document.createElement('div');
 
-                // BREAK SELECT DROPDOWN 
                 const breakSelect = document.createElement('select');
-                breakSelect.classList.add('break-select');
-                breakSelect.id = `breakSelect_${project.id}`;
-                breakSelect.title = "Select break time to deduct from total";
-                breakSelect.disabled = project.status === 'Reassigned_TechAbsent';
-
+                breakSelect.classList.add('break-select'); breakSelect.id = `breakSelect_${project.id}`;
+                breakSelect.title = "Select break time to deduct"; breakSelect.disabled = project.status === 'Reassigned_TechAbsent';
                 let defaultBreakOption = document.createElement('option'); defaultBreakOption.value = '0'; defaultBreakOption.textContent = 'No Break'; breakSelect.appendChild(defaultBreakOption);
                 let option15Min = document.createElement('option'); option15Min.value = '15'; option15Min.textContent = '15m Break'; breakSelect.appendChild(option15Min);
                 let option60Min = document.createElement('option'); option60Min.value = '60'; option60Min.textContent = '1h Break'; breakSelect.appendChild(option60Min);
                 let option90Min = document.createElement('option'); option90Min.value = '90'; option90Min.textContent = '1h30m Break'; breakSelect.appendChild(option90Min);
-                
                 breakSelect.value = (typeof project.breakDurationMinutes === 'number') ? project.breakDurationMinutes.toString() : '0';
-                
                 breakSelect.onchange = async (event) => {
                     const selectedBreakMinutes = parseInt(event.target.value, 10);
-                    if (!db || !project.id) { 
-                        alert("DB or ID missing."); 
-                        event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; 
-                        return; 
-                    }
+                    if (!db || !project.id) { event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; return; }
                     try {
                         await db.collection("projects").doc(project.id).update({
                             breakDurationMinutes: selectedBreakMinutes,
@@ -860,18 +837,12 @@
                                 let currentAdditionalMs = (project.additionalMinutesManual || 0) * 60000;
                                 let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
                                 let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
-                                if (currentTotalRawMs === 0 && selectedBreakMinutes === 0 && (project.additionalMinutesManual || 0) === 0) {
-                                    currentFinalTotalMs = null;
-                                }
+                                if (currentTotalRawMs === 0 && selectedBreakMinutes === 0 && (project.additionalMinutesManual || 0) === 0) { currentFinalTotalMs = null; }
                                 totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
                                 project.breakDurationMinutes = selectedBreakMinutes; 
                             }
                         }
-                    } catch (error) { 
-                        console.error("Error updating break duration:", error); 
-                        alert("Error: " + error.message); 
-                        event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; 
-                    }
+                    } catch (error) { event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; }
                 };
                 btnContainer.appendChild(breakSelect); 
 
@@ -888,19 +859,15 @@
         }
 
         async function updateProjectState(projectId, action) { 
-            if (!db) { alert("Database not initialized!"); return; }
-            if (!projectId) { alert("Error: Project ID missing."); return; }
-
+            if (!db || !projectId ) return;
             const projectRef = db.collection("projects").doc(projectId);
             let currentProjectData;
             try {
                 const doc = await projectRef.get();
-                if (!doc.exists) { alert(`Error: Project ${projectId} not found.`); return; }
+                if (!doc.exists) return;
                 currentProjectData = doc.data();
-            } catch(error) { console.error("Error fetching project:", error); alert("Error fetching project. Error: " + error.message); return; }
-
-            if (!currentProjectData) { alert(`Error: Could not get data for project ${projectId}.`); return; }
-            if (currentProjectData.status === 'Reassigned_TechAbsent') { alert("This task instance was re-assigned and is closed. No further status changes allowed on this instance."); return; }
+            } catch(error) { return; }
+            if (!currentProjectData || currentProjectData.status === 'Reassigned_TechAbsent') return;
 
             const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
             const clientNowMillis = Date.now();
@@ -908,7 +875,7 @@
 
             switch (action) {
                 case 'startDay1':
-                    if (currentProjectData.status === 'Available' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2' || currentProjectData.status === 'Completed') {
+                    if (['Available', 'Day1Ended_AwaitingNext', 'InProgressDay2', 'Completed'].includes(currentProjectData.status)) {
                         updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null };
                     } break;
                 case 'endDay1':
@@ -925,29 +892,25 @@
                         updatedFields.status = 'Completed';
                         if (currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { updatedFields.finishTimeDay1 = serverTimestamp; updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis); }
                         if (currentProjectData.startTimeDay2 && !currentProjectData.finishTimeDay2) { updatedFields.finishTimeDay2 = serverTimestamp; updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis); }
-                        if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2) { /* no auto-fill if nothing started */ }
+                        if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2) {}
                         else if (!currentProjectData.startTimeDay2 && currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { updatedFields.finishTimeDay1 = serverTimestamp; updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis); }
                         else if (currentProjectData.startTimeDay1 && currentProjectData.finishTimeDay1 && !currentProjectData.startTimeDay2) { updatedFields.startTimeDay2 = null; updatedFields.finishTimeDay2 = null; updatedFields.durationDay2Ms = null; }
                     } break;
                 default: return;
             }
-
             if (Object.keys(updatedFields).length > 1) {
                 try { await projectRef.update(updatedFields); } 
-                catch (error) { console.error(`Error updating project ${projectId}:`, error); alert(`Error: ${error.message}`);}
+                catch (error) { console.error(`Error updating project ${projectId}:`, error); }
             }
         }
 
         async function handleReassignment(originalProjectData) {
-            if (!originalProjectData || !originalProjectData.id) { alert("Original task data missing."); return; }
-            if (originalProjectData.status === 'Reassigned_TechAbsent' || originalProjectData.status === 'Completed') {
-                 alert("Cannot re-assign this task."); return;
-            }
+            if (!originalProjectData || !originalProjectData.id || originalProjectData.status === 'Reassigned_TechAbsent' || originalProjectData.status === 'Completed') return;
             const newTechId = prompt(`Task for '${originalProjectData.areaTask}'. Enter New Tech ID:`);
-            if (newTechId === null || newTechId.trim() === "") { alert("New Tech ID cannot be empty."); return; }
+            if (newTechId === null || newTechId.trim() === "") return;
 
-            if (confirm(`Create NEW task for '${newTechId.trim()}' based on '${originalProjectData.areaTask}'? Current task will be closed.`)) {
-                if (!db) { alert("Database not initialized!"); return; }
+            if (confirm(`Create NEW task for '${newTechId.trim()}'? Current task will be closed.`)) {
+                if (!db) return;
                 const batch = db.batch(); const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
                 const newReassignedData = {
                     batchId: originalProjectData.batchId, baseProjectName: originalProjectData.baseProjectName,
@@ -961,7 +924,7 @@
                 };
                 batch.set(db.collection("projects").doc(), newReassignedData);
                 batch.update(db.collection("projects").doc(originalProjectData.id), { status: 'Reassigned_TechAbsent', lastModifiedTimestamp: serverTimestamp });
-                try { await batch.commit(); } catch (error) { console.error("Error in re-assignment:", error); alert("Error: " + error.message); }
+                try { await batch.commit(); } catch (error) { console.error("Error in re-assignment:", error); }
             }
         }
 
@@ -974,7 +937,7 @@
         }
 
         async function renderAllowedEmailsList() { 
-            if (!allowedEmailsList) { return; } await fetchAllowedEmails(); allowedEmailsList.innerHTML = '';
+            if (!allowedEmailsList) return; await fetchAllowedEmails(); allowedEmailsList.innerHTML = '';
             if (allowedEmailsFromFirestore.length === 0) { allowedEmailsList.innerHTML = '<li>No allowed emails configured.</li>'; return; }
             allowedEmailsFromFirestore.forEach(email => {
                 const li = document.createElement('li'); li.textContent = email;
@@ -984,7 +947,7 @@
             });
         }
         async function handleAddEmail() { 
-            if (!addEmailInput) { return; } const newEmail = addEmailInput.value.trim().toLowerCase();
+            if (!addEmailInput) return; const newEmail = addEmailInput.value.trim().toLowerCase();
             if (!newEmail || !newEmail.includes('@')) { alert("Please enter a valid email address."); return; }
             if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(newEmail)) { alert("This email is already in the allowed list."); return; }
             const updatedEmails = [...allowedEmailsFromFirestore, newEmail].sort();
@@ -1000,13 +963,10 @@
         function setupAuthEventListeners() { 
             const provider = new firebase.auth.GoogleAuthProvider();
             if (signInBtn) {
-                signInBtn.addEventListener('click', () => {
-                    if (!auth) { return; }
-                    auth.signInWithPopup(provider).catch((error) => { console.error("Sign-in error: ", error); alert("Error: " + error.message); });
-                });
+                signInBtn.addEventListener('click', () => { if (auth) auth.signInWithPopup(provider).catch(console.error); });
             }
             if (signOutBtn) {
-                signOutBtn.addEventListener('click', () => { if (auth) auth.signOut().catch((error) => { console.error("Sign-out error: ", error); alert("Error: " + error.message); }); });
+                signOutBtn.addEventListener('click', () => { if (auth) auth.signOut().catch(console.error); });
             }
         }
         function initializeAppComponents() { 
@@ -1018,21 +978,18 @@
 
         if (auth) {
             auth.onAuthStateChanged(async (user) => { 
-                if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
-                    setupDOMReferences(); 
-                }
+                if (!userNameP) setupDOMReferences(); 
                 if (user) {
                     await fetchAllowedEmails(); const userEmailLower = user.email ? user.email.toLowerCase() : "";
-                    if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
-                        userNameP.textContent = user.displayName || "N/A"; userEmailP.textContent = user.email || "N/A"; userPhotoImg.src = user.photoURL || "";
+                    if (user.email && allowedEmailsFromFirestore.map(e=>e.toLowerCase()).includes(userEmailLower)) {
+                        userNameP.textContent = user.displayName||""; userEmailP.textContent = user.email||""; userPhotoImg.src = user.photoURL||"";
                         userInfoDisplayDiv.style.display = 'flex'; signInBtn.style.display = 'none';
                         loadingAuthMessageDiv.style.display = 'none'; appContentDiv.style.display = 'block'; openSettingsBtn.style.display = 'block';
                         initializeAppComponents();
                     } else {
-                        alert("Access Denied: Your email (" + (user.email || "N/A") + ") is not authorized.");
+                        alert("Access Denied.");
                         auth.signOut().then(() => {
-                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Please sign in with an authorized account.</p>';
-                            userNameP.textContent = ''; userEmailP.textContent = ''; userPhotoImg.src = '';
+                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied.</p>';
                             userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none'; loadingAuthMessageDiv.style.display = 'block'; openSettingsBtn.style.display = 'none';
                             projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
@@ -1041,18 +998,17 @@
                         });
                     }
                 } else {
-                    userNameP.textContent = ''; userEmailP.textContent = ''; userPhotoImg.src = '';
                     userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
                     appContentDiv.style.display = 'none'; openSettingsBtn.style.display = 'none';
-                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';}
-                    loadingAuthMessageDiv.style.display = 'block';
+                    if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';}
+                    if(loadingAuthMessageDiv) loadingAuthMessageDiv.style.display = 'block';
                     projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = ''; if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                     if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
                     isAppInitialized = false;
                 }
             });
         } else {
-            if (loadingAuthMessageDiv) loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Auth services could not be loaded.</p>`;
+            if (loadingAuthMessageDiv) loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Auth services error.</p>`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
