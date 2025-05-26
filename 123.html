@@ -123,23 +123,21 @@
             margin-top: 15px; /* Apply margin here instead of table */
         }
 
-        #projectTable { 
-            width: 100%; /* Important: Make table width 100% to fill container */
-            border-collapse: collapse; 
-            font-size: 0.75em; /* Slightly smaller overall table font size */
-            /* Removed table-layout: fixed; here to allow browser to calculate widths more flexibly */
-            /* Min-width to ensure table doesn't get too small before scrolling */
-            min-width: 1200px; /* Adjust this value based on your content and desired minimum size */
+        #projectTable input[type="text"].assigned-to-input {
+         height: 18px;
+         }
+         #projectTable textarea.tech-notes-input {
+         min-height: 18px;
+         max-height: 40px;
         }
         /* Default for all table cells: allow wrapping unless specified */
-        #projectTable th, #projectTable td { 
-            border: 1px solid #ddd; 
-            padding: 2px 3px; /* Significantly reduced padding for tight rows */
-            text-align: left; 
-            vertical-align: middle; 
-            white-space: normal; /* Changed to normal to allow wrapping by default */
-            word-wrap: break-word; /* Ensures long words break if needed */
-        }
+        #projectTable th, #projectTable td {
+         padding: 2px 4px; /* Keep padding minimal */
+         height: 24px; /* Add fixed height to rows */
+         font-size: 13px; /* Small but readable text */
+         line-height: 1.2; /* Control vertical alignment */
+         vertical-align: middle; /* Align text in middle vertically */
+         }
         #projectTable thead th { 
             background-color: #34495e; 
             color: white; 
