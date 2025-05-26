@@ -62,7 +62,8 @@
         .hidden-group-row { display: none; }
         .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
         #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
-        #projectTable td.total-duration-column { color: #004085; font-weight: bold; background-color: #f0f4f8; }
+        /* MODIFIED: Changed background color for total-duration-column to red */
+        #projectTable td.total-duration-column { color: white; font-weight: bold; background-color: #e74c3c; } /* Changed to a strong red */
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
@@ -743,7 +744,11 @@
                 let breakInMs = (project.breakDurationMinutes || 0) * 60 * 1000; // Convert minutes to milliseconds
 
                 let finalTotalDurationMs = totalRawDurationMs > 0 ? Math.max(0, totalRawDurationMs - breakInMs) : null;
-                row.insertCell().textContent = formatMillisToMinutes(finalTotalDurationMs);
+                
+                // MODIFIED: Added class to total duration cell
+                const totalDurationCell = row.insertCell();
+                totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
+                totalDurationCell.classList.add('total-duration-column');
 
                 // NEW: Display Break Duration
                 row.insertCell().textContent = project.breakDurationMinutes || 0;
