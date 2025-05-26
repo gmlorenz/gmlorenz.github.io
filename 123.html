@@ -4,521 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team123 - Project Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #3498db;
-            --primary-hover-color: #2980b9;
-            --secondary-color: #2ecc71;
-            --secondary-hover-color: #27ae60;
-            --danger-color: #e74c3c;
-            --danger-hover-color: #c0392b;
-            --warning-color: #f39c12;
-            --warning-hover-color: #e67e22;
-            --info-color: #17a2b8;
-            --info-hover-color: #138496;
-            --background-color: #f0f2f5;
-            --card-background: #ffffff;
-            --text-color: #333;
-            --header-bg: #2c3e50;
-            --header-text: #ffffff;
-            --border-color: #e0e0e0;
-            --shadow-light: 0 2px 8px rgba(0,0,0,0.05);
-            --shadow-medium: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        body {
-            font-family: 'Poppins', Arial, sans-serif;
-            margin: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .container {
-            width: 96%;
-            max-width: 1800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: var(--card-background);
-            box-shadow: var(--shadow-medium);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
+        .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
         
-        /* Auth Section Styles */
-        #auth-container {
-            padding: 30px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-            background-color: #fdfdfd;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100px;
-            box-shadow: var(--shadow-light);
+        /* Styles for Auth Section */
+        #auth-container { 
+            padding: 20px; /* Increased padding */
+            text-align: center; 
+            border-bottom: 1px solid #eee; 
+            margin-bottom: 15px; 
+            background-color: #f8f9fa; 
+            border-radius: 5px;
+            display: flex; /* Use flexbox for vertical alignment */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically if container has height */
+            min-height: 80px; /* Give it a minimum height for better centering */
         }
-        #auth-container h2 {
-            font-size: 1.6em;
-            margin-bottom: 20px;
-            color: var(--header-bg);
-            font-weight: 600;
+        #auth-container h2 { 
+            font-size: 1.3em; /* Slightly larger heading */
+            margin-bottom: 15px; /* More space below heading */
+            color: #333; 
         }
-        #user-info-display {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
+        #user-info-display { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
             flex-wrap: wrap;
-            margin-top: 15px;
+            margin-top: 10px; /* Add some space above user info */
         }
-        #user-info-display img {
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            border: 3px solid var(--primary-color);
-            object-fit: cover;
-            box-shadow: var(--shadow-light);
+        #user-info-display img { 
+            border-radius: 50%; 
+            width: 50px; /* Slightly larger photo */
+            height: 50px; 
+            border: 2px solid #ddd;
+            object-fit: cover; /* Ensure image covers the area */
         }
-        #user-info-display .user-details p {
-            margin: 0;
-            font-size: 1.1em;
-            color: #555;
+        #user-info-display .user-details p { 
+            margin: 0; 
+            font-size: 1em; /* Slightly larger font size */
         }
-        #user-info-display .user-details p:first-child {
-            font-weight: 600;
-            color: var(--text-color);
-            font-size: 1.2em;
+        #user-info-display .user-details p:first-child { 
+            font-weight: bold; 
         }
-        #signInBtn, #signOutBtn {
-            padding: 14px 30px;
-            font-size: 1.2em;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            margin-top: 15px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+        #signInBtn, #signOutBtn { 
+            padding: 12px 25px; /* Larger buttons */
+            font-size: 1.1em; /* Larger font */
+            cursor: pointer; 
+            border: none; 
+            border-radius: 4px; 
+            transition: background-color 0.3s ease; 
+            margin-top: 10px; /* Space above button */
         }
-        #signInBtn { background-color: var(--primary-color); color: white; }
-        #signInBtn:hover { background-color: var(--primary-hover-color); transform: translateY(-2px); box-shadow: var(--shadow-light); }
-        #signOutBtn { background-color: var(--danger-color); color: white; }
-        #signOutBtn:hover { background-color: var(--danger-hover-color); transform: translateY(-2px); box-shadow: var(--shadow-light); }
+        #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
+        #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
 
-        /* General Headings and App Content */
-        #app-content { display: none; padding-top: 10px; }
-        #loading-auth-message { text-align: center; padding: 30px; font-size: 1.2em; color: #777; background-color: #fdfdfd; border-radius: 10px; box-shadow: var(--shadow-light); }
+        /* Initially hide app content and show loading/auth message */
+        #app-content { display: none; }
+        #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555;}
 
-        h1, h2, h3 {
-            color: var(--header-bg);
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-        h1 { font-size: 2.2em; margin-bottom: 25px;}
-        h2 { font-size: 1.8em; margin-bottom: 20px;}
-        h3 { font-size: 1.4em; text-align: left; margin-top: 30px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); color: var(--primary-color); font-weight: 600; }
-        
-        .action-bar {
-            margin-bottom: 25px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 10px 0;
-            background-color: #fdfdfd;
-            border-radius: 10px;
-            box-shadow: var(--shadow-light);
-        }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            margin: 2px;
-            min-width: 80px;
-            text-align: center;
-            vertical-align: middle;
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .btn-lg { padding: 10px 20px; font-size: 1em; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .btn-group-toggle {
-            min-width: 30px;
-            padding: 4px 8px;
-            font-size: 0.9em;
-            margin-left: 10px;
-            background-color: #7f8c8d;
-            color: white;
-        }
-        .btn-group-toggle:hover { background-color: #95a5a6; }
-        .btn-danger { background-color: var(--danger-color); color: white; } .btn-danger:hover { background-color: var(--danger-hover-color); }
-        .btn-primary { background-color: var(--primary-color); color: white; } .btn-primary:hover { background-color: var(--primary-hover-color); }
-        .btn-success { background-color: var(--secondary-color); color: white; } .btn-success:hover { background-color: var(--secondary-hover-color); }
+        h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
+        h2 { font-size: 1.3em; }
+        h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        .action-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; } /* Added flex-wrap */
+        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+        .btn-lg { padding: 7px 12px; font-size: 0.9em; }
+        .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
+        .btn-group-toggle:hover { background-color: #95a5a6;}
+        .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
+        .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
+        .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
         .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
-        .btn-release { background-color: #9b59b6; color: white; font-size:0.9em; padding: 7px 14px; } .btn-release:hover { background-color: #8e44ad; }
-        .btn-day-start { background-color: #007bff; color: white; } .btn-day-start:hover { background-color: #0056b3; }
-        .btn-day-end { background-color: #fd7e14; color: white; } .btn-day-end:hover { background-color: #c85e08; }
-        .btn-warning { background-color: var(--warning-color); color: white; } .btn-warning:hover { background-color: var(--warning-hover-color); }
-        .btn-info { background-color: var(--info-color); color: white; } .btn-info:hover { background-color: var(--info-hover-color); }
-        .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background-color: var(--card-background);
-            margin: 5% auto;
-            padding: 30px;
-            border: none;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            box-shadow: var(--shadow-medium);
-            animation: fadeInScale 0.3s ease-out;
-        }
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        #projectFormModal .modal-content { max-width: 500px; }
-        #tlDashboardModal .modal-content { max-width: 800px; max-height: 85vh; overflow-y: auto;}
-        #settingsModal .modal-content { max-width: 600px; max-height: 85vh; overflow-y: auto;}
-
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 30px;
-            font-weight: bold;
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        .close-button:hover, .close-button:focus {
-            color: var(--danger-color);
-            text-decoration: none;
-        }
-
-        /* Forms in Modals */
-        #newProjectForm label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            font-weight: 600;
-            font-size: 0.95em;
-            color: #555;
-        }
-        #newProjectForm input[type="text"],
-        #newProjectForm input[type="number"],
-        #newProjectForm select {
-            width: calc(100% - 22px);
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 0.9em;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        #newProjectForm input[type="text"]:focus,
-        #newProjectForm input[type="number"]:focus,
-        #newProjectForm select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-            outline: none;
-        }
-        #newProjectForm button[type="submit"] {
-            margin-top: 25px;
-            width: 100%;
-            padding: 12px;
-            font-size: 1.1em;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        /* Project Table (Reverted to original structure with minor tweaks) */
-        #projectTable {
-            width: 100%;
-            border-collapse: collapse; /* Reverted to collapse */
-            margin-top: 15px;
-            font-size: 0.8em;
-            background-color: var(--card-background); /* Added for consistent background */
-            box-shadow: var(--shadow-light); /* Added subtle shadow */
-            border-radius: 5px; /* Added for subtle round corners */
-            overflow: hidden; /* Important for rounded corners on scrollable table */
-        }
-        #projectTable th, #projectTable td {
-            border: 1px solid #ddd; /* Original border style */
-            padding: 3px 5px; /* Original padding */
-            text-align: left;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-        #projectTable thead th {
-            background-color: #34495e; /* Original header background */
-            color: white;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
+        .btn-release { background-color: #9b59b6; color: white; font-size:0.85em; padding: 5px 10px; } .btn-release:hover { background-color: #8e44ad; }
+        .btn-day-start { background-color: #007bff; color: white; }
+        .btn-day-start:hover { background-color: #0056b3; }
+        .btn-day-end { background-color: #fd7e14; color: white; }
+        .btn-day-end:hover { background-color: #c85e08; }
+        .btn-warning { background-color: #f39c12; color: white; }
+        .btn-warning:hover { background-color: #e67e22; }
+        .btn-info { background-color: #17a2b8; color: white; } 
+        .btn-info:hover { background-color: #138496; }
+        .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
+        #projectFormModal .modal-content { max-width: 480px; }
+        #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
+        #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;} 
+        .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+        #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
+        #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
+        #newProjectForm button[type="submit"] { margin-top: 12px; }
+        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+        #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
+        #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
         #projectTable td.wrap-text { white-space: normal; }
-        #projectTable input[type="text"].assigned-to-input,
-        #projectTable textarea.tech-notes-input {
-            width: calc(100% - 6px); /* Original width calculation */
-            padding: 2px; /* Original padding */
-            border: 1px solid #ccc;
-            border-radius: 2px;
-            box-sizing: border-box;
-            font-size: 1em; /* Original font size */
-            background-color: #fff;
-        }
+        #projectTable input[type="text"].assigned-to-input, #projectTable textarea.tech-notes-input { width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
         #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
-
-        .batch-header-row td {
-            background-color: #6c757d !important;
-            color: white;
-            font-size: 1.1em;
-            font-weight: bold;
-            text-align: left;
-            padding: 6px 8px;
-        }
-        .fix-group-header td {
-            background-color: #adb5bd !important;
-            color: #212529;
-            font-size: 1.0em;
-            font-weight: bold;
-            text-align: left;
-            padding: 4px 8px;
-            cursor: pointer;
-            padding-left: 30px;
-        }
-        .fix-group-header .btn-group-toggle { /* Style for the toggle button inside header */
-            background-color: #7f8c8d;
-            margin-right: 10px;
-            order: -1;
-            min-width: 25px; /* Adjust as needed */
-            padding: 2px 6px; /* Adjust as needed */
-            font-size: 0.9em; /* Adjust as needed */
-            box-shadow: none; /* Remove button shadow inside header */
-        }
-        .fix-group-header .btn-group-toggle:hover {
-            background-color: #95a5a6;
-            transform: none; /* Prevent translateY on hover for toggle button */
-            box-shadow: none;
-        }
-
+        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
+        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
         .hidden-group-row { display: none; }
-        .overall-project-separator td {
-            height: 10px !important;
-            background-color: #e9ecef !important;
-            border: none !important;
-            padding: 0 !important;
-        }
+        .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
         #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
-        #projectTable td.total-duration-column {
-            color: white;
-            font-weight: bold;
-            background-color: #e74c3c;
-            /* Keep original small inline badge look if desired, or remove padding/display for full cell background */
-            padding: 2px 5px; /* Adjusted slightly from original padding for badge */
-            border-radius: 3px; /* Added for small badge */
-            display: inline-block; /* Added for small badge */
-        }
+        #projectTable td.total-duration-column { color: white; font-weight: bold; background-color: #e74c3c; } 
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
         .fix4-row { background-color: #fff5e6; }
         .reassigned-task-highlight { background-color: #FFF9C4 !important; }
-        #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover {
-            background-color: #d0e0f0 !important; /* Original hover color */
-            box-shadow: none; /* Remove left border shadow from previous version */
-        }
-
-        /* Status Badges (kept mostly same as previous enhanced, but smaller to fit table) */
-        .status {
-            padding: 4px 8px; /* Slightly smaller padding */
-            border-radius: 15px; /* Smaller radius */
-            color: white;
-            font-weight: 600; /* Maintained bold */
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8em; /* Slightly smaller font size */
-            min-width: 70px; /* Adjusted minimum width */
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow */
-        }
+        #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover { background-color: #d0e0f0 !important; }
+        .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
         .status-available { background-color: #3498db; }
         .status-inprogressday1 { background-color: #f39c12; }
-        .status-day1ended_awaitingnext { background-color: #f39c12; }
-        .status-inprogressday2 { background-color: #e67e22; }
+        .status-day1ended_awaitingnext { background-color: #f39c12; } 
+        .status-inprogressday2 { background-color: #f39c12; }
+        .status-inprogressday3 { background-color: #8e44ad; } /* NEW: Day 3 Status Style */
         .status-completed { background-color: #2ecc71; }
-        .status-reassigned_techabsent { background-color: #B0BEC5; color: #455A64; }
-
-        /* TL Dashboard */
-        #tlDashboardContent { margin-top:20px; }
-        .dashboard-batch-item {
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 15px;
-            background-color: #fdfdfd;
-            border-radius: 10px;
-            box-shadow: var(--shadow-light);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .dashboard-batch-item:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-medium);
-        }
-        .dashboard-batch-item h4 {
-            margin-top: 0;
-            margin-bottom: 12px;
-            font-size: 1.2em;
-            color: var(--header-bg);
-            border-bottom: 1px dashed var(--border-color);
-            padding-bottom: 8px;
-        }
-        .dashboard-batch-item p { margin: 6px 0; font-size: 0.95em; color: #555; }
-        .dashboard-batch-actions-release { margin-top: 15px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .dashboard-batch-actions-delete { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;}
-        
-        /* Break Select */
+        .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
+        #tlDashboardContent { margin-top:15px; }
+        .dashboard-batch-item { border: 1px solid #bdc3c7; padding: 10px; margin-bottom: 10px; background-color: #fff; border-radius: 4px; }
+        .dashboard-batch-item h4 { margin-top: 0; margin-bottom: 8px; font-size: 1.05em; color: #34495e;}
+        .dashboard-batch-item p { margin: 3px 0; font-size: 0.9em;}
+        .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
+        .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
         .break-select {
-            padding: 2px 5px; /* Original padding */
-            border: 1px solid #ccc; /* Original border */
-            border-radius: 3px; /* Original border-radius */
-            font-size: 0.8em; /* Original font size */
-            min-width: 100px; /* Original min-width */
-            margin-left: 5px; /* Original margin-left */
-            background-color: #fff; /* Reverted background color */
-            appearance: none; /* Keep custom arrow */
-            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.8L146.2%20209.6%205.4%2069.8c-3.1-3.1-8.2-3.1-11.3%200-3.1%203.1-3.1%208.2%200%2011.3l145.4%20145.4c3.1%203.1%208.2%203.1%2011.3%200l145.4-145.4c3.1-3.1%203.1-8.2%200-11.3C295.2%2066.7%20290.1%2066.7%20287%2069.8z%22%2F%3E%3C%2Fsvg%3E');
-            background-repeat: no-repeat;
-            background-position: right 5px top 50%;
-            background-size: 8px auto;
-        }
-        .break-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
-            outline: none;
+            padding: 2px 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 0.8em;
+            min-width: 100px; 
+            margin-left: 5px; 
         }
         /* Styles for Settings Modal */
-        #allowedEmailsList {
-            list-style-type: none;
-            padding: 0;
-            max-height: 250px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            background-color: #fdfdfd;
-        }
-        #allowedEmailsList li {
-            padding: 10px 15px;
-            border-bottom: 1px dashed var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95em;
-            color: #444;
-        }
+        #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
+        #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
         #allowedEmailsList li:last-child { border-bottom: none; }
-        #allowedEmailsList li button {
-            background-color: var(--danger-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: background-color 0.3s ease;
+        #allowedEmailsList li button { background-color: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8em;}
+        #allowedEmailsList li button:hover { background-color: #c82333; }
+        #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
+        .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} /* Added align-items */
+        /* NEW: Styles for Day 3 columns */
+        .day3-column-header, .day3-column-cell {
+            display: table-cell; /* Default for table cells */
         }
-        #allowedEmailsList li button:hover { background-color: var(--danger-hover-color); }
-        .settings-input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-        #addEmailInput {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 0.9em;
-        }
-        #addEmailBtn {
-            padding: 10px 20px;
-            font-size: 0.9em;
-            border-radius: 6px;
-        }
-        @media (max-width: 768px) {
-            .container {
-                width: 98%;
-                margin: 10px auto;
-                padding: 15px;
-            }
-            .action-bar, .dashboard-batch-actions-delete {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .btn-lg {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-            #projectTable th, #projectTable td {
-                padding: 6px 4px; /* Reduced padding for smaller screens */
-                font-size: 0.7em; /* Smaller font size for table content */
-            }
-            #projectTable input, #projectTable textarea, .break-select {
-                font-size: 0.65em; /* Even smaller font for inputs */
-                padding: 2px;
-            }
-            .status {
-                padding: 3px 5px;
-                font-size: 0.65em;
-                min-width: unset;
-            }
-            .btn {
-                padding: 4px 8px;
-                font-size: 0.65em;
-                min-width: 30px;
-            }
-            .batch-header-row td, .fix-group-header td {
-                font-size: 0.8em;
-                padding: 6px;
-            }
+        /* Hide Day 3 columns by default */
+        .day3-column-header, .day3-column-cell {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="auth-container">
-            <h2>Welcome to Team123 Project Tracker</h2>
-            <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+            <h2></h2> <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
             <div id="user-info-display" style="display: none;">
                 <img id="userPhoto" src="" alt="User Photo">
                 <div class="user-details">
@@ -533,12 +172,11 @@
         </div>
         
         <div id="app-content">
-            <h1>Team123 Project Tracker Dashboard</h1>
+            <h1></h1>
             <div class="action-bar">
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
-                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
-            </div>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> </div>
 
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
@@ -546,21 +184,13 @@
                     <h2>Add New Tracker</h2>
                     <form id="newProjectForm">
                         <label for="fixCategorySelect">Fix Category:</label>
-                        <select id="fixCategorySelect" required>
-                            <option value="Fix1">Fix1</option>
-                            <option value="Fix2">Fix2</option>
-                            <option value="Fix3">Fix3</option>
-                            <option value="Fix4">Fix4</option>
-                        </select>
+                        <select id="fixCategorySelect" required><option value="Fix1">Fix1</option><option value="Fix2">Fix2</option><option value="Fix3">Fix3</option><option value="Fix4">Fix4</option></select>
                         <label for="numRows">Number of Area:</label>
                         <input type="number" id="numRows" value="1" min="1" required>
                         <label for="baseProjectName">Project Name:</label>
                         <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
                         <label for="gsd">GSD:</label>
-                        <select id="gsd" required>
-                            <option value="3in">3in</option>
-                            <option value="9in">9in</option>
-                        </select>
+                        <select id="gsd" required><option value="3in">3in</option><option value="9in">9in</option></select>
                         <button type="submit" class="btn btn-success">Add Project(s)</button>
                     </form>
                 </div>
@@ -579,7 +209,8 @@
                     <span class="close-button" id="closeSettingsBtn">&times;</span>
                     <h2>⚙️ User Settings</h2>
                     <h3>Manage Allowed User Emails</h3>
-                    <ul id="allowedEmailsList"></ul>
+                    <ul id="allowedEmailsList">
+                        </ul>
                     <div class="settings-input-group">
                         <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
                         <button id="addEmailBtn" class="btn btn-success">Add Email</button>
@@ -587,26 +218,20 @@
                 </div>
             </div>
 
-            <h3>📌 Current Projects Overview</h3>
+            <h3>📌 Team123 Project Tracker</h3>
             <table id="projectTable">
                 <thead>
                     <tr>
-                        <th>Fix</th>
-                        <th style="min-width: 150px;">Project Name</th>
-                        <th style="min-width: 80px;">Area</th>
-                        <th>GSD</th>
-                        <th style="min-width: 80px;">Assigned Tech</th>
-                        <th style="min-width: 120px;">Status</th>
-                        <th>D1 Start</th>
-                        <th>D1 End</th>
-                        <th>D1 Dur(m)</th>
-                        <th>D2 Start</th>
-                        <th>D2 End</th>
-                        <th>D2 Dur(m)</th>
+                        <th>Fix</th><th style="min-width: 150px;">Project Name</th><th style="min-width: 80px;">Area</th><th>GSD</th>
+                        <th style="min-width: 80px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
+                        <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
+                        <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
+                        <th class="day3-column-header">D3 Start</th>
+                        <th class="day3-column-header">D3 End</th>
+                        <th class="day3-column-header">D3 Dur(m)</th>
                         <th>Total(m)</th>
-                        <th>Break(m)</th>
-                        <th style="min-width: 150px;">Tech Notes</th>
-                        <th style="min-width: 180px;">Actions</th>
+                        <th>Break(m)</th> 
+                        <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="projectTableBody"></tbody>
@@ -676,9 +301,11 @@
         const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4"];
         const STATUS_ORDER = {
             'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3,
-            'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6
+            'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6,
+            'InProgressDay3': 7 // NEW: Day 3 Status
         };
-        const NUM_TABLE_COLUMNS = 16; 
+        const NUM_TABLE_COLUMNS = 19; // Updated from 16 to 19 for Day 3 columns
+        // END NEW
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
@@ -708,7 +335,20 @@
         }
         
         function loadGroupVisibilityState() { 
-            try { const savedState = localStorage.getItem('projectTrackerGroupVisibility'); if (savedState) groupVisibilityState = JSON.parse(savedState); else groupVisibilityState = {}; } catch (e) { console.error("Error parsing group visibility state from localStorage:", e); groupVisibilityState = {}; }
+            try { 
+                const savedState = localStorage.getItem('projectTrackerGroupVisibility'); 
+                if (savedState) groupVisibilityState = JSON.parse(savedState); 
+                else groupVisibilityState = {}; 
+                // Ensure isDay3Expanded is set for existing groups, defaults to false
+                for (const key in groupVisibilityState) {
+                    if (groupVisibilityState.hasOwnProperty(key) && groupVisibilityState[key].isDay3Expanded === undefined) {
+                        groupVisibilityState[key].isDay3Expanded = false;
+                    }
+                }
+            } catch (e) { 
+                console.error("Error parsing group visibility state from localStorage:", e); 
+                groupVisibilityState = {}; 
+            }
         }
         function saveGroupVisibilityState() { 
             try { localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState)); } catch (lsError) { console.error("Error saving group visibility state to localStorage:", lsError); alert("Warning: Could not save your group visibility preferences.");}
@@ -771,11 +411,15 @@
                         if (p && p.batchId && p.fixCategory) { 
                             const groupStateKey = `${p.batchId}_${p.fixCategory}`; 
                             if (groupVisibilityState[groupStateKey] === undefined) {
-                                groupVisibilityState[groupStateKey] = { isExpanded: true }; 
+                                groupVisibilityState[groupStateKey] = { isExpanded: true, isDay3Expanded: false }; // Initialize Day 3 state here too
                             }
                             if (p.breakDurationMinutes === undefined) {
                                 p.breakDurationMinutes = 0; 
                             }
+                            // Ensure Day 3 fields exist for older projects
+                            if (p.startTimeDay3 === undefined) p.startTimeDay3 = null;
+                            if (p.finishTimeDay3 === undefined) p.finishTimeDay3 = null;
+                            if (p.durationDay3Ms === undefined) p.durationDay3Ms = null;
                         } 
                     });
                     refreshAllViews();
@@ -886,6 +530,11 @@
                         startTimeDay2: null, 
                         finishTimeDay2: null, 
                         durationDay2Ms: null, 
+                        // NEW: Day 3 fields
+                        startTimeDay3: null, 
+                        finishTimeDay3: null, 
+                        durationDay3Ms: null, 
+                        // END NEW
                         releasedToNextStage: false, 
                         lastModifiedTimestamp: batchCreationTimestamp, 
                         isReassigned: false, 
@@ -1046,6 +695,11 @@
                             startTimeDay2: null, 
                             finishTimeDay2: null, 
                             durationDay2Ms: null, 
+                            // NEW: Day 3 fields for new task
+                            startTimeDay3: null, 
+                            finishTimeDay3: null, 
+                            durationDay3Ms: null, 
+                            // END NEW
                             releasedToNextStage: false, 
                             lastModifiedTimestamp: releaseTimestamp, 
                             isReassigned: false, 
@@ -1157,7 +811,7 @@
                 if (project.fixCategory !== currentFixCategoryForHeader) { 
                     currentFixCategoryForHeader = project.fixCategory; 
                     const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`; 
-                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true }; 
+                    if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true, isDay3Expanded: false }; 
                     
                     const groupHeaderRow = projectTableBody.insertRow(); 
                     groupHeaderRow.classList.add('fix-group-header'); 
@@ -1170,8 +824,26 @@
                     toggleBtn.textContent = isExpanded ? '−' : '+'; 
                     toggleBtn.title = isExpanded ? `Collapse ${currentFixCategoryForHeader}` : `Expand ${currentFixCategoryForHeader}`; 
                     
-                    groupHeaderCell.appendChild(toggleBtn); 
                     groupHeaderCell.appendChild(document.createTextNode(`${currentFixCategoryForHeader} `)); 
+                    groupHeaderCell.appendChild(toggleBtn); 
+
+                    // NEW: Day 3 Toggle Button
+                    const day3ToggleBtn = document.createElement('button');
+                    day3ToggleBtn.classList.add('btn', 'btn-group-toggle');
+                    day3ToggleBtn.style.marginLeft = '10px';
+                    const isDay3Expanded = groupVisibilityState[groupStateKey]?.isDay3Expanded === true;
+                    day3ToggleBtn.textContent = isDay3Expanded ? 'Hide Day3' : 'Show Day3';
+                    day3ToggleBtn.title = isDay3Expanded ? `Hide Day 3 times for ${currentFixCategoryForHeader}` : `Show Day 3 times for ${currentFixCategoryForHeader}`;
+                    day3ToggleBtn.onclick = (e) => {
+                        e.stopPropagation(); // Prevent the group header click event from firing
+                        if (groupVisibilityState[groupStateKey]) {
+                            groupVisibilityState[groupStateKey].isDay3Expanded = !groupVisibilityState[groupStateKey].isDay3Expanded;
+                            saveGroupVisibilityState();
+                            renderProjects(); // Re-render to apply visibility changes
+                        }
+                    };
+                    groupHeaderCell.appendChild(day3ToggleBtn);
+                    // END NEW
                     
                     groupHeaderCell.onclick = (e) => { 
                         if (e.target === toggleBtn || e.target === groupHeaderCell || groupHeaderCell.contains(e.target)) { 
@@ -1229,7 +901,9 @@
                 statusCell.appendChild(statusSpan); 
                 
                 const timeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true }; 
-                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, d2s = project.startTimeDay2, d2f = project.finishTimeDay2; 
+                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, 
+                    d2s = project.startTimeDay2, d2f = project.finishTimeDay2,
+                    d3s = project.startTimeDay3, d3f = project.finishTimeDay3; // NEW: Day 3
                 try { 
                     if (d1s && typeof d1s.toDate === 'function') d1s = d1s.toDate(); 
                     else if (d1s) d1s = new Date(d1s); 
@@ -1243,7 +917,15 @@
                     if (d2f && typeof d2f.toDate === 'function') d2f = d2f.toDate(); 
                     else if (d2f) d2f = new Date(d2f); 
                     else d2f = null; 
-                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = null; } 
+                    // NEW: Day 3 Date Parsing
+                    if (d3s && typeof d3s.toDate === 'function') d3s = d3s.toDate(); 
+                    else if (d3s) d3s = new Date(d3s); 
+                    else d3s = null; 
+                    if (d3f && typeof d3f.toDate === 'function') d3f = d3f.toDate(); 
+                    else if (d3f) d3f = new Date(d3f); 
+                    else d3f = null; 
+                    // END NEW
+                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = d3s = d3f = null; } // NEW: Reset d3 dates too
                 
                 row.insertCell().textContent = d1s && !isNaN(d1s) ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = d1f && !isNaN(d1f) ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
@@ -1252,7 +934,24 @@
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms); 
                 
-                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
+                // NEW: Day 3 Cells and Visibility
+                const d3sCell = row.insertCell();
+                const d3fCell = row.insertCell();
+                const d3DurCell = row.insertCell();
+
+                d3sCell.textContent = d3s && !isNaN(d3s) ? d3s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                d3fCell.textContent = d3f && !isNaN(d3f) ? d3f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                d3DurCell.textContent = formatMillisToMinutes(project.durationDay3Ms);
+
+                const isDay3Visible = groupVisibilityState[currentGroupStateKeyForRow]?.isDay3Expanded === true;
+                if (!isDay3Visible) {
+                    d3sCell.style.display = 'none';
+                    d3fCell.style.display = 'none';
+                    d3DurCell.style.display = 'none';
+                }
+                // END NEW
+
+                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0); // NEW: Include Day 3
                 let breakInMs = (project.breakDurationMinutes || 0) * 60 * 1000; 
 
                 let finalTotalDurationMs = totalRawDurationMs > 0 ? Math.max(0, totalRawDurationMs - breakInMs) : null;
@@ -1261,7 +960,32 @@
                 totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
                 totalDurationCell.classList.add('total-duration-column');
 
-                const breakCell = row.insertCell();
+                row.insertCell().textContent = project.breakDurationMinutes || 0;
+
+                const techNotesCell = row.insertCell(); 
+                const techNotesInput = document.createElement('textarea'); 
+                techNotesInput.value = project.techNotes || ''; 
+                techNotesInput.placeholder = 'Notes'; 
+                techNotesInput.classList.add('tech-notes-input'); 
+                techNotesInput.rows = 1; 
+                techNotesInput.id = `techNotes_${project.id}`; 
+                techNotesInput.disabled = project.status === 'Reassigned_TechAbsent'; 
+                techNotesInput.onchange = async (event) => { 
+                    const newVal = event.target.value; 
+                    if (!db || !project.id) { alert("Error: Cannot save. DB or ID missing."); event.target.value = project.techNotes || ''; return; } 
+                    try { 
+                        await db.collection("projects").doc(project.id).update({ techNotes: newVal, lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
+                    } catch (error) { 
+                        console.error("Error updating techNotes:", error); 
+                        alert("Error saving Tech Notes. Error: " + error.message); 
+                        event.target.value = project.techNotes || ''; 
+                    } 
+                }; 
+                techNotesCell.appendChild(techNotesInput); 
+                
+                const actionsCell = row.insertCell(); 
+                const btnContainer = document.createElement('div'); 
+                
                 const breakSelect = document.createElement('select');
                 breakSelect.classList.add('break-select');
                 breakSelect.id = `breakSelect_${project.id}`;
@@ -1273,17 +997,17 @@
 
                 let option15Min = document.createElement('option');
                 option15Min.value = '15'; 
-                option15Min.textContent = '15 min';
+                option15Min.textContent = '15 mins Break';
                 breakSelect.appendChild(option15Min);
 
                 let option60Min = document.createElement('option');
                 option60Min.value = '60'; 
-                option60Min.textContent = '1 hr';
+                option60Min.textContent = '1 hr Break';
                 breakSelect.appendChild(option60Min);
 
                 let option90Min = document.createElement('option');
                 option90Min.value = '90'; 
-                option90Min.textContent = '1 hr 30 min';
+                option90Min.textContent = '1 hr 30 mins Break';
                 breakSelect.appendChild(option90Min);
 
                 if (typeof project.breakDurationMinutes === 'number') {
@@ -1311,35 +1035,7 @@
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
                     }
                 };
-                breakCell.appendChild(breakSelect); 
-
-
-                const techNotesCell = row.insertCell(); 
-                const techNotesInput = document.createElement('textarea'); 
-                techNotesInput.value = project.techNotes || ''; 
-                techNotesInput.placeholder = 'Notes'; 
-                techNotesInput.classList.add('tech-notes-input'); 
-                techNotesInput.rows = 1; 
-                techNotesInput.id = `techNotes_${project.id}`; 
-                techNotesInput.disabled = project.status === 'Reassigned_TechAbsent'; 
-                techNotesInput.onchange = async (event) => { 
-                    const newVal = event.target.value; 
-                    if (!db || !project.id) { alert("Error: Cannot save. DB or ID missing."); event.target.value = project.techNotes || ''; return; } 
-                    try { 
-                        await db.collection("projects").doc(project.id).update({ techNotes: newVal, lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
-                    } catch (error) { 
-                        console.error("Error updating techNotes:", error); 
-                        alert("Error saving Tech Notes. Error: " + error.message); 
-                        event.target.value = project.techNotes || ''; 
-                    } 
-                }; 
-                techNotesCell.appendChild(techNotesInput); 
-                
-                const actionsCell = row.insertCell(); 
-                const btnContainer = document.createElement('div'); 
-                btnContainer.style.display = 'flex';
-                btnContainer.style.flexDirection = 'column';
-                btnContainer.style.gap = '5px';
+                btnContainer.appendChild(breakSelect); 
 
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent'; 
@@ -1347,10 +1043,55 @@
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn); 
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn); 
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn); 
+                
+                // NEW: Day 3 Buttons
+                const sD3btn = document.createElement('button'); 
+                sD3btn.textContent = 'Start D3'; 
+                sD3btn.classList.add('btn','btn-day-start'); 
+                // Enable if Day 2 is ended or Day 1 ended and Day 2 was skipped
+                sD3btn.disabled = !((project.status === 'Completed' && project.durationDay2Ms !== null) || // Completed Day 2
+                                    (project.status === 'Day1Ended_AwaitingNext' && project.durationDay1Ms !== null) || // Day 1 ended, no Day 2
+                                    (project.status === 'InProgressDay2' && project.durationDay2Ms === null)) || // Currently in Day 2, allow to mark D2 done and then start D3
+                                    isOriginalReassignedTask || project.startTimeDay3 !== null; 
+
+                sD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay3'); }; 
+                btnContainer.appendChild(sD3btn); 
+                
+                const eD3btn = document.createElement('button'); 
+                eD3btn.textContent = 'End D3'; 
+                eD3btn.classList.add('btn','btn-day-end'); 
+                eD3btn.disabled = project.startTimeDay3 === null || isOriginalReassignedTask || project.finishTimeDay3 !== null; 
+                eD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay3'); }; 
+                btnContainer.appendChild(eD3btn); 
+                // END NEW
+
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn); 
                 const reassignBtn = document.createElement('button'); reassignBtn.textContent = 'Re-Assign'; reassignBtn.classList.add('btn', 'btn-warning'); reassignBtn.title = 'Re-assign task by creating a new entry.'; reassignBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; reassignBtn.onclick = () => { const currentProjectData = projects.find(p => p.id === project.id); if (currentProjectData) handleReassignment(currentProjectData); else alert("Error: Could not retrieve task data for re-assignment."); }; btnContainer.appendChild(reassignBtn); 
                 actionsCell.appendChild(btnContainer); 
             });
+
+            // NEW: Show/hide Day 3 columns based on group visibility state
+            const headerCells = document.querySelectorAll('#projectTable thead th');
+            const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
+            
+            headerCells.forEach(th => {
+                const isDay3Header = th.classList.contains('day3-column-header');
+                if (isDay3Header) {
+                    let shouldBeVisible = false;
+                    // Check if any visible group has Day 3 expanded
+                    for (const key in groupVisibilityState) {
+                        if (groupVisibilityState.hasOwnProperty(key)) {
+                            const group = groupVisibilityState[key];
+                            if (group.isExpanded && group.isDay3Expanded) {
+                                shouldBeVisible = true;
+                                break;
+                            }
+                        }
+                    }
+                    th.style.display = shouldBeVisible ? 'table-cell' : 'none';
+                }
+            });
+            // End NEW
         }
 
         async function updateProjectState(projectId, action) { 
@@ -1374,7 +1115,7 @@
             
             switch (action) { 
                 case 'startDay1': 
-                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null }; 
+                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; // NEW: Reset Day 3 fields
                     else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay1': 
@@ -1382,13 +1123,35 @@
                     else console.warn(`Cannot 'endDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'startDay2': 
-                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null }; 
+                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; // NEW: Reset Day 3 fields
                     else console.warn(`Cannot 'startDay2'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay2': 
                     if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) }; 
                     else console.warn(`Cannot 'endDay2'. Status: ${currentProjectData.status}`); 
                     break; 
+                // NEW: Day 3 Cases
+                case 'startDay3':
+                    if (currentProjectData.status === 'Completed' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2') {
+                        // If coming from InProgressDay2, ensure Day 2 is marked complete
+                        if (currentProjectData.status === 'InProgressDay2' && !currentProjectData.finishTimeDay2) {
+                            updatedFields.finishTimeDay2 = serverTimestamp;
+                            updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
+                        }
+                        // If coming from Day1Ended, and Day2 was skipped (no startTimeDay2), mark Day2 as null explicitly
+                        if (currentProjectData.status === 'Day1Ended_AwaitingNext' && !currentProjectData.startTimeDay2) {
+                            updatedFields.startTimeDay2 = null;
+                            updatedFields.finishTimeDay2 = null;
+                            updatedFields.durationDay2Ms = null;
+                        }
+                        updatedFields = { ...updatedFields, status: 'InProgressDay3', startTimeDay3: serverTimestamp, finishTimeDay3: null, durationDay3Ms: null };
+                    } else console.warn(`Cannot 'startDay3'. Status: ${currentProjectData.status}`);
+                    break;
+                case 'endDay3':
+                    if (currentProjectData.status === 'InProgressDay3' && currentProjectData.startTimeDay3) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay3: serverTimestamp, durationDay3Ms: calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis) };
+                    else console.warn(`Cannot 'endDay3'. Status: ${currentProjectData.status}`);
+                    break;
+                // END NEW
                 case 'markDone': 
                     if (currentProjectData.status !== 'Completed') { 
                         updatedFields.status = 'Completed'; 
@@ -1404,6 +1167,16 @@
                             updatedFields.durationDay2Ms = null; 
                             updatedFields.finishTimeDay2 = null; 
                         } 
+                        // NEW: Mark Day 3 Done
+                        if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) { 
+                            updatedFields.finishTimeDay3 = serverTimestamp; 
+                            updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis); 
+                        } 
+                        if (!currentProjectData.startTimeDay3) { 
+                            updatedFields.durationDay3Ms = null; 
+                            updatedFields.finishTimeDay3 = null; 
+                        } 
+                        // END NEW
                     } else console.warn(`Cannot 'markDone'. Status: ${currentProjectData.status}`); 
                     break; 
                 default: 
@@ -1458,6 +1231,11 @@
                     startTimeDay2: null, 
                     finishTimeDay2: null, 
                     durationDay2Ms: null, 
+                    // NEW: Day 3 fields for re-assigned task
+                    startTimeDay3: null, 
+                    finishTimeDay3: null, 
+                    durationDay3Ms: null, 
+                    // END NEW
                     techNotes: ``, 
                     creationTimestamp: serverTimestamp, 
                     lastModifiedTimestamp: serverTimestamp, 
