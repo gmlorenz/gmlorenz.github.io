@@ -1285,8 +1285,7 @@
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
                     }
                 };
-                btnContainer.appendChild(breakSelect); 
-
+                
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent'; 
                 const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = project.status !== 'Available' || isOriginalReassignedTask; sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn); 
@@ -1316,8 +1315,10 @@
                 // END NEW
 
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn); 
+                btnContainer.appendChild(breakSelect); 
                 const reassignBtn = document.createElement('button'); reassignBtn.textContent = 'Re-Assign'; reassignBtn.classList.add('btn', 'btn-warning'); reassignBtn.title = 'Re-assign task by creating a new entry.'; reassignBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; reassignBtn.onclick = () => { const currentProjectData = projects.find(p => p.id === project.id); if (currentProjectData) handleReassignment(currentProjectData); else alert("Error: Could not retrieve task data for re-assignment."); }; btnContainer.appendChild(reassignBtn); 
                 actionsCell.appendChild(btnContainer); 
+                
             });
         }
 
