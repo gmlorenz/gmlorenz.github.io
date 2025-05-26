@@ -69,37 +69,15 @@
         h2 { font-size: 1.3em; }
         h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
         .action-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; } /* Added flex-wrap */
-        .btn { 
-            padding: 2px 5px; /* Reduced padding for smaller buttons */
-            border: none; 
-            border-radius: 3px; 
-            cursor: pointer; 
-            font-size: 0.7em; /* Smaller font size */
-            transition: background-color 0.3s ease; 
-            margin: 1px; /* Reduced margin */
-            min-width: 40px; /* Smaller min-width */
-            text-align: center; 
-            vertical-align: middle;
-        }
+        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
-        .btn-group-toggle { 
-            min-width: 25px; 
-            padding: 2px 6px; 
-            font-size: 0.8em; /* Slightly smaller for group toggle */
-            margin-left: 10px; 
-            background-color: #7f8c8d; 
-            color:white; 
-        }
-        #projectTable .batch-header-row td {
-         text-align: left !important;
-         }
+        .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
         .btn-group-toggle:hover { background-color: #95a5a6;}
         .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
         .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
         .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
         .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
-        .btn-release { background-color: #9b59b6; color: white; font-size:0.8em; padding: 3px 8px; } /* Slightly smaller for release */
-        .btn-release:hover { background-color: #8e44ad; }
+        .btn-release { background-color: #9b59b6; color: white; font-size:0.85em; padding: 5px 10px; } .btn-release:hover { background-color: #8e44ad; }
         .btn-day-start { background-color: #007bff; color: white; }
         .btn-day-start:hover { background-color: #0056b3; }
         .btn-day-end { background-color: #fd7e14; color: white; }
@@ -118,100 +96,29 @@
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
         #newProjectForm button[type="submit"] { margin-top: 12px; }
-
-        /* Container for horizontal scrolling */
-        .table-responsive-container {
-            overflow-x: auto; /* Enables horizontal scrolling */
-            -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS */
-            margin-top: 15px; /* Apply margin here instead of table */
-        }
-
-        #projectTable { 
-            width: 100%; /* Important: Make table width 100% to fill container */
-            border-collapse: collapse; 
-            font-size: 0.75em; /* Slightly smaller overall table font size */
-            /* Removed table-layout: fixed; here to allow browser to calculate widths more flexibly */
-            /* Min-width to ensure table doesn't get too small before scrolling */
-            min-width: 1200px; /* Adjust this value based on your content and desired minimum size */
-        }
-        /* Default for all table cells: allow wrapping unless specified */
-        #projectTable th, #projectTable td { 
-            border: 1px solid #ddd; 
-            padding: 2px 3px; /* Significantly reduced padding for tight rows */
-            text-align: left; 
-            vertical-align: middle; 
-            white-space: normal; /* Changed to normal to allow wrapping by default */
-            word-wrap: break-word; /* Ensures long words break if needed */
-        }
-        #projectTable thead th { 
-            background-color: #34495e; 
-            color: white; 
-            font-weight: bold; 
-            position: sticky; 
-            top: 0; 
-            z-index: 10;
-            white-space: nowrap; /* Keep header text on single line */
-            line-height: 1.2; /* Reduce line height for headers */
-        }
-        /* Specific overrides for columns that need to stay on one line */
-        #projectTable td.duration-column,
-        #projectTable td.total-duration-column {
-            white-space: nowrap; /* Keep duration numbers on single line */
-            text-align: center; /* Center the numbers for readability */
-            min-width: 45px; /* Give a min-width to prevent severe squishing, adjusted */
-            line-height: 1.2; /* Adjust line height for numbers */
-        }
-
-        /* Input/textarea within table cells */
-        #projectTable input[type="text"].assigned-to-input { 
-            width: calc(100% - 6px); /* Full width minus padding/border */
-            padding: 1px; /* Reduced input padding */
-            border: 1px solid #ccc; 
-            border-radius: 2px; 
-            box-sizing: border-box; 
-            font-size: 0.9em; /* Slightly smaller input font */
-            background-color: #fff; 
-            height: 18px; /* Fixed height for inputs */
-            line-height: 1.2; /* Adjust line height */
-        }
-        #projectTable textarea.tech-notes-input { 
-            width: calc(100% - 6px); 
-            padding: 1px; /* Reduced textarea padding */
-            border: 1px solid #ccc; 
-            border-radius: 2px; 
-            box-sizing: border-box; 
-            font-size: 0.9em; /* Slightly smaller textarea font */
-            background-color: #fff; 
-            resize: vertical; 
-            min-height: 18px; /* Minimum height for textarea */
-            max-height: 40px; /* Optional: Max height to prevent overly tall rows */
-            line-height: 1.2; /* Adjust line height */
-        }
-        #projectTable .fix-group-header td {
-         text-align: left !important;
-        }
-        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.0em; /* Slightly smaller for batch header */ font-weight: bold; text-align: left; padding: 4px 6px; } /* Reduced padding */
-        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 0.95em; /* Slightly smaller for group header */ font-weight: bold; text-align: left; padding: 3px 5px; /* Reduced padding */ cursor:pointer; padding-left: 30px; }
+        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+        #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
+        #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+        #projectTable td.wrap-text { white-space: normal; }
+        #projectTable input[type="text"].assigned-to-input, #projectTable textarea.tech-notes-input { width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
+        #projectTable textarea.tech-notes-input { resize: vertical; min-height: 18px; line-height: 1.3; }
+        .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
+        .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
         .hidden-group-row { display: none; }
-        .overall-project-separator td { height: 5px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; } /* Reduced separator height */
+        .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
         #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
-        #projectTable td.total-duration-column { 
-            color: white; 
-            font-weight: bold; 
-            background-color: #e74c3c; 
-        } 
+        #projectTable td.total-duration-column { color: white; font-weight: bold; background-color: #e74c3c; } 
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
         .fix4-row { background-color: #fff5e6; }
         .reassigned-task-highlight { background-color: #FFF9C4 !important; }
         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover { background-color: #d0e0f0 !important; }
-        .status { padding: 1px 3px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.85em; /* Smaller status text */ line-height: 1.2;}
+        .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
         .status-available { background-color: #3498db; }
         .status-inprogressday1 { background-color: #f39c12; }
         .status-day1ended_awaitingnext { background-color: #f39c12; } 
         .status-inprogressday2 { background-color: #f39c12; }
-        .status-inprogressday3 { background-color: #8e44ad; } 
         .status-completed { background-color: #2ecc71; }
         .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
         #tlDashboardContent { margin-top:15px; }
@@ -221,13 +128,12 @@
         .dashboard-batch-actions-release { margin-top: 8px; margin-bottom: 8px; }
         .dashboard-batch-actions-delete { margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;}
         .break-select {
-            padding: 1px 3px; /* Reduced padding for select */
+            padding: 2px 5px;
             border: 1px solid #ccc;
             border-radius: 3px;
-            font-size: 0.8em; /* Smaller font for select */
-            min-width: 80px; /* Adjusted min-width for select */
-            margin-left: 2px; /* Reduced margin */
-            height: 20px; /* Fixed height to match inputs */
+            font-size: 0.8em;
+            min-width: 100px; 
+            margin-left: 5px; 
         }
         /* Styles for Settings Modal */
         #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
@@ -236,223 +142,8 @@
         #allowedEmailsList li button { background-color: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8em;}
         #allowedEmailsList li button:hover { background-color: #c82333; }
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
-        .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} 
-
-        /* NEW: Styles for Day 3 columns - Hide them by controlling display of headers/cells */
-        .day3-column-header, 
-        .day3-column-cell {
-            display: table-cell; /* Default display */
-        }
-
-        /* Class added by JS to hide Day 3 columns */
-        .hide-day3-column {
-            display: none !important;
-        }
-
-        /* Additional min-width for important columns to prevent squishing even in auto-layout */
-        /* These min-widths are crucial for horizontal scrolling to work effectively */
-        #projectTable th:nth-child(2), /* Project Name */
-        #projectTable td:nth-child(2) {
-            min-width: 130px; /* Minimum width for project name, adjusted */
-        }
-        #projectTable th:nth-child(5), /* Assigned Tech */
-        #projectTable td:nth-child(5) {
-            min-width: 70px; /* Minimum width for assigned tech, adjusted */
-        }
-        #projectTable th:nth-child(6), /* Status */
-        #projectTable td:nth-child(6) {
-            min-width: 90px; /* Minimum width for status, adjusted */
-        }
-        #projectTable th:nth-child(7), /* D1 Start */
-        #projectTable td:nth-child(7),
-        #projectTable th:nth-child(8), /* D1 End */
-        #projectTable td:nth-child(8),
-        #projectTable th:nth-child(10), /* D2 Start */
-        #projectTable td:nth-child(10),
-        #projectTable th:nth-child(11), /* D2 End */
-        #projectTable td:nth-child(11),
-        /* Day 3 times */
-        #projectTable th:nth-child(13), /* D3 Start */
-        #projectTable td:nth-child(13),
-        #projectTable th:nth-child(14), /* D3 End */
-        #projectTable td:nth-child(14) {
-            min-width: 55px; /* Minimum width for time columns */
-        }
-
-        #projectTable th:nth-child(9), /* D1 Dur(m) */
-        #projectTable td:nth-child(9),
-        #projectTable th:nth-child(12), /* D2 Dur(m) */
-        #projectTable td:nth-child(12),
-        #projectTable th:nth-child(15), /* D3 Dur(m) */
-        #projectTable td:nth-child(15) {
-            min-width: 45px; /* Minimum width for duration columns */
-            text-align: center;
-        }
-
-        #projectTable th:nth-child(16), /* Total(m) */
-        #projectTable td:nth-child(16) {
-            min-width: 50px; /* Ensure Total(m) maintains reasonable width */
-            text-align: center;
-        }
-        #projectTable th:nth-child(17), /* Break(m) */
-        #projectTable td:nth-child(17) {
-            min-width: 50px; /* Ensure Break(m) maintains reasonable width */
-            text-align: center;
-        }
-        #projectTable th:nth-child(18), /* Tech Notes */
-        #projectTable td:nth-child(18) {
-            min-width: 110px; /* Ensure Tech Notes maintains reasonable width */
-        }
-        #projectTable th:nth-child(19), /* Actions */
-        #projectTable td:nth-child(19) {
-            min-width: 140px; /* Ensure Actions maintains reasonable width */
-        }
-
-    
-/* Compact row height overrides */
-#projectTable td {
-    padding: 2px 3px !important;
-    font-size: 12px !important;
-    line-height: 1.1 !important;
-    height: 22px !important;
-    vertical-align: middle !important;
-}
-#projectTable input[type="text"].assigned-to-input {
-    height: 18px !important;
-    font-size: 12px !important;
-    padding: 1px 2px !important;
-}
-#projectTable textarea.tech-notes-input {
-    min-height: 18px !important;
-    max-height: 22px !important;
-    font-size: 12px !important;
-    padding: 1px 2px !important;
-    line-height: 1.1 !important;
-}
-.btn {
-    padding: 2px 4px !important;
-    font-size: 11px !important;
-    line-height: 1.1 !important;
-}
-
-
-/* Stripped down to match text size exactly */
-#projectTable td, #projectTable th {
-    padding: 0 !important;
-    margin: 0 !important;
-    font-size: 12px !important;
-    line-height: 1 !important;
-    height: 18px !important;
-    vertical-align: middle !important;
-}
-#projectTable input[type="text"].assigned-to-input {
-    height: 16px !important;
-    font-size: 12px !important;
-    padding: 0 2px !important;
-    margin: 0 !important;
-    line-height: 1 !important;
-}
-#projectTable textarea.tech-notes-input {
-    min-height: 16px !important;
-    max-height: 18px !important;
-    font-size: 12px !important;
-    padding: 0 2px !important;
-    margin: 0 !important;
-    line-height: 1 !important;
-    resize: none !important;
-}
-.btn {
-    padding: 1px 3px !important;
-    font-size: 10px !important;
-    line-height: 1 !important;
-    height: 18px !important;
-}
-
-
-/* Center align all table headers and cells */
-#projectTable td, #projectTable th {
-    text-align: center !important;
-    vertical-align: middle !important;
-}
-
-/* Styles for the new switch button */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 34px;
-  margin-left: 10px; /* Space from label */
-  vertical-align: middle;
-}
-
-.switch input { 
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
-  border-radius: 34px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #2196F3;
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
-  -webkit-transform: translateX(26px);
-  -ms-transform: translateX(26px);
-  transform: translateX(26px);
-}
-
-/* Rounded sliders */
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-.dashboard-toggle-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-.dashboard-toggle-group label {
-    margin-right: 10px;
-    font-weight: bold;
-}
-
-</style>
+        .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;} /* Added align-items */
+    </style>
 </head>
 <body>
     <div class="container">
@@ -476,8 +167,7 @@ input:checked + .slider:before {
             <div class="action-bar">
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
-                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> 
-            </div>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button> </div>
 
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
@@ -501,13 +191,6 @@ input:checked + .slider:before {
                 <div class="modal-content">
                     <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Project Settings</h2>
-                    <div class="dashboard-toggle-group">
-                        <label for="enableDay3FixToggle">Enable Day 3 Fix Columns:</label>
-                        <label class="switch">
-                            <input type="checkbox" id="enableDay3FixToggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
                     <div id="tlDashboardContent"></div>
                 </div>
             </div>
@@ -527,24 +210,21 @@ input:checked + .slider:before {
             </div>
 
             <h3>📌 Team123 Project Tracker</h3>
-            <div class="table-responsive-container"> <table id="projectTable">
-                    <thead>
-                        <tr>
-                            <th>Fix</th><th>Project Name</th><th>Area</th><th>GSD</th>
-                            <th>Assigned Tech</th><th>Status</th>
-                            <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
-                            <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
-                            <th class="day3-column-header">D3 Start</th>
-                            <th class="day3-column-header">D3 End</th>
-                            <th class="day3-column-header">D3 Dur(m)</th>
-                            <th>Total(m)</th>
-                            <th>Break(m)</th> 
-                            <th>Tech Notes</th><th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="projectTableBody"></tbody>
-                </table>
-            </div> </div>
+            <table id="projectTable">
+                <thead>
+                    <tr>
+                        <th>Fix</th><th style="min-width: 150px;">Project Name</th><th style="min-width: 80px;">Area</th><th>GSD</th>
+                        <th style="min-width: 80px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
+                        <th>D1 Start</th><th>D1 End</th><th>D1 Dur(m)</th>
+                        <th>D2 Start</th><th>D2 End</th><th>D2 Dur(m)</th>
+                        <th>Total(m)</th>
+                        <th>Break(m)</th> 
+                        <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="projectTableBody"></tbody>
+            </table>
+        </div>
     </div>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -572,7 +252,7 @@ input:checked + .slider:before {
         // DOM elements for app state
         let appContentDiv, loadingAuthMessageDiv;
 
-        // NEW: Hardcoded PIN for TL Dashboard and User Settings
+        // NEW: Hardcoded PIN for TL Dashboard
         const TL_DASHBOARD_PIN = "1234";
 
         // NEW: Reference for the allowed emails document in Firestore
@@ -609,21 +289,18 @@ input:checked + .slider:before {
         const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4"];
         const STATUS_ORDER = {
             'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3,
-            'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6,
-            'InProgressDay3': 7 // NEW: Day 3 Status
+            'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6
         };
-        const NUM_TABLE_COLUMNS = 19; // Updated from 16 to 19 for Day 3 columns
-        // END NEW
+        const NUM_TABLE_COLUMNS = 16; 
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, enableDay3FixToggle; // Renamed toggleDay3ColumnsBtn to enableDay3FixToggle
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn; 
 
         let projects = [];
         let groupVisibilityState = {};
         let isAppInitialized = false; 
         let firestoreListenerUnsubscribe = null; 
-        let showDay3Globally = false; // New global state for Day 3 column visibility
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
         function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
@@ -644,29 +321,10 @@ input:checked + .slider:before {
         }
         
         function loadGroupVisibilityState() { 
-            try { 
-                const savedState = localStorage.getItem('projectTrackerGroupVisibility'); 
-                if (savedState) groupVisibilityState = JSON.parse(savedState); 
-                else groupVisibilityState = {}; 
-            } catch (e) { 
-                console.error("Error parsing group visibility state from localStorage:", e); 
-                groupVisibilityState = {}; 
-            }
-            // Load global Day 3 visibility state
-            const savedDay3GlobalState = localStorage.getItem('projectTrackerDay3GlobalVisibility');
-            if (savedDay3GlobalState !== null) {
-                showDay3Globally = JSON.parse(savedDay3GlobalState);
-            } else {
-                showDay3Globally = false; // Default to hidden
-            }
+            try { const savedState = localStorage.getItem('projectTrackerGroupVisibility'); if (savedState) groupVisibilityState = JSON.parse(savedState); else groupVisibilityState = {}; } catch (e) { console.error("Error parsing group visibility state from localStorage:", e); groupVisibilityState = {}; }
         }
-
         function saveGroupVisibilityState() { 
             try { localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState)); } catch (lsError) { console.error("Error saving group visibility state to localStorage:", lsError); alert("Warning: Could not save your group visibility preferences.");}
-        }
-
-        function saveDay3GlobalVisibilityState() {
-            try { localStorage.setItem('projectTrackerDay3GlobalVisibility', JSON.stringify(showDay3Globally)); } catch (lsError) { console.error("Error saving Day 3 global visibility state to localStorage:", lsError); }
         }
 
         async function fetchAllowedEmails() {
@@ -715,7 +373,7 @@ input:checked + .slider:before {
                 console.log("Previous Firestore listener detached.");
             }
 
-            loadGroupVisibilityState(); // Load both group and global Day 3 visibility
+            loadGroupVisibilityState();
             try {
                 db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
                   .onSnapshot((querySnapshot) => {
@@ -726,15 +384,11 @@ input:checked + .slider:before {
                         if (p && p.batchId && p.fixCategory) { 
                             const groupStateKey = `${p.batchId}_${p.fixCategory}`; 
                             if (groupVisibilityState[groupStateKey] === undefined) {
-                                groupVisibilityState[groupStateKey] = { isExpanded: true };
+                                groupVisibilityState[groupStateKey] = { isExpanded: true }; 
                             }
                             if (p.breakDurationMinutes === undefined) {
                                 p.breakDurationMinutes = 0; 
                             }
-                            // Ensure Day 3 fields exist for older projects
-                            if (p.startTimeDay3 === undefined) p.startTimeDay3 = null;
-                            if (p.finishTimeDay3 === undefined) p.finishTimeDay3 = null;
-                            if (p.durationDay3Ms === undefined) p.durationDay3Ms = null;
                         } 
                     });
                     refreshAllViews();
@@ -763,9 +417,8 @@ input:checked + .slider:before {
             allowedEmailsList = document.getElementById('allowedEmailsList'); 
             addEmailInput = document.getElementById('addEmailInput'); 
             addEmailBtn = document.getElementById('addEmailBtn'); 
-            enableDay3FixToggle = document.getElementById('enableDay3FixToggle'); // Get the new switch button
-            
-            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !settingsModal || !closeProjectFormBtn || !closeTlDashboardBtn || !closeSettingsBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !allowedEmailsList || !addEmailInput || !addEmailBtn || !openSettingsBtn || !enableDay3FixToggle) { // Added enableDay3FixToggle to check
+
+            if (!openAddNewProjectBtn || !newProjectForm || !projectTableBody || !tlDashboardContentElement || !projectFormModal || !tlDashboardModal || !openSettingsBtn || !settingsModal || !allowedEmailsList || !addEmailInput || !addEmailBtn) {
                 console.error("CRITICAL DOM ERROR: One or more essential tracker elements not found!");
             }
         }
@@ -778,12 +431,7 @@ input:checked + .slider:before {
                 openTlDashboardBtn.onclick = () => {
                     const pin = prompt("Enter PIN to access Project Settings:");
                     if (pin === TL_DASHBOARD_PIN) {
-                        if (tlDashboardModal) { 
-                            // Set the checkbox state when opening the modal
-                            if (enableDay3FixToggle) enableDay3FixToggle.checked = showDay3Globally;
-                            tlDashboardModal.style.display = 'block'; 
-                            renderTLDashboard(); 
-                        }
+                        if (tlDashboardModal) { tlDashboardModal.style.display = 'block'; renderTLDashboard(); }
                         else console.error("Cannot open Project Settings: tlDashboardModal is null.");
                     } else {
                         alert("Incorrect PIN. Access Denied. ");
@@ -792,29 +440,9 @@ input:checked + .slider:before {
             }
             if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { if (tlDashboardModal) tlDashboardModal.style.display = 'none'; };
 
-            // Modified: Add PIN check for User Settings
-            if (openSettingsBtn) { 
-                openSettingsBtn.onclick = () => {
-                    const pin = prompt("Enter PIN to access User Settings:");
-                    if (pin === TL_DASHBOARD_PIN) {
-                        if (settingsModal) { settingsModal.style.display = 'block'; renderAllowedEmailsList(); }
-                        else console.error("Cannot open Settings modal: settingsModal is null.");
-                    } else {
-                        alert("Incorrect PIN. Access Denied.");
-                    }
-                };
-            }
+            if (openSettingsBtn) openSettingsBtn.onclick = () => { if (settingsModal) { settingsModal.style.display = 'block'; renderAllowedEmailsList(); } else console.error("Cannot open Settings modal: settingsModal is null."); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { if (settingsModal) settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
-
-            // New: Day 3 Toggle switch event listener inside the modal
-            if (enableDay3FixToggle) {
-                enableDay3FixToggle.addEventListener('change', () => {
-                    showDay3Globally = enableDay3FixToggle.checked;
-                    saveDay3GlobalVisibilityState();
-                    renderProjects(); // Re-render to apply the global visibility change
-                });
-            }
 
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
@@ -871,11 +499,6 @@ input:checked + .slider:before {
                         startTimeDay2: null, 
                         finishTimeDay2: null, 
                         durationDay2Ms: null, 
-                        // NEW: Day 3 fields
-                        startTimeDay3: null, 
-                        finishTimeDay3: null, 
-                        durationDay3Ms: null, 
-                        // END NEW
                         releasedToNextStage: false, 
                         lastModifiedTimestamp: batchCreationTimestamp, 
                         isReassigned: false, 
@@ -909,16 +532,9 @@ input:checked + .slider:before {
 
         function renderTLDashboard() { 
             if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); return; } 
-            tlDashboardContentElement.innerHTML = ''; // Clear existing content
-            
-            // Re-append the toggle group to ensure it's always at the top of TL Dashboard content
-            const toggleGroup = document.querySelector('.dashboard-toggle-group');
-            if (toggleGroup && tlDashboardContentElement.parentNode === document.querySelector('.modal-content')) { // Ensure it's the correct parent
-                tlDashboardContentElement.parentNode.prepend(toggleGroup);
-            }
-
+            tlDashboardContentElement.innerHTML = ''; 
             const manageableBatches = getManageableBatches(); 
-            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML += '<p>No project batches found.</p>'; return; } // Appended, not replaced
+            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found.</p>'; return; } 
             
             manageableBatches.forEach(batch => { 
                 if (!batch || !batch.batchId) return; 
@@ -1043,11 +659,6 @@ input:checked + .slider:before {
                             startTimeDay2: null, 
                             finishTimeDay2: null, 
                             durationDay2Ms: null, 
-                            // NEW: Day 3 fields for new task
-                            startTimeDay3: null, 
-                            finishTimeDay3: null, 
-                            durationDay3Ms: null, 
-                            // END NEW
                             releasedToNextStage: false, 
                             lastModifiedTimestamp: releaseTimestamp, 
                             isReassigned: false, 
@@ -1118,10 +729,10 @@ input:checked + .slider:before {
                     if (fixOrderA < fixOrderB) return -1; 
                     if (fixOrderA > fixOrderB) return 1; 
                     
-                    if ((a.areaTask || "") < (b.areaTask || "") ) return -1; 
-                    if ((a.areaTask || "") > (b.areaTask || "") ) return 1; 
+                    if ((a.areaTask || "") < (b.areaTask || "")) return -1; 
+                    if ((a.areaTask || "") > (b.areaTask || "")) return 1; 
                     
-                    if ((a.areaTask || "") === (b.areaTask || "") ) { 
+                    if ((a.areaTask || "") === (b.areaTask || "")) { 
                         let tsA_create = a.creationTimestamp; 
                         let tsB_create = b.creationTimestamp; 
                         if (tsA_create && typeof tsA_create.toMillis === 'function') tsA_create = tsA_create.toMillis(); 
@@ -1143,21 +754,6 @@ input:checked + .slider:before {
             let currentBatchIdForDisplay = null; 
             let currentFixCategoryForHeader = null; 
             
-            // Apply Day 3 visibility to header cells based on global state
-            const day3HeaderCells = document.querySelectorAll('#projectTable .day3-column-header');
-            day3HeaderCells.forEach(th => {
-                if (showDay3Globally) {
-                    th.classList.remove('hide-day3-column');
-                } else {
-                    th.classList.add('hide-day3-column');
-                }
-            });
-            // Update the state of the toggle button if it exists
-            if (enableDay3FixToggle) {
-                enableDay3FixToggle.checked = showDay3Globally;
-            }
-
-
             projectsToRender.forEach(project => { 
                 if (!project || !project.id || !project.batchId || !project.fixCategory) { console.warn("Skipping malformed project:", project); return; } 
                 
@@ -1189,7 +785,7 @@ input:checked + .slider:before {
                     
                     groupHeaderCell.appendChild(document.createTextNode(`${currentFixCategoryForHeader} `)); 
                     groupHeaderCell.appendChild(toggleBtn); 
-
+                    
                     groupHeaderCell.onclick = (e) => { 
                         if (e.target === toggleBtn || e.target === groupHeaderCell || groupHeaderCell.contains(e.target)) { 
                             if (groupVisibilityState[groupStateKey]) { 
@@ -1246,9 +842,7 @@ input:checked + .slider:before {
                 statusCell.appendChild(statusSpan); 
                 
                 const timeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true }; 
-                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, 
-                    d2s = project.startTimeDay2, d2f = project.finishTimeDay2,
-                    d3s = project.startTimeDay3, d3f = project.finishTimeDay3; 
+                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, d2s = project.startTimeDay2, d2f = project.finishTimeDay2; 
                 try { 
                     if (d1s && typeof d1s.toDate === 'function') d1s = d1s.toDate(); 
                     else if (d1s) d1s = new Date(d1s); 
@@ -1262,13 +856,7 @@ input:checked + .slider:before {
                     if (d2f && typeof d2f.toDate === 'function') d2f = d2f.toDate(); 
                     else if (d2f) d2f = new Date(d2f); 
                     else d2f = null; 
-                    if (d3s && typeof d3s.toDate === 'function') d3s = d3s.toDate(); 
-                    else if (d3s) d3s = new Date(d3s); 
-                    else d3s = null; 
-                    if (d3f && typeof d3f.toDate === 'function') d3f = d3f.toDate(); 
-                    else if (d3f) d3f = new Date(d3f); 
-                    else d3f = null; 
-                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = d3s = d3f = null; } 
+                } catch (dateError) { console.error("Error parsing date for " + project.id, dateError); d1s = d1f = d2s = d2f = null; } 
                 
                 row.insertCell().textContent = d1s && !isNaN(d1s) ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = d1f && !isNaN(d1f) ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
@@ -1277,27 +865,7 @@ input:checked + .slider:before {
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-'; 
                 row.insertCell().textContent = formatMillisToMinutes(project.durationDay2Ms); 
                 
-                // Day 3 Cells and Visibility based on global state
-                const d3sCell = row.insertCell();
-                const d3fCell = row.insertCell();
-                const d3DurCell = row.insertCell();
-
-                d3sCell.textContent = d3s && !isNaN(d3s) ? d3s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
-                d3fCell.textContent = d3f && !isNaN(d3f) ? d3f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
-                d3DurCell.textContent = formatMillisToMinutes(project.durationDay3Ms);
-
-                // Apply visibility to individual cells based on showDay3Globally
-                if (!showDay3Globally) { 
-                    d3sCell.classList.add('hide-day3-column');
-                    d3fCell.classList.add('hide-day3-column');
-                    d3DurCell.classList.add('hide-day3-column');
-                } else {
-                    d3sCell.classList.remove('hide-day3-column'); 
-                    d3fCell.classList.remove('hide-day3-column');
-                    d3DurCell.classList.remove('hide-day3-column');
-                }
-
-                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0); 
+                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
                 let breakInMs = (project.breakDurationMinutes || 0) * 60 * 1000; 
 
                 let finalTotalDurationMs = totalRawDurationMs > 0 ? Math.max(0, totalRawDurationMs - breakInMs) : null;
@@ -1381,38 +949,17 @@ input:checked + .slider:before {
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
                     }
                 };
-                
+                btnContainer.appendChild(breakSelect); 
+
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent'; 
                 const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = project.status !== 'Available' || isOriginalReassignedTask; sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn); 
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn); 
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn); 
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn); 
-                
-                // Day 3 Buttons
-                const sD3btn = document.createElement('button'); 
-                sD3btn.textContent = 'Start D3'; 
-                sD3btn.classList.add('btn','btn-day-start'); 
-                sD3btn.disabled = !((project.status === 'Completed' && project.durationDay2Ms !== null) || 
-                                    (project.status === 'Day1Ended_AwaitingNext' && project.durationDay1Ms !== null) || 
-                                    (project.status === 'InProgressDay2' && project.durationDay2Ms === null)) || 
-                                    isOriginalReassignedTask || project.startTimeDay3 !== null; 
-
-                sD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay3'); }; 
-                btnContainer.appendChild(sD3btn); 
-                
-                const eD3btn = document.createElement('button'); 
-                eD3btn.textContent = 'End D3'; 
-                eD3btn.classList.add('btn','btn-day-end'); 
-                eD3btn.disabled = project.startTimeDay3 === null || isOriginalReassignedTask || project.finishTimeDay3 !== null; 
-                eD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay3'); }; 
-                btnContainer.appendChild(eD3btn); 
-
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn); 
-                btnContainer.appendChild(breakSelect); 
                 const reassignBtn = document.createElement('button'); reassignBtn.textContent = 'Re-Assign'; reassignBtn.classList.add('btn', 'btn-warning'); reassignBtn.title = 'Re-assign task by creating a new entry.'; reassignBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; reassignBtn.onclick = () => { const currentProjectData = projects.find(p => p.id === project.id); if (currentProjectData) handleReassignment(currentProjectData); else alert("Error: Could not retrieve task data for re-assignment."); }; btnContainer.appendChild(reassignBtn); 
                 actionsCell.appendChild(btnContainer); 
-                
             });
         }
 
@@ -1437,7 +984,7 @@ input:checked + .slider:before {
             
             switch (action) { 
                 case 'startDay1': 
-                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; 
+                    if (currentProjectData.status === 'Available') updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null }; 
                     else console.warn(`Cannot 'startDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay1': 
@@ -1445,32 +992,13 @@ input:checked + .slider:before {
                     else console.warn(`Cannot 'endDay1'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'startDay2': 
-                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null, startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null }; 
+                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null }; 
                     else console.warn(`Cannot 'startDay2'. Status: ${currentProjectData.status}`); 
                     break; 
                 case 'endDay2': 
                     if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) }; 
                     else console.warn(`Cannot 'endDay2'. Status: ${currentProjectData.status}`); 
                     break; 
-                // Day 3 Cases
-                case 'startDay3':
-                    if (currentProjectData.status === 'Completed' || currentProjectData.status === 'Day1Ended_AwaitingNext' || currentProjectData.status === 'InProgressDay2') {
-                        if (currentProjectData.status === 'InProgressDay2' && !currentProjectData.finishTimeDay2) {
-                            updatedFields.finishTimeDay2 = serverTimestamp;
-                            updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
-                        }
-                        if (currentProjectData.status === 'Day1Ended_AwaitingNext' && !currentProjectData.startTimeDay2) {
-                            updatedFields.startTimeDay2 = null;
-                            updatedFields.finishTimeDay2 = null;
-                            updatedFields.durationDay2Ms = null;
-                        }
-                        updatedFields = { ...updatedFields, status: 'InProgressDay3', startTimeDay3: serverTimestamp, finishTimeDay3: null, durationDay3Ms: null };
-                    } else console.warn(`Cannot 'startDay3'. Status: ${currentProjectData.status}`);
-                    break;
-                case 'endDay3':
-                    if (currentProjectData.status === 'InProgressDay3' && currentProjectData.startTimeDay3) updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay3: serverTimestamp, durationDay3Ms: calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis) };
-                    else console.warn(`Cannot 'endDay3'. Status: ${currentProjectData.status}`);
-                    break;
                 case 'markDone': 
                     if (currentProjectData.status !== 'Completed') { 
                         updatedFields.status = 'Completed'; 
@@ -1485,15 +1013,6 @@ input:checked + .slider:before {
                         if (!currentProjectData.startTimeDay2) { 
                             updatedFields.durationDay2Ms = null; 
                             updatedFields.finishTimeDay2 = null; 
-                        } 
-                        // Mark Day 3 Done
-                        if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) { 
-                            updatedFields.finishTimeDay3 = serverTimestamp; 
-                            updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis); 
-                        } 
-                        if (!currentProjectData.startTimeDay3) { 
-                            updatedFields.durationDay3Ms = null; 
-                            updatedFields.finishTimeDay3 = null; 
                         } 
                     } else console.warn(`Cannot 'markDone'. Status: ${currentProjectData.status}`); 
                     break; 
@@ -1549,11 +1068,6 @@ input:checked + .slider:before {
                     startTimeDay2: null, 
                     finishTimeDay2: null, 
                     durationDay2Ms: null, 
-                    // NEW: Day 3 fields for re-assigned task
-                    startTimeDay3: null, 
-                    finishTimeDay3: null, 
-                    durationDay3Ms: null, 
-                    // END NEW
                     techNotes: ``, 
                     creationTimestamp: serverTimestamp, 
                     lastModifiedTimestamp: serverTimestamp, 
@@ -1568,7 +1082,7 @@ input:checked + .slider:before {
                 const originalProjectRef = db.collection("projects").doc(originalProjectData.id); 
                 const originalTaskUpdateData = { 
                     status: 'Reassigned_TechAbsent', 
-                    techNotes: (originalProjectData.techNotes || "") + `\n--- THIS TASK INSTANCE WAS RE-ASSIGNED to '${trimmedNewTechId}' on ${new Date().toLocaleString()}. This instance is now closed. New task ID: ${newProjectRef.id} ---`, 
+                    techNotes: "Re-Assign", 
                     lastModifiedTimestamp: serverTimestamp 
                 }; 
                 batch.update(originalProjectRef, originalTaskUpdateData); 
@@ -1586,11 +1100,7 @@ input:checked + .slider:before {
         function refreshAllViews() { 
             try { 
                 renderProjects(); 
-                // Only render TL Dashboard content if the modal is open, but always update the toggle state.
-                // The renderTLDashboard function now takes care of prepending the toggle element.
-                if (tlDashboardModal && tlDashboardModal.style.display === 'block') {
-                    renderTLDashboard(); 
-                }
+                if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard(); 
                 if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList(); 
             } catch (e) { 
                 console.error("Error during refreshAllViews:", e); 
