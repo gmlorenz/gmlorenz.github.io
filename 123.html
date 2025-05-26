@@ -107,7 +107,15 @@
         .hidden-group-row { display: none; }
         .overall-project-separator td { height: 10px !important; background-color: #e9ecef !important; border: none !important; padding: 0 !important; }
         #projectTable td.duration-column { color: #0056b3; font-weight: bold; }
-        #projectTable td.total-duration-column { color: white; font-weight: bold; background-color: #e74c3c; } 
+        #projectTable td.total-duration-column { 
+            color: white; 
+            font-weight: bold; 
+            background-color: #e74c3c; 
+            white-space: normal; /* Allow text to wrap */
+            width: 60px; /* Example fixed width, adjust as needed */
+            min-width: 60px; /* Ensure it doesn't shrink too much */
+            max-width: 80px; /* Prevent it from getting too wide */
+        }
         .fix1-row { background-color: #e6ffe6; }
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
