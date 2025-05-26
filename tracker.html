@@ -429,12 +429,12 @@
             
             if (openTlDashboardBtn) { 
                 openTlDashboardBtn.onclick = () => {
-                    const pin = prompt("Enter PIN to access TL Dashboard:");
+                    const pin = prompt("Enter PIN to access Project Settings:");
                     if (pin === TL_DASHBOARD_PIN) {
                         if (tlDashboardModal) { tlDashboardModal.style.display = 'block'; renderTLDashboard(); }
-                        else console.error("Cannot open TL Dashboard: tlDashboardModal is null.");
+                        else console.error("Cannot open Project Settings: tlDashboardModal is null.");
                     } else {
-                        alert("Incorrect PIN. Access Denied.");
+                        alert("Incorrect PIN. Access Denied. ");
                     }
                 };
             }
