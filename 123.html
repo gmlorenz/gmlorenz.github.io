@@ -123,21 +123,23 @@
             margin-top: 15px; /* Apply margin here instead of table */
         }
 
-        #projectTable input[type="text"].assigned-to-input {
-         height: 18px;
-         }
-         #projectTable textarea.tech-notes-input {
-         min-height: 18px;
-         max-height: 40px;
+        #projectTable { 
+            width: 100%; /* Important: Make table width 100% to fill container */
+            border-collapse: collapse; 
+            font-size: 0.75em; /* Slightly smaller overall table font size */
+            /* Removed table-layout: fixed; here to allow browser to calculate widths more flexibly */
+            /* Min-width to ensure table doesn't get too small before scrolling */
+            min-width: 1200px; /* Adjust this value based on your content and desired minimum size */
         }
         /* Default for all table cells: allow wrapping unless specified */
-        #projectTable th, #projectTable td {
-         padding: 2px 4px; /* Keep padding minimal */
-         height: 24px; /* Add fixed height to rows */
-         font-size: 13px; /* Small but readable text */
-         line-height: 1.2; /* Control vertical alignment */
-         vertical-align: middle; /* Align text in middle vertically */
-         }
+        #projectTable th, #projectTable td { 
+            border: 1px solid #ddd; 
+            padding: 2px 3px; /* Significantly reduced padding for tight rows */
+            text-align: left; 
+            vertical-align: middle; 
+            white-space: normal; /* Changed to normal to allow wrapping by default */
+            word-wrap: break-word; /* Ensures long words break if needed */
+        }
         #projectTable thead th { 
             background-color: #34495e; 
             color: white; 
@@ -301,7 +303,34 @@
             min-width: 140px; /* Ensure Actions maintains reasonable width */
         }
 
-    </style>
+    
+/* Compact row height overrides */
+#projectTable td {
+    padding: 2px 3px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    height: 22px !important;
+    vertical-align: middle !important;
+}
+#projectTable input[type="text"].assigned-to-input {
+    height: 18px !important;
+    font-size: 12px !important;
+    padding: 1px 2px !important;
+}
+#projectTable textarea.tech-notes-input {
+    min-height: 18px !important;
+    max-height: 22px !important;
+    font-size: 12px !important;
+    padding: 1px 2px !important;
+    line-height: 1.1 !important;
+}
+.btn {
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+}
+
+</style>
 </head>
 <body>
     <div class="container">
