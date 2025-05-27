@@ -276,7 +276,7 @@
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
                 <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button>
-                <button id="openTotalSummaryBtn" class="btn btn-primary btn-lg">📈 TL Dashboard</button>
+                <button id="openTotalSummaryBtn" class="btn btn-primary btn-lg">📈 TL Summary</button>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -321,10 +321,6 @@
                         <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
                         <button id="addEmailBtn" class="btn btn-success">Add Email</button>
                     </div>
-                    <hr>
-                    <h3>Activity Log Management</h3>
-                    <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
-                    <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
                 </div>
             </div>
 
@@ -453,13 +449,16 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn;
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn; // Removed cleanActivityLogsBtn from here
 
         // NEW: Activity Log related variables
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
 
         // NEW: Total Summary Dashboard related variables
         let openTotalSummaryBtn, totalSummaryModal, closeTotalSummaryBtn, totalSummaryContentElement;
+
+        // Moved cleanActivityLogsBtn to be accessible from renderTLDashboard and common event listeners
+        let cleanActivityLogsBtn;
 
         let projects = [];
         let groupVisibilityState = {};
@@ -674,6 +673,8 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
+
+            // IMPORTANT: Get reference to cleanActivityLogsBtn here as it's moved
             cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
 
             // NEW: Activity Log references
@@ -723,7 +724,10 @@
             if (openSettingsBtn) openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
-            if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
+
+            // `cleanActivityLogsBtn` listener is now attached when renderTLDashboard populates the content
+            // So, this global attachment for it should be removed or handled differently.
+            // We'll rely on renderTLDashboard to attach it dynamically.
 
             // NEW: Activity Log button and close event listener
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
@@ -895,7 +899,7 @@
                 await batch.commit();
                 alert(`Successfully deleted ${deletedCount} old activity logs.`);
                 logActivity('Cleaned Old Activity Logs', { deletedCount: deletedCount, oldestTimestampKept: oldestTimestampToKeep.toDate().toLocaleString() });
-                renderActivityLog();
+                renderActivityLog(); // Re-render log if the log modal is open
             } catch (error) {
                 console.error("Error cleaning activity logs:", error);
                 alert("Error cleaning activity logs: " + error.message);
@@ -966,78 +970,97 @@
             if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); hideLoading(); return; }
             tlDashboardContentElement.innerHTML = '';
             const manageableBatches = getManageableBatches();
-            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>'; hideLoading(); return; }
-
-            manageableBatches.forEach(batch => {
-                if (!batch || !batch.batchId) return;
-                const batchDiv = document.createElement('div');
-                batchDiv.classList.add('dashboard-batch-item');
-                const title = document.createElement('h4');
-                title.textContent = `Batch: ${batch.baseProjectName || 'Unknown'} (ID: ${batch.batchId.split('_')[1] || 'N/A'})`;
-                batchDiv.appendChild(title);
-                const stagesPresentP = document.createElement('p');
-                const presentFixCategories = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
-                stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${presentFixCategories.join(', ') || 'None'}`;
-                batchDiv.appendChild(stagesPresentP);
-                const releaseActionsDiv = document.createElement('div');
-                releaseActionsDiv.classList.add('dashboard-batch-actions-release');
-                let latestFixCategoryForBatch = "";
-                let allTasksInLatestStageReadyForRelease = false;
-                let alreadyReleasedFromLatestStage = true;
-                if (batch.tasksByFix) {
-                    FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
-                        if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) {
-                            latestFixCategoryForBatch = fixCat;
-                            alreadyReleasedFromLatestStage = batch.tasksByFix[fixCat].every(t => t && t.releasedToNextStage && t.status !== 'Reassigned_TechAbsent');
-                            if (!alreadyReleasedFromLatestStage) {
-                                allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat]
-                                    .filter(t => t.status !== 'Reassigned_TechAbsent')
-                                    .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext' || t.status === 'Day2Ended_AwaitingNext'));
+            if (manageableBatches.length === 0) {
+                 tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>';
+            } else {
+                manageableBatches.forEach(batch => {
+                    if (!batch || !batch.batchId) return;
+                    const batchDiv = document.createElement('div');
+                    batchDiv.classList.add('dashboard-batch-item');
+                    const title = document.createElement('h4');
+                    title.textContent = `Batch: ${batch.baseProjectName || 'Unknown'} (ID: ${batch.batchId.split('_')[1] || 'N/A'})`;
+                    batchDiv.appendChild(title);
+                    const stagesPresentP = document.createElement('p');
+                    const presentFixCategories = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
+                    stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${presentFixCategories.join(', ') || 'None'}`;
+                    batchDiv.appendChild(stagesPresentP);
+                    const releaseActionsDiv = document.createElement('div');
+                    releaseActionsDiv.classList.add('dashboard-batch-actions-release');
+                    let latestFixCategoryForBatch = "";
+                    let allTasksInLatestStageReadyForRelease = false;
+                    let alreadyReleasedFromLatestStage = true;
+                    if (batch.tasksByFix) {
+                        FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
+                            if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) {
+                                latestFixCategoryForBatch = fixCat;
+                                alreadyReleasedFromLatestStage = batch.tasksByFix[fixCat].every(t => t && t.releasedToNextStage && t.status !== 'Reassigned_TechAbsent');
+                                if (!alreadyReleasedFromLatestStage) {
+                                    allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat]
+                                        .filter(t => t.status !== 'Reassigned_TechAbsent')
+                                        .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext' || t.status === 'Day2Ended_AwaitingNext'));
+                                }
                             }
-                        }
-                    });
-                }
-                if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) {
-                    const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch);
-                    if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) {
-                        const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIdx + 1];
-                        const releaseBtn = document.createElement('button');
-                        releaseBtn.textContent = `Release to ${nextFixCategory}`;
-                        releaseBtn.classList.add('btn', 'btn-release');
-                        if (!allTasksInLatestStageReadyForRelease) {
-                            releaseBtn.disabled = true;
-                            releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`;
-                        }
-                        releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);
-                        releaseActionsDiv.appendChild(releaseBtn);
+                        });
                     }
-                } else if (alreadyReleasedFromLatestStage && latestFixCategoryForBatch && FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch) < FIX_CATEGORIES_ORDER.length -1) {
-                    const releasedInfoP = document.createElement('p');
-                    releasedInfoP.innerHTML = `<small><em>(Active tasks released from ${latestFixCategoryForBatch})</em></small>`;
-                    releaseActionsDiv.appendChild(releasedInfoP);
-                }
-                batchDiv.appendChild(releaseActionsDiv);
-                const deleteActionsDiv = document.createElement('div');
-                deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
-                if (batch.tasksByFix) {
-                    FIX_CATEGORIES_ORDER.forEach(fixCat => {
-                        if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
-                            const deleteFixBtn = document.createElement('button');
-                            deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
-                            deleteFixBtn.classList.add('btn', 'btn-danger');
-                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
-                            deleteActionsDiv.appendChild(deleteFixBtn);
+                    if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) {
+                        const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch);
+                        if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) {
+                            const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIdx + 1];
+                            const releaseBtn = document.createElement('button');
+                            releaseBtn.textContent = `Release to ${nextFixCategory}`;
+                            releaseBtn.classList.add('btn', 'btn-release');
+                            if (!allTasksInLatestStageReadyForRelease) {
+                                releaseBtn.disabled = true;
+                                releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`;
+                            }
+                            releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);
+                            releaseActionsDiv.appendChild(releaseBtn);
                         }
-                    });
-                }
-                const deleteAllBtn = document.createElement('button');
-                deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch';
-                deleteAllBtn.classList.add('btn', 'btn-danger');
-                deleteAllBtn.onclick = () => { if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteProjectBatch(batch.batchId); };
-                deleteActionsDiv.appendChild(deleteAllBtn);
-                batchDiv.appendChild(deleteActionsDiv);
-                tlDashboardContentElement.appendChild(batchDiv);
-            });
+                    } else if (alreadyReleasedFromLatestStage && latestFixCategoryForBatch && FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch) < FIX_CATEGORIES_ORDER.length -1) {
+                        const releasedInfoP = document.createElement('p');
+                        releasedInfoP.innerHTML = `<small><em>(Active tasks released from ${latestFixCategoryForBatch})</em></small>`;
+                        releaseActionsDiv.appendChild(releasedInfoP);
+                    }
+                    batchDiv.appendChild(releaseActionsDiv);
+                    const deleteActionsDiv = document.createElement('div');
+                    deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
+                    if (batch.tasksByFix) {
+                        FIX_CATEGORIES_ORDER.forEach(fixCat => {
+                            if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
+                                const deleteFixBtn = document.createElement('button');
+                                deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
+                                deleteFixBtn.classList.add('btn', 'btn-danger');
+                                deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
+                                deleteActionsDiv.appendChild(deleteFixBtn);
+                            }
+                        });
+                    }
+                    const deleteAllBtn = document.createElement('button');
+                    deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch';
+                    deleteAllBtn.classList.add('btn', 'btn-danger');
+                    deleteAllBtn.onclick = () => { if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteProjectBatch(batch.batchId); };
+                    deleteActionsDiv.appendChild(deleteAllBtn);
+                    batchDiv.appendChild(deleteActionsDiv);
+                    tlDashboardContentElement.appendChild(batchDiv);
+                });
+            }
+
+            // ADDED: Activity Log Management to TL Dashboard
+            const activityLogManagementDiv = document.createElement('div');
+            activityLogManagementDiv.innerHTML = `
+                <hr style="border: none; border-top: 1px dashed #ccc; margin: 20px 0;">
+                <h3>Activity Log Management</h3>
+                <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
+                <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
+            `;
+            tlDashboardContentElement.appendChild(activityLogManagementDiv);
+
+            // Re-attach listener for the moved button
+            cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
+            if (cleanActivityLogsBtn) {
+                cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
+            }
+
             hideLoading(); // Hide loading
         }
 
