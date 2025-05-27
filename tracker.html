@@ -365,7 +365,6 @@
          let loadingOverlay; // Reference to the loading overlay
          
          const TL_DASHBOARD_PIN = "1234";
-         const ADD_NEW_TRACKER_PIN = "1234"; // Define the PIN for Add New Tracker
          const ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails";
          let allowedEmailsFromFirestore = [];
          
@@ -653,19 +652,19 @@
          fixCategoryFilter = document.getElementById('fixCategoryFilter');
          }
          
-         function attachEventListeners() {
-         // MODIFIED: Add PIN check for Add New Tracker button
-         if (openAddNewProjectBtn) {
-            openAddNewProjectBtn.onclick = () => {
-                const pin = prompt("Enter PIN to add new tracker:");
-                if (pin === ADD_NEW_TRACKER_PIN) {
-                    projectFormModal.style.display = 'block';
-                } else {
-                    alert("Incorrect PIN.");
-                }
-            };
+         function setupAuthRelatedDOMReferences() {
+         signInBtn = document.getElementById('signInBtn');
+         signOutBtn = document.getElementById('signOutBtn');
+         userInfoDisplayDiv = document.getElementById('user-info-display');
+         userNameP = document.getElementById('userName');
+         userEmailP = document.getElementById('userEmail');
+         userPhotoImg = document.getElementById('userPhoto');
+         appContentDiv = document.getElementById('app-content');
+         loadingAuthMessageDiv = document.getElementById('loading-auth-message');
          }
          
+         function attachEventListeners() {
+         if (openAddNewProjectBtn) openAddNewProjectBtn.onclick = () => { projectFormModal.style.display = 'block'; };
          if (closeProjectFormBtn) closeProjectFormBtn.onclick = () => { projectFormModal.style.display = 'none'; };
          if (openTlDashboardBtn) {
          openTlDashboardBtn.onclick = () => {
