@@ -1181,57 +1181,117 @@
 
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                if (!userNameP) setupDOMReferences();
+                // Ensure all relevant DOM references are available.
+                // If not, re-acquire them. This is a safeguard.
+                if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
+                    console.error("One or more critical UI elements for auth state change not found. Attempting to re-acquire.");
+                    setupAuthRelatedDOMReferences();
+                    // If still unable to find, something is fundamentally wrong with the HTML structure or IDs.
+                    if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
+                        console.error("Still unable to find critical UI elements. Aborting UI update for auth state change.");
+                        return;
+                    }
+                }
+
                 if (user) {
-                    await fetchAllowedEmails();
+                    // User is signed in. Now check if they are authorized.
+                    await fetchAllowedEmails(); // Fetch the latest allowed emails
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
-                    if (user.email && allowedEmailsFromFirestore.map(e=>e.toLowerCase()).includes(userEmailLower)) {
-                        userNameP.textContent = user.displayName||"";
-                        userEmailP.textContent = user.email||"";
-                        userPhotoImg.src = user.photoURL||"";
-                        userInfoDisplayDiv.style.display = 'flex';
-                        signInBtn.style.display = 'none';
-                        loadingAuthMessageDiv.style.display = 'none'; // Ensure loading message is hidden
-                        appContentDiv.style.display = 'block';
-                        openSettingsBtn.style.display = 'block';
-                        initializeAppComponents();
+
+                    if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
+                        // User is signed in AND authorized
+                        console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
+
+                        userNameP.textContent = user.displayName || "Name not available";
+                        userEmailP.textContent = user.email || "Email not available";
+                        userPhotoImg.src = user.photoURL || "default-user.png"; // Fallback image
+
+                        userInfoDisplayDiv.style.display = 'flex'; // Show user info and sign out button
+                        signInBtn.style.display = 'none';         // Hide sign in button
+                        loadingAuthMessageDiv.style.display = 'none'; // Hide any loading/auth messages
+                        appContentDiv.style.display = 'block';    // Show the main application content
+                        openSettingsBtn.style.display = 'block';  // Show settings button for authorized users
+
+                        initializeAppComponents(); // Initialize or re-initialize app data and listeners
                     } else {
-                        alert("Access Denied.");
+                        // User is signed in but NOT authorized
+                        console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
+                        alert("Access Denied: Your email address (" + (user.email || "N/A") + ") is not authorized to use this application.");
+
+                        // Automatically sign out the unauthorized user
                         auth.signOut().then(() => {
-                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied.</p>';
+                            console.log("Unauthorized user automatically signed out.");
+                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Please sign in with an authorized account.</p>';
+                            userNameP.textContent = '';
+                            userEmailP.textContent = '';
+                            userPhotoImg.src = '';
                             userInfoDisplayDiv.style.display = 'none';
-                            signInBtn.style.display = 'block';
+                            signInBtn.style.display = 'block'; // Show sign in button again
                             appContentDiv.style.display = 'none';
-                            loadingAuthMessageDiv.style.display = 'block';
-                            openSettingsBtn.style.display = 'none';
+                            loadingAuthMessageDiv.style.display = 'block'; // Show access denied message
+                            openSettingsBtn.style.display = 'none'; // Hide settings button
+
+                            // Clear any displayed project data and detach listener
                             projects = [];
                             if (projectTableBody) projectTableBody.innerHTML = '';
                             if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                            if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
-                            isAppInitialized = false;
+                            if (firestoreListenerUnsubscribe) {
+                                firestoreListenerUnsubscribe();
+                                firestoreListenerUnsubscribe = null;
+                                console.log("Firestore listener detached for unauthorized user sign out.");
+                            }
+                            isAppInitialized = false; // Reset app initialized state
+                        }).catch(error => {
+                            console.error("Error signing out unauthorized user:", error);
+                            // Even if sign out fails, attempt to hide sensitive data and show sign in.
+                            userNameP.textContent = '';
+                            userEmailP.textContent = '';
+                            userPhotoImg.src = '';
+                            userInfoDisplayDiv.style.display = 'none';
+                            signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none';
+                            loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Error during sign out. Please refresh.</p>';
+                            loadingAuthMessageDiv.style.display = 'block';
+                            openSettingsBtn.style.display = 'none';
                         });
                     }
+
                 } else {
-                    userInfoDisplayDiv.style.display = 'none';
-                    signInBtn.style.display = 'block';
-                    appContentDiv.style.display = 'none';
-                    openSettingsBtn.style.display = 'none';
-                    if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
-                        loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';
-                        loadingAuthMessageDiv.style.display = 'block'; // Ensure it's visible when asking to sign in
-                    } else if (loadingAuthMessageDiv) {
-                        loadingAuthMessageDiv.style.display = 'none'; // Hide if "Access Denied" is already there. This is the crucial line.
+                    // User is signed out
+                    console.log("Auth state changed: User is SIGNED OUT");
+                    userNameP.textContent = ''; // Clear user info
+                    userEmailP.textContent = '';
+                    userPhotoImg.src = '';
+
+                    userInfoDisplayDiv.style.display = 'none'; // Hide user info and sign out button
+                    signInBtn.style.display = 'block';         // Show sign in button
+                    appContentDiv.style.display = 'none';     // Hide main application content
+                    openSettingsBtn.style.display = 'none';   // Hide settings button
+
+                    // Set loading message, unless it's already an "Access Denied" message from a previous unauthorized attempt
+                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
+                         loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                     }
+                    loadingAuthMessageDiv.style.display = 'block'; // Ensure loading message is visible when signed out
+
+                    // Clear any displayed project data and detach listener
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = '';
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
-                    if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
-                    isAppInitialized = false;
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Also clear allowed emails list in settings modal
+                    if (firestoreListenerUnsubscribe) {
+                        firestoreListenerUnsubscribe();
+                        firestoreListenerUnsubscribe = null;
+                        console.log("Firestore listener detached on sign out.");
+                    }
+                    isAppInitialized = false; // Reset app initialized state
+                    console.log("App content hidden, project data cleared, and Firestore listener detached.");
                 }
             });
         } else {
-            if (loadingAuthMessageDiv) loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Auth services error.</p>`;
+            console.error("Firebase Auth is not initialized. UI updates based on auth state will not occur.");
+             const loadingMsgDiv = document.getElementById('loading-auth-message');
+            if (loadingMsgDiv) loadingMsgDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
         }
         document.addEventListener('DOMContentLoaded', () => {
             setupDOMReferences();
