@@ -310,7 +310,7 @@
 
             <h3>📌 Team123 Project Tracker</h3>
             <div class="group-selector-controls">
-                <label for="batchIdSelect">Select Batch:</label>
+                <label for="batchIdSelect">Select Project:</label>
                 <select id="batchIdSelect">
                 </select>
                 <label for="fixCategoryFilter">Select Fix Category:</label>
@@ -561,7 +561,8 @@
                 sortedUniqueBatchIds.forEach(batchId => {
                     const option = document.createElement('option');
                     option.value = batchId;
-                    option.textContent = `${batchIdToName[batchId] || 'Unknown'} (ID: ${batchId.split('_')[1] || 'N/A'})`;
+                    //option.textContent = `${batchIdToName[batchId] || 'Unknown'} (ID: ${batchId.split('_')[1] || 'N/A'})`;
+                    option.textContent = `${batchIdToName[batchId] || 'Unknown Project'}`;
                     batchIdSelect.appendChild(option);
                 });
 
