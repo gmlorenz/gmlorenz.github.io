@@ -305,10 +305,6 @@
                         <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
                         <button id="addEmailBtn" class="btn btn-success">Add Email</button>
                     </div>
-                    <hr>
-                    <h3>Activity Log Management</h3>
-                    <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
-                    <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
                 </div>
             </div>
 
@@ -316,7 +312,12 @@
                 <div class="modal-content">
                     <span class="close-button" id="closeActivityLogBtn">&times;</span>
                     <h2>📊 Activity Log</h2>
-                    <div id="activityLogContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></div>
+                    <div id="activityLogContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <hr>
+                        <h3>Activity Log Management</h3>
+                        <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
+                        <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
+                    </div>
                 </div>
             </div>
             <h3>📌 Team123 Project Tracker</h3>
