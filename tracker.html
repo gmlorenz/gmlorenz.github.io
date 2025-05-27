@@ -103,7 +103,6 @@
         #projectFormModal .modal-content { max-width: 480px; }
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
         #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
-        #activityLogModal .modal-content { max-width: 700px; max-height: 85vh; overflow-y: auto;} /* NEW */
         #tlSummaryModal .modal-content { max-width: 600px; max-height: 85vh; overflow-y: auto;}
         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
@@ -165,9 +164,6 @@
         #allowedEmailsList li:last-child { border-bottom: none; }
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
         .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;}
-        #activityLogContent ul { list-style-type: disc; padding-left: 20px; margin-top: 10px;} /* NEW */
-        #activityLogContent li { margin-bottom: 8px; border-bottom: 1px dotted #eee; padding-bottom: 5px;} /* NEW */
-        #activityLogContent li:last-child { border-bottom: none;} /* NEW */
 
         /* NEW: Hide Additional(m) column */
         #projectTable th:nth-child(12), /* Assuming 12th column for Additional(m) */
@@ -259,7 +255,6 @@
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
-                <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button>
                 <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
             </div>
 
@@ -308,19 +303,6 @@
                 </div>
             </div>
 
-            <div id="activityLogModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-button" id="closeActivityLogBtn">&times;</span>
-                    <h2>📊 Activity Log</h2>
-                    <div id="activityLogContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        <hr>
-                        <h3>Activity Log Management</h3>
-                        <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
-                        <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
-                    </div>
-                </div>
-            </div>
-
             <div id="tlSummaryModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeTlSummaryBtn">&times;</span>
@@ -335,7 +317,6 @@
             <div class="group-selector-controls">
                 <label for="batchIdSelect">Select Batch:</label>
                 <select id="batchIdSelect">
-                    <option value="">All Batches (Latest)</option>
                 </select>
                 <label for="fixCategoryFilter">Select Fix Category:</label>
                 <select id="fixCategoryFilter">
@@ -442,11 +423,9 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn;
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn;
 
-        let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
-
-        let tlSummaryModal, closeTlSummaryBtn, tlSummaryContent; // NEW: TL Summary modal elements
+        let tlSummaryModal, closeTlSummaryBtn, tlSummaryContent, openTlSummaryBtn; // NEW: TL Summary modal elements
 
         let projects = [];
         let groupVisibilityState = {};
@@ -547,47 +526,55 @@
 
             // Fetch all unique batch IDs first to populate the batchIdSelect dropdown
             // This is a separate, non-listening query to avoid re-rendering the dropdown constantly
-            if (!batchIdSelect.options || batchIdSelect.options.length <= 1) { // Populate only if not already populated
-                 const allBatchesSnapshot = await db.collection("projects")
-                                                    .orderBy("creationTimestamp", "desc") // Order to get latest batches first
-                                                    .get();
-                 const uniqueBatchIds = new Set();
-                 const batchIdToName = {}; // To store base project name for display
-                 allBatchesSnapshot.forEach(doc => {
-                     const data = doc.data();
-                     if (data.batchId) {
-                         uniqueBatchIds.add(data.batchId);
-                         batchIdToName[data.batchId] = data.baseProjectName;
-                     }
-                 });
+            // If currentSelectedBatchId is empty (default), set it to the latest batch
+            // The batchIdSelect dropdown is populated with actual batch IDs and their names, no "All Batches" option.
+            const allBatchesSnapshot = await db.collection("projects")
+                                                .orderBy("creationTimestamp", "desc") // Order to get latest batches first
+                                                .get();
+            const uniqueBatchIds = new Set();
+            const batchIdToName = {}; // To store base project name for display
+            allBatchesSnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.batchId) {
+                    uniqueBatchIds.add(data.batchId);
+                    batchIdToName[data.batchId] = data.baseProjectName;
+                }
+            });
 
-                 // Clear existing options except "All Batches"
-                 while (batchIdSelect.options.length > 1) {
-                     batchIdSelect.remove(1);
-                 }
+            // Clear existing options
+            batchIdSelect.innerHTML = '';
 
-                 // Sort unique batch IDs by creation timestamp (if available, otherwise alphabetically)
-                 const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
+            // If there are no projects, add a default disabled option
+            if (uniqueBatchIds.size === 0) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No batches available";
+                option.disabled = true;
+                option.selected = true;
+                batchIdSelect.appendChild(option);
+            } else {
+                // Sort unique batch IDs by creation timestamp (if available, otherwise alphabetically)
+                const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
                     const projectA = allBatchesSnapshot.docs.find(doc => doc.data().batchId === a);
                     const projectB = allBatchesSnapshot.docs.find(doc => doc.data().batchId === b);
                     if (projectA && projectB && projectA.data().creationTimestamp && projectB.data().creationTimestamp) {
                         return projectB.data().creationTimestamp.toMillis() - projectA.data().creationTimestamp.toMillis();
                     }
                     return a.localeCompare(b); // Fallback to alphabetical
-                 });
+                });
 
-                 sortedUniqueBatchIds.forEach(batchId => {
-                     const option = document.createElement('option');
-                     option.value = batchId;
-                     option.textContent = `${batchIdToName[batchId] || 'Unknown'} (ID: ${batchId.split('_')[1] || 'N/A'})`;
-                     batchIdSelect.appendChild(option);
-                 });
+                sortedUniqueBatchIds.forEach(batchId => {
+                    const option = document.createElement('option');
+                    option.value = batchId;
+                    option.textContent = `${batchIdToName[batchId] || 'Unknown'} (ID: ${batchId.split('_')[1] || 'N/A'})`;
+                    batchIdSelect.appendChild(option);
+                });
 
-                 // If currentSelectedBatchId is empty (default), set it to the latest batch
-                 if (!currentSelectedBatchId && sortedUniqueBatchIds.length > 0) {
-                     currentSelectedBatchId = sortedUniqueBatchIds[0];
-                     batchIdSelect.value = currentSelectedBatchId;
-                 }
+                // If no batch is currently selected, default to the latest one
+                if (!currentSelectedBatchId && sortedUniqueBatchIds.length > 0) {
+                    currentSelectedBatchId = sortedUniqueBatchIds[0];
+                }
+                batchIdSelect.value = currentSelectedBatchId; // Ensure the dropdown reflects the current selection
             }
 
 
@@ -655,11 +642,6 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
-            cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
-
-            activityLogModal = document.getElementById('activityLogModal');
-            closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
-            activityLogContentElement = document.getElementById('activityLogContent');
 
             tlSummaryModal = document.getElementById('tlSummaryModal'); // NEW
             closeTlSummaryBtn = document.getElementById('closeTlSummaryBtn'); // NEW
@@ -699,12 +681,6 @@
             if (openSettingsBtn) openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
-            if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
-
-            if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
-                activityLogModal.style.display = 'block'; renderActivityLog();
-            };
-            if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { activityLogModal.style.display = 'none'; };
 
             if (openTlSummaryBtn) openTlSummaryBtn.onclick = () => { // NEW
                 tlSummaryModal.style.display = 'block'; generateTlSummaryData();
@@ -733,7 +709,6 @@
                     if (event.target == projectFormModal) projectFormModal.style.display = 'none';
                     if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (event.target == settingsModal) settingsModal.style.display = 'none';
-                    if (event.target == activityLogModal) activityLogModal.style.display = 'none';
                     if (event.target == tlSummaryModal) tlSummaryModal.style.display = 'none'; // NEW
                 };
             }
@@ -757,120 +732,6 @@
                 console.log("Activity logged:", action, details);
             } catch (error) {
                 console.error("Error logging activity:", error);
-            }
-        }
-
-        async function renderActivityLog() {
-            showLoading("Loading activity log...");
-            if (!activityLogContentElement) {
-                console.error("activityLogContentElement not found.");
-                hideLoading();
-                return;
-            }
-            activityLogContentElement.innerHTML = '<p>Loading activity log...</p>';
-
-            try {
-                const querySnapshot = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(50).get();
-                if (querySnapshot.empty) {
-                    activityLogContentElement.innerHTML = '<p>No activities recorded yet.</p>';
-                    return;
-                }
-
-                let logHtml = '<ul style="list-style: none; padding: 0;">';
-                querySnapshot.forEach(doc => {
-                    const log = doc.data();
-                    const date = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : 'N/A';
-                    let detailsHtml = '';
-                    if (log.details && Object.keys(log.details).length > 0) {
-                        detailsHtml += '<ul style="list-style-type: disc; margin-top: 5px; padding-left: 20px; font-size: 0.9em;">';
-                        for (const key in log.details) {
-                            if (log.details.hasOwnProperty(key)) {
-                                detailsHtml += `<li><strong>${key}:</strong> ${JSON.stringify(log.details[key]).replace(/"/g, '')}</li>`;
-                            }
-                            }
-                        detailsHtml += '</ul>';
-                    }
-                    logHtml += `
-                        <li style="margin-bottom: 10px; border-bottom: 1px dotted #eee; padding-bottom: 8px;">
-                            <strong>${date}</strong> -
-                            <span style="font-weight: bold; color: #555;">${log.userEmail || 'Unknown User'}</span>:
-                            ${log.action}
-                            ${detailsHtml}
-                        </li>
-                    `;
-                });
-                logHtml += '</ul>';
-                activityLogContentElement.innerHTML = logHtml;
-
-            } catch (error) {
-                console.error("Error fetching activity logs:", error);
-                activityLogContentElement.innerHTML = '<p style="color:red;">Error loading activity log.</p>';
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function handleCleanActivityLogs() {
-            if (!confirm("Are you sure you want to delete all activity logs older than the latest 50? This action is irreversible.")) {
-                return;
-            }
-            showLoading("Cleaning activity logs...");
-
-            if (!db) {
-                alert("Database not initialized! Cannot clean logs.");
-                hideLoading();
-                return;
-            }
-
-            try {
-                const latestLogsSnapshot = await db.collection("activity_logs")
-                    .orderBy("timestamp", "desc")
-                    .limit(50)
-                    .get();
-
-                if (latestLogsSnapshot.empty) {
-                    alert("No activity logs to clean.");
-                    return;
-                }
-
-                let oldestTimestampToKeep = null;
-                if (latestLogsSnapshot.docs.length === 50) {
-                    oldestTimestampToKeep = latestLogsSnapshot.docs[latestLogsSnapshot.docs.length - 1].data().timestamp;
-                } else {
-                    alert("Fewer than 50 logs found, no logs to delete.");
-                    return;
-                }
-
-                if (!oldestTimestampToKeep) {
-                    alert("Could not determine oldest timestamp to keep.");
-                    return;
-                }
-
-                const oldLogsSnapshot = await db.collection("activity_logs")
-                    .where("timestamp", "<", oldestTimestampToKeep)
-                    .get();
-
-                if (oldLogsSnapshot.empty) {
-                    alert("No old activity logs to delete.");
-                    return;
-                }
-
-                const batch = db.batch();
-                let deletedCount = 0;
-                oldLogsSnapshot.forEach(doc => {
-                    batch.delete(doc.ref);
-                    deletedCount++;
-                });
-
-                await batch.commit();
-                alert(`Successfully deleted ${deletedCount} old activity logs.`);
-                logActivity('Cleaned Old Activity Logs', { deletedCount: deletedCount, oldestTimestampKept: oldestTimestampToKeep.toDate().toLocaleString() });
-                renderActivityLog();
-            } catch (error) {
-                console.error("Error cleaning activity logs:", error);
-                alert("Error cleaning activity logs: " + error.message);
-            } finally {
-                hideLoading();
             }
         }
 
@@ -933,8 +794,7 @@
                     const p = doc.data();
                     if (p && p.batchId) {
                         if (!allBatchesInfo[p.batchId]) allBatchesInfo[p.batchId] = { batchId: p.batchId, baseProjectName: p.baseProjectName || "N/A", tasksByFix: {} };
-                        if (p.fixCategory && !allBatchesInfo[p.batchId].tasksByFix[p.fixCategory]) allBatchesInfo[p.batchId].tasksByFix[p.fixCategory] = [];
-                        if (p.fixCategory) allBatchesInfo[p.batchId].tasksByFix[p.fixCategory].push(p);
+                        if (p.fixCategory && !allBatchesInfo[p.batchId].tasksByFix[p.fixCategory]) allBatchesInfo[p.batchId].tasksByFix[p.fixCategory].push(p);
                     }
                 });
                 return Object.values(allBatchesInfo);
