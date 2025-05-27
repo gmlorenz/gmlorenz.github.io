@@ -384,6 +384,7 @@
         let loginModal, closeLoginBtn, openLoginBtn; // openLoginBtn is the one on the main page
         let signInBtn, emailInput, passwordInput, emailSignInBtn, emailRegisterBtn, emailAuthSection;
         let unauthenticatedSection; // The section that shows the initial message and "Sign In" button
+        let signOutBtn; // Ensure signOutBtn is also declared globally for clarity
         // --- End Global DOM element variables ---
 
         let projects = [];
@@ -435,11 +436,13 @@
                 if (docSnap.exists) {
                     allowedEmailsFromFirestore = docSnap.data().emails || [];
                 } else {
+                    // Set a default email if the document doesn't exist
                     allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
                     await docRef.set({ emails: allowedEmailsFromFirestore }, { merge: true });
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
+                // Fallback to a default in case of error
                 allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
                 alert("Error fetching allowed emails from database. Using default access list.");
             }
@@ -504,7 +507,7 @@
                     });
                     projects = firebaseProjects;
                     projects.forEach(p => {
-                        const groupStateKey = `<span class="math-inline">\{p\.batchId\}\_</span>{p.fixCategory}`;
+                        const groupStateKey = `${p.batchId}_${p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                     });
                     refreshAllViews();
@@ -568,6 +571,7 @@
             emailSignInBtn = document.getElementById('emailSignInBtn');
             emailRegisterBtn = document.getElementById('emailRegisterBtn');
             emailAuthSection = document.getElementById('email-auth-section'); // Still exists, now inside loginModal
+            signOutBtn = document.getElementById('signOutBtn'); // Ensure signOutBtn is also referenced
 
             // Defensive checks
             const elementsToCheck = {
@@ -588,7 +592,8 @@
                 'openLoginBtn': openLoginBtn, // New
                 'signInBtn': signInBtn, // Now in loginModal
                 'emailInput': emailInput, 'passwordInput': passwordInput, 'emailSignInBtn': emailSignInBtn,
-                'emailRegisterBtn': emailRegisterBtn, 'emailAuthSection': emailAuthSection
+                'emailRegisterBtn': emailRegisterBtn, 'emailAuthSection': emailAuthSection,
+                'signOutBtn': signOutBtn // Added to defensive checks
             };
             for (const id in elementsToCheck) {
                 if (elementsToCheck[id] === null) {
@@ -694,8 +699,8 @@
                     }
                     logHtml += `
                         <li style="margin-bottom: 10px; border-bottom: 1px dotted #eee; padding-bottom: 8px;">
-                            <strong><span class="math-inline">\{date\}</strong\> \-
-<span style\="font\-weight\: bold; color\: \#555;"\></span>{log.userEmail || 'Unknown User'}</span>:
+                            <strong>${date}</strong> -
+                            <span style="font-weight: bold; color: #555;">${log.userEmail || 'Unknown User'}</span>:
                             ${log.action}
                             ${detailsHtml}
                         </li>
@@ -839,7 +844,7 @@
                             const deleteFixBtn = document.createElement('button');
                             deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
                             deleteFixBtn.classList.add('btn', 'btn-danger');
-                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all <span class="math-inline">\{fixCat\} tasks for batch '</span>{batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
+                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
                             deleteActionsDiv.appendChild(deleteFixBtn);
                         }
                     });
@@ -962,7 +967,7 @@
                 }
                 if (project.fixCategory !== currentFixCategoryForHeader) {
                     currentFixCategoryForHeader = project.fixCategory;
-                    const groupStateKey = `<span class="math-inline">\{project\.batchId\}\_</span>{currentFixCategoryForHeader}`;
+                    const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`;
                     if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                     const groupHeaderRow = projectTableBody.insertRow(); groupHeaderRow.classList.add('fix-group-header');
                     const groupHeaderCell = groupHeaderRow.insertCell(); groupHeaderCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString());
@@ -984,7 +989,7 @@
                 }
 
                 const row = projectTableBody.insertRow();
-                const currentGroupStateKeyForRow = `<span class="math-inline">\{project\.batchId\}\_</span>{project.fixCategory}`;
+                const currentGroupStateKeyForRow = `${project.batchId}_${project.fixCategory}`;
                 if (!(groupVisibilityState[currentGroupStateKeyForRow]?.isExpanded !== false)) row.classList.add('hidden-group-row');
                 if (project.fixCategory) row.classList.add(`${project.fixCategory.toLowerCase()}-row`);
                 if (project.isReassigned) row.classList.add('reassigned-task-highlight');
@@ -1266,7 +1271,7 @@
                     if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) {
                         updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) };
                         newStatus = 'Completed';
-                    } else { console.warn(`Invalid state transition for endDay2. Current status: ${currentProjectData.status}`); return; }
+                    } else { console.warn(`Invalid state transition for endD2. Current status: ${currentProjectData.status}`); return; }
                     break;
                 case 'markDone':
                     if (currentProjectData.status !== 'Completed') {
@@ -1280,295 +1285,313 @@
                             updatedFields.finishTimeDay2 = serverTimestamp;
                             updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
                         }
-                    } else { console.warn(`Project already completed. No action for markDone.`); return; }
+                    } else {
+                        console.warn(`Invalid state transition for markDone. Current status: ${currentProjectData.status}`);
+                        return;
+                    }
                     break;
                 default:
-                    console.warn("Unknown action for updateProjectState:", action);
+                    console.warn(`Unknown action: ${action}`);
                     return;
             }
-            if (Object.keys(updatedFields).length > 1) {
-                try {
-                    await projectRef.update(updatedFields);
-                    logActivity(`Updated Project Status: ${action}`, {
-                        projectId: projectId,
-                        projectName: `${currentProjectData.baseProjectName || 'N/A'} ${currentProjectData.areaTask || 'N/A'}`,
-                        oldStatus: oldStatus,
-                        newStatus: newStatus
-                    });
-                }
-                catch (error) { console.error(`Error updating project ${projectId}:`, error); alert("Error updating project status: " + error.message); }
+
+            try {
+                await projectRef.update(updatedFields);
+                logActivity(`Project State Updated: ${oldStatus} -> ${newStatus}`, {
+                    projectId: projectId,
+                    projectName: `${currentProjectData.baseProjectName || 'N/A'} ${currentProjectData.areaTask || 'N/A'}`,
+                    oldStatus: oldStatus,
+                    newStatus: newStatus,
+                    action: action
+                });
+            } catch (error) {
+                console.error(`Error updating project state for ${projectId} with action ${action}:`, error);
+                alert(`Error updating project state: ${error.message}`);
             }
         }
 
-        async function handleReassignment(originalProjectData) {
-            if (!originalProjectData || !originalProjectData.id || originalProjectData.status === 'Reassigned_TechAbsent' || originalProjectData.status === 'Completed') {
-                console.warn("Cannot reassign. Project is invalid, already reassigned, or completed.");
-                return;
-            }
-            const newTechId = prompt(`Task for '${originalProjectData.areaTask}'. Enter New Tech ID:`);
-            if (newTechId === null || newTechId.trim() === "") {
-                alert("New Tech ID cannot be empty.");
+        async function handleReassignment(originalProject) {
+            if (!db) { alert("Database not initialized!"); return; }
+            if (originalProject.status === 'Reassigned_TechAbsent') {
+                alert("This task has already been marked for reassignment.");
                 return;
             }
 
-            if (confirm(`Create NEW task for '${newTechId.trim()}'? Current task will be closed and marked as 'Re-Assigned'.`)) {
-                if (!db) { alert("Database not initialized!"); return; }
-                const batch = db.batch(); const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
-                const newReassignedData = {
-                    batchId: originalProjectData.batchId, baseProjectName: originalProjectData.baseProjectName,
-                    areaTask: originalProjectData.areaTask, gsd: originalProjectData.gsd, fixCategory: originalProjectData.fixCategory,
-                    assignedTo: newTechId.trim(), status: 'Available',
-                    startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
-                    startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
-                    techNotes: `Reassigned from ${originalProjectData.assignedTo || 'N/A'}. Original Project ID: ${originalProjectData.id}`, creationTimestamp: serverTimestamp, lastModifiedTimestamp: serverTimestamp,
-                    isReassigned: true, originalProjectId: originalProjectData.id, releasedToNextStage: false,
-                    breakDurationMinutes: 0, additionalMinutesManual: 0
+            const newAssignedTech = prompt("Enter the Tech ID for reassignment (e.g., 7248AA). Leave empty to just mark as 'Reassigned_TechAbsent'.");
+            let reassignToEmail = ''; // This will be the actual assignedTo field value for the new task
+
+            if (newAssignedTech !== null && newAssignedTech.trim() !== '') {
+                if (!TECH_IDS.includes(newAssignedTech.trim())) {
+                    alert("Invalid Tech ID. Please use one from the predefined list.");
+                    return;
+                }
+                reassignToEmail = newAssignedTech.trim();
+            } else {
+                 // If the user didn't enter a new tech ID, just mark the original as reassigned_techabsent
+                 // and don't create a new task.
+            }
+
+
+            const batch = db.batch();
+            const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            // 1. Mark the original project as 'Reassigned_TechAbsent'
+            const originalProjectUpdate = {
+                status: 'Reassigned_TechAbsent',
+                techNotes: originalProject.techNotes ? `${originalProject.techNotes}\n(Reassigned from ${originalProject.assignedTo || 'N/A'})` : `Reassigned from ${originalProject.assignedTo || 'N/A'}`,
+                lastModifiedTimestamp: serverTimestamp,
+                isReassigned: true // Mark original as reassigned
+            };
+            batch.update(db.collection("projects").doc(originalProject.id), originalProjectUpdate);
+
+            let newProjectId = null;
+            if (reassignToEmail) {
+                // 2. Create a new project document for the reassigned task
+                const newProjectData = {
+                    ...originalProject, // Copy existing data
+                    id: undefined, // Let Firestore generate new ID
+                    assignedTo: reassignToEmail, // Assign to new tech
+                    status: 'Available', // Reset status for the new task
+                    techNotes: `Reassigned from original task ${originalProject.baseProjectName} ${originalProject.areaTask} (ID: ${originalProject.id.substring(0,6)})`,
+                    startTimeDay1: null,
+                    finishTimeDay1: null,
+                    durationDay1Ms: null,
+                    startTimeDay2: null,
+                    finishTimeDay2: null,
+                    durationDay2Ms: null,
+                    releasedToNextStage: false,
+                    lastModifiedTimestamp: serverTimestamp,
+                    creationTimestamp: serverTimestamp, // New creation timestamp for the reassigned task
+                    isReassigned: false, // This new task is NOT a reassigned one, it's the "active" version
+                    originalProjectId: originalProject.id // Reference to the original task
                 };
                 const newDocRef = db.collection("projects").doc();
-                batch.set(newDocRef, newReassignedData);
-                batch.update(db.collection("projects").doc(originalProjectData.id), { status: 'Reassigned_TechAbsent', lastModifiedTimestamp: serverTimestamp });
-                try {
-                    await batch.commit();
-                    logActivity('Reassigned Task', {
-                        originalProjectId: originalProjectData.id,
-                        originalProjectName: `${originalProjectData.baseProjectName || 'N/A'} ${originalProjectData.areaTask || 'N/A'}`,
-                        oldAssignedTo: originalProjectData.assignedTo,
-                        newAssignedTo: newTechId.trim(),
-                        newProjectId: newDocRef.id
-                    });
-                } catch (error) { console.error("Error in re-assignment:", error); alert("Error during reassignment: " + error.message); }
+                batch.set(newDocRef, newProjectData);
+                newProjectId = newDocRef.id;
+            }
+
+            try {
+                await batch.commit();
+                logActivity('Task Reassigned', {
+                    originalProjectId: originalProject.id,
+                    newProjectId: newProjectId || 'N/A',
+                    originalAssignedTo: originalProject.assignedTo,
+                    newAssignedTo: reassignToEmail || 'N/A',
+                    projectName: `${originalProject.baseProjectName || 'N/A'} ${originalProject.areaTask || 'N/A'}`
+                });
+                alert("Task reassigned successfully!");
+            } catch (error) {
+                console.error("Error during reassignment:", error);
+                alert("Failed to reassign task: " + error.message);
             }
         }
 
         function refreshAllViews() {
-            try {
-                renderProjects();
-                if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard();
-                if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList();
-                if (activityLogModal && activityLogModal.style.display === 'block') renderActivityLog();
-            } catch (e) { console.error("Error during refreshAllViews:", e); }
+            renderProjects();
+            if (tlDashboardModal && tlDashboardModal.style.display === 'block') {
+                renderTLDashboard();
+            }
+            if (settingsModal && settingsModal.style.display === 'block') {
+                renderAllowedEmailsList();
+            }
+            if (activityLogModal && activityLogModal.style.display === 'block') {
+                renderActivityLog();
+            }
         }
 
-        async function renderAllowedEmailsList() {
-            if (!allowedEmailsList) { console.error("allowedEmailsList not found."); return; }
-            await fetchAllowedEmails();
-            allowedEmailsList.innerHTML = '';
-            if (allowedEmailsFromFirestore.length === 0) { allowedEmailsList.innerHTML = '<li>No allowed emails configured.</li>'; return; }
-            allowedEmailsFromFirestore.forEach(email => {
-                const li = document.createElement('li'); li.textContent = email;
-                const removeBtn = document.createElement('button'); removeBtn.textContent = 'Remove';
-                removeBtn.onclick = () => handleRemoveEmail(email); li.appendChild(removeBtn);
-                allowedEmailsList.appendChild(li);
-            });
-        }
-        async function handleAddEmail() {
-            if (!addEmailInput) { console.error("addEmailInput not found."); return; }
-            const newEmail = addEmailInput.value.trim().toLowerCase();
-            if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) {
-                alert("Please enter a valid email address."); return;
+        // --- Auth Related Functions ---
+        function updateUIforAuthState(user) {
+            if (!appContentDiv || !unauthenticatedSection || !userInfoDisplayDiv || !userNameP || !userEmailP || !userPhotoImg || !openSettingsBtn || !loginModal) {
+                console.error("Authentication UI elements not fully defined.");
+                return;
             }
-            if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(newEmail)) { alert("This email is already in the allowed list."); return; }
-            const updatedEmails = [...allowedEmailsFromFirestore, newEmail].sort();
-            if (await updateAllowedEmailsInFirestore(updatedEmails)) {
-                logActivity('Added Allowed Email', { email: newEmail });
-                addEmailInput.value = ''; renderAllowedEmailsList();
-            }
-        }
-        async function handleRemoveEmail(emailToRemove) {
-            if (confirm(`Remove ${emailToRemove} from allowed list?`)) {
-                const updatedEmails = allowedEmailsFromFirestore.filter(email => email !== emailToRemove);
-                if (await updateAllowedEmailsInFirestore(updatedEmails)) {
-                    logActivity('Removed Allowed Email', { email: emailToRemove });
-                    renderAllowedEmailsList();
+
+            if (user) {
+                const userEmail = user.email;
+                if (!allowedEmailsFromFirestore.includes(userEmail)) {
+                    auth.signOut(); // Sign out unauthorized user immediately
+                    alert("Your email is not authorized to access this application. Please contact an administrator.");
+                    // Hide app content and show unauthenticated section
+                    appContentDiv.style.display = 'none';
+                    unauthenticatedSection.style.display = 'block';
+                    userInfoDisplayDiv.style.display = 'none';
+                    loginModal.style.display = 'none'; // Ensure login modal is hidden
+                    loadingAuthMessageDiv.textContent = "Your email is not authorized to access this application. Please contact an administrator.";
+                    loadingAuthMessageDiv.style.color = 'red';
+                    return;
                 }
+
+                unauthenticatedSection.style.display = 'none';
+                appContentDiv.style.display = 'block';
+                loginModal.style.display = 'none'; // Hide login modal on successful login
+
+                userInfoDisplayDiv.style.display = 'flex';
+                userNameP.textContent = user.displayName || 'User';
+                userEmailP.textContent = user.email || 'N/A';
+                userPhotoImg.src = user.photoURL || 'https://via.placeholder.com/30'; // Default placeholder
+
+                // Show settings button only for specific users (e.g., admin)
+                // Assuming 'ev.lorens.ebrado@gmail.com' is the admin email
+                if (user.email === 'ev.lorens.ebrado@gmail.com') {
+                    openSettingsBtn.style.display = 'inline-block';
+                } else {
+                    openSettingsBtn.style.display = 'none';
+                }
+
+                // If this is the first time the app is initialized, fetch data
+                if (!isAppInitialized) {
+                    initializeFirebaseAndLoadData();
+                    isAppInitialized = true;
+                }
+            } else {
+                appContentDiv.style.display = 'none';
+                unauthenticatedSection.style.display = 'block';
+                userInfoDisplayDiv.style.display = 'none';
+                loadingAuthMessageDiv.textContent = "Please sign in to access the Project Tracker.";
+                loadingAuthMessageDiv.style.color = '#555';
+                isAppInitialized = false; // Reset if user logs out
+                if (firestoreListenerUnsubscribe) {
+                    firestoreListenerUnsubscribe(); // Stop listening to project changes
+                    firestoreListenerUnsubscribe = null;
+                }
+                projects = []; // Clear local projects data
+                refreshAllViews(); // Clear the table
+            }
+        }
+
+        // Google Sign-In
+        async function signInWithGoogle() {
+            if (!auth) { console.error("Firebase Auth not initialized!"); alert("Authentication service is not available."); return; }
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await auth.signInWithPopup(provider);
+                logActivity('Google Sign In');
+            } catch (error) {
+                console.error("Google Sign-In Error:", error);
+                alert("Google Sign-In failed: " + error.message);
+            }
+        }
+
+        // Email Sign-In
+        async function signInWithEmail() {
+            if (!auth || !emailInput || !passwordInput) { console.error("Auth or email/password inputs missing!"); return; }
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (!email || !password) { alert("Please enter both email and password."); return; }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                logActivity('Email Sign In');
+            } catch (error) {
+                console.error("Email Sign-In Error:", error);
+                alert("Email Sign-In failed: " + error.message);
+            }
+        }
+
+        // Email Registration
+        async function registerWithEmail() {
+            if (!auth || !emailInput || !passwordInput) { console.error("Auth or email/password inputs missing!"); return; }
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (!email || !password) { alert("Please enter both email and password for registration."); return; }
+
+            if (!allowedEmailsFromFirestore.includes(email)) {
+                alert("Your email is not on the allowed list for registration. Please contact an administrator.");
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                alert("Registration successful! You are now signed in.");
+                logActivity('Email Register');
+            } catch (error) {
+                console.error("Email Registration Error:", error);
+                alert("Email Registration failed: " + error.message);
+            }
+        }
+
+        // Sign Out
+        async function signOutUser() {
+            if (!auth) { console.error("Firebase Auth not initialized!"); return; }
+            try {
+                await auth.signOut();
+                logActivity('Sign Out');
+                alert("You have been signed out.");
+            } catch (error) {
+                console.error("Sign Out Error:", error);
+                alert("Error signing out: " + error.message);
             }
         }
 
         function setupAuthEventListeners() {
-            if (!auth) { console.error("Firebase Auth not available, cannot set up auth event listeners."); return; }
-            const provider = new firebase.auth.GoogleAuthProvider();
+            if (signInBtn) signInBtn.onclick = signInWithGoogle;
+            if (signOutBtn) signOutBtn.onclick = signOutUser;
+            if (emailSignInBtn) emailSignInBtn.onclick = signInWithEmail;
+            if (emailRegisterBtn) emailRegisterBtn.onclick = registerWithEmail;
 
-            if (signInBtn) {
-                signInBtn.addEventListener('click', () => {
-                    console.log("Google Sign-In button clicked.");
-                    auth.signInWithPopup(provider).catch(error => {
-                        console.error("Google Sign-In failed:", error);
-                        alert("Google Sign-In failed: " + error.message);
-                    });
+            // Firebase Auth State Listener
+            if (auth) {
+                auth.onAuthStateChanged((user) => {
+                    updateUIforAuthState(user);
                 });
-            }
-            if (signOutBtn) {
-                signOutBtn.addEventListener('click', () => {
-                    console.log("Sign Out button clicked.");
-                    auth.signOut().catch(error => {
-                        console.error("Sign Out failed:", error);
-                        alert("Sign Out failed: " + error.message);
-                    });
-                });
-            }
-
-            if (emailSignInBtn && emailInput && passwordInput) {
-                emailSignInBtn.onclick = async () => {
-                    try {
-                        const email = emailInput.value.trim();
-                        const password = passwordInput.value;
-                        if (!email || !password) {
-                            alert("Please enter both email and password.");
-                            return;
-                        }
-                        console.log("Attempting email sign-in...");
-                        const result = await auth.signInWithEmailAndPassword(email, password);
-                        console.log("Email sign-in successful for:", result.user.email);
-                    } catch (error) {
-                        console.error("Email Sign-In failed:", error);
-                        alert("Email Sign-In failed: " + error.message);
-                    }
-                };
-            }
-
-            if (emailRegisterBtn && emailInput && passwordInput) {
-                emailRegisterBtn.onclick = async () => {
-                    try {
-                        const email = emailInput.value.trim();
-                        const password = passwordInput.value;
-                        if (!email || !password) {
-                            alert("Please enter both email and password to register.");
-                            return;
-                        }
-                        if (password.length < 6) {
-                            alert("Password must be at least 6 characters long.");
-                            return;
-                        }
-                        console.log("Attempting email registration...");
-                        const result = await auth.createUserWithEmailAndPassword(email, password);
-                        alert("Registration successful for " + result.user.email + ". You are now signed in.");
-                    } catch (error) {
-                        console.error("Registration failed:", error);
-                        alert("Registration failed: " + error.message);
-                    }
-                };
-            }
-        }
-
-        function initializeAppComponents() {
-            if (!isAppInitialized) {
-                initializeFirebaseAndLoadData();
-                isAppInitialized = true;
-                console.log("Main app components initialized.");
             } else {
-                console.log("App components already initialized, re-initializing Firebase data listener.");
-                initializeFirebaseAndLoadData();
+                console.error("Firebase Auth object is null. Cannot set up auth state listener.");
+                updateUIforAuthState(null); // Ensure UI reflects unauthenticated state
             }
         }
 
-        // Firebase Auth State Listener - This is the core logic for UI display based on auth status
-        if (auth) {
-            auth.onAuthStateChanged(async (user) => {
-                // Ensure DOM references are always available when this fires
-                if (!unauthenticatedSection) { // A critical element that tells us if DOM references are set
-                    console.warn("DOM elements not yet ready in onAuthStateChanged, calling setupDOMReferences.");
-                    setupDOMReferences();
-                }
-
-                if (user) {
-                    console.log("User detected:", user.email);
-                    await fetchAllowedEmails();
-
-                    const userEmailLower = user.email ? user.email.toLowerCase() : "";
-
-                    if (user.email && allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(userEmailLower)) {
-                        // User is authorized
-                        if(userNameP) userNameP.textContent = user.displayName || "";
-                        if(userEmailP) userEmailP.textContent = user.email || "";
-                        if(userPhotoImg) userPhotoImg.src = user.photoURL || "";
-
-                        // Show authenticated UI, hide unauthenticated UI
-                        if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'flex';
-                        if(unauthenticatedSection) unauthenticatedSection.style.display = 'none'; // Hide the "Sign In" button area
-                        if(appContentDiv) appContentDiv.style.display = 'block'; // Show the main app content
-                        if(loginModal) loginModal.style.display = 'none'; // Ensure login modal is closed
-                        if(openSettingsBtn) openSettingsBtn.style.display = 'block'; // Show settings for authorized users
-
-                        initializeAppComponents(); // Initialize or re-initialize data listeners
-                    } else {
-                        // User is NOT authorized (e.g., signed in with Google but email not allowed)
-                        alert("Access Denied. Your email is not on the allowed list: " + (user.email || ""));
-                        console.warn("Unauthorized user attempted access:", user.email);
-                        auth.signOut().then(() => {
-                            // Show initial message and "Sign In" button again
-                            if(unauthenticatedSection) unauthenticatedSection.style.display = 'block';
-                            if(loadingAuthMessageDiv) {
-                                loadingAuthMessageDiv.innerHTML = '<p style="color:red;">Access Denied. Please sign in with an allowed account.</p>';
-                                loadingAuthMessageDiv.style.display = 'block';
-                            }
-                            if(appContentDiv) appContentDiv.style.display = 'none'; // Hide app content
-                            if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-                            if(loginModal) loginModal.style.display = 'block'; // Maybe re-open login modal to try again
-                            if(openSettingsBtn) openSettingsBtn.style.display = 'none';
-
-                            // Clean up app state if unauthorized
-                            projects = [];
-                            if (projectTableBody) projectTableBody.innerHTML = '';
-                            if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                            if (allowedEmailsList) allowedEmailsList.innerHTML = '';
-                            if (activityLogContentElement) activityLogContentElement.innerHTML = '';
-                            if (firestoreListenerUnsubscribe) {
-                                firestoreListenerUnsubscribe();
-                                firestoreListenerUnsubscribe = null;
-                            }
-                            isAppInitialized = false;
-                        }).catch(error => {
-                            console.error("Error during unauthorized sign out:", error);
-                            alert("Error signing out an unauthorized user. Please refresh.");
-                        });
+        // Email Management for Settings Modal
+        function renderAllowedEmailsList() {
+            if (!allowedEmailsList) { console.error("allowedEmailsList element not found."); return; }
+            allowedEmailsList.innerHTML = '';
+            if (allowedEmailsFromFirestore.length === 0) {
+                allowedEmailsList.innerHTML = '<li>No allowed emails. Add one below.</li>';
+                return;
+            }
+            allowedEmailsFromFirestore.forEach(email => {
+                const li = document.createElement('li');
+                li.textContent = email;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Remove';
+                deleteBtn.onclick = async () => {
+                    if (confirm(`Are you sure you want to remove ${email}?`)) {
+                        const newEmails = allowedEmailsFromFirestore.filter(e => e !== email);
+                        if (await updateAllowedEmailsInFirestore(newEmails)) {
+                            renderAllowedEmailsList(); // Re-render on success
+                            logActivity('Removed Allowed Email', { email: email });
+                        }
                     }
-                } else {
-                    // No user signed in (initial load or after sign out)
-                    console.log("No user signed in. Displaying initial prompt and 'Sign In' button.");
-                    // Show unauthenticated UI, hide app content
-                    if(unauthenticatedSection) unauthenticatedSection.style.display = 'block';
-                    if(loadingAuthMessageDiv) {
-                        loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
-                        loadingAuthMessageDiv.style.display = 'block';
-                    }
-                    if(appContentDiv) appContentDiv.style.display = 'none';
-                    if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-                    if(loginModal) loginModal.style.display = 'none'; // Ensure login modal is hidden initially
-                    if(openSettingsBtn) openSettingsBtn.style.display = 'none';
-
-                    // Clear app content if no user
-                    projects = [];
-                    if (projectTableBody) projectTableBody.innerHTML = '';
-                    if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
-                    if (activityLogContentElement) activityLogContentElement.innerHTML = '';
-
-                    // Stop listening to Firestore data if no user is signed in
-                    if (firestoreListenerUnsubscribe) {
-                        firestoreListenerUnsubscribe();
-                        firestoreListenerUnsubscribe = null;
-                    }
-                    isAppInitialized = false;
-                }
+                };
+                li.appendChild(deleteBtn);
+                allowedEmailsList.appendChild(li);
             });
-        } else {
-            // This block handles cases where Firebase Auth itself failed to initialize (auth object is null)
-            console.error("Firebase Auth object is null. Cannot set up authentication listener.");
-            if (loadingAuthMessageDiv) {
-                loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Authentication service error. Please check your Firebase configuration and network connection.</p>`;
-                loadingAuthMessageDiv.style.display = 'block';
-            }
-            if (unauthenticatedSection) unauthenticatedSection.style.display = 'block'; // Show the initial message even if auth failed
-            if (openLoginBtn) openLoginBtn.style.display = 'none'; // Hide the login button if auth not available
-            if (appContentDiv) appContentDiv.style.display = 'none';
-            if (userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-            if (loginModal) loginModal.style.display = 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        async function handleAddEmail() {
+            if (!addEmailInput) { console.error("addEmailInput element not found."); return; }
+            const newEmail = addEmailInput.value.trim();
+            if (newEmail && !allowedEmailsFromFirestore.includes(newEmail)) {
+                const newEmails = [...allowedEmailsFromFirestore, newEmail];
+                if (await updateAllowedEmailsInFirestore(newEmails)) {
+                    addEmailInput.value = ''; // Clear input
+                    renderAllowedEmailsList(); // Re-render on success
+                    logActivity('Added Allowed Email', { email: newEmail });
+                }
+            } else if (allowedEmailsFromFirestore.includes(newEmail)) {
+                alert("Email already in the list.");
+            }
+        }
+
+        // Initialize on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', async () => {
             setupDOMReferences();
+            if (db) { // Only attempt to fetch emails if Firestore is initialized
+                await fetchAllowedEmails();
+            }
             attachEventListeners();
+            // The Firebase auth state listener in setupAuthEventListeners will handle initial UI update
         });
+
     </script>
 </body>
 </html>
