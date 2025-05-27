@@ -944,6 +944,7 @@
                 await fbBatch.commit();
                 logActivity('Deleted Entire Project Batch', { batchId: batchIdToDelete.split('_')[1] });
                 initializeFirebaseAndLoadData(); // Re-load data after deletion
+                renderTLDashboard();
             } catch (error) { console.error(`Error deleting batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
             finally { hideLoading(); }
         }
@@ -958,6 +959,7 @@
                 await fbBatch.commit();
                 logActivity(`Deleted Specific Fix Tasks for Batch: ${fixCategoryToDelete}`, { batchId: batchIdToDelete.split('_')[1], fixCategory: fixCategoryToDelete });
                 initializeFirebaseAndLoadData(); // Re-load data after deletion
+                renderTLDashboard();
             } catch (error) { console.error(`Error deleting ${fixCategoryToDelete} for batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
             finally { hideLoading(); }
         }
