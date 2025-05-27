@@ -9,7 +9,6 @@
         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
 
         /* Styles for Auth Section - copied from tracker.html for direct control */
-     /* Styles for Auth Section - copied from tracker.html for direct control */
         #auth-container {
             /* Adjust these values */
             padding: 10px 15px; /* Reduced vertical and horizontal padding */
@@ -65,7 +64,7 @@
         /* Keep hover styles as they are */
         #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
-        
+
         /* Initially hide app content and show loading/auth message */
         #app-content { display: none; }
         #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Added margin-top to separate from auth-container */
@@ -176,6 +175,41 @@
         #projectTable td:nth-child(12) {
             display: none;
         }
+
+        /* Styles for Pagination Controls */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        .pagination-controls button {
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background-color: #e0e0e0;
+        }
+        .pagination-controls button:disabled {
+            background-color: #ddd;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .pagination-controls span {
+            font-size: 0.9em;
+            color: #555;
+        }
+        .pagination-controls select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -247,6 +281,10 @@
                         <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
                         <button id="addEmailBtn" class="btn btn-success">Add Email</button>
                     </div>
+                    <hr>
+                    <h3>Activity Log Management</h3>
+                    <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
+                    <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
                 </div>
             </div>
 
@@ -258,6 +296,16 @@
                 </div>
             </div>
             <h3>📌 Team123 Project Tracker</h3>
+            <div class="pagination-controls">
+                <button id="prevPageBtn" disabled>Previous</button>
+                <select id="pageSizeSelect">
+                    <option value="10">10 per page</option>
+                    <option value="25" selected>25 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+                <button id="nextPageBtn">Next</button>
+            </div>
             <table id="projectTable">
                 <thead>
                     <tr>
@@ -348,7 +396,7 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn;
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn; // Added cleanActivityLogsBtn
 
         // NEW: Activity Log related variables
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
@@ -357,6 +405,15 @@
         let groupVisibilityState = {};
         let isAppInitialized = false;
         let firestoreListenerUnsubscribe = null;
+
+        // Pagination variables
+        let pageSize = 25; // Default page size
+        let lastVisibleDoc = null;
+        let firstVisibleDoc = null;
+        let queryHistory = []; // To store documents for going back
+        let currentPage = 0;
+        let prevPageBtn, nextPageBtn, pageSizeSelect;
+
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
         function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
@@ -413,32 +470,99 @@
             }
         }
 
-        function initializeFirebaseAndLoadData() {
+        // Modified: To include pagination logic
+        async function initializeFirebaseAndLoadData(direction = 'next') {
             if (!db) { projects = []; refreshAllViews(); return; }
-            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe();
+            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe(); // Unsubscribe from previous listener
+
             loadGroupVisibilityState();
+
+            let query = db.collection("projects").orderBy("creationTimestamp", "desc"); // Order by timestamp for consistent pagination
+
+            if (direction === 'next' && lastVisibleDoc) {
+                query = query.startAfter(lastVisibleDoc);
+            } else if (direction === 'prev' && firstVisibleDoc) {
+                 query = query.endBefore(firstVisibleDoc);
+            }
+
             try {
-                db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
-                  .onSnapshot((querySnapshot) => {
+                firestoreListenerUnsubscribe = query.limit(pageSize).onSnapshot((querySnapshot) => {
                     const firebaseProjects = [];
-                    querySnapshot.forEach((doc) => { if (doc.exists && typeof doc.data === 'function') firebaseProjects.push({ id: doc.id, ...doc.data() }); });
+                    querySnapshot.forEach((doc) => {
+                        if (doc.exists && typeof doc.data === 'function') {
+                            firebaseProjects.push({ id: doc.id, ...doc.data() });
+                        }
+                    });
+
+                    if (firebaseProjects.length === 0 && currentPage > 0 && direction === 'next') {
+                        // Reached end of data, go back to previous page
+                        currentPage--;
+                        lastVisibleDoc = queryHistory[currentPage] ? queryHistory[currentPage].lastVisible : null;
+                        firstVisibleDoc = queryHistory[currentPage] ? queryHistory[currentPage].firstVisible : null;
+                        initializeFirebaseAndLoadData('prev'); // Try to go back to the previous known page
+                        return;
+                    }
+                     if (firebaseProjects.length === 0 && currentPage === 0 && direction === 'prev') {
+                        // Already at the beginning and no data, stay put.
+                        lastVisibleDoc = null;
+                        firstVisibleDoc = null;
+                        projects = [];
+                        updatePaginationButtons(false, false);
+                        refreshAllViews();
+                        return;
+                    }
+
+
                     projects = firebaseProjects;
+
+                    // Update lastVisibleDoc and firstVisibleDoc for pagination
+                    lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+                    firstVisibleDoc = querySnapshot.docs[0];
+
+                    if (direction === 'next' && lastVisibleDoc) {
+                        queryHistory.push({ firstVisible: firstVisibleDoc, lastVisible: lastVisibleDoc });
+                        currentPage++;
+                    } else if (direction === 'prev' && firstVisibleDoc) {
+                        queryHistory.pop(); // Remove current page's start/end markers
+                        if (queryHistory.length > 0) {
+                             const prevPageMarkers = queryHistory[queryHistory.length - 1];
+                             firstVisibleDoc = prevPageMarkers.firstVisible;
+                             lastVisibleDoc = prevPageMarkers.lastVisible;
+                             currentPage--;
+                        } else {
+                            // On first page, clear history
+                            firstVisibleDoc = null;
+                            currentPage = 0;
+                        }
+                    }
+
+                    // Pre-process projects for new Day3 fields if not present
                     projects.forEach(p => {
                         const groupStateKey = `${p.batchId}_${p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                         if (p.breakDurationMinutes === undefined) p.breakDurationMinutes = 0;
                         if (p.additionalMinutesManual === undefined) p.additionalMinutesManual = 0;
-                        // NEW: Ensure Day3 fields exist for existing projects
                         if (p.startTimeDay3 === undefined) p.startTimeDay3 = null;
                         if (p.finishTimeDay3 === undefined) p.finishTimeDay3 = null;
                         if (p.durationDay3Ms === undefined) p.durationDay3Ms = null;
                     });
+
+                    updatePaginationButtons(querySnapshot.docs.length < pageSize, currentPage === 0);
                     refreshAllViews();
                 }, (error) => {
                     console.error("Error fetching projects: ", error);
-                    projects = []; refreshAllViews();
+                    projects = [];
+                    updatePaginationButtons(true, true); // Disable both on error
+                    refreshAllViews();
                 });
-            } catch (fbError) { console.error("Error setting up Firebase listener: ", fbError); }
+            } catch (fbError) {
+                console.error("Error setting up Firebase listener: ", fbError);
+            }
+        }
+
+        function updatePaginationButtons(isLastPage, isFirstPage) {
+            if (prevPageBtn) prevPageBtn.disabled = isFirstPage;
+            if (nextPageBtn) nextPageBtn.disabled = isLastPage;
         }
 
         function setupDOMReferences() {
@@ -457,12 +581,18 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
+            cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn'); // Ref for new button
 
             // NEW: Activity Log references
             openActivityLogBtn = document.getElementById('openActivityLogBtn');
             activityLogModal = document.getElementById('activityLogModal');
             closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
             activityLogContentElement = document.getElementById('activityLogContent');
+
+            // Pagination references
+            prevPageBtn = document.getElementById('prevPageBtn');
+            nextPageBtn = document.getElementById('nextPageBtn');
+            pageSizeSelect = document.getElementById('pageSizeSelect');
         }
 
         function setupAuthRelatedDOMReferences() {
@@ -492,6 +622,7 @@
             if (openSettingsBtn) openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
+            if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs; // New event listener
 
             // NEW: Activity Log button and close event listener
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
@@ -499,6 +630,32 @@
             };
             if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { activityLogModal.style.display = 'none'; };
 
+            // Pagination event listeners
+            if (prevPageBtn) prevPageBtn.onclick = () => {
+                if (currentPage > 0) {
+                    lastVisibleDoc = queryHistory[currentPage - 1].lastVisible; // Get previous last visible doc
+                    firstVisibleDoc = queryHistory[currentPage - 1].firstVisible; // Get previous first visible doc
+                    currentPage--;
+                    initializeFirebaseAndLoadData('prev');
+                } else {
+                     // If on the first page, just re-load it to ensure consistency if something went wrong
+                    currentPage = 0;
+                    lastVisibleDoc = null; // Start from the beginning
+                    firstVisibleDoc = null; // Start from the beginning
+                    initializeFirebaseAndLoadData();
+                }
+            };
+            if (nextPageBtn) nextPageBtn.onclick = () => {
+                initializeFirebaseAndLoadData('next');
+            };
+            if (pageSizeSelect) pageSizeSelect.onchange = (event) => {
+                pageSize = parseInt(event.target.value, 10);
+                lastVisibleDoc = null; // Reset pagination
+                firstVisibleDoc = null;
+                queryHistory = [];
+                currentPage = 0;
+                initializeFirebaseAndLoadData();
+            };
 
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
@@ -541,8 +698,8 @@
             activityLogContentElement.innerHTML = '<p>Loading activity log...</p>';
 
             try {
-                // Fetch latest 100 logs, adjust limit as needed for performance/display
-                const querySnapshot = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(100).get();
+                // Fetch latest 50 logs
+                const querySnapshot = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(50).get(); // Limit to 50 latest logs
                 if (querySnapshot.empty) {
                     activityLogContentElement.innerHTML = '<p>No activities recorded yet.</p>';
                     return;
@@ -577,6 +734,69 @@
             } catch (error) {
                 console.error("Error fetching activity logs:", error);
                 activityLogContentElement.innerHTML = '<p style="color:red;">Error loading activity log.</p>';
+            }
+        }
+
+        async function handleCleanActivityLogs() {
+            if (!confirm("Are you sure you want to delete all activity logs older than the latest 50? This action is irreversible.")) {
+                return;
+            }
+
+            if (!db) {
+                alert("Database not initialized! Cannot clean logs.");
+                return;
+            }
+
+            try {
+                // Get the latest 50 logs by timestamp
+                const latestLogsSnapshot = await db.collection("activity_logs")
+                    .orderBy("timestamp", "desc")
+                    .limit(50)
+                    .get();
+
+                if (latestLogsSnapshot.empty) {
+                    alert("No activity logs to clean.");
+                    return;
+                }
+
+                let oldestTimestampToKeep = null;
+                if (latestLogsSnapshot.docs.length === 50) { // If there are exactly 50 logs, we find the oldest of these.
+                    oldestTimestampToKeep = latestLogsSnapshot.docs[latestLogsSnapshot.docs.length - 1].data().timestamp;
+                } else {
+                    // If fewer than 50 logs, we don't delete any.
+                    alert("Fewer than 50 logs found, no logs to delete.");
+                    return;
+                }
+
+                if (!oldestTimestampToKeep) {
+                    alert("Could not determine oldest timestamp to keep.");
+                    return;
+                }
+
+                // Query for all logs older than the oldest of the latest 50
+                const oldLogsSnapshot = await db.collection("activity_logs")
+                    .where("timestamp", "<", oldestTimestampToKeep)
+                    .get();
+
+                if (oldLogsSnapshot.empty) {
+                    alert("No old activity logs to delete.");
+                    return;
+                }
+
+                const batch = db.batch();
+                let deletedCount = 0;
+                oldLogsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                    deletedCount++;
+                });
+
+                await batch.commit();
+                alert(`Successfully deleted ${deletedCount} old activity logs.`);
+                logActivity('Cleaned Old Activity Logs', { deletedCount: deletedCount, oldestTimestampKept: oldestTimestampToKeep.toDate().toLocaleString() });
+                renderActivityLog(); // Refresh the log display
+            } catch (error) {
+                console.error("Error cleaning activity logs:", error);
+                alert("Error cleaning activity logs: " + error.message);
             }
         }
 
@@ -627,6 +847,10 @@
 
         function getManageableBatches() {
             const allBatchesInfo = {};
+            // Iterate over all projects (which are already limited by pagination for the main table)
+            // For dashboard, you might want to fetch all batches explicitly if you need to manage them regardless of current page
+            // For now, it works on currently loaded projects, which might be incomplete for batch management.
+            // A more robust solution for TL dashboard would be to run a separate query for all batches (not paginated).
             projects.forEach(p => {
                 if (p && p.batchId) {
                     if (!allBatchesInfo[p.batchId]) allBatchesInfo[p.batchId] = { batchId: p.batchId, baseProjectName: p.baseProjectName || "N/A", tasksByFix: {} };
@@ -641,7 +865,7 @@
             if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); return; }
             tlDashboardContentElement.innerHTML = '';
             const manageableBatches = getManageableBatches();
-            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found.</p>'; return; }
+            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>'; return; } // Adjusted message for pagination context
 
             manageableBatches.forEach(batch => {
                 if (!batch || !batch.batchId) return;
@@ -789,6 +1013,7 @@
 
             projectsToRender.sort((a, b) => {
                 if (!a || !b) return 0;
+                // Preserve the original sorting logic for display within the current page
                 if ((a.batchId || "") < (b.batchId || "")) return -1; if ((a.batchId || "") > (b.batchId || "")) return 1;
                 const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory || ""); const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory || "");
                 if (fixOrderA < fixOrderB) return -1; if (fixOrderA > fixOrderB) return 1;
@@ -1349,10 +1574,16 @@
                 // setupDOMReferences and setupAuthRelatedDOMReferences are called here to ensure all elements are ready
                 setupDOMReferences();
                 attachEventListeners(); // Moved here to ensure elements are available for listeners
-                initializeFirebaseAndLoadData();
+                // Initial load of data for the first page
+                lastVisibleDoc = null; // Start from the beginning
+                firstVisibleDoc = null;
+                queryHistory = [];
+                currentPage = 0;
+                initializeFirebaseAndLoadData(); // Load first page
                 isAppInitialized = true;
             } else {
                 console.log("App components already initialized or re-initializing data load.");
+                // Re-initialize data load for the current page.
                 initializeFirebaseAndLoadData();
             }
         }
