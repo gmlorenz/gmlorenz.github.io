@@ -1183,31 +1183,49 @@
             auth.onAuthStateChanged(async (user) => {
                 if (!userNameP) setupDOMReferences();
                 if (user) {
-                    await fetchAllowedEmails(); const userEmailLower = user.email ? user.email.toLowerCase() : "";
+                    await fetchAllowedEmails();
+                    const userEmailLower = user.email ? user.email.toLowerCase() : "";
                     if (user.email && allowedEmailsFromFirestore.map(e=>e.toLowerCase()).includes(userEmailLower)) {
-                        userNameP.textContent = user.displayName||""; userEmailP.textContent = user.email||""; userPhotoImg.src = user.photoURL||"";
-                        userInfoDisplayDiv.style.display = 'flex'; signInBtn.style.display = 'none';
-                        loadingAuthMessageDiv.style.display = 'none'; appContentDiv.style.display = 'block'; openSettingsBtn.style.display = 'block';
+                        userNameP.textContent = user.displayName||"";
+                        userEmailP.textContent = user.email||"";
+                        userPhotoImg.src = user.photoURL||"";
+                        userInfoDisplayDiv.style.display = 'flex';
+                        signInBtn.style.display = 'none';
+                        loadingAuthMessageDiv.style.display = 'none'; // Ensure loading message is hidden
+                        appContentDiv.style.display = 'block';
+                        openSettingsBtn.style.display = 'block';
                         initializeAppComponents();
                     } else {
                         alert("Access Denied.");
                         auth.signOut().then(() => {
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied.</p>';
                             userInfoDisplayDiv.style.display = 'none';
-                            signInBtn.style.display = 'block'; // Ensure signInBtn is shown on access denied signOut
-                            appContentDiv.style.display = 'none'; loadingAuthMessageDiv.style.display = 'block'; openSettingsBtn.style.display = 'none';
-                            projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
+                            signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none';
+                            loadingAuthMessageDiv.style.display = 'block';
+                            openSettingsBtn.style.display = 'none';
+                            projects = [];
+                            if (projectTableBody) projectTableBody.innerHTML = '';
+                            if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                             if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
                             isAppInitialized = false;
                         });
                     }
                 } else {
                     userInfoDisplayDiv.style.display = 'none';
-                    signInBtn.style.display = 'block'; // THIS IS THE KEY LINE TO ADD/ENSURE
-                    appContentDiv.style.display = 'none'; openSettingsBtn.style.display = 'none';
-                    if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';}
-                    if(loadingAuthMessageDiv) loadingAuthMessageDiv.display = 'block';
-                    projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = ''; if (allowedEmailsList) allowedEmailsList.innerHTML = '';
+                    signInBtn.style.display = 'block';
+                    appContentDiv.style.display = 'none';
+                    openSettingsBtn.style.display = 'none';
+                    if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
+                        loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';
+                        loadingAuthMessageDiv.style.display = 'block'; // Ensure it's visible when asking to sign in
+                    } else if (loadingAuthMessageDiv) {
+                        loadingAuthMessageDiv.style.display = 'none'; // Hide if "Access Denied" is already there. This is the crucial line.
+                    }
+                    projects = [];
+                    if (projectTableBody) projectTableBody.innerHTML = '';
+                    if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                     if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
                     isAppInitialized = false;
                 }
@@ -1215,7 +1233,6 @@
         } else {
             if (loadingAuthMessageDiv) loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Auth services error.</p>`;
         }
-
         document.addEventListener('DOMContentLoaded', () => {
             setupDOMReferences();
             attachEventListeners();
