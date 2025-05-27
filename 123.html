@@ -9,58 +9,63 @@
         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
 
         /* Styles for Auth Section - copied from tracker.html for direct control */
+     /* Styles for Auth Section - copied from tracker.html for direct control */
         #auth-container {
-            padding: 20px; /* Increased padding */
+            /* Adjust these values */
+            padding: 10px 15px; /* Reduced vertical and horizontal padding */
+            min-height: 60px; /* Reduced minimum height */
+            /* Keep these as they control layout */
             text-align: center;
             border-bottom: 1px solid #eee;
             margin-bottom: 15px;
             background-color: #f8f9fa;
             border-radius: 5px;
-            display: flex; /* Use flexbox for vertical alignment */
-            flex-direction: column; /* Stack items vertically */
-            align-items: center; /* Center horizontally */
-            justify-content: center; /* Center vertically if container has height */
-            min-height: 80px; /* Give it a minimum height for better centering */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         #auth-container h2 {
-            font-size: 1.3em; /* Slightly larger heading */
-            margin-bottom: 15px; /* More space below heading */
+            font-size: 1.1em; /* Slightly smaller heading */
+            margin-bottom: 8px; /* Reduced space below heading */
             color: #333;
         }
         #user-info-display {
+            /* Keep these as they control layout */
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 10px; /* Slightly reduced gap */
             flex-wrap: wrap;
-            margin-top: 10px; /* Add some space above user info */
+            margin-top: 5px; /* Reduced space above user info */
         }
         #user-info-display img {
             border-radius: 50%;
-            width: 50px; /* Slightly larger photo */
-            height: 50px;
+            width: 40px; /* Slightly smaller photo */
+            height: 40px; /* Slightly smaller photo */
             border: 2px solid #ddd;
-            object-fit: cover; /* Ensure image covers the area */
+            object-fit: cover;
         }
         #user-info-display .user-details p {
             margin: 0;
-            font-size: 1em; /* Slightly larger font size */
+            font-size: 0.9em; /* Slightly smaller font size */
         }
         #user-info-display .user-details p:first-child {
             font-weight: bold;
         }
         #signInBtn, #signOutBtn {
-            padding: 12px 25px; /* Larger buttons */
-            font-size: 1.1em; /* Larger font */
+            padding: 8px 18px; /* Smaller buttons */
+            font-size: 1em; /* Smaller font */
             cursor: pointer;
             border: none;
             border-radius: 4px;
             transition: background-color 0.3s ease;
-            margin-top: 10px; /* Space above button */
+            margin-top: 8px; /* Reduced space above button */
         }
+        /* Keep hover styles as they are */
         #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
-
+        
         /* Initially hide app content and show loading/auth message */
         #app-content { display: none; }
         #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Added margin-top to separate from auth-container */
