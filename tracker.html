@@ -104,8 +104,6 @@
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
         #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
         #activityLogModal .modal-content { max-width: 700px; max-height: 85vh; overflow-y: auto;} /* NEW */
-        #totalSummaryModal .modal-content { max-width: 800px; max-height: 85vh; overflow-y: auto;} /* NEW */
-
         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
@@ -249,6 +247,30 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* TL Summary styles */
+        #tlSummaryContent h3 {
+            text-align: left;
+            margin-top: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        #tlSummaryContent ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+        #tlSummaryContent li {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        #tlSummaryContent li strong {
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -276,7 +298,6 @@
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
                 <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button>
-                <button id="openTotalSummaryBtn" class="btn btn-primary btn-lg">📈 TL Summary</button>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -306,8 +327,13 @@
                 <div class="modal-content">
                     <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Project Settings</h2>
-                    <div id="tlDashboardContent">
-                        </div>
+                    <div id="tlSummaryContent"></div>
+                    <hr>
+                    <h3>Activity Log Management</h3>
+                    <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
+                    <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
+                    <hr>
+                    <div id="tlDashboardContent"></div>
                 </div>
             </div>
 
@@ -332,15 +358,6 @@
                     <div id="activityLogContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></div>
                 </div>
             </div>
-
-            <div id="totalSummaryModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-button" id="closeTotalSummaryBtn">&times;</span>
-                    <h2>📈 TL Dashboard Summary</h2>
-                    <div id="totalSummaryContent"></div>
-                </div>
-            </div>
-
             <h3>📌 Team123 Project Tracker</h3>
             <div class="pagination-controls">
                 <button id="prevPageBtn" disabled>Previous</button>
@@ -450,16 +467,13 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn;
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn;
 
         // NEW: Activity Log related variables
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
 
-        // NEW: Total Summary Dashboard related variables
-        let openTotalSummaryBtn, totalSummaryModal, closeTotalSummaryBtn, totalSummaryContentElement;
-
-        // Moved cleanActivityLogsBtn to be accessible from renderTLDashboard and common event listeners
-        let cleanActivityLogsBtn;
+        // NEW: TL Summary related variable
+        let tlSummaryContentElement;
 
         let projects = [];
         let groupVisibilityState = {};
@@ -492,7 +506,7 @@
 
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
-        function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 0 : Math.floor(millis / 60000); } // Changed to 0 for sum calculation
+        function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
 
         function calculateDurationMs(startTime, endTime) {
             let startMillis = startTime; let endMillis = endTime;
@@ -526,12 +540,9 @@
                     allowedEmailsFromFirestore = docSnap.data().emails || [];
                 } else {
                     allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
-                    // Initialize with default if it doesn't exist
-                    await docRef.set({ emails: allowedEmailsFromFirestore });
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
-                // Fallback to a hardcoded list if Firestore fetch fails
                 allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
             } finally {
                 hideLoading(); // Hide loading
@@ -674,8 +685,6 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
-
-            // IMPORTANT: Get reference to cleanActivityLogsBtn here as it's within tlDashboardContent
             cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
 
             // NEW: Activity Log references
@@ -684,11 +693,8 @@
             closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
             activityLogContentElement = document.getElementById('activityLogContent');
 
-            // NEW: Total Summary Dashboard references
-            openTotalSummaryBtn = document.getElementById('openTotalSummaryBtn');
-            totalSummaryModal = document.getElementById('totalSummaryModal');
-            closeTotalSummaryBtn = document.getElementById('closeTotalSummaryBtn');
-            totalSummaryContentElement = document.getElementById('totalSummaryContent');
+            // NEW: TL Summary reference
+            tlSummaryContentElement = document.getElementById('tlSummaryContent');
 
             // Pagination references
             prevPageBtn = document.getElementById('prevPageBtn');
@@ -717,7 +723,9 @@
                 openTlDashboardBtn.onclick = () => {
                     const pin = prompt("Enter PIN to access Project Settings:");
                     if (pin === TL_DASHBOARD_PIN) {
-                        tlDashboardModal.style.display = 'block'; renderTLDashboard();
+                        tlDashboardModal.style.display = 'block';
+                        renderTLSummary(); // Render TL Summary
+                        renderTLDashboard(); // Render Project Settings
                     } else { alert("Incorrect PIN."); }
                 };
             }
@@ -725,21 +733,13 @@
             if (openSettingsBtn) openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
-
-            // `cleanActivityLogsBtn` listener is now attached dynamically in `renderTLDashboard`
-            // if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs; // REMOVED from here
+            if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
 
             // NEW: Activity Log button and close event listener
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
                 activityLogModal.style.display = 'block'; renderActivityLog();
             };
             if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { activityLogModal.style.display = 'none'; };
-
-            // NEW: Total Summary Dashboard button and close event listener
-            if (openTotalSummaryBtn) openTotalSummaryBtn.onclick = () => {
-                totalSummaryModal.style.display = 'block'; renderTotalSummaryDashboard();
-            };
-            if (closeTotalSummaryBtn) closeTotalSummaryBtn.onclick = () => { totalSummaryModal.style.display = 'none'; };
 
             // Pagination event listeners
             if (prevPageBtn) prevPageBtn.onclick = () => {
@@ -765,7 +765,6 @@
                     if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (event.target == settingsModal) settingsModal.style.display = 'none';
                     if (event.target == activityLogModal) activityLogModal.style.display = 'none';
-                    if (event.target == totalSummaryModal) totalSummaryModal.style.display = 'none'; // NEW
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -899,13 +898,80 @@
                 await batch.commit();
                 alert(`Successfully deleted ${deletedCount} old activity logs.`);
                 logActivity('Cleaned Old Activity Logs', { deletedCount: deletedCount, oldestTimestampKept: oldestTimestampToKeep.toDate().toLocaleString() });
-                renderActivityLog(); // Re-render log if the log modal is open
+                renderActivityLog();
             } catch (error) {
                 console.error("Error cleaning activity logs:", error);
                 alert("Error cleaning activity logs: " + error.message);
             } finally {
                 hideLoading(); // Hide loading
             }
+        }
+
+        // NEW: Function to render the TL Summary
+        function renderTLSummary() {
+            showLoading("Calculating TL Summary..."); // Show loading
+            if (!tlSummaryContentElement) {
+                console.error("tlSummaryContentElement not found.");
+                hideLoading();
+                return;
+            }
+            tlSummaryContentElement.innerHTML = ''; // Clear previous content
+
+            const summaryByProjectAndFix = {};
+
+            projects.forEach(project => {
+                if (project && project.baseProjectName && project.fixCategory) {
+                    const key = `${project.baseProjectName}_${project.fixCategory}`;
+                    if (!summaryByProjectAndFix[key]) {
+                        summaryByProjectAndFix[key] = {
+                            baseProjectName: project.baseProjectName,
+                            fixCategory: project.fixCategory,
+                            totalDurationMs: 0
+                        };
+                    }
+
+                    let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                    let breakToSubtractMs = (project.breakDurationMinutes || 0) * 60000;
+                    let additionalManualMs = (project.additionalMinutesManual || 0) * 60000;
+                    let durationAfterBreakMs = Math.max(0, totalRawDurationMs - breakToSubtractMs);
+                    let finalTotalDurationMs = durationAfterBreakMs + additionalManualMs;
+
+                    if (finalTotalDurationMs !== null) {
+                        summaryByProjectAndFix[key].totalDurationMs += finalTotalDurationMs;
+                    }
+                }
+            });
+
+            let summaryHtml = '<h3>TL Summary (Per Project, Per Fix Category)</h3>';
+            summaryHtml += '<ul>';
+
+            const sortedKeys = Object.keys(summaryByProjectAndFix).sort((a, b) => {
+                const projectA = summaryByProjectAndFix[a].baseProjectName;
+                const projectB = summaryByProjectAndFix[b].baseProjectName;
+                if (projectA < projectB) return -1;
+                if (projectA > projectB) return 1;
+
+                const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(summaryByProjectAndFix[a].fixCategory);
+                const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(summaryByProjectAndFix[b].fixCategory);
+                return fixOrderA - fixOrderB;
+            });
+
+            sortedKeys.forEach(key => {
+                const summary = summaryByProjectAndFix[key];
+                const totalMinutes = Math.floor(summary.totalDurationMs / 60000);
+                const decimalHours = (summary.totalDurationMs / 3600000).toFixed(2); // Convert milliseconds to hours and format to 2 decimal places
+
+                summaryHtml += `
+                    <li>
+                        <strong>Project Name:</strong> ${summary.baseProjectName} (${summary.fixCategory})<br>
+                        <strong>Total:</strong> ${totalMinutes} minutes<br>
+                        <strong>Decimal:</strong> ${decimalHours} hours
+                    </li>
+                `;
+            });
+            summaryHtml += '</ul>';
+            tlSummaryContentElement.innerHTML = summaryHtml;
+            hideLoading(); // Hide loading
         }
 
 
@@ -970,97 +1036,78 @@
             if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); hideLoading(); return; }
             tlDashboardContentElement.innerHTML = '';
             const manageableBatches = getManageableBatches();
-            if (manageableBatches.length === 0) {
-                 tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>';
-            } else {
-                manageableBatches.forEach(batch => {
-                    if (!batch || !batch.batchId) return;
-                    const batchDiv = document.createElement('div');
-                    batchDiv.classList.add('dashboard-batch-item');
-                    const title = document.createElement('h4');
-                    title.textContent = `Batch: ${batch.baseProjectName || 'Unknown'} (ID: ${batch.batchId.split('_')[1] || 'N/A'})`;
-                    batchDiv.appendChild(title);
-                    const stagesPresentP = document.createElement('p');
-                    const presentFixCategories = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
-                    stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${presentFixCategories.join(', ') || 'None'}`;
-                    batchDiv.appendChild(stagesPresentP);
-                    const releaseActionsDiv = document.createElement('div');
-                    releaseActionsDiv.classList.add('dashboard-batch-actions-release');
-                    let latestFixCategoryForBatch = "";
-                    let allTasksInLatestStageReadyForRelease = false;
-                    let alreadyReleasedFromLatestStage = true;
-                    if (batch.tasksByFix) {
-                        FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
-                            if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) {
-                                latestFixCategoryForBatch = fixCat;
-                                alreadyReleasedFromLatestStage = batch.tasksByFix[fixCat].every(t => t && t.releasedToNextStage && t.status !== 'Reassigned_TechAbsent');
-                                if (!alreadyReleasedFromLatestStage) {
-                                    allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat]
-                                        .filter(t => t.status !== 'Reassigned_TechAbsent')
-                                        .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext' || t.status === 'Day2Ended_AwaitingNext'));
-                                }
+            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>'; hideLoading(); return; }
+
+            manageableBatches.forEach(batch => {
+                if (!batch || !batch.batchId) return;
+                const batchDiv = document.createElement('div');
+                batchDiv.classList.add('dashboard-batch-item');
+                const title = document.createElement('h4');
+                title.textContent = `Batch: ${batch.baseProjectName || 'Unknown'} (ID: ${batch.batchId.split('_')[1] || 'N/A'})`;
+                batchDiv.appendChild(title);
+                const stagesPresentP = document.createElement('p');
+                const presentFixCategories = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
+                stagesPresentP.innerHTML = `<strong>Stages Present:</strong> ${presentFixCategories.join(', ') || 'None'}`;
+                batchDiv.appendChild(stagesPresentP);
+                const releaseActionsDiv = document.createElement('div');
+                releaseActionsDiv.classList.add('dashboard-batch-actions-release');
+                let latestFixCategoryForBatch = "";
+                let allTasksInLatestStageReadyForRelease = false;
+                let alreadyReleasedFromLatestStage = true;
+                if (batch.tasksByFix) {
+                    FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
+                        if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0 && !latestFixCategoryForBatch) {
+                            latestFixCategoryForBatch = fixCat;
+                            alreadyReleasedFromLatestStage = batch.tasksByFix[fixCat].every(t => t && t.releasedToNextStage && t.status !== 'Reassigned_TechAbsent');
+                            if (!alreadyReleasedFromLatestStage) {
+                                allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat]
+                                    .filter(t => t.status !== 'Reassigned_TechAbsent')
+                                    .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext' || t.status === 'Day2Ended_AwaitingNext'));
                             }
-                        });
-                    }
-                    if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) {
-                        const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch);
-                        if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) {
-                            const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIdx + 1];
-                            const releaseBtn = document.createElement('button');
-                            releaseBtn.textContent = `Release to ${nextFixCategory}`;
-                            releaseBtn.classList.add('btn', 'btn-release');
-                            if (!allTasksInLatestStageReadyForRelease) {
-                                releaseBtn.disabled = true;
-                                releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`;
-                            }
-                            releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);
-                            releaseActionsDiv.appendChild(releaseBtn);
                         }
-                    } else if (alreadyReleasedFromLatestStage && latestFixCategoryForBatch && FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch) < FIX_CATEGORIES_ORDER.length -1) {
-                        const releasedInfoP = document.createElement('p');
-                        releasedInfoP.innerHTML = `<small><em>(Active tasks released from ${latestFixCategoryForBatch})</em></small>`;
-                        releaseActionsDiv.appendChild(releasedInfoP);
+                    });
+                }
+                if (latestFixCategoryForBatch && !alreadyReleasedFromLatestStage) {
+                    const currentFixIdx = FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch);
+                    if (currentFixIdx < FIX_CATEGORIES_ORDER.length - 1) {
+                        const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIdx + 1];
+                        const releaseBtn = document.createElement('button');
+                        releaseBtn.textContent = `Release to ${nextFixCategory}`;
+                        releaseBtn.classList.add('btn', 'btn-release');
+                        if (!allTasksInLatestStageReadyForRelease) {
+                            releaseBtn.disabled = true;
+                            releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`;
+                        }
+                        releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);
+                        releaseActionsDiv.appendChild(releaseBtn);
                     }
-                    batchDiv.appendChild(releaseActionsDiv);
-                    const deleteActionsDiv = document.createElement('div');
-                    deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
-                    if (batch.tasksByFix) {
-                        FIX_CATEGORIES_ORDER.forEach(fixCat => {
-                            if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
-                                const deleteFixBtn = document.createElement('button');
-                                deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
-                                deleteFixBtn.classList.add('btn', 'btn-danger');
-                                deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
-                                deleteActionsDiv.appendChild(deleteFixBtn);
-                            }
-                        });
-                    }
-                    const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch';
-                    deleteAllBtn.classList.add('btn', 'btn-danger');
-                    deleteAllBtn.onclick = () => { if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteProjectBatch(batch.batchId); };
-                    deleteActionsDiv.appendChild(deleteAllBtn);
-                    batchDiv.appendChild(deleteActionsDiv);
-                    tlDashboardContentElement.appendChild(batchDiv);
-                });
-            }
-
-            // ADDED: Activity Log Management to TL Dashboard
-            const activityLogManagementDiv = document.createElement('div');
-            activityLogManagementDiv.innerHTML = `
-                <hr style="border: none; border-top: 1px dashed #ccc; margin: 20px 0;">
-                <h3>Activity Log Management</h3>
-                <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
-                <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
-            `;
-            tlDashboardContentElement.appendChild(activityLogManagementDiv);
-
-            // Re-attach listener for the moved button (must be done after element is added to DOM)
-            cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
-            if (cleanActivityLogsBtn) {
-                cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
-            }
-
+                } else if (alreadyReleasedFromLatestStage && latestFixCategoryForBatch && FIX_CATEGORIES_ORDER.indexOf(latestFixCategoryForBatch) < FIX_CATEGORIES_ORDER.length -1) {
+                    const releasedInfoP = document.createElement('p');
+                    releasedInfoP.innerHTML = `<small><em>(Active tasks released from ${latestFixCategoryForBatch})</em></small>`;
+                    releaseActionsDiv.appendChild(releasedInfoP);
+                }
+                batchDiv.appendChild(releaseActionsDiv);
+                const deleteActionsDiv = document.createElement('div');
+                deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
+                if (batch.tasksByFix) {
+                    FIX_CATEGORIES_ORDER.forEach(fixCat => {
+                        if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
+                            const deleteFixBtn = document.createElement('button');
+                            deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
+                            deleteFixBtn.classList.add('btn', 'btn-danger');
+                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
+                            deleteActionsDiv.appendChild(deleteFixBtn);
+                        }
+                    });
+                }
+                const deleteAllBtn = document.createElement('button');
+                deleteAllBtn.textContent = 'Delete ALL Tasks for this Batch';
+                deleteAllBtn.classList.add('btn', 'btn-danger');
+                deleteAllBtn.onclick = () => { if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteProjectBatch(batch.batchId); };
+                deleteActionsDiv.appendChild(deleteAllBtn);
+                batchDiv.appendChild(deleteActionsDiv);
+                tlDashboardContentElement.appendChild(batchDiv);
+            });
             hideLoading(); // Hide loading
         }
 
@@ -1242,7 +1289,7 @@
                             oldAssignedTo: oldTechId,
                             newAssignedTo: newTechId
                         });
-                        project.assignedTo = newTechId; // Update local project object
+                        project.assignedTo = newTechId;
                     } catch (error) {
                         console.error("Error updating assignedTo:", error);
                         alert("Error: " + error.message);
@@ -1360,7 +1407,7 @@
                                 let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
                                 if (currentTotalRawMs === 0 && selectedBreakMinutes === 0 && (project.additionalMinutesManual || 0) === 0) { currentFinalTotalMs = null; }
                                 totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
-                                project.breakDurationMinutes = selectedBreakMinutes; // Update the local project object for consistency
+                                project.breakDurationMinutes = selectedBreakMinutes;
                             }
                         }
                     } catch (error) {
@@ -1380,7 +1427,7 @@
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn);
 
                 const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start');
-                sD2btn.disabled = isOriginalReassignedTask || !(project.status === 'Day1Ended_AwaitingNext' || project.status === 'InProgressDay2' || project.status === 'Day2Ended_AwaitingNext' || project.status === 'InProgressDay3' || project.status === 'Completed');
+                sD2btn.disabled = isOriginalReassignedTask || !(project.status === 'Day1Ended_AwaitingNext' || project.status === 'Day2Ended_AwaitingNext' || project.status === 'InProgressDay3' || project.status === 'Completed');
                 sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn);
 
                 const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end');
@@ -1479,27 +1526,25 @@
                         if (currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { updatedFields.finishTimeDay1 = serverTimestamp; updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis); }
                         if (currentProjectData.startTimeDay2 && !currentProjectData.finishTimeDay2) { updatedFields.finishTimeDay2 = serverTimestamp; updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis); }
                         if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) { updatedFields.finishTimeDay3 = serverTimestamp; updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis); }
-                        // If no start times, no duration to calculate. No need to set to null if they already are.
-                        // The following conditions ensure that if a day was started but not ended, it gets marked complete.
-                        // If a day was already completed and the next wasn't started, it stays null.
                         if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2 && !currentProjectData.startTimeDay3) {
-                            // Do nothing, no start times means no durations to set.
-                        } else if (currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) {
+                            // No start times, no duration to calculate for any day
+                        } else if (!currentProjectData.startTime2 && currentProjectData.startTime1 && !currentProjectData.finishTime1) {
                             updatedFields.finishTimeDay1 = serverTimestamp;
                             updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis);
-                        }
-                        if (currentProjectData.startTimeDay2 && !currentProjectData.finishTimeDay2) {
+                        } else if (currentProjectData.startTime1 && currentProjectData.finishTime1 && !currentProjectData.startTime2) {
+                            updatedFields.startTimeDay2 = null; updatedFields.finishTimeDay2 = null; updatedFields.durationDay2Ms = null;
+                            updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
+                        } else if (currentProjectData.startTime2 && !currentProjectData.finishTime2) {
                              updatedFields.finishTimeDay2 = serverTimestamp;
                              updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
-                        }
-                        if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) {
-                            updatedFields.finishTimeDay3 = serverTimestamp;
-                            updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis);
+                             updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
+                        } else if (currentProjectData.startTime2 && currentProjectData.finishTime2 && !currentProjectData.startTime3) {
+                            updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
                         }
                     } break;
                 default: hideLoading(); return; // Important: hide loading if action is not handled
             }
-            if (Object.keys(updatedFields).length > 1) { // Check if more than just lastModifiedTimestamp was updated
+            if (Object.keys(updatedFields).length > 1) {
                 try {
                     await projectRef.update(updatedFields);
                     logActivity(`Updated Project Status: ${action}`, {
@@ -1553,101 +1598,22 @@
             }
         }
 
-        // NEW: Function to format minutes to decimal hours
-        function formatMinutesToDecimalHours(minutes) {
-            if (typeof minutes !== 'number' || minutes < 0) return '0.00';
-            const hours = Math.floor(minutes / 60);
-            const remainingMinutes = minutes % 60;
-            const decimal = (remainingMinutes / 60).toFixed(2);
-            // Ensure two decimal places, and remove trailing zero if integer
-            const finalDecimal = parseFloat(decimal) === 0 ? "" : parseFloat(decimal).toString().substring(1); // e.g., "0.00" -> "", "0.25" -> ".25"
-            return `${hours}${finalDecimal}`;
-        }
-
-        // NEW: Function to render the TL Dashboard Summary
-        function renderTotalSummaryDashboard() {
-            showLoading("Calculating totals...");
-            if (!totalSummaryContentElement) {
-                console.error("totalSummaryContentElement not found.");
-                hideLoading();
-                return;
-            }
-            totalSummaryContentElement.innerHTML = '<p>Calculating...</p>';
-
-            // Group by baseProjectName and then by fixCategory
-            const projectFixCategoryTotals = {}; // { "PROJ_ABC": { "Fix1": { totalMinutes: 0 }, "Fix2": {...} }, ... }
-
-            projects.forEach(project => {
-                if (project && project.baseProjectName && project.fixCategory) {
-                    const projectKey = project.baseProjectName;
-                    const fixCategoryKey = project.fixCategory;
-
-                    if (!projectFixCategoryTotals[projectKey]) {
-                        projectFixCategoryTotals[projectKey] = {};
-                    }
-                    if (!projectFixCategoryTotals[projectKey][fixCategoryKey]) {
-                        projectFixCategoryTotals[projectKey][fixCategoryKey] = { totalMinutes: 0 };
-                    }
-
-                    let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                    let breakToSubtractMs = (project.breakDurationMinutes || 0) * 60000;
-                    let additionalManualMs = (project.additionalMinutesManual || 0) * 60000;
-                    let durationAfterBreakMs = Math.max(0, totalRawDurationMs - breakToSubtractMs);
-                    let finalTotalDurationMs = durationAfterBreakMs + additionalManualMs;
-
-                    const projectMinutes = (finalTotalDurationMs !== null && typeof finalTotalDurationMs === 'number') ? Math.floor(finalTotalDurationMs / 60000) : 0;
-
-                    projectFixCategoryTotals[projectKey][fixCategoryKey].totalMinutes += projectMinutes;
-                }
-            });
-
-            let summaryHtml = '';
-            const sortedProjectNames = Object.keys(projectFixCategoryTotals).sort();
-
-            if (sortedProjectNames.length === 0) {
-                summaryHtml = '<p>No project data to display totals. (Please ensure projects are loaded)</p>';
-            } else {
-                summaryHtml += '<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 15px;">';
-                sortedProjectNames.forEach(projectName => {
-                    const fixCategoriesForProject = projectFixCategoryTotals[projectName];
-                    const sortedFixCategories = FIX_CATEGORIES_ORDER.filter(cat => fixCategoriesForProject[cat]);
-
-                    sortedFixCategories.forEach(fixCat => {
-                        const totalMins = fixCategoriesForProject[fixCat].totalMinutes;
-                        const decimalHours = formatMinutesToDecimalHours(totalMins);
-
-                        summaryHtml += `
-                            <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; width: 280px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05);">
-                                <h4 style="margin-top: 0; color: #34495e; text-align: center;">Project: ${projectName} (${fixCat})</h4>
-                                <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-bottom: 5px;">Total: ${totalMins} minutes</p>
-                                <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-top: 0;">Decimal: ${decimalHours} hours</p>
-                            </div>
-                        `;
-                    });
-                });
-                summaryHtml += '</div>';
-            }
-
-            totalSummaryContentElement.innerHTML = summaryHtml;
-            hideLoading();
-        }
-
         function refreshAllViews() {
             // Note: Loading overlay for refreshAllViews is handled by the calling functions
             try {
                 renderProjects();
-                if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard();
+                if (tlDashboardModal && tlDashboardModal.style.display === 'block') {
+                    renderTLSummary(); // Re-render TL Summary on refresh
+                    renderTLDashboard();
+                }
                 if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList();
                 if (activityLogModal && activityLogModal.style.display === 'block') renderActivityLog();
-                if (totalSummaryModal && totalSummaryModal.style.display === 'block') renderTotalSummaryDashboard(); // NEW
             } catch (e) { console.error("Error during refreshAllViews:", e); }
         }
 
         async function renderAllowedEmailsList() {
             // Note: Loading overlay for renderAllowedEmailsList is handled by fetchAllowedEmails
-            if (!allowedEmailsList) return;
-            await fetchAllowedEmails(); // Ensure emails are fetched before rendering
-            allowedEmailsList.innerHTML = '';
+            if (!allowedEmailsList) return; await fetchAllowedEmails(); allowedEmailsList.innerHTML = '';
             if (allowedEmailsFromFirestore.length === 0) { allowedEmailsList.innerHTML = '<li>No allowed emails configured.</li>'; return; }
             allowedEmailsFromFirestore.forEach(email => {
                 const li = document.createElement('li'); li.textContent = email;
@@ -1758,8 +1724,8 @@
         // Main authentication state change listener
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                setupDOMReferences(); // Ensure DOM references are available before manipulating UI
-                setupAuthRelatedDOMReferences(); // Specific auth UI refs
+                setupDOMReferences();
+                setupAuthRelatedDOMReferences();
 
                 if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                     console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
@@ -1769,8 +1735,7 @@
 
                 if (user) {
                     showLoading("Checking authorization..."); // Show loading during authorization check
-                    await fetchAllowedEmails(); // Fetch allowed emails on every auth state change
-
+                    await fetchAllowedEmails();
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
 
                     if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
@@ -1786,7 +1751,7 @@
                         appContentDiv.style.display = 'block';
                         openSettingsBtn.style.display = 'block';
 
-                        initializeAppComponents(); // Only initialize app components if authorized
+                        initializeAppComponents();
                         // Loading will be hidden by initializeFirebaseAndLoadData
                     } else {
                         console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
@@ -1801,19 +1766,17 @@
                             loadingAuthMessageDiv.style.display = 'block';
                             openSettingsBtn.style.display = 'none';
 
-                            projects = []; // Clear local data
+                            projects = [];
                             if (projectTableBody) projectTableBody.innerHTML = '';
                             if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                             if (allowedEmailsList) allowedEmailsList.innerHTML = '';
-                            if (activityLogContentElement) activityLogContentElement.innerHTML = ''; // Clear activity log content
-                            if (totalSummaryContentElement) totalSummaryContentElement.innerHTML = ''; // Clear total summary content
-
+                            if (tlSummaryContentElement) tlSummaryContentElement.innerHTML = ''; // Clear TL summary
                             if (firestoreListenerUnsubscribe) {
                                 firestoreListenerUnsubscribe();
                                 firestoreListenerUnsubscribe = null;
                                 console.log("Firestore listener detached for unauthorized user sign out.");
                             }
-                            isAppInitialized = false; // Reset initialization flag
+                            isAppInitialized = false;
                             hideLoading(); // Hide loading after handling unauthorized sign out
                         }).catch(error => {
                             console.error("Error signing out unauthorized user:", error);
@@ -1844,19 +1807,17 @@
                     }
                     loadingAuthMessageDiv.style.display = 'block';
 
-                    projects = []; // Clear local data
+                    projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = '';
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                     if (allowedEmailsList) allowedEmailsList.innerHTML = '';
-                    if (activityLogContentElement) activityLogContentElement.innerHTML = ''; // Clear activity log content
-                    if (totalSummaryContentElement) totalSummaryContentElement.innerHTML = ''; // Clear total summary content
-
+                    if (tlSummaryContentElement) tlSummaryContentElement.innerHTML = ''; // Clear TL summary
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
                         firestoreListenerUnsubscribe = null;
                         console.log("Firestore listener detached on sign out.");
                     }
-                    isAppInitialized = false; // Reset initialization flag
+                    isAppInitialized = false;
                     console.log("App content hidden, project data cleared, and Firestore listener detached.");
                     hideLoading(); // Ensure loading is hidden when signed out
                 }
@@ -1866,6 +1827,25 @@
             if (loadingAuthMessageDiv) {
                 loadingAuthMessageDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
                 loadingAuthMessageDiv.style.display = 'block';
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded.");
+            setupDOMReferences();
+            setupAuthRelatedDOMReferences();
+
+            if (auth) {
+                setupAuthEventListeners();
+                console.log("Auth UI and event listeners set up.");
+            } else {
+                console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
+                const authContainer = document.getElementById('auth-container');
+                if (authContainer && loadingAuthMessageDiv) {
+                    loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
+                    loadingAuthMessageDiv.style.display = 'block';
+                }
             }
         });
     </script>
