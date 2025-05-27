@@ -306,7 +306,8 @@
                 <div class="modal-content">
                     <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Project Settings</h2>
-                    <div id="tlDashboardContent"></div>
+                    <div id="tlDashboardContent">
+                        </div>
                 </div>
             </div>
 
@@ -449,7 +450,7 @@
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn; // Removed cleanActivityLogsBtn from here
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn;
 
         // NEW: Activity Log related variables
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
@@ -491,7 +492,7 @@
 
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
-        function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
+        function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 0 : Math.floor(millis / 60000); } // Changed to 0 for sum calculation
 
         function calculateDurationMs(startTime, endTime) {
             let startMillis = startTime; let endMillis = endTime;
@@ -674,7 +675,7 @@
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
 
-            // IMPORTANT: Get reference to cleanActivityLogsBtn here as it's moved
+            // IMPORTANT: Get reference to cleanActivityLogsBtn here as it's within tlDashboardContent
             cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
 
             // NEW: Activity Log references
@@ -725,9 +726,8 @@
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
 
-            // `cleanActivityLogsBtn` listener is now attached when renderTLDashboard populates the content
-            // So, this global attachment for it should be removed or handled differently.
-            // We'll rely on renderTLDashboard to attach it dynamically.
+            // `cleanActivityLogsBtn` listener is now attached dynamically in `renderTLDashboard`
+            // if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs; // REMOVED from here
 
             // NEW: Activity Log button and close event listener
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
@@ -1055,7 +1055,7 @@
             `;
             tlDashboardContentElement.appendChild(activityLogManagementDiv);
 
-            // Re-attach listener for the moved button
+            // Re-attach listener for the moved button (must be done after element is added to DOM)
             cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
             if (cleanActivityLogsBtn) {
                 cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
@@ -1559,7 +1559,9 @@
             const hours = Math.floor(minutes / 60);
             const remainingMinutes = minutes % 60;
             const decimal = (remainingMinutes / 60).toFixed(2);
-            return `${hours + parseFloat(decimal)}`;
+            // Ensure two decimal places, and remove trailing zero if integer
+            const finalDecimal = parseFloat(decimal) === 0 ? "" : parseFloat(decimal).toString().substring(1); // e.g., "0.00" -> "", "0.25" -> ".25"
+            return `${hours}${finalDecimal}`;
         }
 
         // NEW: Function to render the TL Dashboard Summary
@@ -1572,12 +1574,19 @@
             }
             totalSummaryContentElement.innerHTML = '<p>Calculating...</p>';
 
-            const fixCategoryTotals = {}; // { "Fix1": { totalMinutes: 0, projects: [] }, ... }
+            // Group by baseProjectName and then by fixCategory
+            const projectFixCategoryTotals = {}; // { "PROJ_ABC": { "Fix1": { totalMinutes: 0 }, "Fix2": {...} }, ... }
 
             projects.forEach(project => {
-                if (project && project.fixCategory) {
-                    if (!fixCategoryTotals[project.fixCategory]) {
-                        fixCategoryTotals[project.fixCategory] = { totalMinutes: 0, projects: [] };
+                if (project && project.baseProjectName && project.fixCategory) {
+                    const projectKey = project.baseProjectName;
+                    const fixCategoryKey = project.fixCategory;
+
+                    if (!projectFixCategoryTotals[projectKey]) {
+                        projectFixCategoryTotals[projectKey] = {};
+                    }
+                    if (!projectFixCategoryTotals[projectKey][fixCategoryKey]) {
+                        projectFixCategoryTotals[projectKey][fixCategoryKey] = { totalMinutes: 0 };
                     }
 
                     let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
@@ -1588,44 +1597,33 @@
 
                     const projectMinutes = (finalTotalDurationMs !== null && typeof finalTotalDurationMs === 'number') ? Math.floor(finalTotalDurationMs / 60000) : 0;
 
-                    fixCategoryTotals[project.fixCategory].totalMinutes += projectMinutes;
-                    fixCategoryTotals[project.fixCategory].projects.push({
-                        name: `${project.baseProjectName || 'Unknown'} ${project.areaTask || 'N/A'}`,
-                        minutes: projectMinutes
-                    });
+                    projectFixCategoryTotals[projectKey][fixCategoryKey].totalMinutes += projectMinutes;
                 }
             });
 
             let summaryHtml = '';
-            const sortedFixCategories = FIX_CATEGORIES_ORDER.filter(cat => fixCategoryTotals[cat]);
+            const sortedProjectNames = Object.keys(projectFixCategoryTotals).sort();
 
-            if (sortedFixCategories.length === 0) {
+            if (sortedProjectNames.length === 0) {
                 summaryHtml = '<p>No project data to display totals. (Please ensure projects are loaded)</p>';
             } else {
                 summaryHtml += '<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 15px;">';
-                sortedFixCategories.forEach(fixCat => {
-                    const totalMins = fixCategoryTotals[fixCat].totalMinutes;
-                    const decimalHours = formatMinutesToDecimalHours(totalMins);
+                sortedProjectNames.forEach(projectName => {
+                    const fixCategoriesForProject = projectFixCategoryTotals[projectName];
+                    const sortedFixCategories = FIX_CATEGORIES_ORDER.filter(cat => fixCategoriesForProject[cat]);
 
-                    summaryHtml += `
-                        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; width: 280px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05);">
-                            <h4 style="margin-top: 0; color: #34495e; text-align: center;">${fixCat} Summary</h4>
-                            <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-bottom: 5px;">Total: ${totalMins} minutes</p>
-                            <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-top: 0;">Decimal: ${decimalHours} hours</p>
-                            <hr style="border: none; border-top: 1px dashed #eee; margin: 10px 0;">
-                            <h5 style="margin-bottom: 5px; text-align: center; color: #555;">Individual Projects:</h5>
-                            <ul style="list-style-type: none; padding: 0; max-height: 150px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 5px;">
-                    `;
+                    sortedFixCategories.forEach(fixCat => {
+                        const totalMins = fixCategoriesForProject[fixCat].totalMinutes;
+                        const decimalHours = formatMinutesToDecimalHours(totalMins);
 
-                    // Sort projects by minutes descending
-                    fixCategoryTotals[fixCat].projects.sort((a, b) => b.minutes - a.minutes).forEach(proj => {
-                        summaryHtml += `<li style="padding: 3px 0; font-size: 0.9em; border-bottom: 1px dotted #f0f0f0;">${proj.name}: ${proj.minutes}m</li>`;
+                        summaryHtml += `
+                            <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; width: 280px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05);">
+                                <h4 style="margin-top: 0; color: #34495e; text-align: center;">Project: ${projectName} (${fixCat})</h4>
+                                <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-bottom: 5px;">Total: ${totalMins} minutes</p>
+                                <p style="font-size: 1.1em; font-weight: bold; text-align: center; margin-top: 0;">Decimal: ${decimalHours} hours</p>
+                            </div>
+                        `;
                     });
-
-                    summaryHtml += `
-                            </ul>
-                        </div>
-                    `;
                 });
                 summaryHtml += '</div>';
             }
@@ -1868,25 +1866,6 @@
             if (loadingAuthMessageDiv) {
                 loadingAuthMessageDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
                 loadingAuthMessageDiv.style.display = 'block';
-            }
-        }
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM fully loaded.");
-            setupDOMReferences(); // Initial setup of all DOM element references
-            setupAuthRelatedDOMReferences(); // Specific auth UI element references
-
-            if (auth) {
-                setupAuthEventListeners();
-                console.log("Auth UI and event listeners set up.");
-            } else {
-                console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && loadingAuthMessageDiv) {
-                    loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
-                    loadingAuthMessageDiv.style.display = 'block';
-                }
             }
         });
     </script>
