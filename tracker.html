@@ -170,6 +170,12 @@
         #activityLogContent ul { list-style-type: disc; padding-left: 20px; margin-top: 10px;} /* NEW */
         #activityLogContent li { margin-bottom: 8px; border-bottom: 1px dotted #eee; padding-bottom: 5px;} /* NEW */
         #activityLogContent li:last-child { border-bottom: none;} /* NEW */
+
+        /* NEW: Hide Additional(m) column */
+        #projectTable th:nth-child(12), /* Assuming 12th column for Additional(m) */
+        #projectTable td:nth-child(12) {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -260,7 +266,6 @@
                         <th>D1 Start</th><th>D1 End</th>
                         <th>D2 Start</th><th>D2 End</th>
                         <th>D3 Start</th><th>D3 End</th> <th>Total(m)</th>
-                        <th style="min-width: 80px;">Additional(m)</th>
                         <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
                     </tr>
                 </thead>
@@ -338,8 +343,8 @@
             'InProgressDay2': 4, 'Day2Ended_AwaitingNext': 5, 'InProgressDay3': 6,
             'Completed': 7, 'Reassigned_TechAbsent': 8
         };
-        // UPDATED: Changed from 14 to 16 columns for Day3 Start/End
-        const NUM_TABLE_COLUMNS = 16;
+        // UPDATED: Changed from 16 to 15 columns (removing Additional(m))
+        const NUM_TABLE_COLUMNS = 15;
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
@@ -941,51 +946,52 @@
                 totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
                 totalDurationCell.classList.add('total-duration-column');
 
-                const additionalMinutesCell = row.insertCell();
-                const additionalMinutesInput = document.createElement('input');
-                additionalMinutesInput.type = 'number'; additionalMinutesInput.min = '0';
-                additionalMinutesInput.value = project.additionalMinutesManual || 0;
-                additionalMinutesInput.classList.add('additional-minutes-input');
-                additionalMinutesInput.title = "Manually add minutes to total";
-                additionalMinutesInput.disabled = project.status === 'Reassigned_TechAbsent';
-                additionalMinutesInput.onchange = async (event) => {
-                    const newAdditionalMins = Math.max(0, parseInt(event.target.value, 10) || 0);
-                    const oldAdditionalMins = project.additionalMinutesManual || 0; // Get old value for logging
-                    if (!db || !project.id) { event.target.value = project.additionalMinutesManual || 0; return; }
-                    try {
-                        await db.collection("projects").doc(project.id).update({
-                            additionalMinutesManual: newAdditionalMins,
-                            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        // NEW: Log activity
-                        logActivity('Updated Additional Minutes', {
-                            projectId: project.id,
-                            projectName: project.baseProjectName + ' ' + project.areaTask,
-                            oldValue: oldAdditionalMins,
-                            newValue: newAdditionalMins
-                        });
+                // Removed: Logic for Additional(m) input field
+                // const additionalMinutesCell = row.insertCell();
+                // const additionalMinutesInput = document.createElement('input');
+                // additionalMinutesInput.type = 'number'; additionalMinutesInput.min = '0';
+                // additionalMinutesInput.value = project.additionalMinutesManual || 0;
+                // additionalMinutesInput.classList.add('additional-minutes-input');
+                // additionalMinutesInput.title = "Manually add minutes to total";
+                // additionalMinutesInput.disabled = project.status === 'Reassigned_TechAbsent';
+                // additionalMinutesInput.onchange = async (event) => {
+                //     const newAdditionalMins = Math.max(0, parseInt(event.target.value, 10) || 0);
+                //     const oldAdditionalMins = project.additionalMinutesManual || 0; // Get old value for logging
+                //     if (!db || !project.id) { event.target.value = project.additionalMinutesManual || 0; return; }
+                //     try {
+                //         await db.collection("projects").doc(project.id).update({
+                //             additionalMinutesManual: newAdditionalMins,
+                //             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                //         });
+                //         // NEW: Log activity
+                //         logActivity('Updated Additional Minutes', {
+                //             projectId: project.id,
+                //             projectName: project.baseProjectName + ' ' + project.areaTask,
+                //             oldValue: oldAdditionalMins,
+                //             newValue: newAdditionalMins
+                //         });
 
-                        const currentRow = event.target.closest('tr');
-                        if (currentRow) {
-                            const totalCellInRow = currentRow.querySelector('.total-duration-column');
-                            if (totalCellInRow) {
-                                // UPDATED: Recalculate totalRawDurationMs to include Day3
-                                let currentTotalRawMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                                let currentBreakMs = (project.breakDurationMinutes || 0) * 60000;
-                                let currentAdditionalMs = newAdditionalMins * 60000;
-                                let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
-                                let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
-                                if (currentTotalRawMs === 0 && (project.breakDurationMinutes || 0) === 0 && newAdditionalMins === 0) { currentFinalTotalMs = null; }
-                                totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
-                                project.additionalMinutesManual = newAdditionalMins;
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error updating additional minutes:", error);
-                        event.target.value = project.additionalMinutesManual || 0;
-                    }
-                };
-                additionalMinutesCell.appendChild(additionalMinutesInput);
+                //         const currentRow = event.target.closest('tr');
+                //         if (currentRow) {
+                //             const totalCellInRow = currentRow.querySelector('.total-duration-column');
+                //             if (totalCellInRow) {
+                //                 // UPDATED: Recalculate totalRawDurationMs to include Day3
+                //                 let currentTotalRawMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                //                 let currentBreakMs = (project.breakDurationMinutes || 0) * 60000;
+                //                 let currentAdditionalMs = newAdditionalMins * 60000;
+                //                 let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
+                //                 let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
+                //                 if (currentTotalRawMs === 0 && (project.breakDurationMinutes || 0) === 0 && newAdditionalMins === 0) { currentFinalTotalMs = null; }
+                //                 totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
+                //                 project.additionalMinutesManual = newAdditionalMins;
+                //             }
+                //         }
+                //     } catch (error) {
+                //         console.error("Error updating additional minutes:", error);
+                //         event.target.value = project.additionalMinutesManual || 0;
+                //     }
+                // };
+                // additionalMinutesCell.appendChild(additionalMinutesInput);
 
                 const techNotesCell = row.insertCell();
                 const techNotesInput = document.createElement('textarea'); techNotesInput.value = project.techNotes || '';
