@@ -793,8 +793,16 @@
                 querySnapshot.forEach(doc => {
                     const p = doc.data();
                     if (p && p.batchId) {
-                        if (!allBatchesInfo[p.batchId]) allBatchesInfo[p.batchId] = { batchId: p.batchId, baseProjectName: p.baseProjectName || "N/A", tasksByFix: {} };
-                        if (p.fixCategory && !allBatchesInfo[p.batchId].tasksByFix[p.fixCategory]) allBatchesInfo[p.batchId].tasksByFix[p.fixCategory].push(p);
+                        if (!allBatchesInfo[p.batchId]) {
+                            allBatchesInfo[p.batchId] = { batchId: p.batchId, baseProjectName: p.baseProjectName || "N/A", tasksByFix: {} };
+                        }
+                        if (p.fixCategory) {
+                            // Initialize the array if it doesn't exist
+                            if (!allBatchesInfo[p.batchId].tasksByFix[p.fixCategory]) {
+                                allBatchesInfo[p.batchId].tasksByFix[p.fixCategory] = [];
+                            }
+                            allBatchesInfo[p.batchId].tasksByFix[p.fixCategory].push(p);
+                        }
                     }
                 });
                 return Object.values(allBatchesInfo);
