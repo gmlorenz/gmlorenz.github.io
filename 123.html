@@ -9,7 +9,6 @@
         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
 
         /* Styles for Auth Section - copied from tracker.html for direct control */
-     /* Styles for Auth Section - copied from tracker.html for direct control */
         #auth-container {
             /* Adjust these values */
             padding: 10px 15px; /* Reduced vertical and horizontal padding */
@@ -65,7 +64,7 @@
         /* Keep hover styles as they are */
         #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
-        
+
         /* Initially hide app content and show loading/auth message */
         #app-content { display: none; }
         #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Added margin-top to separate from auth-container */
@@ -129,6 +128,10 @@
         .fix2-row { background-color: #ffe6f2; }
         .fix3-row { background-color: #e6e6ff; }
         .fix4-row { background-color: #fff5e6; }
+        /* NEW Fix Categories */
+        .fix5-row { background-color: #e0f2f7; } /* Light Blue */
+        .fix6-row { background-color: #ffe0b2; } /* Light Orange */
+
         .reassigned-task-highlight { background-color: #FFF9C4 !important; }
         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):not(.overall-project-separator):hover { background-color: #d0e0f0 !important; }
         .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
@@ -136,6 +139,10 @@
         .status-inprogressday1 { background-color: #f39c12; }
         .status-day1ended_awaitingnext { background-color: #f39c12; }
         .status-inprogressday2 { background-color: #f39c12; }
+        /* NEW STATUSES for Day3 */
+        .status-day2ended_awaitingnext { background-color: #f39c12; } /* Same color as Day1Ended, for consistency */
+        .status-inprogressday3 { background-color: #e9630e; } /* A slightly different orange for Day3 in progress */
+
         .status-completed { background-color: #2ecc71; }
         .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
         #tlDashboardContent { margin-top:15px; }
@@ -162,6 +169,84 @@
         #activityLogContent ul { list-style-type: disc; padding-left: 20px; margin-top: 10px;} /* NEW */
         #activityLogContent li { margin-bottom: 8px; border-bottom: 1px dotted #eee; padding-bottom: 5px;} /* NEW */
         #activityLogContent li:last-child { border-bottom: none;} /* NEW */
+
+        /* NEW: Hide Additional(m) column */
+        #projectTable th:nth-child(12), /* Assuming 12th column for Additional(m) */
+        #projectTable td:nth-child(12) {
+            display: none;
+        }
+
+        /* Styles for Pagination Controls */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        .pagination-controls button {
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background-color: #e0e0e0;
+        }
+        .pagination-controls button:disabled {
+            background-color: #ddd;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .pagination-controls span {
+            font-size: 0.9em;
+            color: #555;
+        }
+        .pagination-controls select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* Loading Overlay Styles */
+        #loadingOverlay {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5); /* Black semi-transparent background */
+            z-index: 9999; /* Sit on top */
+            cursor: wait; /* Change cursor to indicate waiting */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            flex-direction: column; /* Stack text and spinner */
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* Spinner CSS (simplified) */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -197,7 +282,12 @@
                     <h2>Add New Tracker</h2>
                     <form id="newProjectForm">
                         <label for="fixCategorySelect">Fix Category:</label>
-                        <select id="fixCategorySelect" required><option value="Fix1">Fix1</option><option value="Fix2">Fix2</option><option value="Fix3">Fix3</option><option value="Fix4">Fix4</option></select>
+                        <select id="fixCategorySelect" required>
+                            <option value="Fix1">Fix1</option>
+                            <option value="Fix2">Fix2</option>
+                            <option value="Fix3">Fix3</option>
+                            <option value="Fix4">Fix4</option>
+                            <option value="Fix5">Fix5</option> <option value="Fix6">Fix6</option> </select>
                         <label for="numRows">Number of Area:</label>
                         <input type="number" id="numRows" value="1" min="1" required>
                         <label for="baseProjectName">Project Name:</label>
@@ -228,6 +318,10 @@
                         <input type="email" id="addEmailInput" placeholder="Enter new allowed email">
                         <button id="addEmailBtn" class="btn btn-success">Add Email</button>
                     </div>
+                    <hr>
+                    <h3>Activity Log Management</h3>
+                    <p>Old activity logs are automatically pruned. You can manually trigger a cleanup here if needed.</p>
+                    <button id="cleanActivityLogsBtn" class="btn btn-danger">Clean Old Activity Logs</button>
                 </div>
             </div>
 
@@ -239,6 +333,16 @@
                 </div>
             </div>
             <h3>📌 Team123 Project Tracker</h3>
+            <div class="pagination-controls">
+                <button id="prevPageBtn" disabled>Previous</button>
+                <select id="pageSizeSelect">
+                    <option value="10">10 per page</option>
+                    <option value="25" selected>25 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+                <button id="nextPageBtn">Next</button>
+            </div>
             <table id="projectTable">
                 <thead>
                     <tr>
@@ -246,8 +350,7 @@
                         <th style="min-width: 110px;">Assigned Tech</th><th style="min-width: 120px;">Status</th>
                         <th>D1 Start</th><th>D1 End</th>
                         <th>D2 Start</th><th>D2 End</th>
-                        <th>Total(m)</th>
-                        <th style="min-width: 80px;">Additional(m)</th>
+                        <th>D3 Start</th><th>D3 End</th> <th>Total(m)</th>
                         <th style="min-width: 120px;">Tech Notes</th><th style="min-width: 150px;">Actions</th>
                     </tr>
                 </thead>
@@ -255,6 +358,12 @@
             </table>
         </div>
     </div>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -278,6 +387,7 @@
 
         let signInBtn, signOutBtn, userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg;
         let appContentDiv, loadingAuthMessageDiv;
+        let loadingOverlay; // Reference to the loading overlay
 
         const TL_DASHBOARD_PIN = "1234";
         const ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails";
@@ -317,16 +427,21 @@
             else alert("CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: " + e.message);
         }
 
-        const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4"];
+        // UPDATED: Added Fix5 and Fix6
+        const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4", "Fix5", "Fix6"];
+        // UPDATED: Added Day2Ended_AwaitingNext and InProgressDay3
         const STATUS_ORDER = {
-            'Available': 1, 'InProgressDay1': 2, 'Day1Ended_AwaitingNext': 3,
-            'InProgressDay2': 4, 'Completed': 5, 'Reassigned_TechAbsent': 6
+            'Available': 1, 'InProgressDay1': 2, 'P_Day1Ended_AwaitingNext': 3, // Renamed for clarity, P_ indicates potential
+            'InProgressDay2': 4, 'P_Day2Ended_AwaitingNext': 5, // Renamed
+            'InProgressDay3': 6,
+            'Completed': 7, 'Reassigned_TechAbsent': 8
         };
-        const NUM_TABLE_COLUMNS = 14;
+        // UPDATED: Changed from 16 to 15 columns (removing Additional(m))
+        const NUM_TABLE_COLUMNS = 15;
 
         let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal,
             closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody,
-            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn;
+            tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn;
 
         // NEW: Activity Log related variables
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
@@ -335,6 +450,31 @@
         let groupVisibilityState = {};
         let isAppInitialized = false;
         let firestoreListenerUnsubscribe = null;
+
+        // Pagination variables
+        let pageSize = 25; // Default page size
+        let lastVisibleDoc = null;
+        let firstVisibleDoc = null;
+        let queryHistory = []; // To store documents for going back
+        let currentPage = 0;
+        let prevPageBtn, nextPageBtn, pageSizeSelect;
+
+
+        // --- Loading Overlay Functions ---
+        function showLoading(message = "Loading...") {
+            if (loadingOverlay) {
+                loadingOverlay.querySelector('p').textContent = message;
+                loadingOverlay.style.display = 'flex';
+            }
+        }
+
+        function hideLoading() {
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+        // --- End Loading Overlay Functions ---
+
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
         function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
@@ -362,7 +502,8 @@
         }
 
         async function fetchAllowedEmails() {
-            if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); return; }
+            showLoading("Fetching allowed emails..."); // Show loading
+            if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); hideLoading(); return; }
             try {
                 const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
                 const docSnap = await docRef.get();
@@ -374,11 +515,14 @@
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
                 allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
+            } finally {
+                hideLoading(); // Hide loading
             }
         }
 
         async function updateAllowedEmailsInFirestore(newEmailsArray) {
-             if (!db) { alert("Database not initialized! Cannot update allowed emails."); return false; }
+            showLoading("Updating allowed emails..."); // Show loading
+             if (!db) { alert("Database not initialized! Cannot update allowed emails."); hideLoading(); return false; }
             const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
             try {
                 await docRef.set({ emails: newEmailsArray });
@@ -388,31 +532,112 @@
                 console.error("Error updating allowed emails in Firestore:", error);
                 alert("Error saving allowed emails. Error: " + error.message);
                 return false;
+            } finally {
+                hideLoading(); // Hide loading
             }
         }
 
-        function initializeFirebaseAndLoadData() {
-            if (!db) { projects = []; refreshAllViews(); return; }
-            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe();
+        // Modified: To include pagination logic
+        async function initializeFirebaseAndLoadData(direction = 'next') {
+            showLoading("Loading projects..."); // Show loading
+            if (!db) { projects = []; refreshAllViews(); hideLoading(); return; }
+            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe(); // Unsubscribe from previous listener
+
             loadGroupVisibilityState();
+
+            // The main change for efficient pagination: ordering by a single field
+            let query = db.collection("projects").orderBy("creationTimestamp", "desc");
+
+            if (direction === 'next' && lastVisibleDoc) {
+                // For going to the next page, start fetching after the last document of the current page
+                query = query.startAfter(lastVisibleDoc);
+            } else if (direction === 'prev' && firstVisibleDoc) {
+                 // For going to the previous page, end fetching before the first document of the current page
+                 // This works because the query is ordered descending, so 'endBefore' effectively goes back
+                 query = query.endBefore(firstVisibleDoc);
+            }
+
             try {
-                firestoreListenerUnsubscribe = db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
-                  .onSnapshot((querySnapshot) => {
+                firestoreListenerUnsubscribe = query.limit(pageSize).onSnapshot((querySnapshot) => { // Limit the number of documents per fetch
                     const firebaseProjects = [];
-                    querySnapshot.forEach((doc) => { if (doc.exists && typeof doc.data === 'function') firebaseProjects.push({ id: doc.id, ...doc.data() }); });
-                    projects = firebaseProjects;
-                    projects.forEach(p => {
-                        const groupStateKey = `${p.batchId}_${p.fixCategory}`;
-                        if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
-                        if (p.breakDurationMinutes === undefined) p.breakDurationMinutes = 0;
-                        if (p.additionalMinutesManual === undefined) p.additionalMinutesManual = 0;
+                    querySnapshot.forEach((doc) => {
+                        if (doc.exists && typeof doc.data === 'function') {
+                            firebaseProjects.push({ id: doc.id, ...doc.data() });
+                        }
                     });
+
+                    if (firebaseProjects.length === 0 && currentPage > 0 && direction === 'next') {
+                        // Reached end of data, go back to previous page
+                        currentPage--;
+                        lastVisibleDoc = queryHistory[currentPage] ? queryHistory[currentPage].lastVisible : null;
+                        firstVisibleDoc = queryHistory[currentPage] ? queryHistory[currentPage].firstVisible : null;
+                        initializeFirebaseAndLoadData('prev'); // Try to go back to the previous known page
+                        return;
+                    }
+                     if (firebaseProjects.length === 0 && currentPage === 0 && direction === 'prev') {
+                        // Already at the beginning and no data, stay put.
+                        lastVisibleDoc = null;
+                        firstVisibleDoc = null;
+                        projects = [];
+                        updatePaginationButtons(false, false);
+                        refreshAllViews();
+                        hideLoading(); // Hide loading even if no data
+                        return;
+                    }
+
+
+                    projects = firebaseProjects;
+
+                    // Update lastVisibleDoc and firstVisibleDoc for pagination
+                    lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+                    firstVisibleDoc = querySnapshot.docs[0];
+
+                    if (direction === 'next' && querySnapshot.docs.length > 0) { // Only push if there are documents fetched
+                        // Store the current page's markers
+                        if (queryHistory.length <= currentPage) { // Prevent duplicates if re-rendering current page
+                            queryHistory.push({ firstVisible: firstVisibleDoc, lastVisible: lastVisibleDoc });
+                        } else { // Update if on the current page
+                            queryHistory[currentPage] = { firstVisible: firstVisibleDoc, lastVisible: lastVisibleDoc };
+                        }
+                        // currentPage is incremented after push to point to the next expected page's index
+                        if (direction === 'next' && queryHistory.length > currentPage + 1) { // Only increment if not the last item
+                             currentPage++;
+                        } else if (direction === 'next' && querySnapshot.docs.length === pageSize) { // Only increment if a full page was fetched
+                             currentPage++;
+                        }
+
+                    } else if (direction === 'prev' && querySnapshot.docs.length > 0) { // Only adjust if documents fetched
+                        // currentPage is decremented before fetch
+                        if (currentPage > 0) {
+                            currentPage--;
+                        }
+                    } else if (direction === 'prev' && querySnapshot.docs.length === 0 && currentPage === 0){
+                        // This case handles being at the start and trying to go back further, result in no data
+                        projects = [];
+                        currentPage = 0;
+                        firstVisibleDoc = null;
+                        lastVisibleDoc = null;
+                        queryHistory = [];
+                    }
+
+                    updatePaginationButtons(querySnapshot.docs.length < pageSize, currentPage === 0);
                     refreshAllViews();
                 }, (error) => {
                     console.error("Error fetching projects: ", error);
-                    projects = []; refreshAllViews();
+                    projects = [];
+                    updatePaginationButtons(true, true); // Disable both on error
+                    refreshAllViews();
                 });
-            } catch (fbError) { console.error("Error setting up Firebase listener: ", fbError); }
+            } catch (fbError) {
+                console.error("Error setting up Firebase listener: ", fbError);
+            } finally {
+                hideLoading(); // Hide loading
+            }
+        }
+
+        function updatePaginationButtons(isLastPage, isFirstPage) {
+            if (prevPageBtn) prevPageBtn.disabled = isFirstPage;
+            if (nextPageBtn) nextPageBtn.disabled = isLastPage;
         }
 
         function setupDOMReferences() {
@@ -431,12 +656,20 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
+            cleanActivityLogsBtn = document.getElementById('cleanActivityLogsBtn');
 
             // NEW: Activity Log references
             openActivityLogBtn = document.getElementById('openActivityLogBtn');
             activityLogModal = document.getElementById('activityLogModal');
             closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
             activityLogContentElement = document.getElementById('activityLogContent');
+
+            // Pagination references
+            prevPageBtn = document.getElementById('prevPageBtn');
+            nextPageBtn = document.getElementById('nextPageBtn');
+            pageSizeSelect = document.getElementById('pageSizeSelect');
+
+            loadingOverlay = document.getElementById('loadingOverlay'); // Get reference to loading overlay
         }
 
         function setupAuthRelatedDOMReferences() {
@@ -466,6 +699,7 @@
             if (openSettingsBtn) openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
             if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
+            if (cleanActivityLogsBtn) cleanActivityLogsBtn.onclick = handleCleanActivityLogs;
 
             // NEW: Activity Log button and close event listener
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
@@ -473,13 +707,30 @@
             };
             if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { activityLogModal.style.display = 'none'; };
 
+            // Pagination event listeners
+            if (prevPageBtn) prevPageBtn.onclick = () => {
+                 lastVisibleDoc = queryHistory[currentPage - 1]?.lastVisible || null;
+                 firstVisibleDoc = queryHistory[currentPage - 1]?.firstVisible || null;
+                 initializeFirebaseAndLoadData('prev');
+            };
+            if (nextPageBtn) nextPageBtn.onclick = () => {
+                initializeFirebaseAndLoadData('next');
+            };
+            if (pageSizeSelect) pageSizeSelect.onchange = (event) => {
+                pageSize = parseInt(event.target.value, 10);
+                lastVisibleDoc = null; // Reset pagination
+                firstVisibleDoc = null;
+                queryHistory = [];
+                currentPage = 0;
+                initializeFirebaseAndLoadData();
+            };
 
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
                     if (event.target == projectFormModal) projectFormModal.style.display = 'none';
                     if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (event.target == settingsModal) settingsModal.style.display = 'none';
-                    if (event.target == activityLogModal) activityLogModal.style.display = 'none'; // NEW
+                    if (event.target == activityLogModal) activityLogModal.style.display = 'none';
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -508,15 +759,17 @@
 
         // NEW: Function to fetch and render the activity log
         async function renderActivityLog() {
+            showLoading("Loading activity log..."); // Show loading
             if (!activityLogContentElement) {
                 console.error("activityLogContentElement not found.");
+                hideLoading();
                 return;
             }
             activityLogContentElement.innerHTML = '<p>Loading activity log...</p>';
 
             try {
-                // Fetch latest 100 logs, adjust limit as needed for performance/display
-                const querySnapshot = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(100).get();
+                // Fetch latest 50 logs
+                const querySnapshot = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(50).get();
                 if (querySnapshot.empty) {
                     activityLogContentElement.innerHTML = '<p>No activities recorded yet.</p>';
                     return;
@@ -531,9 +784,9 @@
                         detailsHtml += '<ul style="list-style-type: disc; margin-top: 5px; padding-left: 20px; font-size: 0.9em;">';
                         for (const key in log.details) {
                             if (log.details.hasOwnProperty(key)) {
-                                detailsHtml += `<li><strong>${key}:</strong> ${JSON.stringify(log.details[key]).replace(/"/g, '')}</li>`; // Remove quotes from stringified values
+                                detailsHtml += `<li><strong>${key}:</strong> ${JSON.stringify(log.details[key]).replace(/"/g, '')}</li>`;
                             }
-                        }
+                            }
                         detailsHtml += '</ul>';
                     }
                     logHtml += `
@@ -551,19 +804,86 @@
             } catch (error) {
                 console.error("Error fetching activity logs:", error);
                 activityLogContentElement.innerHTML = '<p style="color:red;">Error loading activity log.</p>';
+            } finally {
+                hideLoading(); // Hide loading
+            }
+        }
+
+        async function handleCleanActivityLogs() {
+            if (!confirm("Are you sure you want to delete all activity logs older than the latest 50? This action is irreversible.")) {
+                return;
+            }
+            showLoading("Cleaning activity logs..."); // Show loading
+
+            if (!db) {
+                alert("Database not initialized! Cannot clean logs.");
+                hideLoading();
+                return;
+            }
+
+            try {
+                const latestLogsSnapshot = await db.collection("activity_logs")
+                    .orderBy("timestamp", "desc")
+                    .limit(50)
+                    .get();
+
+                if (latestLogsSnapshot.empty) {
+                    alert("No activity logs to clean.");
+                    return;
+                }
+
+                let oldestTimestampToKeep = null;
+                if (latestLogsSnapshot.docs.length === 50) {
+                    oldestTimestampToKeep = latestLogsSnapshot.docs[latestLogsSnapshot.docs.length - 1].data().timestamp;
+                } else {
+                    alert("Fewer than 50 logs found, no logs to delete.");
+                    return;
+                }
+
+                if (!oldestTimestampToKeep) {
+                    alert("Could not determine oldest timestamp to keep.");
+                    return;
+                }
+
+                const oldLogsSnapshot = await db.collection("activity_logs")
+                    .where("timestamp", "<", oldestTimestampToKeep)
+                    .get();
+
+                if (oldLogsSnapshot.empty) {
+                    alert("No old activity logs to delete.");
+                    return;
+                }
+
+                const batch = db.batch();
+                let deletedCount = 0;
+                oldLogsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                    deletedCount++;
+                });
+
+                await batch.commit();
+                alert(`Successfully deleted ${deletedCount} old activity logs.`);
+                logActivity('Cleaned Old Activity Logs', { deletedCount: deletedCount, oldestTimestampKept: oldestTimestampToKeep.toDate().toLocaleString() });
+                renderActivityLog();
+            } catch (error) {
+                console.error("Error cleaning activity logs:", error);
+                alert("Error cleaning activity logs: " + error.message);
+            } finally {
+                hideLoading(); // Hide loading
             }
         }
 
 
         async function handleAddProjectSubmit(e) {
             e.preventDefault();
-            if (!db) { alert("Database not initialized!"); return; }
+            showLoading("Adding project(s)..."); // Show loading
+            if (!db) { alert("Database not initialized!"); hideLoading(); return; }
             const fixCategory = document.getElementById('fixCategorySelect').value;
             const numRows = parseInt(document.getElementById('numRows').value, 10);
             const baseProjectNameVal = document.getElementById('baseProjectName').value.trim();
             const gsd = document.getElementById('gsd').value;
 
-            if (!baseProjectNameVal || isNaN(numRows) || numRows < 1) { alert("Invalid input."); return; }
+            if (!baseProjectNameVal || isNaN(numRows) || numRows < 1) { alert("Invalid input."); hideLoading(); return; }
 
             const currentBatchId = "batch_" + generateId();
             const batchCreationTimestamp = firebase.firestore.FieldValue.serverTimestamp();
@@ -577,6 +897,7 @@
                         assignedTo: "", techNotes: "", status: 'Available',
                         startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                        startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                         releasedToNextStage: false, lastModifiedTimestamp: batchCreationTimestamp,
                         isReassigned: false, originalProjectId: null,
                         breakDurationMinutes: 0,
@@ -585,17 +906,16 @@
                     fbBatch.set(db.collection("projects").doc(), newProjectData);
                 }
                 await fbBatch.commit();
-                // NEW: Log activity
                 logActivity('Added New Project(s)', {
                     fixCategory: fixCategory,
                     numRows: numRows,
                     baseProjectName: baseProjectNameVal,
                     gsd: gsd,
-                    batchId: currentBatchId.split('_')[1] // Log just the ID part
+                    batchId: currentBatchId.split('_')[1]
                 });
                 newProjectForm.reset();
             } catch (error) { console.error("Error adding projects: ", error); alert("Error: " + error.message); }
-            finally { projectFormModal.style.display = 'none'; }
+            finally { projectFormModal.style.display = 'none'; hideLoading(); }
         }
 
         function getManageableBatches() {
@@ -611,10 +931,11 @@
         }
 
         function renderTLDashboard() {
-            if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); return; }
+            showLoading("Loading Project Settings..."); // Show loading
+            if (!tlDashboardContentElement) { console.error("tlDashboardContentElement not found."); hideLoading(); return; }
             tlDashboardContentElement.innerHTML = '';
             const manageableBatches = getManageableBatches();
-            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found.</p>'; return; }
+            if (manageableBatches.length === 0) { tlDashboardContentElement.innerHTML = '<p>No project batches found in current view. (Consider loading all projects for full management)</p>'; hideLoading(); return; }
 
             manageableBatches.forEach(batch => {
                 if (!batch || !batch.batchId) return;
@@ -640,7 +961,7 @@
                             if (!alreadyReleasedFromLatestStage) {
                                 allTasksInLatestStageReadyForRelease = batch.tasksByFix[fixCat]
                                     .filter(t => t.status !== 'Reassigned_TechAbsent')
-                                    .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext'));
+                                    .every(t => t && (t.status === 'Completed' || t.status === 'Day1Ended_AwaitingNext' || t.status === 'Day2Ended_AwaitingNext'));
                             }
                         }
                     });
@@ -654,7 +975,7 @@
                         releaseBtn.classList.add('btn', 'btn-release');
                         if (!allTasksInLatestStageReadyForRelease) {
                             releaseBtn.disabled = true;
-                            releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended'.`;
+                            releaseBtn.title = `Not all active tasks in ${latestFixCategoryForBatch} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`;
                         }
                         releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, latestFixCategoryForBatch, nextFixCategory);
                         releaseActionsDiv.appendChild(releaseBtn);
@@ -686,17 +1007,19 @@
                 batchDiv.appendChild(deleteActionsDiv);
                 tlDashboardContentElement.appendChild(batchDiv);
             });
+            hideLoading(); // Hide loading
         }
 
         async function releaseBatchToNextFix(batchId, currentFixCategory, nextFixCategory) {
-            if (!db) { alert("Database not initialized!"); return; }
+            showLoading(`Releasing ${currentFixCategory} tasks...`); // Show loading
+            if (!db) { alert("Database not initialized!"); hideLoading(); return; }
             try {
                 const sourceTasksSnapshot = await db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", currentFixCategory).where("releasedToNextStage", "==", false).get();
                 if (sourceTasksSnapshot.empty) { alert("No active tasks to release."); refreshAllViews(); return; }
                 const sourceBatchTasks = [];
                 sourceTasksSnapshot.forEach(doc => { const data = doc.data(); if (data.status !== 'Reassigned_TechAbsent') sourceBatchTasks.push({id: doc.id, ...data }); });
                 if (sourceBatchTasks.length === 0) { alert("No active tasks to release after filtering."); refreshAllViews(); return; }
-                const allReadyForRelease = sourceBatchTasks.every(p => p && (p.status === 'Completed' || p.status === 'Day1Ended_AwaitingNext'));
+                const allReadyForRelease = sourceBatchTasks.every(p => p && (p.status === 'Completed' || p.status === 'Day1Ended_AwaitingNext' || p.status === 'Day2Ended_AwaitingNext'));
                 if (!allReadyForRelease) { alert(`Not all active tasks in ${currentFixCategory} are ready. Cannot release.`); return; }
                 const releaseTimestamp = firebase.firestore.FieldValue.serverTimestamp();
                 const fbBatch = db.batch();
@@ -711,6 +1034,7 @@
                             assignedTo: sourceTask.assignedTo, techNotes: "", status: 'Available',
                             startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                             startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                             releasedToNextStage: false, lastModifiedTimestamp: releaseTimestamp,
                             isReassigned: false, originalProjectId: sourceTask.id,
                             breakDurationMinutes: 0, additionalMinutesManual: 0
@@ -720,47 +1044,51 @@
                     fbBatch.update(db.collection("projects").doc(sourceTask.id), { releasedToNextStage: true, lastModifiedTimestamp: releaseTimestamp });
                 }
                 await fbBatch.commit();
-                // NEW: Log activity
                 logActivity(`Released Batch to Next Fix: ${currentFixCategory} -> ${nextFixCategory}`, {
                     batchId: batchId.split('_')[1],
                     currentFixCategory: currentFixCategory,
                     nextFixCategory: nextFixCategory
                 });
             } catch (error) { console.error("Error releasing batch:", error); alert("Error: " + error.message); }
+            finally { hideLoading(); } // Hide loading
         }
 
         async function deleteProjectBatch(batchIdToDelete) {
-            if (!db || !batchIdToDelete) return;
+            showLoading("Deleting batch..."); // Show loading
+            if (!db || !batchIdToDelete) { hideLoading(); return; }
             try {
                 const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).get();
                 if (querySnapshot.empty) return;
                 const fbBatch = db.batch();
                 querySnapshot.forEach(doc => fbBatch.delete(doc.ref));
                 await fbBatch.commit();
-                // NEW: Log activity
                 logActivity('Deleted Entire Project Batch', { batchId: batchIdToDelete.split('_')[1] });
             } catch (error) { console.error(`Error deleting batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
+            finally { hideLoading(); } // Hide loading
         }
         async function deleteSpecificFixTasksForBatch(batchIdToDelete, fixCategoryToDelete) {
-            if (!db || !batchIdToDelete || !fixCategoryToDelete) return;
+            showLoading(`Deleting ${fixCategoryToDelete} tasks...`); // Show loading
+            if (!db || !batchIdToDelete || !fixCategoryToDelete) { hideLoading(); return; }
             try {
                 const querySnapshot = await db.collection("projects").where("batchId", "==", batchIdToDelete).where("fixCategory", "==", fixCategoryToDelete).get();
                 if (querySnapshot.empty) return;
                 const fbBatch = db.batch();
                 querySnapshot.forEach(doc => fbBatch.delete(doc.ref));
                 await fbBatch.commit();
-                // NEW: Log activity
                 logActivity(`Deleted Specific Fix Tasks for Batch: ${fixCategoryToDelete}`, { batchId: batchIdToDelete.split('_')[1], fixCategory: fixCategoryToDelete });
             } catch (error) { console.error(`Error deleting ${fixCategoryToDelete} for batch ${batchIdToDelete}:`, error); alert("Error: " + error.message); }
+            finally { hideLoading(); } // Hide loading
         }
 
         function renderProjects() {
+            // Note: Loading overlay for renderProjects is handled by initializeFirebaseAndLoadData
             if (!projectTableBody) { console.error("CRITICAL: projectTableBody not found."); return; }
             projectTableBody.innerHTML = '';
             const projectsToRender = [...projects];
 
             projectsToRender.sort((a, b) => {
                 if (!a || !b) return 0;
+                // Preserve the original sorting logic for display within the current page
                 if ((a.batchId || "") < (b.batchId || "")) return -1; if ((a.batchId || "") > (b.batchId || "")) return 1;
                 const fixOrderA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory || ""); const fixOrderB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory || "");
                 if (fixOrderA < fixOrderB) return -1; if (fixOrderA > fixOrderB) return 1;
@@ -820,19 +1148,16 @@
                 row.insertCell().textContent = project.areaTask || 'N/A';
                 row.insertCell().textContent = project.gsd || 'N/A';
 
-                // MODIFIED: Assigned Tech - Changed to Select Dropdown
                 const assignedToCell = row.insertCell();
                 const assignedToSelect = document.createElement('select');
-                assignedToSelect.classList.add('assigned-to-select'); // New class for styling if needed
+                assignedToSelect.classList.add('assigned-to-select');
                 assignedToSelect.disabled = project.status === 'Reassigned_TechAbsent';
 
-                // Add a default "unassigned" option
                 const unassignedOption = document.createElement('option');
                 unassignedOption.value = "";
                 unassignedOption.textContent = "Select Tech ID";
                 assignedToSelect.appendChild(unassignedOption);
 
-                // Populate with Tech IDs
                 TECH_IDS.forEach(techId => {
                     const option = document.createElement('option');
                     option.value = techId;
@@ -840,14 +1165,16 @@
                     assignedToSelect.appendChild(option);
                 });
 
-                assignedToSelect.value = project.assignedTo || ""; // Set current value
+                assignedToSelect.value = project.assignedTo || "";
 
                 assignedToSelect.onchange = async (event) => {
+                    showLoading("Updating assignment..."); // Show loading
                     const newTechId = event.target.value;
-                    const oldTechId = project.assignedTo || ""; // Get old value for logging
+                    const oldTechId = project.assignedTo || "";
                     if (!db || !project.id) {
                         alert("DB or ID missing.");
                         event.target.value = project.assignedTo || '';
+                        hideLoading();
                         return;
                     }
                     try {
@@ -855,18 +1182,19 @@
                             assignedTo: newTechId,
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        // NEW: Log activity
                         logActivity('Changed Assigned Tech', {
                             projectId: project.id,
                             projectName: project.baseProjectName + ' ' + project.areaTask,
                             oldAssignedTo: oldTechId,
                             newAssignedTo: newTechId
                         });
-                        project.assignedTo = newTechId; // Update local project data immediately
+                        project.assignedTo = newTechId;
                     } catch (error) {
                         console.error("Error updating assignedTo:", error);
                         alert("Error: " + error.message);
-                        event.target.value = project.assignedTo || ''; // Revert on error
+                        event.target.value = project.assignedTo || '';
+                    } finally {
+                        hideLoading(); // Hide loading
                     }
                 };
                 assignedToCell.appendChild(assignedToSelect);
@@ -875,25 +1203,34 @@
                 const statusSpan = document.createElement('span'); statusSpan.classList.add('status');
                 let statusText = (project.status || "Unknown").replace(/([A-Z])(?=[a-z0-9_])/g, ' $1').trim();
                 if (project.status === "Day1Ended_AwaitingNext") statusText = "Started Available";
+                if (project.status === "Day2Ended_AwaitingNext") statusText = "Started Day 2 Ended";
                 if (project.status === "Reassigned_TechAbsent") statusText = "Re-Assigned";
                 statusSpan.textContent = statusText; statusSpan.classList.add(`status-${(project.status || "unknown").toLowerCase()}`);
                 statusCell.appendChild(statusSpan);
 
                 const timeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1, d2s = project.startTimeDay2, d2f = project.finishTimeDay2;
+                let d1s = project.startTimeDay1, d1f = project.finishTimeDay1,
+                    d2s = project.startTimeDay2, d2f = project.finishTimeDay2,
+                    d3s = project.startTimeDay3, d3f = project.finishTimeDay3;
+
                 try {
                     if (d1s && typeof d1s.toDate === 'function') d1s = d1s.toDate(); else if (d1s) d1s = new Date(d1s); else d1s = null;
                     if (d1f && typeof d1f.toDate === 'function') d1f = d1f.toDate(); else if (d1f) d1f = new Date(d1f); else d1f = null;
                     if (d2s && typeof d2s.toDate === 'function') d2s = d2s.toDate(); else if (d2s) d2s = new Date(d2s); else d2s = null;
                     if (d2f && typeof d2f.toDate === 'function') d2f = d2f.toDate(); else if (d2f) d2f = new Date(d2f); else d2f = null;
-                } catch (dateError) { d1s = d1f = d2s = d2f = null; }
+                    if (d3s && typeof d3s.toDate === 'function') d3s = d3s.toDate(); else if (d3s) d3s = new Date(d3s); else d3s = null;
+                    if (d3f && typeof d3f.toDate === 'function') d3f = d3f.toDate(); else if (d3f) d3f = new Date(d3f); else d3f = null;
+
+                } catch (dateError) { d1s = d1f = d2s = d2f = d3s = d3f = null; }
 
                 row.insertCell().textContent = d1s && !isNaN(d1s) ? d1s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = d1f && !isNaN(d1f) ? d1f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = d2s && !isNaN(d2s) ? d2s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
                 row.insertCell().textContent = d2f && !isNaN(d2f) ? d2f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = d3s && !isNaN(d3s) ? d3s.toLocaleTimeString('en-US', timeFormatOptions) : '-';
+                row.insertCell().textContent = d3f && !isNaN(d3f) ? d3f.toLocaleTimeString('en-US', timeFormatOptions) : '-';
 
-                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
+                let totalRawDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
                 let breakToSubtractMs = (project.breakDurationMinutes || 0) * 60000;
                 let additionalManualMs = (project.additionalMinutesManual || 0) * 60000;
                 let durationAfterBreakMs = Math.max(0, totalRawDurationMs - breakToSubtractMs);
@@ -905,71 +1242,28 @@
                 totalDurationCell.textContent = formatMillisToMinutes(finalTotalDurationMs);
                 totalDurationCell.classList.add('total-duration-column');
 
-                const additionalMinutesCell = row.insertCell();
-                const additionalMinutesInput = document.createElement('input');
-                additionalMinutesInput.type = 'number'; additionalMinutesInput.min = '0';
-                additionalMinutesInput.value = project.additionalMinutesManual || 0;
-                additionalMinutesInput.classList.add('additional-minutes-input');
-                additionalMinutesInput.title = "Manually add minutes to total";
-                additionalMinutesInput.disabled = project.status === 'Reassigned_TechAbsent';
-                additionalMinutesInput.onchange = async (event) => {
-                    const newAdditionalMins = Math.max(0, parseInt(event.target.value, 10) || 0);
-                    const oldAdditionalMins = project.additionalMinutesManual || 0; // Get old value for logging
-                    if (!db || !project.id) { event.target.value = project.additionalMinutesManual || 0; return; }
-                    try {
-                        await db.collection("projects").doc(project.id).update({
-                            additionalMinutesManual: newAdditionalMins,
-                            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        // NEW: Log activity
-                        logActivity('Updated Additional Minutes', {
-                            projectId: project.id,
-                            projectName: project.baseProjectName + ' ' + project.areaTask,
-                            oldValue: oldAdditionalMins,
-                            newValue: newAdditionalMins
-                        });
-
-                        const currentRow = event.target.closest('tr');
-                        if (currentRow) {
-                            const totalCellInRow = currentRow.querySelector('.total-duration-column');
-                            if (totalCellInRow) {
-                                let currentTotalRawMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
-                                let currentBreakMs = (project.breakDurationMinutes || 0) * 60000;
-                                let currentAdditionalMs = newAdditionalMins * 60000;
-                                let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
-                                let currentFinalTotalMs = currentDurationAfterBreakMs + currentAdditionalMs;
-                                if (currentTotalRawMs === 0 && (project.breakDurationMinutes || 0) === 0 && newAdditionalMins === 0) { currentFinalTotalMs = null; }
-                                totalCellInRow.textContent = formatMillisToMinutes(currentFinalTotalMs);
-                                project.additionalMinutesManual = newAdditionalMins;
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error updating additional minutes:", error);
-                        event.target.value = project.additionalMinutesManual || 0;
-                    }
-                };
-                additionalMinutesCell.appendChild(additionalMinutesInput);
-
                 const techNotesCell = row.insertCell();
                 const techNotesInput = document.createElement('textarea'); techNotesInput.value = project.techNotes || '';
                 techNotesInput.placeholder = 'Notes'; techNotesInput.classList.add('tech-notes-input'); techNotesInput.rows = 1;
                 techNotesInput.id = `techNotes_${project.id}`; techNotesInput.disabled = project.status === 'Reassigned_TechAbsent';
                 techNotesInput.onchange = async (event) => {
+                    showLoading("Updating tech notes..."); // Show loading
                     const newVal = event.target.value;
-                    const oldVal = project.techNotes || ''; // Get old value for logging
-                    if (!db || !project.id) { event.target.value = project.techNotes || ''; return; }
+                    const oldVal = project.techNotes || '';
+                    if (!db || !project.id) { event.target.value = project.techNotes || ''; hideLoading(); return; }
                     try {
                         await db.collection("projects").doc(project.id).update({ techNotes: newVal, lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                        // NEW: Log activity
                         logActivity('Updated Tech Notes', {
                             projectId: project.id,
                             projectName: project.baseProjectName + ' ' + project.areaTask,
                             oldNotes: oldVal,
-                            newNotes: newVal.length > 50 ? newVal.substring(0, 50) + '...' : newVal // Truncate long notes for log
+                            newNotes: newVal.length > 50 ? newVal.substring(0, 50) + '...' : newVal
                         });
                     } catch (error) {
                         console.error("Error updating techNotes:", error);
                         event.target.value = project.techNotes || '';
+                    } finally {
+                        hideLoading(); // Hide loading
                     }
                 };
                 techNotesCell.appendChild(techNotesInput);
@@ -986,15 +1280,15 @@
                 let option90Min = document.createElement('option'); option90Min.value = '90'; option90Min.textContent = '1h30m Break'; breakSelect.appendChild(option90Min);
                 breakSelect.value = (typeof project.breakDurationMinutes === 'number') ? project.breakDurationMinutes.toString() : '0';
                 breakSelect.onchange = async (event) => {
+                    showLoading("Updating break duration..."); // Show loading
                     const selectedBreakMinutes = parseInt(event.target.value, 10);
-                    const oldBreakMinutes = project.breakDurationMinutes || 0; // Get old value for logging
-                    if (!db || !project.id) { event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; return; }
+                    const oldBreakMinutes = project.breakDurationMinutes || 0;
+                    if (!db || !project.id) { event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0'; hideLoading(); return; }
                     try {
                         await db.collection("projects").doc(project.id).update({
                             breakDurationMinutes: selectedBreakMinutes,
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        // NEW: Log activity
                         logActivity('Updated Break Duration', {
                             projectId: project.id,
                             projectName: project.baseProjectName + ' ' + project.areaTask,
@@ -1005,7 +1299,7 @@
                          if (currentRow) {
                             const totalCellInRow = currentRow.querySelector('.total-duration-column');
                             if (totalCellInRow) {
-                                let currentTotalRawMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0);
+                                let currentTotalRawMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
                                 let currentBreakMs = selectedBreakMinutes * 60000;
                                 let currentAdditionalMs = (project.additionalMinutesManual || 0) * 60000;
                                 let currentDurationAfterBreakMs = Math.max(0, currentTotalRawMs - currentBreakMs);
@@ -1018,15 +1312,34 @@
                     } catch (error) {
                         console.error("Error updating break duration:", error);
                         event.target.value = project.breakDurationMinutes ? project.breakDurationMinutes.toString() : '0';
+                    } finally {
+                        hideLoading(); // Hide loading
                     }
                 };
                 btnContainer.appendChild(breakSelect);
 
                 const isOriginalReassignedTask = project.status === 'Reassigned_TechAbsent';
-                const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start'); sD1btn.disabled = isOriginalReassignedTask || !(project.status === 'Available' || project.status === 'Day1Ended_AwaitingNext' || project.status === 'InProgressDay2' || project.status === 'Completed'); sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn);
+                const sD1btn = document.createElement('button'); sD1btn.textContent = 'Start D1'; sD1btn.classList.add('btn','btn-day-start');
+                sD1btn.disabled = isOriginalReassignedTask || !(project.status === 'Available' || project.status === 'Day1Ended_AwaitingNext' || project.status === 'InProgressDay2' || project.status === 'Day2Ended_AwaitingNext' || project.status === 'InProgressDay3' || project.status === 'Completed');
+                sD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay1'); }; btnContainer.appendChild(sD1btn);
+
                 const eD1btn = document.createElement('button'); eD1btn.textContent = 'End D1'; eD1btn.classList.add('btn','btn-day-end'); eD1btn.disabled = project.status !== 'InProgressDay1' || isOriginalReassignedTask; eD1btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay1'); }; btnContainer.appendChild(eD1btn);
-                const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start'); sD2btn.disabled = project.status !== 'Day1Ended_AwaitingNext' || isOriginalReassignedTask; sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn);
-                const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end'); eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn);
+
+                const sD2btn = document.createElement('button'); sD2btn.textContent = 'Start D2'; sD2btn.classList.add('btn','btn-day-start');
+                sD2btn.disabled = isOriginalReassignedTask || !(project.status === 'Day1Ended_AwaitingNext' || project.status === 'Day2Ended_AwaitingNext' || project.status === 'InProgressDay3' || project.status === 'Completed');
+                sD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay2'); }; btnContainer.appendChild(sD2btn);
+
+                const eD2btn = document.createElement('button'); eD2btn.textContent = 'End D2'; eD2btn.classList.add('btn','btn-day-end');
+                eD2btn.disabled = project.status !== 'InProgressDay2' || isOriginalReassignedTask; eD2btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay2'); }; btnContainer.appendChild(eD2btn);
+
+                const sD3btn = document.createElement('button'); sD3btn.textContent = 'Start D3'; sD3btn.classList.add('btn','btn-day-start');
+                sD3btn.disabled = isOriginalReassignedTask || !(project.status === 'Day2Ended_AwaitingNext' || project.status === 'InProgressDay3' || project.status === 'Completed');
+                sD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'startDay3'); }; btnContainer.appendChild(sD3btn);
+
+                const eD3btn = document.createElement('button'); eD3btn.textContent = 'End D3'; eD3btn.classList.add('btn','btn-day-end');
+                eD3btn.disabled = project.status !== 'InProgressDay3' || isOriginalReassignedTask; eD3btn.onclick = () => { if (project.id) updateProjectState(project.id, 'endDay3'); }; btnContainer.appendChild(eD3btn);
+
+
                 const doneBtn = document.createElement('button'); doneBtn.textContent = 'Done'; doneBtn.classList.add('btn','btn-mark-done'); doneBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; doneBtn.onclick = () => { if (project.id) updateProjectState(project.id, 'markDone'); }; btnContainer.appendChild(doneBtn);
                 const reassignBtn = document.createElement('button'); reassignBtn.textContent = 'Re-Assign'; reassignBtn.classList.add('btn', 'btn-warning'); reassignBtn.title = 'Re-assign task by creating a new entry.'; reassignBtn.disabled = project.status === 'Completed' || isOriginalReassignedTask; reassignBtn.onclick = () => { const currentProjectData = projects.find(p => p.id === project.id); if (currentProjectData) handleReassignment(currentProjectData); }; btnContainer.appendChild(reassignBtn);
 
@@ -1035,29 +1348,38 @@
         }
 
         async function updateProjectState(projectId, action) {
-            if (!db || !projectId ) return;
+            showLoading("Updating project state..."); // Show loading
+            if (!db || !projectId ) { hideLoading(); return; }
             const projectRef = db.collection("projects").doc(projectId);
             let currentProjectData;
             try {
                 const doc = await projectRef.get();
-                if (!doc.exists) return;
+                if (!doc.exists) { hideLoading(); return; }
                 currentProjectData = doc.data();
             } catch(error) {
                 console.error("Error fetching current project data for update:", error);
+                hideLoading();
                 return;
             }
-            if (!currentProjectData || currentProjectData.status === 'Reassigned_TechAbsent') return;
+            if (!currentProjectData || currentProjectData.status === 'Reassigned_TechAbsent') { hideLoading(); return; }
 
             const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
             const clientNowMillis = Date.now();
             let updatedFields = { lastModifiedTimestamp: serverTimestamp };
-            let oldStatus = currentProjectData.status; // Store old status for logging
-            let newStatus = oldStatus; // Initialize new status
+            let oldStatus = currentProjectData.status;
+            let newStatus = oldStatus;
 
             switch (action) {
                 case 'startDay1':
-                    if (['Available', 'Day1Ended_AwaitingNext', 'InProgressDay2', 'Completed'].includes(currentProjectData.status)) {
-                        updatedFields = { ...updatedFields, status: 'InProgressDay1', startTimeDay1: serverTimestamp, finishTimeDay1: null, durationDay1Ms: null, startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null };
+                    if (['Available', 'Day1Ended_AwaitingNext', 'InProgressDay2', 'Day2Ended_AwaitingNext', 'InProgressDay3', 'Completed'].includes(currentProjectData.status)) {
+                        updatedFields = {
+                            ...updatedFields,
+                            status: 'InProgressDay1',
+                            startTimeDay1: serverTimestamp,
+                            finishTimeDay1: null, durationDay1Ms: null,
+                            startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null
+                        };
                         newStatus = 'InProgressDay1';
                     } break;
                 case 'endDay1':
@@ -1067,14 +1389,32 @@
                     }
                     break;
                 case 'startDay2':
-                    if (currentProjectData.status === 'Day1Ended_AwaitingNext') {
-                        updatedFields = { ...updatedFields, status: 'InProgressDay2', startTimeDay2: serverTimestamp, finishTimeDay2: null, durationDay2Ms: null };
+                    if (['Day1Ended_AwaitingNext', 'Day2Ended_AwaitingNext', 'InProgressDay3', 'Completed'].includes(currentProjectData.status)) {
+                        updatedFields = {
+                            ...updatedFields,
+                            status: 'InProgressDay2',
+                            startTimeDay2: serverTimestamp,
+                            finishTimeDay2: null, durationDay2Ms: null,
+                            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null
+                        };
                         newStatus = 'InProgressDay2';
                     }
                     break;
                 case 'endDay2':
                     if (currentProjectData.status === 'InProgressDay2' && currentProjectData.startTimeDay2) {
-                        updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) };
+                        updatedFields = { ...updatedFields, status: 'Day2Ended_AwaitingNext', finishTimeDay2: serverTimestamp, durationDay2Ms: calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis) };
+                        newStatus = 'Day2Ended_AwaitingNext';
+                    }
+                    break;
+                case 'startDay3':
+                    if (['Day2Ended_AwaitingNext', 'InProgressDay3', 'Completed'].includes(currentProjectData.status)) {
+                        updatedFields = { ...updatedFields, status: 'InProgressDay3', startTimeDay3: serverTimestamp, finishTimeDay3: null, durationDay3Ms: null };
+                        newStatus = 'InProgressDay3';
+                    }
+                    break;
+                case 'endDay3':
+                    if (currentProjectData.status === 'InProgressDay3' && currentProjectData.startTimeDay3) {
+                        updatedFields = { ...updatedFields, status: 'Completed', finishTimeDay3: serverTimestamp, durationDay3Ms: calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis) };
                         newStatus = 'Completed';
                     }
                     break;
@@ -1084,16 +1424,28 @@
                         newStatus = 'Completed';
                         if (currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { updatedFields.finishTimeDay1 = serverTimestamp; updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis); }
                         if (currentProjectData.startTimeDay2 && !currentProjectData.finishTimeDay2) { updatedFields.finishTimeDay2 = serverTimestamp; updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis); }
-                        if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2) {}
-                        else if (!currentProjectData.startTimeDay2 && currentProjectData.startTimeDay1 && !currentProjectData.finishTimeDay1) { updatedFields.finishTimeDay1 = serverTimestamp; updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis); }
-                        else if (currentProjectData.startTimeDay1 && currentProjectData.finishTimeDay1 && !currentProjectData.startTimeDay2) { updatedFields.startTimeDay2 = null; updatedFields.finishTimeDay2 = null; updatedFields.durationDay2Ms = null; }
+                        if (currentProjectData.startTimeDay3 && !currentProjectData.finishTimeDay3) { updatedFields.finishTimeDay3 = serverTimestamp; updatedFields.durationDay3Ms = calculateDurationMs(currentProjectData.startTimeDay3, clientNowMillis); }
+                        if (!currentProjectData.startTimeDay1 && !currentProjectData.startTimeDay2 && !currentProjectData.startTimeDay3) {
+                            // No start times, no duration to calculate for any day
+                        } else if (!currentProjectData.startTime2 && currentProjectData.startTime1 && !currentProjectData.finishTime1) {
+                            updatedFields.finishTimeDay1 = serverTimestamp;
+                            updatedFields.durationDay1Ms = calculateDurationMs(currentProjectData.startTimeDay1, clientNowMillis);
+                        } else if (currentProjectData.startTime1 && currentProjectData.finishTime1 && !currentProjectData.startTime2) {
+                            updatedFields.startTimeDay2 = null; updatedFields.finishTimeDay2 = null; updatedFields.durationDay2Ms = null;
+                            updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
+                        } else if (currentProjectData.startTime2 && !currentProjectData.finishTime2) {
+                             updatedFields.finishTimeDay2 = serverTimestamp;
+                             updatedFields.durationDay2Ms = calculateDurationMs(currentProjectData.startTimeDay2, clientNowMillis);
+                             updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
+                        } else if (currentProjectData.startTime2 && currentProjectData.finishTime2 && !currentProjectData.startTime3) {
+                            updatedFields.startTimeDay3 = null; updatedFields.finishTimeDay3 = null; updatedFields.durationDay3Ms = null;
+                        }
                     } break;
-                default: return;
+                default: hideLoading(); return; // Important: hide loading if action is not handled
             }
             if (Object.keys(updatedFields).length > 1) {
                 try {
                     await projectRef.update(updatedFields);
-                    // NEW: Log activity for status change
                     logActivity(`Updated Project Status: ${action}`, {
                         projectId: projectId,
                         projectName: currentProjectData.baseProjectName + ' ' + currentProjectData.areaTask,
@@ -1102,6 +1454,9 @@
                     });
                 }
                 catch (error) { console.error(`Error updating project ${projectId}:`, error); }
+                finally { hideLoading(); } // Always hide loading
+            } else {
+                hideLoading(); // Hide loading if no updates were made
             }
         }
 
@@ -1111,7 +1466,8 @@
             if (newTechId === null || newTechId.trim() === "") return;
 
             if (confirm(`Create NEW task for '${newTechId.trim()}'? Current task will be closed.`)) {
-                if (!db) return;
+                showLoading("Reassigning task..."); // Show loading
+                if (!db) { hideLoading(); return; }
                 const batch = db.batch(); const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
                 const newReassignedData = {
                     batchId: originalProjectData.batchId, baseProjectName: originalProjectData.baseProjectName,
@@ -1119,37 +1475,40 @@
                     assignedTo: newTechId.trim(), status: 'Available',
                     startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                     startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                    startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                     techNotes: `Reassigned from ${originalProjectData.assignedTo || 'N/A'}. Original Project ID: ${originalProjectData.id}`, creationTimestamp: serverTimestamp, lastModifiedTimestamp: serverTimestamp,
                     isReassigned: true, originalProjectId: originalProjectData.id, releasedToNextStage: false,
                     breakDurationMinutes: 0, additionalMinutesManual: 0
                 };
-                const newDocRef = db.collection("projects").doc(); // Get a new doc reference
-                batch.set(newDocRef, newReassignedData); // Use the new doc reference
+                const newDocRef = db.collection("projects").doc();
+                batch.set(newDocRef, newReassignedData);
                 batch.update(db.collection("projects").doc(originalProjectData.id), { status: 'Reassigned_TechAbsent', lastModifiedTimestamp: serverTimestamp });
                 try {
                     await batch.commit();
-                    // NEW: Log activity
                     logActivity('Reassigned Task', {
                         originalProjectId: originalProjectData.id,
                         originalProjectName: originalProjectData.baseProjectName + ' ' + originalProjectData.areaTask,
                         oldAssignedTo: originalProjectData.assignedTo,
                         newAssignedTo: newTechId.trim(),
-                        newProjectId: newDocRef.id // Log the ID of the newly created task
+                        newProjectId: newDocRef.id
                     });
                 } catch (error) { console.error("Error in re-assignment:", error); }
+                finally { hideLoading(); } // Hide loading
             }
         }
 
         function refreshAllViews() {
+            // Note: Loading overlay for refreshAllViews is handled by the calling functions
             try {
                 renderProjects();
                 if (tlDashboardModal && tlDashboardModal.style.display === 'block') renderTLDashboard();
                 if (settingsModal && settingsModal.style.display === 'block') renderAllowedEmailsList();
-                if (activityLogModal && activityLogModal.style.display === 'block') renderActivityLog(); // NEW
+                if (activityLogModal && activityLogModal.style.display === 'block') renderActivityLog();
             } catch (e) { console.error("Error during refreshAllViews:", e); }
         }
 
         async function renderAllowedEmailsList() {
+            // Note: Loading overlay for renderAllowedEmailsList is handled by fetchAllowedEmails
             if (!allowedEmailsList) return; await fetchAllowedEmails(); allowedEmailsList.innerHTML = '';
             if (allowedEmailsFromFirestore.length === 0) { allowedEmailsList.innerHTML = '<li>No allowed emails configured.</li>'; return; }
             allowedEmailsFromFirestore.forEach(email => {
@@ -1160,24 +1519,27 @@
             });
         }
         async function handleAddEmail() {
-            if (!addEmailInput) return; const newEmail = addEmailInput.value.trim().toLowerCase();
-            if (!newEmail || !newEmail.includes('@')) { alert("Please enter a valid email address."); return; }
-            if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(newEmail)) { alert("This email is already in the allowed list."); return; }
+            showLoading("Adding email..."); // Show loading
+            if (!addEmailInput) { hideLoading(); return; }
+            const newEmail = addEmailInput.value.trim().toLowerCase();
+            if (!newEmail || !newEmail.includes('@')) { alert("Please enter a valid email address."); hideLoading(); return; }
+            if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(newEmail)) { alert("This email is already in the allowed list."); hideLoading(); return; }
             const updatedEmails = [...allowedEmailsFromFirestore, newEmail].sort();
             if (await updateAllowedEmailsInFirestore(updatedEmails)) {
-                // NEW: Log activity
                 logActivity('Added Allowed Email', { email: newEmail });
                 addEmailInput.value = ''; renderAllowedEmailsList();
             }
+            // updateAllowedEmailsInFirestore already handles hiding the loading spinner in its finally block.
         }
         async function handleRemoveEmail(emailToRemove) {
             if (confirm(`Remove ${emailToRemove} from allowed list?`)) {
+                showLoading("Removing email..."); // Show loading
                 const updatedEmails = allowedEmailsFromFirestore.filter(email => email !== emailToRemove);
                 if (await updateAllowedEmailsInFirestore(updatedEmails)) {
-                    // NEW: Log activity
                     logActivity('Removed Allowed Email', { email: emailToRemove });
                     renderAllowedEmailsList();
                 }
+                // updateAllowedEmailsInFirestore already handles hiding the loading spinner in its finally block.
             }
         }
 
@@ -1186,10 +1548,12 @@
 
             if (signInBtn) {
                 signInBtn.addEventListener('click', () => {
-                    if (!auth) { console.error("Auth not initialized"); return; }
+                    showLoading("Signing in..."); // Show loading
+                    if (!auth) { console.error("Auth not initialized"); hideLoading(); return; }
                     auth.signInWithPopup(provider)
                         .then((result) => {
                             console.log("Sign-in attempt successful for: ", result.user.email);
+                            // Loading hides after auth state change, which triggers initializeAppComponents
                         })
                         .catch((error) => {
                             console.error("Sign-in error: ", error);
@@ -1202,7 +1566,6 @@
                                 errorMessage = "Sign-in pop-up was blocked by the browser. Please allow pop-ups for this site and try again.";
                             }
                             alert(errorMessage);
-                            // Ensure UI is reverted to signed-out state if sign-in fails
                             if (loadingAuthMessageDiv && signInBtn && userInfoDisplayDiv && appContentDiv) {
                                 userInfoDisplayDiv.style.display = 'none';
                                 signInBtn.style.display = 'block';
@@ -1210,6 +1573,7 @@
                                 loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                                 loadingAuthMessageDiv.style.display = 'block';
                             }
+                            hideLoading(); // Hide loading on sign-in error
                         });
                 });
             } else {
@@ -1218,14 +1582,17 @@
 
             if (signOutBtn) {
                 signOutBtn.addEventListener('click', () => {
-                    if (!auth) { console.error("Auth not initialized"); return; }
+                    showLoading("Signing out..."); // Show loading
+                    if (!auth) { console.error("Auth not initialized"); hideLoading(); return; }
                     auth.signOut()
                         .then(() => {
                             console.log("User signed out successfully by clicking button.");
+                            // Loading hides after auth state change
                         })
                         .catch((error) => {
                             console.error("Sign-out error: ", error);
                             alert("Error signing out: " + error.message);
+                            hideLoading(); // Hide loading on sign-out error
                         });
                 });
             } else {
@@ -1236,10 +1603,12 @@
         function initializeAppComponents() {
             if (!isAppInitialized) {
                 console.log("Initializing app components (DOM refs, event listeners, Firestore data)...");
-                // setupDOMReferences and setupAuthRelatedDOMReferences are called here to ensure all elements are ready
                 setupDOMReferences();
-                setupAuthRelatedDOMReferences();
                 attachEventListeners();
+                lastVisibleDoc = null;
+                firstVisibleDoc = null;
+                queryHistory = [];
+                currentPage = 0;
                 initializeFirebaseAndLoadData();
                 isAppInitialized = true;
             } else {
@@ -1251,128 +1620,121 @@
         // Main authentication state change listener
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                // Ensure all relevant DOM references are available before manipulating UI
-                setupDOMReferences(); // Call to set main app DOM refs
-                setupAuthRelatedDOMReferences(); // Call to set auth specific DOM refs
+                setupDOMReferences();
+                setupAuthRelatedDOMReferences();
 
                 if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
                     console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
-                    return; // Crucial elements are missing, cannot proceed safely.
+                    hideLoading(); // Hide loading if UI elements are missing
+                    return;
                 }
 
                 if (user) {
-                    // User is signed in. Now check if they are authorized based on allowed emails.
-                    await fetchAllowedEmails(); // Fetch the latest allowed emails from Firestore
+                    showLoading("Checking authorization..."); // Show loading during authorization check
+                    await fetchAllowedEmails();
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
 
                     if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
-                        // User is signed in AND authorized
                         console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
 
                         userNameP.textContent = user.displayName || "Name not available";
                         userEmailP.textContent = user.email || "Email not available";
                         userPhotoImg.src = user.photoURL || "default-user.png";
 
-                        userInfoDisplayDiv.style.display = 'flex';   // Show user's name, photo, and sign-out button
-                        signInBtn.style.display = 'none';             // Hide the sign-in button
-                        loadingAuthMessageDiv.style.display = 'none'; // Hide the "Please sign in" message
-                        appContentDiv.style.display = 'block';        // Show the main application content
-                        openSettingsBtn.style.display = 'block';      // Show settings button for authorized users
+                        userInfoDisplayDiv.style.display = 'flex';
+                        signInBtn.style.display = 'none';
+                        loadingAuthMessageDiv.style.display = 'none';
+                        appContentDiv.style.display = 'block';
+                        openSettingsBtn.style.display = 'block';
 
-                        initializeAppComponents(); // Proceed to load/display application data
+                        initializeAppComponents();
+                        // Loading will be hidden by initializeFirebaseAndLoadData
                     } else {
-                        // User is signed in but NOT authorized
                         console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
                         alert("Access Denied: Your email address (" + (user.email || "N/A") + ") is not authorized to use this application.");
 
-                        // Automatically sign out the unauthorized user
                         auth.signOut().then(() => {
                             console.log("Unauthorized user automatically signed out.");
-                            // Update UI to reflect signed-out state and access denied message
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Please sign in with an authorized account.</p>';
-                            userInfoDisplayDiv.style.display = 'none'; // Hide user info
-                            signInBtn.style.display = 'block';         // Show sign-in button
-                            appContentDiv.style.display = 'none';      // Hide app content
-                            loadingAuthMessageDiv.style.display = 'block'; // Show access denied message
-                            openSettingsBtn.style.display = 'none';    // Hide settings button
+                            userInfoDisplayDiv.style.display = 'none';
+                            signInBtn.style.display = 'block';
+                            appContentDiv.style.display = 'none';
+                            loadingAuthMessageDiv.style.display = 'block';
+                            openSettingsBtn.style.display = 'none';
 
-                            // Clear any displayed project data and detach listener
                             projects = [];
                             if (projectTableBody) projectTableBody.innerHTML = '';
                             if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
+                            if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                             if (firestoreListenerUnsubscribe) {
                                 firestoreListenerUnsubscribe();
                                 firestoreListenerUnsubscribe = null;
                                 console.log("Firestore listener detached for unauthorized user sign out.");
                             }
-                            isAppInitialized = false; // Reset app initialized state
+                            isAppInitialized = false;
+                            hideLoading(); // Hide loading after handling unauthorized sign out
                         }).catch(error => {
                             console.error("Error signing out unauthorized user:", error);
-                            // Fallback UI update if sign-out fails
                             userInfoDisplayDiv.style.display = 'none';
                             signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none';
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Error during sign out. Please refresh.</p>';
                             loadingAuthMessageDiv.style.display = 'block';
                             openSettingsBtn.style.display = 'none';
+                            hideLoading(); // Hide loading even if sign out fails
                         });
                     }
 
                 } else {
-                    // User is signed out (or never signed in)
                     console.log("Auth state changed: User is SIGNED OUT");
 
-                    // Clear any displayed user information
                     userNameP.textContent = '';
                     userEmailP.textContent = '';
                     userPhotoImg.src = '';
 
-                    userInfoDisplayDiv.style.display = 'none'; // Hide user info and sign-out button
-                    signInBtn.style.display = 'block';         // Show the sign-in button
-                    appContentDiv.style.display = 'none';     // Hide the main application content
-                    openSettingsBtn.style.display = 'none';   // Hide settings button
+                    userInfoDisplayDiv.style.display = 'none';
+                    signInBtn.style.display = 'block';
+                    appContentDiv.style.display = 'none';
+                    openSettingsBtn.style.display = 'none';
 
-                    // Only update loading message if it's not already showing an "Access Denied" message
                     if (loadingAuthMessageDiv.innerHTML.indexOf("Access Denied") === -1) {
                          loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                     }
-                    loadingAuthMessageDiv.style.display = 'block'; // Ensure this message is visible
+                    loadingAuthMessageDiv.style.display = 'block';
 
-                    // Clear any previous project data and detach Firestore listener
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = '';
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                    if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Also clear allowed emails list in settings modal
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
                         firestoreListenerUnsubscribe = null;
                         console.log("Firestore listener detached on sign out.");
                     }
-                    isAppInitialized = false; // Reset app initialization status
+                    isAppInitialized = false;
                     console.log("App content hidden, project data cleared, and Firestore listener detached.");
+                    hideLoading(); // Ensure loading is hidden when signed out
                 }
             });
         } else {
-            // Firebase Auth was not initialized successfully
             console.error("Firebase Auth is not initialized. UI updates based on auth state will not occur.");
             if (loadingAuthMessageDiv) {
                 loadingAuthMessageDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
-                loadingAuthMessageDiv.style.display = 'block'; // Make sure the error message is visible
+                loadingAuthMessageDiv.style.display = 'block';
             }
         }
 
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM fully loaded.");
-            setupDOMReferences(); // Set up all DOM references
-            setupAuthRelatedDOMReferences(); // Ensure auth-specific DOM elements are also referenced
+            setupDOMReferences();
+            setupAuthRelatedDOMReferences();
 
-            if (auth) { // Only set up auth listeners if Firebase Auth is initialized
+            if (auth) {
                 setupAuthEventListeners();
                 console.log("Auth UI and event listeners set up.");
             } else {
                 console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
-                // Provide a clear message to the user if Auth isn't working
                 const authContainer = document.getElementById('auth-container');
                 if (authContainer && loadingAuthMessageDiv) {
                     loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
