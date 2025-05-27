@@ -1193,6 +1193,7 @@
                         alert("Access Denied.");
                         auth.signOut().then(() => {
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied.</p>';
+                            signInBtn.style.display = 'block';
                             userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none'; loadingAuthMessageDiv.style.display = 'block'; openSettingsBtn.style.display = 'none';
                             projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
@@ -1204,6 +1205,7 @@
                     userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
                     appContentDiv.style.display = 'none'; openSettingsBtn.style.display = 'none';
                     if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';}
+                    signInBtn.style.display = 'block';
                     if(loadingAuthMessageDiv) loadingAuthMessageDiv.style.display = 'block';
                     projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = ''; if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                     if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
