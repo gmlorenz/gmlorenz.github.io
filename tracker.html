@@ -544,6 +544,7 @@
          batchIdSelect.appendChild(option);
          } else {
          // Sort unique batch IDs by creation timestamp (if available, otherwise alphabetically)
+         option.value = "Select a project";
          const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
          const projectA = allBatchesSnapshot.docs.find(doc => doc.data().batchId === a);
          const projectB = allBatchesSnapshot.docs.find(doc => doc.data().batchId === b);
