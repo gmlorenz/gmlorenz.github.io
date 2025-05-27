@@ -8,55 +8,62 @@
         body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
 
-        /* Styles for Auth Section - Adjusted for integration into action-bar */
+        /* Styles for Auth Section - copied from tracker.html for direct control */
         #auth-container {
-            display: flex; /* Use flexbox to align internal elements */
-            align-items: center; /* Vertically align items */
-            gap: 10px; /* Space between user info and sign out button */
-            margin-left: auto; /* Push auth section to the right within action-bar */
-            padding: 0; /* Remove padding as it's now inside action-bar */
+            padding: 20px; /* Increased padding */
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex; /* Use flexbox for vertical alignment */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically if container has height */
+            min-height: 80px; /* Give it a minimum height for better centering */
         }
         #auth-container h2 {
-            font-size: 1.1em; /* Smaller heading for top corner */
-            margin: 0; /* Remove margin */
+            font-size: 1.3em; /* Slightly larger heading */
+            margin-bottom: 15px; /* More space below heading */
             color: #333;
-            white-space: nowrap; /* Prevent wrapping */
-            margin-right: 10px; /* Space between title and sign-in button */
         }
         #user-info-display {
             display: flex;
             align-items: center;
-            gap: 5px;
-            white-space: nowrap; /* Prevent wrapping of user info */
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px; /* Add some space above user info */
         }
         #user-info-display img {
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 50px; /* Slightly larger photo */
+            height: 50px;
             border: 2px solid #ddd;
-            object-fit: cover;
+            object-fit: cover; /* Ensure image covers the area */
         }
         #user-info-display .user-details p {
             margin: 0;
-            font-size: 0.9em;
+            font-size: 1em; /* Slightly larger font size */
         }
         #user-info-display .user-details p:first-child {
             font-weight: bold;
         }
         #signInBtn, #signOutBtn {
-            padding: 5px 10px;
-            font-size: 0.9em;
+            padding: 12px 25px; /* Larger buttons */
+            font-size: 1.1em; /* Larger font */
             cursor: pointer;
             border: none;
             border-radius: 4px;
             transition: background-color 0.3s ease;
+            margin-top: 10px; /* Space above button */
         }
         #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
 
         /* Initially hide app content and show loading/auth message */
         #app-content { display: none; }
-        #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
+        #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Added margin-top to separate from auth-container */
 
         h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
         h2 { font-size: 1.3em; }
@@ -67,7 +74,7 @@
             gap: 10px;
             flex-wrap: wrap; /* Allows items to wrap to the next line */
             align-items: center; /* Vertically align items in the action bar */
-            justify-content: space-between; /* Distribute space between groups of buttons */
+            justify-content: flex-start; /* Align items to the start for better button grouping */
         }
         .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
@@ -154,6 +161,18 @@
 </head>
 <body>
     <div class="container">
+        <div id="auth-container">
+            <h2>Team123 - Project Tracker</h2> <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+            <div id="user-info-display" style="display: none;">
+                <img id="userPhoto" src="" alt="User Photo">
+                <div class="user-details">
+                    <p id="userName"></p>
+                    <p id="userEmail"></p>
+                </div>
+                <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
+            </div>
+        </div>
+
         <div id="loading-auth-message">
             <p>Please sign in to access the Project Tracker.</p>
         </div>
@@ -164,17 +183,7 @@
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
-                <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button> <div id="auth-container">
-                    <div id="user-info-display" style="display: none;">
-                        <img id="userPhoto" src="" alt="User Photo">
-                        <div class="user-details">
-                            <p id="userName"></p>
-                            <p id="userEmail"></p>
-                        </div>
-                        <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
-                    </div>
-                    <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
-                </div>
+                <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -417,6 +426,15 @@
             allowedEmailsList = document.getElementById('allowedEmailsList');
             addEmailInput = document.getElementById('addEmailInput');
             addEmailBtn = document.getElementById('addEmailBtn');
+
+            // NEW: Activity Log references
+            openActivityLogBtn = document.getElementById('openActivityLogBtn');
+            activityLogModal = document.getElementById('activityLogModal');
+            closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
+            activityLogContentElement = document.getElementById('activityLogContent');
+        }
+
+        function setupAuthRelatedDOMReferences() {
             signInBtn = document.getElementById('signInBtn');
             signOutBtn = document.getElementById('signOutBtn');
             userInfoDisplayDiv = document.getElementById('user-info-display');
@@ -425,12 +443,7 @@
             userPhotoImg = document.getElementById('userPhoto');
             appContentDiv = document.getElementById('app-content');
             loadingAuthMessageDiv = document.getElementById('loading-auth-message');
-
-            // NEW: Activity Log references
-            openActivityLogBtn = document.getElementById('openActivityLogBtn');
-            activityLogModal = document.getElementById('activityLogModal');
-            closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
-            activityLogContentElement = document.getElementById('activityLogContent');
+            // openSettingsBtn is already set up in setupDOMReferences, but it's okay to re-set here if needed.
         }
 
         function attachEventListeners() {
@@ -950,7 +963,7 @@
                             newNotes: newVal.length > 50 ? newVal.substring(0, 50) + '...' : newVal // Truncate long notes for log
                         });
                     } catch (error) {
-                        console.error("Error updating tech notes:", error);
+                        console.error("Error updating techNotes:", error);
                         event.target.value = project.techNotes || '';
                     }
                 };
@@ -1165,35 +1178,86 @@
 
         function setupAuthEventListeners() {
             const provider = new firebase.auth.GoogleAuthProvider();
+
             if (signInBtn) {
-                signInBtn.addEventListener('click', () => { if (auth) auth.signInWithPopup(provider).catch(console.error); });
+                signInBtn.addEventListener('click', () => {
+                    if (!auth) { console.error("Auth not initialized"); return; }
+                    auth.signInWithPopup(provider)
+                        .then((result) => {
+                            console.log("Sign-in attempt successful for: ", result.user.email);
+                        })
+                        .catch((error) => {
+                            console.error("Sign-in error: ", error);
+                            let errorMessage = "Error signing in: " + error.message;
+                            if (error.code === 'auth/popup-closed-by-user') {
+                                errorMessage = "Sign-in process was cancelled. Please try again.";
+                            } else if (error.code === 'auth/cancelled-popup-request') {
+                                errorMessage = "Sign-in process was interrupted. Please try again.";
+                            } else if (error.code === 'auth/popup-blocked') {
+                                errorMessage = "Sign-in pop-up was blocked by the browser. Please allow pop-ups for this site and try again.";
+                            }
+                            alert(errorMessage);
+                            // Ensure UI is reverted to signed-out state if sign-in fails
+                            if (loadingAuthMessageDiv && signInBtn && userInfoDisplayDiv && appContentDiv) {
+                                userInfoDisplayDiv.style.display = 'none';
+                                signInBtn.style.display = 'block';
+                                appContentDiv.style.display = 'none';
+                                loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
+                                loadingAuthMessageDiv.style.display = 'block';
+                            }
+                        });
+                });
+            } else {
+                console.error("Sign-in button not found during event listener setup.");
             }
+
             if (signOutBtn) {
-                signOutBtn.addEventListener('click', () => { if (auth) auth.signOut().catch(console.error); });
+                signOutBtn.addEventListener('click', () => {
+                    if (!auth) { console.error("Auth not initialized"); return; }
+                    auth.signOut()
+                        .then(() => {
+                            console.log("User signed out successfully by clicking button.");
+                        })
+                        .catch((error) => {
+                            console.error("Sign-out error: ", error);
+                            alert("Error signing out: " + error.message);
+                        });
+                });
+            } else {
+                console.error("Sign-out button not found during event listener setup.");
             }
         }
+
         function initializeAppComponents() {
             if (!isAppInitialized) {
-                setupDOMReferences(); attachEventListeners(); initializeFirebaseAndLoadData();
+                console.log("Initializing app components (DOM refs, event listeners, Firestore data)...");
+                // setupDOMReferences and setupAuthRelatedDOMReferences are called here to ensure all elements are ready
+                setupDOMReferences();
+                setupAuthRelatedDOMReferences();
+                attachEventListeners();
+                initializeFirebaseAndLoadData();
                 isAppInitialized = true;
-            } else { initializeFirebaseAndLoadData(); }
+            } else {
+                console.log("App components already initialized or re-initializing data load.");
+                initializeFirebaseAndLoadData();
+            }
         }
-if (auth) {
-            auth.onAuthStateChanged(async (user) => {
-                // Ensure all relevant DOM references are available.
-                // This call sets up/re-acquires the references including auth-related ones.
-                setupDOMReferences(); // Keep this as it sets up all necessary DOM elements.
-                setupAuthRelatedDOMReferences(); // Make sure this is also called, as it explicitly sets auth-specific elements.
 
-                // Safety check, although setupAuthRelatedDOMReferences should catch most of these.
+        // Main authentication state change listener
+        if (auth) {
+            auth.onAuthStateChanged(async (user) => {
+                // Ensure all relevant DOM references are available before manipulating UI
+                setupDOMReferences(); // Call to set main app DOM refs
+                setupAuthRelatedDOMReferences(); // Call to set auth specific DOM refs
+
                 if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
-                    console.error("One or more critical UI elements for auth state change not found after setup. Aborting UI update.");
-                    return;
+                    console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
+                    return; // Crucial elements are missing, cannot proceed safely.
                 }
 
                 if (user) {
-                    // User is signed in. Now check if they are authorized.
-                    await fetchAllowedEmails(); // Fetch the latest allowed emails
+                    // User is signed in. Now check if they are authorized based on allowed emails.
+                    await fetchAllowedEmails(); // Fetch the latest allowed emails from Firestore
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
 
                     if (user.email && allowedEmailsFromFirestore.map(email => email.toLowerCase()).includes(userEmailLower)) {
@@ -1202,15 +1266,15 @@ if (auth) {
 
                         userNameP.textContent = user.displayName || "Name not available";
                         userEmailP.textContent = user.email || "Email not available";
-                        userPhotoImg.src = user.photoURL || "default-user.png"; // Fallback image
+                        userPhotoImg.src = user.photoURL || "default-user.png";
 
-                        userInfoDisplayDiv.style.display = 'flex';   // Show user info and sign out button
-                        signInBtn.style.display = 'none';             // Hide sign in button
-                        loadingAuthMessageDiv.style.display = 'none'; // Hide any loading/auth messages
+                        userInfoDisplayDiv.style.display = 'flex';   // Show user's name, photo, and sign-out button
+                        signInBtn.style.display = 'none';             // Hide the sign-in button
+                        loadingAuthMessageDiv.style.display = 'none'; // Hide the "Please sign in" message
                         appContentDiv.style.display = 'block';        // Show the main application content
                         openSettingsBtn.style.display = 'block';      // Show settings button for authorized users
 
-                        initializeAppComponents(); // Initialize or re-initialize app data and listeners
+                        initializeAppComponents(); // Proceed to load/display application data
                     } else {
                         // User is signed in but NOT authorized
                         console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
@@ -1221,17 +1285,16 @@ if (auth) {
                             console.log("Unauthorized user automatically signed out.");
                             // Update UI to reflect signed-out state and access denied message
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied. Please sign in with an authorized account.</p>';
-                            userInfoDisplayDiv.style.display = 'none';
-                            signInBtn.style.display = 'block'; // Show sign in button again
-                            appContentDiv.style.display = 'none';
+                            userInfoDisplayDiv.style.display = 'none'; // Hide user info
+                            signInBtn.style.display = 'block';         // Show sign-in button
+                            appContentDiv.style.display = 'none';      // Hide app content
                             loadingAuthMessageDiv.style.display = 'block'; // Show access denied message
-                            openSettingsBtn.style.display = 'none'; // Hide settings button
+                            openSettingsBtn.style.display = 'none';    // Hide settings button
 
                             // Clear any displayed project data and detach listener
                             projects = [];
                             if (projectTableBody) projectTableBody.innerHTML = '';
                             if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                            if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Clear allowed emails list in settings modal
                             if (firestoreListenerUnsubscribe) {
                                 firestoreListenerUnsubscribe();
                                 firestoreListenerUnsubscribe = null;
@@ -1240,7 +1303,7 @@ if (auth) {
                             isAppInitialized = false; // Reset app initialized state
                         }).catch(error => {
                             console.error("Error signing out unauthorized user:", error);
-                            // Even if sign out fails, attempt to hide sensitive data and show sign in.
+                            // Fallback UI update if sign-out fails
                             userInfoDisplayDiv.style.display = 'none';
                             signInBtn.style.display = 'block';
                             appContentDiv.style.display = 'none';
@@ -1251,48 +1314,66 @@ if (auth) {
                     }
 
                 } else {
-                    // User is signed out
+                    // User is signed out (or never signed in)
                     console.log("Auth state changed: User is SIGNED OUT");
 
-                    // Clear user info display
+                    // Clear any displayed user information
                     userNameP.textContent = '';
                     userEmailP.textContent = '';
                     userPhotoImg.src = '';
 
-                    userInfoDisplayDiv.style.display = 'none'; // Hide user info and sign out button
-                    signInBtn.style.display = 'block';         // Show sign in button
-                    appContentDiv.style.display = 'none';     // Hide main application content
+                    userInfoDisplayDiv.style.display = 'none'; // Hide user info and sign-out button
+                    signInBtn.style.display = 'block';         // Show the sign-in button
+                    appContentDiv.style.display = 'none';     // Hide the main application content
                     openSettingsBtn.style.display = 'none';   // Hide settings button
 
-                    // Set loading message, unless it's already an "Access Denied" message
-                    if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
+                    // Only update loading message if it's not already showing an "Access Denied" message
+                    if (loadingAuthMessageDiv.innerHTML.indexOf("Access Denied") === -1) {
                          loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                     }
-                    loadingAuthMessageDiv.style.display = 'block'; // Ensure loading message is visible when signed out
+                    loadingAuthMessageDiv.style.display = 'block'; // Ensure this message is visible
 
-                    // Clear any displayed project data and detach listener
+                    // Clear any previous project data and detach Firestore listener
                     projects = [];
                     if (projectTableBody) projectTableBody.innerHTML = '';
                     if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
-                    if (allowedEmailsList) allowedEmailsList.innerHTML = '';
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = ''; // Also clear allowed emails list in settings modal
                     if (firestoreListenerUnsubscribe) {
                         firestoreListenerUnsubscribe();
                         firestoreListenerUnsubscribe = null;
                         console.log("Firestore listener detached on sign out.");
                     }
-                    isAppInitialized = false; // Reset app initialized state
+                    isAppInitialized = false; // Reset app initialization status
                     console.log("App content hidden, project data cleared, and Firestore listener detached.");
                 }
             });
         } else {
+            // Firebase Auth was not initialized successfully
             console.error("Firebase Auth is not initialized. UI updates based on auth state will not occur.");
-             const loadingMsgDiv = document.getElementById('loading-auth-message');
-            if (loadingMsgDiv) loadingMsgDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
+            if (loadingAuthMessageDiv) {
+                loadingAuthMessageDiv.innerHTML = `<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>`;
+                loadingAuthMessageDiv.style.display = 'block'; // Make sure the error message is visible
+            }
         }
-                            
+
+
         document.addEventListener('DOMContentLoaded', () => {
-            setupDOMReferences();
-            attachEventListeners();
+            console.log("DOM fully loaded.");
+            setupDOMReferences(); // Set up all DOM references
+            setupAuthRelatedDOMReferences(); // Ensure auth-specific DOM elements are also referenced
+
+            if (auth) { // Only set up auth listeners if Firebase Auth is initialized
+                setupAuthEventListeners();
+                console.log("Auth UI and event listeners set up.");
+            } else {
+                console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
+                // Provide a clear message to the user if Auth isn't working
+                const authContainer = document.getElementById('auth-container');
+                if (authContainer && loadingAuthMessageDiv) {
+                    loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
+                    loadingAuthMessageDiv.style.display = 'block';
+                }
+            }
         });
     </script>
 </body>
