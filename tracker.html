@@ -104,6 +104,7 @@
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
         #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
         #activityLogModal .modal-content { max-width: 700px; max-height: 85vh; overflow-y: auto;} /* NEW */
+        #tlSummaryModal .modal-content { max-width: 600px; max-height: 85vh; overflow-y: auto;}
         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
@@ -162,8 +163,6 @@
         #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
         #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
         #allowedEmailsList li:last-child { border-bottom: none; }
-        #allowedEmailsList li button { background-color: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8em;}
-        #allowedEmailsList li button:hover { background-color: #c82333; }
         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
         .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;}
         #activityLogContent ul { list-style-type: disc; padding-left: 20px; margin-top: 10px;} /* NEW */
@@ -261,6 +260,7 @@
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
                 <button id="openActivityLogBtn" class="btn btn-info btn-lg">📊 Activity Log</button>
+                <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -320,6 +320,17 @@
                     </div>
                 </div>
             </div>
+
+            <div id="tlSummaryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" id="closeTlSummaryBtn">&times;</span>
+                    <h2>📝 TL Summary</h2>
+                    <div id="tlSummaryContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <p>Loading summary...</p>
+                    </div>
+                </div>
+            </div>
+
             <h3>📌 Team123 Project Tracker</h3>
             <div class="group-selector-controls">
                 <label for="batchIdSelect">Select Batch:</label>
@@ -434,6 +445,8 @@
             tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, cleanActivityLogsBtn;
 
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
+
+        let tlSummaryModal, closeTlSummaryBtn, tlSummaryContent; // NEW: TL Summary modal elements
 
         let projects = [];
         let groupVisibilityState = {};
@@ -648,6 +661,11 @@
             closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
             activityLogContentElement = document.getElementById('activityLogContent');
 
+            tlSummaryModal = document.getElementById('tlSummaryModal'); // NEW
+            closeTlSummaryBtn = document.getElementById('closeTlSummaryBtn'); // NEW
+            tlSummaryContent = document.getElementById('tlSummaryContent'); // NEW
+            openTlSummaryBtn = document.getElementById('openTlSummaryBtn'); // NEW
+
             loadingOverlay = document.getElementById('loadingOverlay');
 
             // NEW: Group selection references
@@ -688,6 +706,14 @@
             };
             if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { activityLogModal.style.display = 'none'; };
 
+            if (openTlSummaryBtn) openTlSummaryBtn.onclick = () => { // NEW
+                tlSummaryModal.style.display = 'block'; generateTlSummaryData();
+            };
+            if (closeTlSummaryBtn) closeTlSummaryBtn.onclick = () => { // NEW
+                tlSummaryModal.style.display = 'none';
+            };
+
+
             // NEW: Group selection event listeners
             if (batchIdSelect) {
                 batchIdSelect.onchange = (event) => {
@@ -708,6 +734,7 @@
                     if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (event.target == settingsModal) settingsModal.style.display = 'none';
                     if (event.target == activityLogModal) activityLogModal.style.display = 'none';
+                    if (event.target == tlSummaryModal) tlSummaryModal.style.display = 'none'; // NEW
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -1519,6 +1546,97 @@
                 }
             }
         }
+
+        // NEW: Function to generate TL Summary data
+        async function generateTlSummaryData() {
+            if (!tlSummaryContent) {
+                console.error("tlSummaryContent element not found.");
+                return;
+            }
+            showLoading("Generating TL Summary...");
+            tlSummaryContent.innerHTML = '<p>Loading summary...</p>';
+
+            if (!db) {
+                tlSummaryContent.innerHTML = '<p style="color:red;">Database not initialized. Cannot generate summary.</p>';
+                hideLoading();
+                return;
+            }
+
+            try {
+                // Fetch all projects regardless of current filters
+                const allProjectsSnapshot = await db.collection("projects").get();
+                const allProjects = [];
+                allProjectsSnapshot.forEach(doc => {
+                    if (doc.exists && typeof doc.data === 'function') {
+                        allProjects.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                const projectFixTotals = {}; // Key: "PROJECT_NAME_FixX", Value: total_minutes
+
+                allProjects.forEach(p => {
+                    // Ensure necessary fields exist before using them
+                    p.durationDay1Ms = p.durationDay1Ms || 0;
+                    p.durationDay2Ms = p.durationDay2Ms || 0;
+                    p.durationDay3Ms = p.durationDay3Ms || 0;
+                    p.breakDurationMinutes = p.breakDurationMinutes || 0;
+                    p.additionalMinutesManual = p.additionalMinutesManual || 0;
+
+                    const totalRawDurationMs = p.durationDay1Ms + p.durationDay2Ms + p.durationDay3Ms;
+                    const breakToSubtractMs = p.breakDurationMinutes * 60000;
+                    const additionalManualMs = p.additionalMinutesManual * 60000;
+
+                    let durationAfterBreakMs = Math.max(0, totalRawDurationMs - breakToSubtractMs);
+                    let finalTotalDurationMs = durationAfterBreakMs + additionalManualMs;
+
+                    // Only count if there's actual duration or manual adjustments
+                    if (finalTotalDurationMs === 0 && p.breakDurationMinutes === 0 && p.additionalMinutesManual === 0) {
+                        return; // Skip projects with no recorded time
+                    }
+
+                    const key = `${p.baseProjectName || 'Unknown Project'}_${p.fixCategory || 'Unknown Fix'}`;
+                    if (!projectFixTotals[key]) {
+                        projectFixTotals[key] = {
+                            projectName: p.baseProjectName || 'Unknown Project',
+                            fixCategory: p.fixCategory || 'Unknown Fix',
+                            totalMinutes: 0
+                        };
+                    }
+                    projectFixTotals[key].totalMinutes += Math.floor(finalTotalDurationMs / 60000); // Add total minutes
+                });
+
+                let summaryHtml = '<ul style="list-style: none; padding: 0;">';
+                const sortedKeys = Object.keys(projectFixTotals).sort(); // Sort alphabetically for consistent display
+
+                sortedKeys.forEach(key => {
+                    const data = projectFixTotals[key];
+                    const decimalHours = (data.totalMinutes / 60).toFixed(2);
+                    summaryHtml += `
+                        <li style="margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dotted #eee;">
+                            <strong>Project Name:</strong> ${data.projectName} (${data.fixCategory})<br>
+                            <strong>Total:</strong> ${data.totalMinutes} minutes<br>
+                            <strong>Decimal:</strong> ${decimalHours} hours
+                        </li>
+                    `;
+                });
+
+                if (sortedKeys.length === 0) {
+                    summaryHtml = '<p>No project time data found to generate a summary.</p>';
+                } else {
+                     summaryHtml += '</ul>';
+                }
+
+                tlSummaryContent.innerHTML = summaryHtml;
+                logActivity('Generated TL Summary', { numEntries: sortedKeys.length });
+
+            } catch (error) {
+                console.error("Error generating TL Summary:", error);
+                tlSummaryContent.innerHTML = '<p style="color:red;">Error generating summary: ' + error.message + '</p>';
+            } finally {
+                hideLoading();
+            }
+        }
+
 
         function setupAuthEventListeners() {
             const provider = new firebase.auth.GoogleAuthProvider();
