@@ -1193,8 +1193,8 @@
                         alert("Access Denied.");
                         auth.signOut().then(() => {
                             loadingAuthMessageDiv.innerHTML = '<p>Access Denied.</p>';
-                            signInBtn.style.display = 'block';
-                            userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
+                            userInfoDisplayDiv.style.display = 'none';
+                            signInBtn.style.display = 'block'; // Ensure signInBtn is shown on access denied signOut
                             appContentDiv.style.display = 'none'; loadingAuthMessageDiv.style.display = 'block'; openSettingsBtn.style.display = 'none';
                             projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = '';
                             if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
@@ -1202,11 +1202,11 @@
                         });
                     }
                 } else {
-                    userInfoDisplayDiv.style.display = 'none'; signInBtn.style.display = 'block';
+                    userInfoDisplayDiv.style.display = 'none';
+                    signInBtn.style.display = 'block'; // THIS IS THE KEY LINE TO ADD/ENSURE
                     appContentDiv.style.display = 'none'; openSettingsBtn.style.display = 'none';
                     if (loadingAuthMessageDiv && loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) { loadingAuthMessageDiv.innerHTML = '<p>Please sign in.</p>';}
-                    signInBtn.style.display = 'block';
-                    if(loadingAuthMessageDiv) loadingAuthMessageDiv.style.display = 'block';
+                    if(loadingAuthMessageDiv) loadingAuthMessageDiv.display = 'block';
                     projects = []; if (projectTableBody) projectTableBody.innerHTML = ''; if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = ''; if (allowedEmailsList) allowedEmailsList.innerHTML = '';
                     if (firestoreListenerUnsubscribe) { firestoreListenerUnsubscribe(); firestoreListenerUnsubscribe = null; }
                     isAppInitialized = false;
