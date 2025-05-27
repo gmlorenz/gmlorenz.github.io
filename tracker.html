@@ -510,116 +510,103 @@
         }
 
         // MODIFIED: initializeFirebaseAndLoadData to filter by selected batch and fix category
-        async function initializeFirebaseAndLoadData() {
-            showLoading("Loading projects...");
-            if (!db) { projects = []; refreshAllViews(); hideLoading(); return; }
-            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe(); // Unsubscribe from previous listener
+       async function initializeFirebaseAndLoadData() {
+    showLoading("Loading projects...");
+    if (!db) { projects = []; refreshAllViews(); hideLoading(); return; }
+    if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe();
 
-            loadGroupVisibilityState();
+    loadGroupVisibilityState();
 
-            let query = db.collection("projects");
+    let query = db.collection("projects");
 
-            // Fetch all unique batch IDs first to populate the batchIdSelect dropdown
-            // This is a separate, non-listening query to avoid re-rendering the dropdown constantly
-            // If currentSelectedBatchId is empty (default), set it to the latest batch
-            // The batchIdSelect dropdown is populated with actual batch IDs and their names, no "All Batches" option.
-            const allBatchesSnapshot = await db.collection("projects")
-                                                .orderBy("creationTimestamp", "desc") // Order to get latest batches first
-                                                .get();
-            const uniqueBatchIds = new Set();
-            const batchIdToName = {}; // To store base project name for display
-            allBatchesSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.batchId) {
-                    uniqueBatchIds.add(data.batchId);
-                    batchIdToName[data.batchId] = data.baseProjectName;
-                }
-            });
+    const allBatchesSnapshot = await db.collection("projects")
+                                        .orderBy("creationTimestamp", "desc")
+                                        .get();
+    const uniqueBatchIds = new Set();
+    const batchIdToName = {};
+    allBatchesSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.batchId) {
+            uniqueBatchIds.add(data.batchId);
+            batchIdToName[data.batchId] = data.baseProjectName;
+        }
+    });
 
-            // Clear existing options
-            batchIdSelect.innerHTML = '';
+    batchIdSelect.innerHTML = '';
+    const defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a Batch"; // Or "All Batches" if that's preferred
+    defaultOption.disabled = false; // Make it selectable
+    defaultOption.selected = true; // Make it selected by default
+    batchIdSelect.appendChild(defaultOption);
 
-            // If there are no projects, add a default disabled option
-            if (uniqueBatchIds.size === 0) {
-                const option = document.createElement('option');
-                option.value = "";
-                option.textContent = "No batches available";
-                option.disabled = true;
-                option.selected = true;
-                batchIdSelect.appendChild(option);
+    if (uniqueBatchIds.size === 0) {
+        // Keep the "No batches available" logic if desired, or let "Select a Batch" be the only option
+        // For now, if no batches, "Select a Batch" will be the only option, which is clearer.
+    } else {
+        const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
+            const projectA = allBatchesSnapshot.docs.find(doc => doc.data().batchId === a);
+            const projectB = allBatchesSnapshot.docs.find(doc => doc.data().batchId === b);
+            if (projectA && projectB && projectA.data().creationTimestamp && projectB.data().creationTimestamp) {
+                return projectB.data().creationTimestamp.toMillis() - projectA.data().creationTimestamp.toMillis();
+            }
+            return a.localeCompare(b);
+        });
+
+        sortedUniqueBatchIds.forEach(batchId => {
+            const option = document.createElement('option');
+            option.value = batchId;
+            // Display only the project name for clarity as per previous discussion
+            option.textContent = `${batchIdToName[batchId] || 'Unknown Project'}`;
+            batchIdSelect.appendChild(option);
+        });
+
+        // Set currentSelectedBatchId to the latest batch if nothing is selected or if the current one is gone
+        if (!currentSelectedBatchId || !uniqueBatchIds.has(currentSelectedBatchId)) {
+            if (sortedUniqueBatchIds.length > 0) {
+                currentSelectedBatchId = sortedUniqueBatchIds[0]; // Select the newest batch by default
             } else {
-                // Sort unique batch IDs by creation timestamp (if available, otherwise alphabetically)
-                const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
-                    const projectA = allBatchesSnapshot.docs.find(doc => doc.data().batchId === a);
-                    const projectB = allBatchesSnapshot.docs.find(doc => doc.data().batchId === b);
-                    if (projectA && projectB && projectA.data().creationTimestamp && projectB.data().creationTimestamp) {
-                        return projectB.data().creationTimestamp.toMillis() - projectA.data().creationTimestamp.toMillis();
-                    }
-                    return a.localeCompare(b); // Fallback to alphabetical
-                });
-
-                sortedUniqueBatchIds.forEach(batchId => {
-                    const option = document.createElement('option');
-                    option.value = batchId;
-                    //option.textContent = `${batchIdToName[batchId] || 'Unknown'} (ID: ${batchId.split('_')[1] || 'N/A'})`;
-                    option.textContent = `${batchIdToName[batchId] || 'Unknown Project'}`;
-                    batchIdSelect.appendChild(option);
-                });
-
-                // If no batch is currently selected, default to the latest one
-                if (!currentSelectedBatchId && sortedUniqueBatchIds.length > 0) {
-                    currentSelectedBatchId = sortedUniqueBatchIds[0];
-                }
-                batchIdSelect.value = currentSelectedBatchId; // Ensure the dropdown reflects the current selection
-            }
-
-
-            // Apply filters based on selected values
-            if (currentSelectedBatchId) {
-                query = query.where("batchId", "==", currentSelectedBatchId);
-            }
-            if (currentSelectedFixCategory) {
-                query = query.where("fixCategory", "==", currentSelectedFixCategory);
-            }
-
-            // Always order by fixCategory and areaTask for consistent display within the selected set
-            query = query.orderBy("fixCategory").orderBy("areaTask");
-
-
-            try {
-                firestoreListenerUnsubscribe = query.onSnapshot((querySnapshot) => {
-                    const firebaseProjects = [];
-                    querySnapshot.forEach((doc) => {
-                        if (doc.exists && typeof doc.data === 'function') {
-                            firebaseProjects.push({ id: doc.id, ...doc.data() });
-                        }
-                    });
-
-                    projects = firebaseProjects;
-
-                    // Pre-process projects for new Day3 fields if not present
-                    projects.forEach(p => {
-                        const groupStateKey = `${p.batchId}_${p.fixCategory}`;
-                        if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
-                        if (p.breakDurationMinutes === undefined) p.breakDurationMinutes = 0;
-                        if (p.additionalMinutesManual === undefined) p.additionalMinutesManual = 0;
-                        if (p.startTimeDay3 === undefined) p.startTimeDay3 = null;
-                        if (p.finishTimeDay3 === undefined) p.finishTimeDay3 = null;
-                        if (p.durationDay3Ms === undefined) p.durationDay3Ms = null;
-                    });
-
-                    refreshAllViews();
-                }, (error) => {
-                    console.error("Error fetching projects: ", error);
-                    projects = [];
-                    refreshAllViews();
-                });
-            } catch (fbError) {
-                console.error("Error setting up Firebase listener: ", fbError);
-            } finally {
-                hideLoading();
+                currentSelectedBatchId = ""; // No batches, default to empty
             }
         }
+        batchIdSelect.value = currentSelectedBatchId; // Ensure the dropdown reflects the current selection
+    }
+
+    // ... rest of the function remains the same
+    if (currentSelectedBatchId) {
+        query = query.where("batchId", "==", currentSelectedBatchId);
+    }
+    if (currentSelectedFixCategory) {
+        query = query.where("fixCategory", "==", currentSelectedFixCategory);
+    }
+
+    query = query.orderBy("fixCategory").orderBy("areaTask");
+
+    try {
+        firestoreListenerUnsubscribe = query.onSnapshot((querySnapshot) => {
+            // ... existing snapshot processing ...
+            projects = firebaseProjects;
+            projects.forEach(p => {
+                const groupStateKey = `<span class="math-inline">\{p\.batchId\}\_</span>{p.fixCategory}`;
+                if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
+                if (p.breakDurationMinutes === undefined) p.breakDurationMinutes = 0;
+                if (p.additionalMinutesManual === undefined) p.additionalMinutesManual = 0;
+                if (p.startTimeDay3 === undefined) p.startTimeDay3 = null;
+                if (p.finishTimeDay3 === undefined) p.finishTimeDay3 = null;
+                if (p.durationDay3Ms === undefined) p.durationDay3Ms = null;
+            });
+            refreshAllViews();
+        }, (error) => {
+            console.error("Error fetching projects: ", error);
+            projects = [];
+            refreshAllViews();
+        });
+    } catch (fbError) {
+        console.error("Error setting up Firebase listener: ", fbError);
+    } finally {
+        hideLoading();
+    }
+}
 
 
         function setupDOMReferences() {
