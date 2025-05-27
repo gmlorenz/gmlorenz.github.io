@@ -429,22 +429,29 @@
         }
 
         async function fetchAllowedEmails() {
-            if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); return; }
+            if (!db) {
+                console.error("Firestore (db) not initialized. Cannot fetch allowed emails.");
+                return;
+            }
+            console.log("Attempting to fetch allowed emails from Firestore...");
             try {
                 const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
                 const docSnap = await docRef.get();
                 if (docSnap.exists) {
                     allowedEmailsFromFirestore = docSnap.data().emails || [];
+                    console.log("Allowed emails fetched successfully:", allowedEmailsFromFirestore);
                 } else {
                     // Set a default email if the document doesn't exist
                     allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
                     await docRef.set({ emails: allowedEmailsFromFirestore }, { merge: true });
+                    console.warn("Allowed emails document not found, created with default.");
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
                 // Fallback to a default in case of error
-                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
-                alert("Error fetching allowed emails from database. Using default access list.");
+                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Fallback still, but log error
+                alert("Error fetching allowed emails from database. Using default access list (check console for details).");
+                throw error; // Re-throw to propagate the error for auth state handling
             }
         }
 
@@ -454,6 +461,7 @@
             try {
                 await docRef.set({ emails: newEmailsArray });
                 allowedEmailsFromFirestore = newEmailsArray;
+                logActivity('Updated Allowed Emails List', { emails: newEmailsArray });
                 return true;
             } catch (error) {
                 console.error("Error updating allowed emails in Firestore:", error);
@@ -469,8 +477,9 @@
                 console.warn("Firestore not available. Cannot load data.");
                 return;
             }
+            // Only set up the listener if not already active
             if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe();
-            loadGroupVisibilityState();
+            loadGroupVisibilityState(); // Load visibility state from local storage
 
             try {
                 firestoreListenerUnsubscribe = db.collection("projects").orderBy("batchId").orderBy("fixCategory").orderBy("areaTask")
@@ -506,14 +515,16 @@
                          }
                     });
                     projects = firebaseProjects;
+                    // Ensure all groups have a visibility state initialized
                     projects.forEach(p => {
                         const groupStateKey = `${p.batchId}_${p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                     });
-                    refreshAllViews();
+                    console.log("Projects data refreshed via Firestore listener.");
+                    refreshAllViews(); // Re-render the UI with new data
                 }, (error) => {
                     console.error("Error fetching projects: ", error);
-                    projects = []; refreshAllViews();
+                    projects = []; refreshAllViews(); // Clear data and UI on error
                     alert("Error loading project data. Some features may not work.");
                 });
             } catch (fbError) {
@@ -523,6 +534,7 @@
         }
 
         function setupDOMReferences() {
+            console.log("Setting up DOM references...");
             // Main app buttons
             openAddNewProjectBtn = document.getElementById('openAddNewProjectBtn');
             openTlDashboardBtn = document.getElementById('openTlDashboardBtn');
@@ -534,8 +546,8 @@
             tlDashboardModal = document.getElementById('tlDashboardModal');
             settingsModal = document.getElementById('settingsModal');
             activityLogModal = document.getElementById('activityLogModal');
-            loginModal = document.getElementById('loginModal'); // New
-            closeLoginBtn = document.getElementById('closeLoginBtn'); // New
+            loginModal = document.getElementById('loginModal');
+            closeLoginBtn = document.getElementById('closeLoginBtn');
 
             closeProjectFormBtn = document.getElementById('closeProjectFormBtn');
             closeTlDashboardBtn = document.getElementById('closeTlDashboardBtn');
@@ -559,56 +571,56 @@
             userPhotoImg = document.getElementById('userPhoto');
             appContentDiv = document.getElementById('app-content');
             loadingAuthMessageDiv = document.getElementById('loading-auth-message');
-            unauthenticatedSection = document.getElementById('unauthenticated-section'); // New container
+            unauthenticatedSection = document.getElementById('unauthenticated-section');
 
-            // New Login Modal Button
+            // New Login Modal Button (main page button)
             openLoginBtn = document.getElementById('openLoginBtn');
 
             // Elements *inside* the login modal
-            signInBtn = document.getElementById('signInBtn'); // Now inside loginModal
+            signInBtn = document.getElementById('signInBtn');
             emailInput = document.getElementById('emailInput');
             passwordInput = document.getElementById('passwordInput');
             emailSignInBtn = document.getElementById('emailSignInBtn');
             emailRegisterBtn = document.getElementById('emailRegisterBtn');
-            emailAuthSection = document.getElementById('email-auth-section'); // Still exists, now inside loginModal
+            emailAuthSection = document.getElementById('email-auth-section');
             signOutBtn = document.getElementById('signOutBtn'); // Ensure signOutBtn is also referenced
 
-            // Defensive checks
+            // Defensive checks and logging
             const elementsToCheck = {
+                'openLoginBtn': openLoginBtn, 'loginModal': loginModal, 'closeLoginBtn': closeLoginBtn,
+                'signInBtn': signInBtn, 'emailInput': emailInput, 'passwordInput': passwordInput,
+                'emailSignInBtn': emailSignInBtn, 'emailRegisterBtn': emailRegisterBtn,
                 'openAddNewProjectBtn': openAddNewProjectBtn, 'openTlDashboardBtn': openTlDashboardBtn,
                 'openSettingsBtn': openSettingsBtn, 'openActivityLogBtn': openActivityLogBtn,
                 'projectFormModal': projectFormModal, 'tlDashboardModal': tlDashboardModal,
                 'settingsModal': settingsModal, 'activityLogModal': activityLogModal,
-                'loginModal': loginModal, 'closeLoginBtn': closeLoginBtn, // New modal elements
                 'closeProjectFormBtn': closeProjectFormBtn, 'closeTlDashboardBtn': closeTlDashboardBtn,
                 'closeSettingsBtn': closeSettingsBtn, 'closeActivityLogBtn': closeActivityLogBtn,
                 'newProjectForm': newProjectForm, 'projectTableBody': projectTableBody,
                 'tlDashboardContentElement': tlDashboardContentElement, 'allowedEmailsList': allowedEmailsList,
                 'addEmailInput': addEmailInput, 'addEmailBtn': addEmailBtn, 'activityLogContentElement': activityLogContentElement,
-                'userInfoDisplayDiv': userInfoDisplayDiv,
-                'userNameP': userNameP, 'userEmailP': userEmailP, 'userPhotoImg': userPhotoImg,
-                'appContentDiv': appContentDiv, 'loadingAuthMessageDiv': loadingAuthMessageDiv,
-                'unauthenticatedSection': unauthenticatedSection, // New
-                'openLoginBtn': openLoginBtn, // New
-                'signInBtn': signInBtn, // Now in loginModal
-                'emailInput': emailInput, 'passwordInput': passwordInput, 'emailSignInBtn': emailSignInBtn,
-                'emailRegisterBtn': emailRegisterBtn, 'emailAuthSection': emailAuthSection,
-                'signOutBtn': signOutBtn // Added to defensive checks
+                'userInfoDisplayDiv': userInfoDisplayDiv, 'userNameP': userNameP, 'userEmailP': userEmailP,
+                'userPhotoImg': userPhotoImg, 'appContentDiv': appContentDiv, 'loadingAuthMessageDiv': loadingAuthMessageDiv,
+                'unauthenticatedSection': unauthenticatedSection, 'signOutBtn': signOutBtn,
+                'emailAuthSection': emailAuthSection
             };
             for (const id in elementsToCheck) {
                 if (elementsToCheck[id] === null) {
                     console.warn(`DOM element with ID '${id}' not found. Check your HTML.`);
                 }
             }
+            console.log("DOM references setup complete.");
         }
 
         function attachEventListeners() {
+            console.log("Attaching event listeners...");
             // Open/Close Modals
-            if (openAddNewProjectBtn) openAddNewProjectBtn.onclick = () => { if(projectFormModal) projectFormModal.style.display = 'block'; };
-            if (closeProjectFormBtn) closeProjectFormBtn.onclick = () => { if(projectFormModal) projectFormModal.style.display = 'none'; };
+            if (openAddNewProjectBtn) openAddNewProjectBtn.onclick = () => { console.log("Add New Tracker button clicked."); if(projectFormModal) projectFormModal.style.display = 'block'; };
+            if (closeProjectFormBtn) closeProjectFormBtn.onclick = () => { console.log("Close Project Form button clicked."); if(projectFormModal) projectFormModal.style.display = 'none'; };
 
             if (openTlDashboardBtn) {
                 openTlDashboardBtn.onclick = () => {
+                    console.log("Project Settings button clicked.");
                     const pin = prompt("Enter PIN to access Project Settings:");
                     if (pin === TL_DASHBOARD_PIN) {
                         if(tlDashboardModal) tlDashboardModal.style.display = 'block';
@@ -616,20 +628,33 @@
                     } else { alert("Incorrect PIN."); }
                 };
             }
-            if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { if(tlDashboardModal) tlDashboardModal.style.display = 'none'; };
+            if (closeTlDashboardBtn) closeTlDashboardBtn.onclick = () => { console.log("Close TL Dashboard button clicked."); if(tlDashboardModal) tlDashboardModal.style.display = 'none'; };
 
-            if (openSettingsBtn) openSettingsBtn.onclick = () => { if(settingsModal) settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
-            if (closeSettingsBtn) closeSettingsBtn.onclick = () => { if(settingsModal) settingsModal.style.display = 'none'; };
+            if (openSettingsBtn) openSettingsBtn.onclick = () => { console.log("User Settings button clicked."); if(settingsModal) settingsModal.style.display = 'block'; renderAllowedEmailsList(); };
+            if (closeSettingsBtn) closeSettingsBtn.onclick = () => { console.log("Close Settings button clicked."); if(settingsModal) settingsModal.style.display = 'none'; };
             if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
 
             if (openActivityLogBtn) openActivityLogBtn.onclick = () => {
+                console.log("Activity Log button clicked.");
                 if(activityLogModal) activityLogModal.style.display = 'block'; renderActivityLog();
             };
-            if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { if(activityLogModal) activityLogModal.style.display = 'none'; };
+            if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { console.log("Close Activity Log button clicked."); if(activityLogModal) activityLogModal.style.display = 'none'; };
 
-            // New: Login Modal Open/Close
-            if (openLoginBtn) openLoginBtn.onclick = () => { if(loginModal) loginModal.style.display = 'block'; };
-            if (closeLoginBtn) closeLoginBtn.onclick = () => { if(loginModal) loginModal.style.display = 'none'; };
+            // Login Modal Open/Close
+            if (openLoginBtn) {
+                openLoginBtn.onclick = () => {
+                    console.log("Sign In to Project Tracker button clicked.");
+                    if(loginModal) {
+                        loginModal.style.display = 'block';
+                        console.log("Login modal display set to 'block'.");
+                    } else {
+                        console.warn("Login modal element not found when trying to open.");
+                    }
+                };
+            } else {
+                console.warn("openLoginBtn element not found, cannot attach click listener.");
+            }
+            if (closeLoginBtn) closeLoginBtn.onclick = () => { console.log("Close Login modal button clicked."); if(loginModal) loginModal.style.display = 'none'; };
 
 
             if (typeof window !== 'undefined') {
@@ -639,11 +664,12 @@
                     if (tlDashboardModal && event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (settingsModal && event.target == settingsModal) settingsModal.style.display = 'none';
                     if (activityLogModal && event.target == activityLogModal) activityLogModal.style.display = 'none';
-                    if (loginModal && event.target == loginModal) loginModal.style.display = 'none'; // New: Close login modal
+                    if (loginModal && event.target == loginModal) loginModal.style.display = 'none';
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
             setupAuthEventListeners();
+            console.log("Event listeners attached.");
         }
 
         async function logActivity(action, details = {}) {
@@ -877,14 +903,25 @@
                     const existingNextStageTaskSnapshot = await q.get();
                     if (existingNextStageTaskSnapshot.empty) {
                         const newReleasedTaskData = {
-                            batchId: sourceTask.batchId, creationTimestamp: sourceTask.creationTimestamp, fixCategory: nextFixCategory,
-                            baseProjectName: sourceTask.baseProjectName, areaTask: sourceTask.areaTask, gsd: sourceTask.gsd,
-                            assignedTo: sourceTask.assignedTo, techNotes: "", status: 'Available',
-                            startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
-                            startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
-                            releasedToNextStage: false, lastModifiedTimestamp: releaseTimestamp,
-                            isReassigned: false, originalProjectId: sourceTask.id,
-                            breakDurationMinutes: 0, additionalMinutesManual: 0
+                            ...sourceTask, // Copy all fields from source task
+                            id: undefined, // Let Firestore generate new ID
+                            fixCategory: nextFixCategory, // Update fix category
+                            assignedTo: "", // Clear assignment for new stage
+                            techNotes: "", // Clear tech notes for new stage
+                            status: 'Available', // Set status to available
+                            startTimeDay1: null, // Reset times
+                            finishTimeDay1: null,
+                            durationDay1Ms: null,
+                            startTimeDay2: null,
+                            finishTimeDay2: null,
+                            durationDay2Ms: null,
+                            releasedToNextStage: false, // Not yet released from THIS stage
+                            lastModifiedTimestamp: releaseTimestamp,
+                            isReassigned: false,
+                            originalProjectId: sourceTask.id, // Link to original task if needed for tracing
+                            breakDurationMinutes: 0,
+                            additionalMinutesManual: 0,
+                            creationTimestamp: releaseTimestamp // New creation timestamp for new task
                         };
                         fbBatch.set(db.collection("projects").doc(), newReleasedTaskData);
                     }
@@ -1037,7 +1074,7 @@
                             oldAssignedTo: oldTechId,
                             newAssignedTo: newTechId
                         });
-                        project.assignedTo = newTechId;
+                        project.assignedTo = newTechId; // Update local project object
                     } catch (error) {
                         console.error("Error updating assignedTo:", error);
                         alert("Error updating assigned tech: " + error.message);
@@ -1401,61 +1438,118 @@
 
         // --- Auth Related Functions ---
         function updateUIforAuthState(user) {
-            if (!appContentDiv || !unauthenticatedSection || !userInfoDisplayDiv || !userNameP || !userEmailP || !userPhotoImg || !openSettingsBtn || !loginModal) {
-                console.error("Authentication UI elements not fully defined.");
+            if (!appContentDiv || !unauthenticatedSection || !userInfoDisplayDiv || !userNameP || !userEmailP || !userPhotoImg || !openSettingsBtn || !loginModal || !auth) {
+                console.error("Authentication UI elements or Firebase Auth not fully defined. Some app features may not work.");
+                loadingAuthMessageDiv.textContent = "Application initialization failed. Please check console for details.";
+                loadingAuthMessageDiv.style.color = 'red';
+                appContentDiv.style.display = 'none';
+                unauthenticatedSection.style.display = 'block';
                 return;
             }
 
             if (user) {
-                const userEmail = user.email;
-                if (!allowedEmailsFromFirestore.includes(userEmail)) {
-                    auth.signOut(); // Sign out unauthorized user immediately
-                    alert("Your email is not authorized to access this application. Please contact an administrator.");
-                    // Hide app content and show unauthenticated section
-                    appContentDiv.style.display = 'none';
-                    unauthenticatedSection.style.display = 'block';
-                    userInfoDisplayDiv.style.display = 'none';
-                    loginModal.style.display = 'none'; // Ensure login modal is hidden
-                    loadingAuthMessageDiv.textContent = "Your email is not authorized to access this application. Please contact an administrator.";
-                    loadingAuthMessageDiv.style.color = 'red';
-                    return;
+                // User is authenticated
+                console.log("User authenticated:", user.email);
+
+                // Fetch allowed emails ONLY if not already fetched and if db is initialized
+                // We use allowedEmailsFromFirestore.length === 0 as a flag to ensure it's fetched only once per session
+                if (db && allowedEmailsFromFirestore.length === 0) {
+                    console.log("Fetching allowed emails for authenticated user...");
+                    fetchAllowedEmails().then(() => {
+                        // After fetching, now check authorization
+                        if (!allowedEmailsFromFirestore.includes(user.email)) {
+                            console.warn("User email not in allowed list:", user.email);
+                            // Sign out unauthorized user and update UI
+                            auth.signOut();
+                            alert("Your email is not authorized to access this application. Please contact an administrator.");
+                            updateUIforAuthState(null); // Recursively call to transition to signed-out state
+                        } else {
+                            console.log("User authorized. Proceeding with app initialization.");
+                            // User is authorized, proceed with displaying app content
+                            unauthenticatedSection.style.display = 'none';
+                            appContentDiv.style.display = 'block';
+                            loginModal.style.display = 'none'; // Hide login modal
+
+                            userInfoDisplayDiv.style.display = 'flex';
+                            userNameP.textContent = user.displayName || 'User';
+                            userEmailP.textContent = user.email || 'N/A';
+                            userPhotoImg.src = user.photoURL || 'https://via.placeholder.com/30';
+
+                            // Show settings button for admin
+                            if (user.email === 'ev.lorens.ebrado@gmail.com') {
+                                openSettingsBtn.style.display = 'inline-block';
+                            } else {
+                                openSettingsBtn.style.display = 'none';
+                            }
+
+                            // Initialize main app data if not already done
+                            if (!isAppInitialized) {
+                                console.log("Initializing Firebase data listeners for projects...");
+                                initializeFirebaseAndLoadData();
+                                isAppInitialized = true;
+                            }
+                        }
+                    }).catch(error => {
+                        // Handle errors during fetchAllowedEmails after sign-in
+                        console.error("CRITICAL: Error fetching allowed emails after sign-in, cannot verify authorization:", error);
+                        alert("Error checking user authorization. Please refresh or contact support.");
+                        auth.signOut(); // Force sign-out on critical error
+                        updateUIforAuthState(null); // Update UI to signed-out state
+                    });
+                } else if (db && allowedEmailsFromFirestore.includes(user.email)) {
+                    // User is authenticated, emails already fetched, and user is authorized.
+                    // Just update UI.
+                    console.log("User already authorized (emails pre-fetched), updating UI.");
+                    unauthenticatedSection.style.display = 'none';
+                    appContentDiv.style.display = 'block';
+                    loginModal.style.display = 'none'; // Hide login modal
+
+                    userInfoDisplayDiv.style.display = 'flex';
+                    userNameP.textContent = user.displayName || 'User';
+                    userEmailP.textContent = user.email || 'N/A';
+                    userPhotoImg.src = user.photoURL || 'https://via.placeholder.com/30';
+
+                    if (user.email === 'ev.lorens.ebrado@gmail.com') {
+                        openSettingsBtn.style.display = 'inline-block';
+                    } else {
+                        openSettingsBtn.style.display = 'none';
+                    }
+
+                    // Ensure app data is initialized even if allowedEmails was fetched previously
+                    if (!isAppInitialized) {
+                         console.log("Initializing Firebase data listeners for projects (second path)...");
+                         initializeFirebaseAndLoadData();
+                         isAppInitialized = true;
+                    }
+
+                } else if (!db) {
+                    // Firestore not initialized at this point (critical error)
+                    console.error("Firestore (db) is null. Cannot fetch allowed emails or initialize app features for authenticated user.");
+                    auth.signOut(); // Force sign-out, as app won't function correctly
+                    alert("Database connection error. Please refresh the page.");
+                    updateUIforAuthState(null); // Transition to signed-out UI
                 }
 
-                unauthenticatedSection.style.display = 'none';
-                appContentDiv.style.display = 'block';
-                loginModal.style.display = 'none'; // Hide login modal on successful login
 
-                userInfoDisplayDiv.style.display = 'flex';
-                userNameP.textContent = user.displayName || 'User';
-                userEmailP.textContent = user.email || 'N/A';
-                userPhotoImg.src = user.photoURL || 'https://via.placeholder.com/30'; // Default placeholder
-
-                // Show settings button only for specific users (e.g., admin)
-                // Assuming 'ev.lorens.ebrado@gmail.com' is the admin email
-                if (user.email === 'ev.lorens.ebrado@gmail.com') {
-                    openSettingsBtn.style.display = 'inline-block';
-                } else {
-                    openSettingsBtn.style.display = 'none';
-                }
-
-                // If this is the first time the app is initialized, fetch data
-                if (!isAppInitialized) {
-                    initializeFirebaseAndLoadData();
-                    isAppInitialized = true;
-                }
             } else {
+                // User is signed out or not yet authenticated
+                console.log("User is unauthenticated.");
                 appContentDiv.style.display = 'none';
                 unauthenticatedSection.style.display = 'block';
                 userInfoDisplayDiv.style.display = 'none';
                 loadingAuthMessageDiv.textContent = "Please sign in to access the Project Tracker.";
                 loadingAuthMessageDiv.style.color = '#555';
-                isAppInitialized = false; // Reset if user logs out
+                isAppInitialized = false; // Reset app initialized state
+                allowedEmailsFromFirestore = []; // Clear the allowed emails list when signed out
+
+                // Stop Firestore listener if active
                 if (firestoreListenerUnsubscribe) {
-                    firestoreListenerUnsubscribe(); // Stop listening to project changes
+                    console.log("Unsubscribing from Firestore projects listener.");
+                    firestoreListenerUnsubscribe();
                     firestoreListenerUnsubscribe = null;
                 }
                 projects = []; // Clear local projects data
-                refreshAllViews(); // Clear the table
+                refreshAllViews(); // Clear the table in UI
             }
         }
 
@@ -1463,9 +1557,11 @@
         async function signInWithGoogle() {
             if (!auth) { console.error("Firebase Auth not initialized!"); alert("Authentication service is not available."); return; }
             try {
+                console.log("Attempting Google Sign-In...");
                 const provider = new firebase.auth.GoogleAuthProvider();
                 await auth.signInWithPopup(provider);
                 logActivity('Google Sign In');
+                console.log("Google Sign-In successful.");
             } catch (error) {
                 console.error("Google Sign-In Error:", error);
                 alert("Google Sign-In failed: " + error.message);
@@ -1480,8 +1576,10 @@
             if (!email || !password) { alert("Please enter both email and password."); return; }
 
             try {
+                console.log("Attempting Email Sign-In...");
                 await auth.signInWithEmailAndPassword(email, password);
                 logActivity('Email Sign In');
+                console.log("Email Sign-In successful.");
             } catch (error) {
                 console.error("Email Sign-In Error:", error);
                 alert("Email Sign-In failed: " + error.message);
@@ -1495,15 +1593,19 @@
             const password = passwordInput.value;
             if (!email || !password) { alert("Please enter both email and password for registration."); return; }
 
+            // Check if email is in allowed list BEFORE allowing registration
+            // This check needs to happen after allowedEmailsFromFirestore is populated
             if (!allowedEmailsFromFirestore.includes(email)) {
                 alert("Your email is not on the allowed list for registration. Please contact an administrator.");
                 return;
             }
 
             try {
+                console.log("Attempting Email Registration...");
                 await auth.createUserWithEmailAndPassword(email, password);
                 alert("Registration successful! You are now signed in.");
                 logActivity('Email Register');
+                console.log("Email Registration successful.");
             } catch (error) {
                 console.error("Email Registration Error:", error);
                 alert("Email Registration failed: " + error.message);
@@ -1514,9 +1616,11 @@
         async function signOutUser() {
             if (!auth) { console.error("Firebase Auth not initialized!"); return; }
             try {
+                console.log("Attempting Sign Out...");
                 await auth.signOut();
                 logActivity('Sign Out');
                 alert("You have been signed out.");
+                console.log("Sign Out successful.");
             } catch (error) {
                 console.error("Sign Out Error:", error);
                 alert("Error signing out: " + error.message);
@@ -1524,20 +1628,23 @@
         }
 
         function setupAuthEventListeners() {
+            console.log("Setting up Auth event listeners...");
             if (signInBtn) signInBtn.onclick = signInWithGoogle;
             if (signOutBtn) signOutBtn.onclick = signOutUser;
             if (emailSignInBtn) emailSignInBtn.onclick = signInWithEmail;
             if (emailRegisterBtn) emailRegisterBtn.onclick = registerWithEmail;
 
-            // Firebase Auth State Listener
+            // Firebase Auth State Listener - THIS IS CRUCIAL FOR INITIAL UI
             if (auth) {
-                auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged(async (user) => { // Made async to await fetchAllowedEmails
+                    console.log("Auth state changed. User:", user ? user.email : "null");
                     updateUIforAuthState(user);
                 });
             } else {
                 console.error("Firebase Auth object is null. Cannot set up auth state listener.");
-                updateUIforAuthState(null); // Ensure UI reflects unauthenticated state
+                updateUIforAuthState(null); // Ensure UI reflects unauthenticated state if Auth is not ready
             }
+            console.log("Auth event listeners setup complete.");
         }
 
         // Email Management for Settings Modal
@@ -1579,17 +1686,18 @@
                 }
             } else if (allowedEmailsFromFirestore.includes(newEmail)) {
                 alert("Email already in the list.");
+            } else {
+                alert("Please enter a valid email address.");
             }
         }
 
         // Initialize on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOMContentLoaded event fired.");
             setupDOMReferences();
-            if (db) { // Only attempt to fetch emails if Firestore is initialized
-                await fetchAllowedEmails();
-            }
             attachEventListeners();
-            // The Firebase auth state listener in setupAuthEventListeners will handle initial UI update
+            // The Firebase auth state listener in setupAuthEventListeners will now handle the initial UI update
+            // and trigger fetchAllowedEmails if a user is already authenticated.
         });
 
     </script>
