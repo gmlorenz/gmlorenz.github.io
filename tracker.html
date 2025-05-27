@@ -15,8 +15,8 @@
             gap: 10px;
             margin-left: auto;
             padding: 0;
-            flex-wrap: wrap; /* Added for better responsiveness */
-            justify-content: flex-end; /* Align items to the right */
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
         #auth-container h2 {
             font-size: 1.1em;
@@ -45,7 +45,8 @@
         #user-info-display .user-details p:first-child {
             font-weight: bold;
         }
-        #signInBtn, #signOutBtn, #emailSignInBtn, #emailRegisterBtn { /* Combined for consistent button styling */
+        /* Combined for consistent button styling, including the new openLoginBtn */
+        #openLoginBtn, #signInBtn, #signOutBtn, #emailSignInBtn, #emailRegisterBtn {
             padding: 5px 10px;
             font-size: 0.9em;
             cursor: pointer;
@@ -53,26 +54,45 @@
             border-radius: 4px;
             transition: background-color 0.3s ease;
         }
-        #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
+        #openLoginBtn { background-color: #007bff; color: white; margin-top: 20px; padding: 10px 20px; font-size: 1.1em; } /* Style for the new openLoginBtn */
+        #openLoginBtn:hover { background-color: #0056b3; }
+        #signInBtn { background-color: #4285F4; color: white; margin-bottom: 10px;} /* Added margin-bottom for spacing in modal */
+        #signInBtn:hover { background-color: #357ae8; }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
         #emailSignInBtn { background-color: #3498db; color: white; margin-right: 5px; } #emailSignInBtn:hover { background-color: #2980b9; }
         #emailRegisterBtn { background-color: #2ecc71; color: white; } #emailRegisterBtn:hover { background-color: #27ae60; }
 
-        /* Initially hide app content and show loading/auth message */
+        /* Initially hide app content */
         #app-content { display: none; }
         #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
 
-        /* Email Auth Section - Initially hidden, controlled by JS */
-        #email-auth-section {
-            display: none; /* Crucial: ensures it's hidden until JS shows it */
-            margin-top:10px;
+        /* New Login Modal Specific Styles */
+        #loginModal .modal-content {
+            max-width: 400px; /* Adjust size for login form */
+            text-align: center;
         }
-        #email-auth-section input[type="email"], #email-auth-section input[type="password"] {
-            padding: 6px;
-            margin-bottom: 6px;
-            width: 220px;
-            box-sizing: border-box; /* Ensures padding doesn't add to total width */
+        #loginModal .modal-content h3 {
+            text-align: center; /* Center the "Email Login" heading */
         }
+        #loginModal .modal-content input[type="email"],
+        #loginModal .modal-content input[type="password"] {
+            width: calc(100% - 20px); /* Adjust width to fit within modal */
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        #loginModal .modal-content button {
+            width: auto;
+            min-width: 120px;
+            margin: 5px; /* Spacing between buttons in modal */
+        }
+        #loginModal .modal-content #email-auth-section {
+            display: block; /* Always visible within the modal */
+        }
+
 
         h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
         h2 { font-size: 1.3em; }
@@ -170,9 +190,15 @@
 </head>
 <body>
     <div class="container">
-        <div id="loading-auth-message">
-            <p>Please sign in to access the Project Tracker.</p>
+        <div id="unauthenticated-section">
+            <div id="loading-auth-message">
+                <p>Please sign in to access the Project Tracker.</p>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="openLoginBtn" class="btn btn-primary btn-lg">Sign In to Project Tracker</button>
+            </div>
         </div>
+
 
         <div id="app-content">
             <h1>Team123 - Project Tracker</h1>
@@ -191,15 +217,7 @@
                         </div>
                         <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
                     </div>
-                    <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
-                    <div id="email-auth-section">
-                        <h3>Email Login</h3>
-                        <input type="email" id="emailInput" placeholder="Email"><br>
-                        <input type="password" id="passwordInput" placeholder="Password"><br>
-                        <button id="emailSignInBtn" class="btn btn-primary">Sign in with Email</button>
-                        <button id="emailRegisterBtn" class="btn btn-success">Register</button>
                     </div>
-                </div>
             </div>
 
             <div id="projectFormModal" class="modal">
@@ -247,6 +265,22 @@
                     <span class="close-button" id="closeActivityLogBtn">&times;</span>
                     <h2>📊 Activity Log</h2>
                     <div id="activityLogContent" style="max-height: 60vh; overflow-y: auto; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></div>
+                </div>
+            </div>
+
+            <div id="loginModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" id="closeLoginBtn">&times;</span>
+                    <h2>Sign In</h2>
+                    <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+                    <hr style="margin: 20px 0; border-top: 1px dashed #ccc;">
+                    <div id="email-auth-section">
+                        <h3>Email Login</h3>
+                        <input type="email" id="emailInput" placeholder="Email"><br>
+                        <input type="password" id="passwordInput" placeholder="Password"><br>
+                        <button id="emailSignInBtn" class="btn btn-primary">Sign in with Email</button>
+                        <button id="emailRegisterBtn" class="btn btn-success">Register</button>
+                    </div>
                 </div>
             </div>
 
@@ -311,10 +345,9 @@
             const loadingMsgDiv = document.getElementById('loading-auth-message');
             if (loadingMsgDiv) {
                 loadingMsgDiv.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${e.message}</p>`;
-                loadingMsgDiv.style.display = 'block'; // Ensure message is visible
+                loadingMsgDiv.style.display = 'block';
             }
-            db = null; auth = null; // Ensure these are null if init failed
-            // Do not proceed with auth.onAuthStateChanged if auth is null
+            db = null; auth = null;
         }
 
 
@@ -344,15 +377,19 @@
 
         let activityLogModal, closeActivityLogBtn, activityLogContentElement, openActivityLogBtn;
 
-        let signInBtn, signOutBtn, userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg;
+        let userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg;
         let appContentDiv, loadingAuthMessageDiv;
-        let emailInput, passwordInput, emailSignInBtn, emailRegisterBtn, emailAuthSection;
+
+        // New Login Modal Elements
+        let loginModal, closeLoginBtn, openLoginBtn; // openLoginBtn is the one on the main page
+        let signInBtn, emailInput, passwordInput, emailSignInBtn, emailRegisterBtn, emailAuthSection;
+        let unauthenticatedSection; // The section that shows the initial message and "Sign In" button
         // --- End Global DOM element variables ---
 
         let projects = [];
         let groupVisibilityState = {};
-        let isAppInitialized = false; // Tracks if main app components are setup and data listener is active
-        let firestoreListenerUnsubscribe = null; // To manage Firestore listener subscription
+        let isAppInitialized = false;
+        let firestoreListenerUnsubscribe = null;
 
         function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
         function formatMillisToMinutes(millis) { return (millis === null || typeof millis !== 'number' || millis < 0) ? 'N/A' : Math.floor(millis / 60000); }
@@ -398,12 +435,12 @@
                 if (docSnap.exists) {
                     allowedEmailsFromFirestore = docSnap.data().emails || [];
                 } else {
-                    allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Default if doc doesn't exist
-                    await docRef.set({ emails: allowedEmailsFromFirestore }, { merge: true }); // Create it
+                    allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
+                    await docRef.set({ emails: allowedEmailsFromFirestore }, { merge: true });
                 }
             } catch (error) {
                 console.error("Error fetching allowed emails:", error);
-                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Fallback on error
+                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
                 alert("Error fetching allowed emails from database. Using default access list.");
             }
         }
@@ -429,7 +466,7 @@
                 console.warn("Firestore not available. Cannot load data.");
                 return;
             }
-            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe(); // Unsubscribe from previous listener
+            if (firestoreListenerUnsubscribe) firestoreListenerUnsubscribe();
             loadGroupVisibilityState();
 
             try {
@@ -466,9 +503,8 @@
                          }
                     });
                     projects = firebaseProjects;
-                    // Ensure local project objects have default properties if missing from Firestore
                     projects.forEach(p => {
-                        const groupStateKey = `${p.batchId}_${p.fixCategory}`;
+                        const groupStateKey = `<span class="math-inline">\{p\.batchId\}\_</span>{p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                     });
                     refreshAllViews();
@@ -483,7 +519,6 @@
             }
         }
 
-        // Centralized function to get all DOM element references
         function setupDOMReferences() {
             // Main app buttons
             openAddNewProjectBtn = document.getElementById('openAddNewProjectBtn');
@@ -496,11 +531,14 @@
             tlDashboardModal = document.getElementById('tlDashboardModal');
             settingsModal = document.getElementById('settingsModal');
             activityLogModal = document.getElementById('activityLogModal');
+            loginModal = document.getElementById('loginModal'); // New
+            closeLoginBtn = document.getElementById('closeLoginBtn'); // New
 
             closeProjectFormBtn = document.getElementById('closeProjectFormBtn');
             closeTlDashboardBtn = document.getElementById('closeTlDashboardBtn');
             closeSettingsBtn = document.getElementById('closeSettingsBtn');
             closeActivityLogBtn = document.getElementById('closeActivityLogBtn');
+
 
             // Forms and content areas
             newProjectForm = document.getElementById('newProjectForm');
@@ -512,36 +550,43 @@
             activityLogContentElement = document.getElementById('activityLogContent');
 
             // Auth related elements
-            signInBtn = document.getElementById('signInBtn');
-            signOutBtn = document.getElementById('signOutBtn');
             userInfoDisplayDiv = document.getElementById('user-info-display');
             userNameP = document.getElementById('userName');
             userEmailP = document.getElementById('userEmail');
             userPhotoImg = document.getElementById('userPhoto');
             appContentDiv = document.getElementById('app-content');
             loadingAuthMessageDiv = document.getElementById('loading-auth-message');
+            unauthenticatedSection = document.getElementById('unauthenticated-section'); // New container
 
-            // Email/Password Auth elements
+            // New Login Modal Button
+            openLoginBtn = document.getElementById('openLoginBtn');
+
+            // Elements *inside* the login modal
+            signInBtn = document.getElementById('signInBtn'); // Now inside loginModal
             emailInput = document.getElementById('emailInput');
             passwordInput = document.getElementById('passwordInput');
             emailSignInBtn = document.getElementById('emailSignInBtn');
             emailRegisterBtn = document.getElementById('emailRegisterBtn');
-            emailAuthSection = document.getElementById('email-auth-section');
+            emailAuthSection = document.getElementById('email-auth-section'); // Still exists, now inside loginModal
 
-            // Defensive checks: if an element is null, log a warning
+            // Defensive checks
             const elementsToCheck = {
                 'openAddNewProjectBtn': openAddNewProjectBtn, 'openTlDashboardBtn': openTlDashboardBtn,
                 'openSettingsBtn': openSettingsBtn, 'openActivityLogBtn': openActivityLogBtn,
                 'projectFormModal': projectFormModal, 'tlDashboardModal': tlDashboardModal,
                 'settingsModal': settingsModal, 'activityLogModal': activityLogModal,
+                'loginModal': loginModal, 'closeLoginBtn': closeLoginBtn, // New modal elements
                 'closeProjectFormBtn': closeProjectFormBtn, 'closeTlDashboardBtn': closeTlDashboardBtn,
                 'closeSettingsBtn': closeSettingsBtn, 'closeActivityLogBtn': closeActivityLogBtn,
                 'newProjectForm': newProjectForm, 'projectTableBody': projectTableBody,
                 'tlDashboardContentElement': tlDashboardContentElement, 'allowedEmailsList': allowedEmailsList,
                 'addEmailInput': addEmailInput, 'addEmailBtn': addEmailBtn, 'activityLogContentElement': activityLogContentElement,
-                'signInBtn': signInBtn, 'signOutBtn': signOutBtn, 'userInfoDisplayDiv': userInfoDisplayDiv,
+                'userInfoDisplayDiv': userInfoDisplayDiv,
                 'userNameP': userNameP, 'userEmailP': userEmailP, 'userPhotoImg': userPhotoImg,
                 'appContentDiv': appContentDiv, 'loadingAuthMessageDiv': loadingAuthMessageDiv,
+                'unauthenticatedSection': unauthenticatedSection, // New
+                'openLoginBtn': openLoginBtn, // New
+                'signInBtn': signInBtn, // Now in loginModal
                 'emailInput': emailInput, 'passwordInput': passwordInput, 'emailSignInBtn': emailSignInBtn,
                 'emailRegisterBtn': emailRegisterBtn, 'emailAuthSection': emailAuthSection
             };
@@ -552,9 +597,8 @@
             }
         }
 
-        // Centralized function for attaching event listeners
         function attachEventListeners() {
-            // Attach event listeners only if the element exists
+            // Open/Close Modals
             if (openAddNewProjectBtn) openAddNewProjectBtn.onclick = () => { if(projectFormModal) projectFormModal.style.display = 'block'; };
             if (closeProjectFormBtn) closeProjectFormBtn.onclick = () => { if(projectFormModal) projectFormModal.style.display = 'none'; };
 
@@ -578,13 +622,19 @@
             };
             if (closeActivityLogBtn) closeActivityLogBtn.onclick = () => { if(activityLogModal) activityLogModal.style.display = 'none'; };
 
+            // New: Login Modal Open/Close
+            if (openLoginBtn) openLoginBtn.onclick = () => { if(loginModal) loginModal.style.display = 'block'; };
+            if (closeLoginBtn) closeLoginBtn.onclick = () => { if(loginModal) loginModal.style.display = 'none'; };
+
 
             if (typeof window !== 'undefined') {
                 window.onclick = (event) => {
+                    // Close specific modals when clicking outside
                     if (projectFormModal && event.target == projectFormModal) projectFormModal.style.display = 'none';
                     if (tlDashboardModal && event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
                     if (settingsModal && event.target == settingsModal) settingsModal.style.display = 'none';
                     if (activityLogModal && event.target == activityLogModal) activityLogModal.style.display = 'none';
+                    if (loginModal && event.target == loginModal) loginModal.style.display = 'none'; // New: Close login modal
                 };
             }
             if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -644,8 +694,8 @@
                     }
                     logHtml += `
                         <li style="margin-bottom: 10px; border-bottom: 1px dotted #eee; padding-bottom: 8px;">
-                            <strong>${date}</strong> -
-                            <span style="font-weight: bold; color: #555;">${log.userEmail || 'Unknown User'}</span>:
+                            <strong><span class="math-inline">\{date\}</strong\> \-
+<span style\="font\-weight\: bold; color\: \#555;"\></span>{log.userEmail || 'Unknown User'}</span>:
                             ${log.action}
                             ${detailsHtml}
                         </li>
@@ -789,7 +839,7 @@
                             const deleteFixBtn = document.createElement('button');
                             deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
                             deleteFixBtn.classList.add('btn', 'btn-danger');
-                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
+                            deleteFixBtn.onclick = () => { if (confirm(`Are you sure you want to delete all <span class="math-inline">\{fixCat\} tasks for batch '</span>{batch.baseProjectName || 'Unknown'}'? IRREVERSIBLE.`)) deleteSpecificFixTasksForBatch(batch.batchId, fixCat); };
                             deleteActionsDiv.appendChild(deleteFixBtn);
                         }
                     });
@@ -912,7 +962,7 @@
                 }
                 if (project.fixCategory !== currentFixCategoryForHeader) {
                     currentFixCategoryForHeader = project.fixCategory;
-                    const groupStateKey = `${project.batchId}_${currentFixCategoryForHeader}`;
+                    const groupStateKey = `<span class="math-inline">\{project\.batchId\}\_</span>{currentFixCategoryForHeader}`;
                     if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
                     const groupHeaderRow = projectTableBody.insertRow(); groupHeaderRow.classList.add('fix-group-header');
                     const groupHeaderCell = groupHeaderRow.insertCell(); groupHeaderCell.setAttribute('colspan', NUM_TABLE_COLUMNS.toString());
@@ -934,7 +984,7 @@
                 }
 
                 const row = projectTableBody.insertRow();
-                const currentGroupStateKeyForRow = `${project.batchId}_${project.fixCategory}`;
+                const currentGroupStateKeyForRow = `<span class="math-inline">\{project\.batchId\}\_</span>{project.fixCategory}`;
                 if (!(groupVisibilityState[currentGroupStateKeyForRow]?.isExpanded !== false)) row.classList.add('hidden-group-row');
                 if (project.fixCategory) row.classList.add(`${project.fixCategory.toLowerCase()}-row`);
                 if (project.isReassigned) row.classList.add('reassigned-task-highlight');
@@ -1401,35 +1451,28 @@
         }
 
         function initializeAppComponents() {
-            // This function runs only once after successful initial auth check
             if (!isAppInitialized) {
-                // DOM references and event listeners should ideally be set once on DOMContentLoaded
-                // and should be ready when this function is called.
-                initializeFirebaseAndLoadData(); // Start listening to Firestore
+                initializeFirebaseAndLoadData();
                 isAppInitialized = true;
                 console.log("Main app components initialized.");
             } else {
-                // If app was already initialized, just re-initialize data listener
                 console.log("App components already initialized, re-initializing Firebase data listener.");
                 initializeFirebaseAndLoadData();
             }
         }
 
         // Firebase Auth State Listener - This is the core logic for UI display based on auth status
-        // This must run only if `auth` object was successfully initialized.
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
-                // Always ensure DOM references are available before manipulating elements
-                // This is called once on DOMContentLoaded, so they should be available here.
-                // Added an extra defensive check just in case, though ideally not needed after DOMContentLoaded.
-                if (!appContentDiv) { // Check for a critical DOM element
+                // Ensure DOM references are always available when this fires
+                if (!unauthenticatedSection) { // A critical element that tells us if DOM references are set
                     console.warn("DOM elements not yet ready in onAuthStateChanged, calling setupDOMReferences.");
                     setupDOMReferences();
                 }
 
                 if (user) {
                     console.log("User detected:", user.email);
-                    await fetchAllowedEmails(); // Always fetch the latest allowed emails
+                    await fetchAllowedEmails();
 
                     const userEmailLower = user.email ? user.email.toLowerCase() : "";
 
@@ -1439,13 +1482,12 @@
                         if(userEmailP) userEmailP.textContent = user.email || "";
                         if(userPhotoImg) userPhotoImg.src = user.photoURL || "";
 
+                        // Show authenticated UI, hide unauthenticated UI
                         if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'flex';
-                        if(signInBtn) signInBtn.style.display = 'none';
-                        if(emailAuthSection) emailAuthSection.style.display = 'none'; // Hide email auth when signed in
-
-                        if(loadingAuthMessageDiv) loadingAuthMessageDiv.style.display = 'none';
-                        if(appContentDiv) appContentDiv.style.display = 'block';
-                        if(openSettingsBtn) openSettingsBtn.style.display = 'block';
+                        if(unauthenticatedSection) unauthenticatedSection.style.display = 'none'; // Hide the "Sign In" button area
+                        if(appContentDiv) appContentDiv.style.display = 'block'; // Show the main app content
+                        if(loginModal) loginModal.style.display = 'none'; // Ensure login modal is closed
+                        if(openSettingsBtn) openSettingsBtn.style.display = 'block'; // Show settings for authorized users
 
                         initializeAppComponents(); // Initialize or re-initialize data listeners
                     } else {
@@ -1453,14 +1495,15 @@
                         alert("Access Denied. Your email is not on the allowed list: " + (user.email || ""));
                         console.warn("Unauthorized user attempted access:", user.email);
                         auth.signOut().then(() => {
+                            // Show initial message and "Sign In" button again
+                            if(unauthenticatedSection) unauthenticatedSection.style.display = 'block';
                             if(loadingAuthMessageDiv) {
                                 loadingAuthMessageDiv.innerHTML = '<p style="color:red;">Access Denied. Please sign in with an allowed account.</p>';
                                 loadingAuthMessageDiv.style.display = 'block';
                             }
-                            if(appContentDiv) appContentDiv.style.display = 'none';
-                            if(signInBtn) signInBtn.style.display = 'block'; // Show Google sign-in button
-                            if(emailAuthSection) emailAuthSection.style.display = 'block'; // Show email auth for another attempt
+                            if(appContentDiv) appContentDiv.style.display = 'none'; // Hide app content
                             if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
+                            if(loginModal) loginModal.style.display = 'block'; // Maybe re-open login modal to try again
                             if(openSettingsBtn) openSettingsBtn.style.display = 'none';
 
                             // Clean up app state if unauthorized
@@ -1473,7 +1516,7 @@
                                 firestoreListenerUnsubscribe();
                                 firestoreListenerUnsubscribe = null;
                             }
-                            isAppInitialized = false; // Reset app initialized state
+                            isAppInitialized = false;
                         }).catch(error => {
                             console.error("Error during unauthorized sign out:", error);
                             alert("Error signing out an unauthorized user. Please refresh.");
@@ -1481,18 +1524,16 @@
                     }
                 } else {
                     // No user signed in (initial load or after sign out)
-                    console.log("No user signed in. Displaying login options.");
-                    if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-                    if(signInBtn) signInBtn.style.display = 'block'; // Show Google sign-in button
-                    if(emailAuthSection) emailAuthSection.style.display = 'block'; // Explicitly show email auth section
-
-                    if(appContentDiv) appContentDiv.style.display = 'none';
+                    console.log("No user signed in. Displaying initial prompt and 'Sign In' button.");
+                    // Show unauthenticated UI, hide app content
+                    if(unauthenticatedSection) unauthenticatedSection.style.display = 'block';
                     if(loadingAuthMessageDiv) {
+                        loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
                         loadingAuthMessageDiv.style.display = 'block';
-                        if (loadingAuthMessageDiv.textContent.indexOf("Access Denied") === -1) {
-                             loadingAuthMessageDiv.innerHTML = '<p>Please sign in to access the Project Tracker.</p>';
-                        }
                     }
+                    if(appContentDiv) appContentDiv.style.display = 'none';
+                    if(userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
+                    if(loginModal) loginModal.style.display = 'none'; // Ensure login modal is hidden initially
                     if(openSettingsBtn) openSettingsBtn.style.display = 'none';
 
                     // Clear app content if no user
@@ -1507,30 +1548,26 @@
                         firestoreListenerUnsubscribe();
                         firestoreListenerUnsubscribe = null;
                     }
-                    isAppInitialized = false; // Reset app initialized state
+                    isAppInitialized = false;
                 }
             });
         } else {
             // This block handles cases where Firebase Auth itself failed to initialize (auth object is null)
             console.error("Firebase Auth object is null. Cannot set up authentication listener.");
-            // Ensure all auth related UI is hidden and only error message is shown
             if (loadingAuthMessageDiv) {
                 loadingAuthMessageDiv.innerHTML = `<p style="color:red;">Authentication service error. Please check your Firebase configuration and network connection.</p>`;
                 loadingAuthMessageDiv.style.display = 'block';
             }
+            if (unauthenticatedSection) unauthenticatedSection.style.display = 'block'; // Show the initial message even if auth failed
+            if (openLoginBtn) openLoginBtn.style.display = 'none'; // Hide the login button if auth not available
             if (appContentDiv) appContentDiv.style.display = 'none';
-            if (signInBtn) signInBtn.style.display = 'none';
-            if (signOutBtn) signOutBtn.style.display = 'none';
             if (userInfoDisplayDiv) userInfoDisplayDiv.style.display = 'none';
-            if (emailAuthSection) emailAuthSection.style.display = 'none';
+            if (loginModal) loginModal.style.display = 'none';
         }
 
-        // Ensure all DOM-related setup runs AFTER the HTML is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
-            setupDOMReferences(); // Populate all global DOM element variables
-            attachEventListeners(); // Attach all event listeners
-            // The Firebase auth state listener (if auth initialized) will then handle initial UI display and data loading
-            // No need to call initializeAppComponents here, auth.onAuthStateChanged will trigger it.
+            setupDOMReferences();
+            attachEventListeners();
         });
     </script>
 </body>
