@@ -413,8 +413,7 @@
          auth = firebase.auth();
          
          console.log("Firebase initialized successfully (App, Firestore, Auth)!");
-         // This is called AFTER setupAuthRelatedDOMReferences is defined
-         fetchAllowedEmails();
+         // fetchAllowedEmails() is called later, within onAuthStateChanged, after DOM refs are setup.
          
          } catch (e) {
          console.error("CRITICAL: Error initializing Firebase: ", e.message);
@@ -490,8 +489,22 @@
          try { localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState)); } catch (lsError) { console.error("Error saving group visibility state to localStorage:", lsError); alert("Warning: Could not save your group visibility preferences.");}
          }
          
+         // This function needs to be declared before it's called by `fetchAllowedEmails` and `onAuthStateChanged`
+         function setupAuthRelatedDOMReferences() {
+            signInBtn = document.getElementById('signInBtn');
+            signOutBtn = document.getElementById('signOutBtn');
+            userInfoDisplayDiv = document.getElementById('user-info-display');
+            userNameP = document.getElementById('userName');
+            userEmailP = document.getElementById('userEmail');
+            userPhotoImg = document.getElementById('userPhoto');
+            appContentDiv = document.getElementById('app-content');
+            loadingAuthMessageDiv = document.getElementById('loading-auth-message');
+         }
+
          async function fetchAllowedEmails() {
             showLoading("Fetching allowed emails...");
+            // Ensure auth-related DOM elements are ready before trying to use them
+            setupAuthRelatedDOMReferences(); 
             if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); hideLoading(); return; }
             try {
                 const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
@@ -507,7 +520,7 @@
                 // In case of error, still ensure a default email is set for basic functionality
                 allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
             } finally {
-                hideLoading();
+                hideLoading(); // Always hide loading indicator
             }
          }
          
@@ -558,18 +571,24 @@
          
             // Fetch unique years for the year filter dropdown
             // This query should not be affected by the current month/year selection
-            const allProjectsForYearsSnapshot = await db.collection("projects")
-                .orderBy("creationTimestamp", "desc")
-                .get();
-            const uniqueYears = new Set();
-            allProjectsForYearsSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.creationTimestamp && typeof data.creationTimestamp.toDate === 'function') {
-                    const year = data.creationTimestamp.toDate().getFullYear();
-                    uniqueYears.add(year);
-                }
-            });
-            populateYearFilter(uniqueYears);
+            try {
+                const allProjectsForYearsSnapshot = await db.collection("projects")
+                    .orderBy("creationTimestamp", "desc")
+                    .get();
+                const uniqueYears = new Set();
+                allProjectsForYearsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Ensure creationTimestamp exists and is a valid Firestore Timestamp
+                    if (data.creationTimestamp && typeof data.creationTimestamp.toDate === 'function') {
+                        const year = data.creationTimestamp.toDate().getFullYear();
+                        uniqueYears.add(year);
+                    }
+                });
+                populateYearFilter(uniqueYears);
+            } catch (error) {
+                console.error("Error fetching years for filter:", error);
+                // Continue execution even if year fetching fails
+            }
          
             // Fetch unique batch IDs, now potentially filtered by month and year
             let allBatchesQuery = db.collection("projects");
@@ -580,7 +599,21 @@
             }
             allBatchesQuery = allBatchesQuery.orderBy("creationTimestamp", "desc");
          
-            const allBatchesSnapshot = await allBatchesQuery.get();
+            let allBatchesSnapshot;
+            try {
+                allBatchesSnapshot = await allBatchesQuery.get();
+            } catch (error) {
+                console.error("Error fetching batches for dropdown:", error);
+                // IMPORTANT: If this query fails (e.g., missing index), it will stop here.
+                // Ensure you check console for "Missing Index" warnings/errors.
+                projects = []; // Clear projects
+                batchIdSelect.innerHTML = '<option value="" disabled selected>Error loading batches</option>';
+                currentSelectedBatchId = "";
+                refreshAllViews();
+                hideLoading(); // Hide loading even on error
+                return;
+            }
+         
             const uniqueBatchIds = new Set();
             const batchIdToName = {};
             allBatchesSnapshot.forEach(doc => {
@@ -606,7 +639,6 @@
                 currentSelectedBatchId = ""; // Ensure it's cleared if no batches are found for the month
             } else {
                 const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
-                    // Fallback to alphabetical if timestamp info isn't directly used for sorting here
                     return (batchIdToName[a] || a).localeCompare(batchIdToName[b] || b);
                 });
          
@@ -642,9 +674,12 @@
             }
          
             // Always order by fixCategory and areaTask for consistent display within the selected set
+            // Note: If you have combined `where` and `orderBy` clauses, Firebase might require composite indexes.
+            // Check your console for warnings.
             query = query.orderBy("fixCategory").orderBy("areaTask");
          
             try {
+                // Attach the snapshot listener for the main project table data
                 firestoreListenerUnsubscribe = query.onSnapshot((querySnapshot) => {
                     const firebaseProjects = [];
                     querySnapshot.forEach((doc) => {
@@ -655,7 +690,6 @@
          
                     projects = firebaseProjects;
          
-                    // Pre-process projects for new Day3 fields if not present
                     projects.forEach(p => {
                         const groupStateKey = `${p.batchId}_${p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
@@ -667,15 +701,16 @@
                     });
          
                     refreshAllViews();
+                    hideLoading(); // Hide loading after the main data load and rendering
                 }, (error) => {
-                    console.error("Error fetching projects: ", error);
+                    console.error("Error fetching projects for main table: ", error);
                     projects = [];
                     refreshAllViews();
+                    hideLoading(); // Hide loading even on listener error
                 });
             } catch (fbError) {
                 console.error("Error setting up Firebase listener: ", fbError);
-            } finally {
-                hideLoading();
+                hideLoading(); // Ensure loading is hidden if listener setup itself fails
             }
          }
          
@@ -739,18 +774,6 @@
          fixCategoryFilter = document.getElementById('fixCategoryFilter');
          monthFilter = document.getElementById('monthFilter');
          yearFilter = document.getElementById('yearFilter');
-         }
-
-         // Moved this function to be in the global scope and defined earlier
-         function setupAuthRelatedDOMReferences() {
-            signInBtn = document.getElementById('signInBtn');
-            signOutBtn = document.getElementById('signOutBtn');
-            userInfoDisplayDiv = document.getElementById('user-info-display');
-            userNameP = document.getElementById('userName');
-            userEmailP = document.getElementById('userEmail');
-            userPhotoImg = document.getElementById('userPhoto');
-            appContentDiv = document.getElementById('app-content');
-            loadingAuthMessageDiv = document.getElementById('loading-auth-message');
          }
          
          function attachEventListeners() {
@@ -1709,7 +1732,7 @@
          if (auth) {
          auth.onAuthStateChanged(async (user) => {
          setupDOMReferences(); // Ensure all DOM references are set up here
-         setupAuthRelatedDOMReferences(); // And auth-related ones
+         setupAuthRelatedDOMReferences(); // And auth-related ones are now defined in global scope
          
          if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
          console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
