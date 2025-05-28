@@ -167,7 +167,7 @@
          align-items: center;
          margin-top: 15px;
          gap: 10px;
-         flex-wrap: wrap; /* Allows wrap for smaller screens */
+         flex-wrap: wrap; /* Allows items to wrap for smaller screens */
          }
          .group-selector-controls label {
          font-size: 0.9em;
@@ -413,6 +413,7 @@
          auth = firebase.auth();
          
          console.log("Firebase initialized successfully (App, Firestore, Auth)!");
+         // This is called AFTER setupAuthRelatedDOMReferences is defined
          fetchAllowedEmails();
          
          } catch (e) {
@@ -490,22 +491,24 @@
          }
          
          async function fetchAllowedEmails() {
-         showLoading("Fetching allowed emails...");
-         if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); hideLoading(); return; }
-         try {
-         const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
-         const docSnap = await docRef.get();
-         if (docSnap.exists) {
-         allowedEmailsFromFirestore = docSnap.data().emails || [];
-         } else {
-         allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
-         }
-         } catch (error) {
-         console.error("Error fetching allowed emails:", error);
-         allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
-         } finally {
-         hideLoading();
-         }
+            showLoading("Fetching allowed emails...");
+            if (!db) { console.error("Firestore (db) not initialized. Cannot fetch allowed emails."); hideLoading(); return; }
+            try {
+                const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
+                const docSnap = await docRef.get();
+                if (docSnap.exists) {
+                    allowedEmailsFromFirestore = docSnap.data().emails || [];
+                } else {
+                    // Fallback to a default email if the document doesn't exist
+                    allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
+                }
+            } catch (error) {
+                console.error("Error fetching allowed emails:", error);
+                // In case of error, still ensure a default email is set for basic functionality
+                allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
+            } finally {
+                hideLoading();
+            }
          }
          
          async function updateAllowedEmailsInFirestore(newEmailsArray) {
@@ -542,21 +545,26 @@
                 const selectedYearNum = parseInt(currentSelectedYear, 10);
                 const selectedMonthNum = parseInt(currentSelectedMonth, 10);
                 startOfPeriod = new Date(selectedYearNum, selectedMonthNum - 1, 1);
-                endOfPeriod = new Date(selectedYearNum, selectedMonthNum, 0); // Last day of the month
+                // Set endOfPeriod to the last millisecond of the last day of the selected month
+                endOfPeriod = new Date(selectedYearNum, selectedMonthNum, 0); // This gets the last day of the month
+                endOfPeriod.setHours(23, 59, 59, 999); // Set to end of the day
             } else if (currentSelectedYear && !currentSelectedMonth) {
                 const selectedYearNum = parseInt(currentSelectedYear, 10);
                 startOfPeriod = new Date(selectedYearNum, 0, 1); // Jan 1st of selected year
-                endOfPeriod = new Date(selectedYearNum + 1, 0, 0); // Dec 31st of selected year
+                // Set endOfPeriod to the last millisecond of Dec 31st of the selected year
+                endOfPeriod = new Date(selectedYearNum, 11, 31); // Dec 31st of selected year
+                endOfPeriod.setHours(23, 59, 59, 999); // Set to end of the day
             }
          
-            // Fetch all unique years for the year filter dropdown
+            // Fetch unique years for the year filter dropdown
+            // This query should not be affected by the current month/year selection
             const allProjectsForYearsSnapshot = await db.collection("projects")
                 .orderBy("creationTimestamp", "desc")
                 .get();
             const uniqueYears = new Set();
             allProjectsForYearsSnapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.creationTimestamp) {
+                if (data.creationTimestamp && typeof data.creationTimestamp.toDate === 'function') {
                     const year = data.creationTimestamp.toDate().getFullYear();
                     uniqueYears.add(year);
                 }
@@ -595,9 +603,10 @@
                 option.textContent = "No batches available for this period";
                 option.disabled = true;
                 batchIdSelect.appendChild(option);
-                currentSelectedBatchId = "";
+                currentSelectedBatchId = ""; // Ensure it's cleared if no batches are found for the month
             } else {
                 const sortedUniqueBatchIds = Array.from(uniqueBatchIds).sort((a, b) => {
+                    // Fallback to alphabetical if timestamp info isn't directly used for sorting here
                     return (batchIdToName[a] || a).localeCompare(batchIdToName[b] || b);
                 });
          
@@ -608,10 +617,12 @@
                     batchIdSelect.appendChild(option);
                 });
          
+                // If a specific batch was previously selected and is still available, re-select it
                 if (currentSelectedBatchId && uniqueBatchIds.has(currentSelectedBatchId)) {
                     batchIdSelect.value = currentSelectedBatchId;
                 } else {
-                    batchIdSelect.value = "";
+                    // Otherwise, default to "All Projects" if available, or the first in the list
+                    batchIdSelect.value = ""; // Default to "All Projects"
                     currentSelectedBatchId = "";
                 }
             }
@@ -623,12 +634,14 @@
             if (currentSelectedFixCategory) {
                 query = query.where("fixCategory", "==", currentSelectedFixCategory);
             }
+            // Apply the period filter (month and/or year) to the main query
             if (startOfPeriod && endOfPeriod) {
                 query = query
                     .where("creationTimestamp", ">=", firebase.firestore.Timestamp.fromDate(startOfPeriod))
                     .where("creationTimestamp", "<=", firebase.firestore.Timestamp.fromDate(endOfPeriod));
             }
          
+            // Always order by fixCategory and areaTask for consistent display within the selected set
             query = query.orderBy("fixCategory").orderBy("areaTask");
          
             try {
@@ -642,6 +655,7 @@
          
                     projects = firebaseProjects;
          
+                    // Pre-process projects for new Day3 fields if not present
                     projects.forEach(p => {
                         const groupStateKey = `${p.batchId}_${p.fixCategory}`;
                         if (groupVisibilityState[groupStateKey] === undefined) groupVisibilityState[groupStateKey] = { isExpanded: true };
@@ -684,11 +698,12 @@
             });
          
             // Set the selected year in the dropdown
+            // If currentSelectedYear is already set and exists in the new list of years, keep it.
+            // Otherwise, if there are any years, default to the latest. If no years, default to "All Years".
             if (currentSelectedYear && years.has(parseInt(currentSelectedYear, 10))) {
                 yearFilter.value = currentSelectedYear;
             } else if (sortedYears.length > 0) {
-                // If currentSelectedYear is not found or not set, default to the latest year or "All Years"
-                currentSelectedYear = sortedYears[0].toString();
+                currentSelectedYear = sortedYears[0].toString(); // Default to the latest year available
                 yearFilter.value = currentSelectedYear;
             } else {
                 currentSelectedYear = ""; // No years available
@@ -713,18 +728,29 @@
          addEmailInput = document.getElementById('addEmailInput');
          addEmailBtn = document.getElementById('addEmailBtn');
          
-         tlSummaryModal = document.getElementById('tlSummaryModal'); // NEW
-         closeTlSummaryBtn = document.getElementById('closeTlSummaryBtn'); // NEW
-         tlSummaryContent = document.getElementById('tlSummaryContent'); // NEW
-         openTlSummaryBtn = document.getElementById('openTlSummaryBtn'); // NEW
+         tlSummaryModal = document.getElementById('tlSummaryModal');
+         closeTlSummaryBtn = document.getElementById('closeTlSummaryBtn');
+         tlSummaryContent = document.getElementById('tlSummaryContent');
+         openTlSummaryBtn = document.getElementById('openTlSummaryBtn');
          
          loadingOverlay = document.getElementById('loadingOverlay');
          
-         // NEW: Group selection references
          batchIdSelect = document.getElementById('batchIdSelect');
          fixCategoryFilter = document.getElementById('fixCategoryFilter');
-         monthFilter = document.getElementById('monthFilter'); // NEW
-         yearFilter = document.getElementById('yearFilter'); // NEW
+         monthFilter = document.getElementById('monthFilter');
+         yearFilter = document.getElementById('yearFilter');
+         }
+
+         // Moved this function to be in the global scope and defined earlier
+         function setupAuthRelatedDOMReferences() {
+            signInBtn = document.getElementById('signInBtn');
+            signOutBtn = document.getElementById('signOutBtn');
+            userInfoDisplayDiv = document.getElementById('user-info-display');
+            userNameP = document.getElementById('userName');
+            userEmailP = document.getElementById('userEmail');
+            userPhotoImg = document.getElementById('userPhoto');
+            appContentDiv = document.getElementById('app-content');
+            loadingAuthMessageDiv = document.getElementById('loading-auth-message');
          }
          
          function attachEventListeners() {
@@ -743,15 +769,15 @@
          if (closeSettingsBtn) closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
          if (addEmailBtn) addEmailBtn.onclick = handleAddEmail;
          
-         if (openTlSummaryBtn) openTlSummaryBtn.onclick = () => { // NEW
+         if (openTlSummaryBtn) openTlSummaryBtn.onclick = () => {
          tlSummaryModal.style.display = 'block'; generateTlSummaryData();
          };
-         if (closeTlSummaryBtn) closeTlSummaryBtn.onclick = () => { // NEW
+         if (closeTlSummaryBtn) closeTlSummaryBtn.onclick = () => {
          tlSummaryModal.style.display = 'none';
          };
          
          
-         // NEW: Group selection event listeners
+         // Group selection event listeners
          if (batchIdSelect) {
          batchIdSelect.onchange = (event) => {
          currentSelectedBatchId = event.target.value;
@@ -765,7 +791,7 @@
          };
          }
          
-         // NEW: Month and Year filter event listeners
+         // Month and Year filter event listeners
          if (monthFilter) {
             monthFilter.onchange = (event) => {
                 currentSelectedMonth = event.target.value;
@@ -790,7 +816,7 @@
          if (event.target == projectFormModal) projectFormModal.style.display = 'none';
          if (event.target == tlDashboardModal) tlDashboardModal.style.display = 'none';
          if (event.target == settingsModal) settingsModal.style.display = 'none';
-         if (event.target == tlSummaryModal) tlSummaryModal.style.display = 'none'; // NEW
+         if (event.target == tlSummaryModal) tlSummaryModal.style.display = 'none';
          };
          }
          if (newProjectForm) newProjectForm.addEventListener('submit', handleAddProjectSubmit);
@@ -1527,10 +1553,12 @@
              const selectedMonthNum = parseInt(currentSelectedMonth, 10);
              startOfSummaryPeriod = new Date(selectedYearNum, selectedMonthNum - 1, 1);
              endOfSummaryPeriod = new Date(selectedYearNum, selectedMonthNum, 0);
+             endOfSummaryPeriod.setHours(23, 59, 59, 999);
          } else if (currentSelectedYear && !currentSelectedMonth) {
              const selectedYearNum = parseInt(currentSelectedYear, 10);
              startOfSummaryPeriod = new Date(selectedYearNum, 0, 1);
-             endOfSummaryPeriod = new Date(selectedYearNum + 1, 0, 0);
+             endOfSummaryPeriod = new Date(selectedYearNum, 11, 31);
+             endOfSummaryPeriod.setHours(23, 59, 59, 999);
          }
          
          if (startOfSummaryPeriod && endOfSummaryPeriod) {
@@ -1557,8 +1585,8 @@
          p.additionalMinutesManual = p.additionalMinutesManual || 0;
          
          const totalRawDurationMs = p.durationDay1Ms + p.durationDay2Ms + p.durationDay3Ms;
-         const breakToSubtractMs = p.breakDurationMinutes * 60000;
-         const additionalManualMs = p.additionalMinutesManual * 60000;
+         const breakToSubtractMs = (p.breakDurationMinutes || 0) * 60000; // Ensure breakDurationMinutes is a number
+         const additionalManualMs = (p.additionalMinutesManual || 0) * 60000; // Ensure additionalMinutesManual is a number
          
          let finalTotalDurationMs = Math.max(0, totalRawDurationMs - breakToSubtractMs) + additionalManualMs;
          
@@ -1680,8 +1708,8 @@
          
          if (auth) {
          auth.onAuthStateChanged(async (user) => {
-         setupDOMReferences();
-         setupAuthRelatedDOMReferences();
+         setupDOMReferences(); // Ensure all DOM references are set up here
+         setupAuthRelatedDOMReferences(); // And auth-related ones
          
          if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
          console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
@@ -1786,8 +1814,8 @@
          
          document.addEventListener('DOMContentLoaded', () => {
          console.log("DOM fully loaded.");
-         setupDOMReferences();
-         setupAuthRelatedDOMReferences();
+         setupDOMReferences(); // Call setupDOMReferences first
+         setupAuthRelatedDOMReferences(); // Then setupAuthRelatedDOMReferences
          
          if (auth) {
          setupAuthEventListeners();
