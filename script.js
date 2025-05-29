@@ -252,24 +252,6 @@ function attachEventListeners() {
   }), newProjectForm && newProjectForm.addEventListener("submit", handleAddProjectSubmit), setupAuthEventListeners()
 }
 
-async function logActivity(e, t = {}) {
-  if (!db || !auth.currentUser) {
-    console.warn("Firestore or authenticated user not available for logging activity.");
-    return
-  }
-  try {
-    await db.collection("activity_logs").add({
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      userId: auth.currentUser.uid,
-      userEmail: auth.currentUser.email,
-      action: e,
-      details: t
-    }), console.log("Activity logged:", e, t)
-  } catch (a) {
-    console.error("Error logging activity:", a)
-  }
-}
-
 async function handleAddProjectSubmit(e) {
   if (e.preventDefault(), showLoading("Adding project(s)..."), !db) {
     alert("Database not initialized!"), hideLoading();
@@ -316,13 +298,7 @@ async function handleAddProjectSubmit(e) {
       };
       o.set(db.collection("projects").doc(), d)
     }
-    await o.commit(), logActivity("Added New Project(s)", {
-      fixCategory: t,
-      numRows: a,
-      baseProjectName: i,
-      gsd: n,
-      batchId: r.split("_")[1]
-    }), newProjectForm.reset(), currentSelectedBatchId = r, localStorage.setItem("currentSelectedBatchId", currentSelectedBatchId), currentSelectedMonth = "", localStorage.setItem("currentSelectedMonth", ""), initializeFirebaseAndLoadData()
+    await o.commit(), newProjectForm.reset(), currentSelectedBatchId = r, localStorage.setItem("currentSelectedBatchId", currentSelectedBatchId), currentSelectedMonth = "", localStorage.setItem("currentSelectedMonth", ""), initializeFirebaseAndLoadData()
   } catch (c) {
     console.error("Error adding projects: ", c), alert("Error adding projects: " + c.message)
   } finally {
@@ -473,11 +449,7 @@ async function releaseBatchToNextFix(e, t, a) {
         lastModifiedTimestamp: s
       })
     }
-    await o.commit(), logActivity(`Released Batch to Next Fix: ${t} -> ${a}`, {
-      batchId: e.split("_")[1],
-      currentFixCategory: t,
-      nextFixCategory: a
-    }), initializeFirebaseAndLoadData()
+    await o.commit(), initializeFirebaseAndLoadData()
   } catch (m) {
     console.error("Error releasing batch:", m), alert("Error releasing batch: " + m.message)
   } finally {
@@ -497,9 +469,7 @@ async function deleteProjectBatch(e) {
       return
     }
     let a = db.batch();
-    t.forEach(e => a.delete(e.ref)), await a.commit(), logActivity("Deleted Entire Project Batch", {
-      batchId: e.split("_")[1]
-    }), currentSelectedBatchId === e && (currentSelectedBatchId = "", localStorage.setItem("currentSelectedBatchId", "")), initializeFirebaseAndLoadData(), renderTLDashboard()
+    t.forEach(e => a.delete(e.ref)), await a.commit(), currentSelectedBatchId === e && (currentSelectedBatchId = "", localStorage.setItem("currentSelectedBatchId", "")), initializeFirebaseAndLoadData(), renderTLDashboard()
   } catch (i) {
     console.error(`Error deleting batch ${e}:`, i), alert("Error deleting batch: " + i.message)
   } finally {
@@ -519,10 +489,7 @@ async function deleteSpecificFixTasksForBatch(e, t) {
       return
     }
     let i = db.batch();
-    a.forEach(e => i.delete(e.ref)), await i.commit(), logActivity(`Deleted Specific Fix Tasks for Batch: ${t}`, {
-      batchId: e.split("_")[1],
-      fixCategory: t
-    }), initializeFirebaseAndLoadData(), renderTLDashboard()
+    a.forEach(e => i.delete(e.ref)), await i.commit(), initializeFirebaseAndLoadData(), renderTLDashboard()
   } catch (n) {
     console.error(`Error deleting ${t} for batch ${e}:`, n), alert("Error deleting specific fix tasks: " + n.message)
   } finally {
@@ -601,11 +568,6 @@ function renderProjects() {
         await db.collection("projects").doc(e.id).update({
           assignedTo: a,
           lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }), logActivity("Changed Assigned Tech", {
-          projectId: e.id,
-          projectName: e.baseProjectName + " " + e.areaTask,
-          oldAssignedTo: i,
-          newAssignedTo: a
         }), e.assignedTo = a
       } catch (n) {
         console.error("Error updating assignedTo:", n), alert("Error updating assignment: " + n.message), t.target.value = i
@@ -657,19 +619,8 @@ function renderProjects() {
           await db.collection("projects").doc(e).update({
             [c]: g,
             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-          }), logActivity(`Updated ${t} and recalculated duration`, {
-            projectId: e,
-            projectName: i.baseProjectName + " " + i.areaTask,
-            field: t,
-            newValue: a,
-            newDuration: formatMillisToMinutes(g)
           })
-        } else logActivity(`Updated ${t}`, {
-          projectId: e,
-          projectName: i.baseProjectName + " " + i.areaTask,
-          field: t,
-          newValue: a
-        })
+        }
       } catch (y) {
         console.error(`Error updating ${t}:`, y), alert(`Error updating ${t}: ` + y.message)
       } finally {
@@ -716,11 +667,6 @@ function renderProjects() {
         await db.collection("projects").doc(e.id).update({
           techNotes: a,
           lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }), logActivity("Updated Tech Notes", {
-          projectId: e.id,
-          projectName: e.baseProjectName + " " + e.areaTask,
-          oldNotes: i,
-          newNotes: a.length > 50 ? a.substring(0, 50) + "..." : a
         }), e.techNotes = a
       } catch (n) {
         console.error("Error updating techNotes:", n), alert("Error updating tech notes: " + n.message), t.target.value = i
@@ -752,11 +698,6 @@ function renderProjects() {
         await db.collection("projects").doc(e.id).update({
           breakDurationMinutes: a,
           lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }), logActivity("Updated Break Duration", {
-          projectId: e.id,
-          projectName: e.baseProjectName + " " + e.areaTask,
-          oldValue: i,
-          newValue: a
         });
         let n = t.target.closest("tr");
         if (n) {
@@ -902,12 +843,7 @@ async function updateProjectState(e, t) {
       return
   }
   if (Object.keys(l).length > 1) try {
-    await a.update(l), logActivity(`Updated Project Status: ${t}`, {
-      projectId: e,
-      projectName: i.baseProjectName + " " + i.areaTask,
-      oldStatus: d,
-      newStatus: c
-    })
+    await a.update(l)
   } catch (u) {
     console.error(`Error updating project ${e}:`, u), alert("Error updating project status: " + u.message)
   } finally {
@@ -964,13 +900,7 @@ async function handleReassignment(e) {
       lastModifiedTimestamp: i
     });
     try {
-      await a.commit(), logActivity("Reassigned Task", {
-        originalProjectId: e.id,
-        originalProjectName: e.baseProjectName + " " + e.areaTask,
-        oldAssignedTo: e.assignedTo,
-        newAssignedTo: t.trim(),
-        newProjectId: r.id
-      }), initializeFirebaseAndLoadData()
+      await a.commit(), initializeFirebaseAndLoadData()
     } catch (s) {
       console.error("Error in re-assignment:", s), alert("Error during re-assignment: " + s.message)
     } finally {
@@ -1010,7 +940,7 @@ async function handleAddEmail() {
     return
   }
   let e = addEmailInput.value.trim().toLowerCase();
-  if (!e || !e.includes("@") || !e.includes(".")) {
+  if (!e || !e.includes("@") || !e.includes(".")){
     alert("Please enter a valid email address (e.g., user@example.com)."), hideLoading();
     return
   }
@@ -1019,18 +949,14 @@ async function handleAddEmail() {
     return
   }
   let t = [...allowedEmailsFromFirestore, e].sort();
-  await updateAllowedEmailsInFirestore(t) && (logActivity("Added Allowed Email", {
-    email: e
-  }), addEmailInput.value = "", renderAllowedEmailsList())
+  await updateAllowedEmailsInFirestore(t) && (addEmailInput.value = "", renderAllowedEmailsList())
 }
 
 async function handleRemoveEmail(e) {
   if (confirm(`Are you sure you want to remove ${e} from the allowed list? This will prevent them from logging in.`)) {
     showLoading("Removing email...");
     let t = allowedEmailsFromFirestore.filter(t => t !== e);
-    await updateAllowedEmailsInFirestore(t) && (logActivity("Removed Allowed Email", {
-      email: e
-    }), renderAllowedEmailsList())
+    await updateAllowedEmailsInFirestore(t) && (renderAllowedEmailsList())
   }
 }
 
@@ -1097,9 +1023,7 @@ async function generateTlSummaryData() {
                     <strong>Decimal:</strong> ${i} hours
                 </li>
             `
-    }), 0 === s.length && 0 === r.length ? n = "<p>No project time data found to generate a summary.</p>" : n += "</ul>", tlSummaryContent.innerHTML = n, logActivity("Generated TL Summary", {
-      numEntries: s.length
-    })
+    }), 0 === s.length && 0 === r.length ? n = "<p>No project time data found to generate a summary.</p>" : n += "</ul>", tlSummaryContent.innerHTML = n
   } catch (o) {
     console.error("Error generating TL Summary:", o), tlSummaryContent.innerHTML = '<p style="color:red;">Error generating summary: ' + o.message + "</p>", alert("Error generating TL Summary: " + o.message)
   } finally {
