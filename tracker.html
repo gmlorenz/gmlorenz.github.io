@@ -223,14 +223,80 @@
             border-radius: 4px; /* Slightly rounded corners */
             font-weight: bold; /* Make text bolder */
         }
+        /* Styles for Notification Bell - Can be moved to main CSS */
+        #notificationBellArea {
+            position: relative;
+            margin-left: 15px; /* Adjust as needed */
+            cursor: pointer;
+            padding: 5px; /* Add some padding for easier clicking */
+        }
+        #notificationBellIcon {
+            font-size: 1.8em; /* Adjust size of bell icon */
+            color: #555; /* Bell color */
+        }
+        #notificationBellIcon:hover {
+            color: #000;
+        }
+        #notificationBadge {
+            position: absolute;
+            top: -2px;      /* Adjust for badge positioning */
+            right: -5px;    /* Adjust for badge positioning */
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.75em; /* Smaller font for badge */
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            border: 1px solid white; /* Optional: white border around badge */
+        }
+        #notificationList {
+            display: none;
+            position: absolute;
+            /* Adjust top based on your header/action bar height */
+            /* Example: if action bar is 60px high and container has 10px padding: */
+            top: calc(60px + 10px + 10px); /* auth-container height + container padding + action-bar margin-bottom (approx) */
+            right: 20px; /* Position from right edge of container */
+            width: 320px; /* Width of the dropdown */
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15);
+            z-index: 1001; /* Ensure it's above other content */
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 400px; /* Max height before scrolling */
+            overflow-y: auto; /* Enable scrolling for many notifications */
+        }
+        #notificationList h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        #notificationListItems li {
+            padding: 8px 5px;
+            border-bottom: 1px dotted #eee;
+            font-size: 0.85em;
+            color: #444;
+        }
+        #notificationListItems li:last-child {
+            border-bottom: none;
+        }
+        #noNotificationsText {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            padding: 10px 0;
+        }
       </style>
    <link rel="icon" type="image/png" href="icon.png">
 </head>
    <body>
       <div class="container">
          <div id="auth-container">
-            <h2></h2>
-            <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+            <h2>Team123 Project Tracker</h2> <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
             <div id="user-info-display" style="display: none;">
                <img id="userPhoto" src="" alt="User Photo">
                <div class="user-details">
@@ -240,16 +306,29 @@
                <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
             </div>
          </div>
+
          <div id="loading-auth-message">
             <p>Please sign in to access the Project Tracker.</p>
          </div>
+
          <div id="app-content">
-            <h1></h1>
             <div class="action-bar">
                <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
                <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
+
+               <div id="notificationBellArea">
+                   <span id="notificationBellIcon">🔔</span>
+                   <span id="notificationBadge">0</span>
+               </div>
+            </div>
+
+            <div id="notificationList">
+                <h4>Recent Notifications</h4>
+                <ul id="notificationListItems">
+                    </ul>
+                <p id="noNotificationsText" style="display: none;">No new notifications.</p>
             </div>
             <div id="projectFormModal" class="modal">
                <div class="modal-content">
@@ -315,20 +394,7 @@
                <label for="monthFilter">Month:</label>
                <select id="monthFilter">
                   <option value="">All Months</option>
-                  <option value="01">January</option>
-                  <option value="02">February</option>
-                  <option value="03">March</option>
-                  <option value="04">April</option>
-                  <option value="05">May</option>
-                  <option value="06">June</option>
-                  <option value="07">July</option>
-                  <option value="08">August</option>
-                  <option value="09">September</option>
-                  <option value="10">October</option>
-                  <option value="11">November</option>
-                  <option value="12">December</option>
-               </select>
-               </select>
+                  </select>
                <label for="fixCategoryFilter">Select Fix Category:</label>
                <select id="fixCategoryFilter">
                   <option value="">All Fix Categories</option>
