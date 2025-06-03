@@ -504,10 +504,14 @@
             <div class="modal-content">
                 <h5>Enter Multiplier & Filter Projects</h5>
                 <div class="input-field">
+                    <div style="margin-bottom: 15px;">
+                        <button type="button" id="filter-select-all-btn" class="btn-small waves-effect waves-light blue" style="margin-right: 5px; margin-bottom: 5px;">Select All</button>
+                        <button type="button" id="filter-deselect-all-btn" class="btn-small waves-effect waves-light grey" style="margin-bottom: 5px;">Deselect All</button>
+                    </div>
                     <select multiple id="project-filter-selector">
                         <option value="" disabled>Select projects to include (default all)</option>
                         </select>
-                    <label for="project-filter-selector">Filter Projects (Optional)</label>
+                    <label for="project-filter-selector" class="active">Filter Projects (Optional)</label>
                 </div>
                 <div class="input-field" style="margin-top: 25px;">
                     <input id="total-multiplier" type="number" value="1" step="0.01">
@@ -669,6 +673,9 @@
         const confirmationCancelButton = document.getElementById('confirmation-cancel-button');
         const generateTlDashboardButton = document.getElementById('generate-tl-dashboard-button');
         const projectFilterSelectorForTotal = document.getElementById('project-filter-selector');
+        const filterSelectAllBtn = document.getElementById('filter-select-all-btn'); // MODIFIED: Added
+        const filterDeselectAllBtn = document.getElementById('filter-deselect-all-btn'); // MODIFIED: Added
+
 
         // --- Global State ---
         let activeProjectData = '';
@@ -678,7 +685,7 @@
         let editingProjectName = null;
         let isLoggedInAsTL = false;
         let confirmPromiseResolve = null;
-        let lastSelectedProjectFilters = []; // MODIFIED: To store last selected filters
+        let lastSelectedProjectFilters = []; 
 
         // --- Utility Functions ---
         function showToast(html, classes = '') { M.toast({ html, classes }); }
@@ -726,7 +733,6 @@
             M.FormSelect.init(projectSelector);
         }
 
-        // MODIFIED: To reapply last selected filters
         function populateProjectFilterSelector() {
             if (!projectFilterSelectorForTotal) return;
             const currentScrollTop = projectFilterSelectorForTotal.scrollTop; 
@@ -740,7 +746,7 @@
                     const option = document.createElement('option');
                     option.value = name;
                     option.textContent = name;
-                    if (lastSelectedProjectFilters.includes(name)) { // Reapply stored selection
+                    if (lastSelectedProjectFilters.includes(name)) { 
                         option.selected = true;
                     }
                     projectFilterSelectorForTotal.appendChild(option);
@@ -996,12 +1002,11 @@
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
 
-        // MODIFIED: To store the selected filters
         function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
             const selectedProjectNamesForFilter = projectFilterSelectorForTotal ? M.FormSelect.getInstance(projectFilterSelectorForTotal).getSelectedValues() : [];
 
-            lastSelectedProjectFilters = [...selectedProjectNamesForFilter]; // Store current filters
+            lastSelectedProjectFilters = [...selectedProjectNamesForFilter]; 
 
             allResultsDiv.innerHTML = '';
             allProjectsAggregatedResults = {};
@@ -1436,7 +1441,31 @@
             confirmationConfirmButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(true);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
             confirmationCancelButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(false);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
             
-            M.FormSelect.init(document.querySelectorAll('select'));
+            // MODIFIED: Event listeners for Select All/Deselect All buttons
+            if (filterSelectAllBtn) {
+                filterSelectAllBtn.addEventListener('click', () => {
+                    const options = projectFilterSelectorForTotal.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (!options[i].disabled) { 
+                            options[i].selected = true;
+                        }
+                    }
+                    M.FormSelect.init(projectFilterSelectorForTotal); 
+                });
+            }
+
+            if (filterDeselectAllBtn) {
+                filterDeselectAllBtn.addEventListener('click', () => {
+                    const options = projectFilterSelectorForTotal.options;
+                    for (let i = 0; i < options.length; i++) {
+                        options[i].selected = false; 
+                    }
+                    M.FormSelect.init(projectFilterSelectorForTotal); 
+                });
+            }
+            // ---
+
+            M.FormSelect.init(document.querySelectorAll('select')); // General init for other selects
             M.updateTextFields();
             document.body.style.display='block';
             
