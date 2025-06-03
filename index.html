@@ -28,12 +28,6 @@
         --success-green: #28a745; /* Standard success green, original: #81c784 */
         --warning-orange: #ffc107; /* Standard warning orange, original: #ffb74d */
         --danger-red: #dc3545;   /* Standard danger red, original: #e57373 */
-
-        /* --- Deprecated Purple (can be removed or kept for other elements if any) --- */
-        /* --primary-purple: #8E7DBF; */
-        /* --primary-purple-dark: #5B4A8C; */
-        /* --primary-purple-light: #F5F2F9; */
-        /* --accent-purple: #9C7CDA; */
     }
 
     /* Dark Mode Colors */
@@ -56,35 +50,29 @@
         --success-green: #81c784;   /* Kept from original for visibility */
         --warning-orange: #ffb74d;  /* Kept from original for visibility */
         --danger-red: #e57373;      /* Kept from original for visibility */
-
-        /* --- Deprecated Purple (dark mode) --- */
-        /* --primary-purple: #9C7CDA; */
-        /* --primary-purple-dark: #8E7DBF; */
-        /* --primary-purple-light: #3A305D; */
-        /* --accent-purple: #B08FD9; */
     }
 
     body {
         padding: 20px;
-        background-color: var(--light-bg); /* MODIFIED */
+        background-color: var(--light-bg);
         font-family: 'Open Sans', sans-serif;
-        color: var(--dark-text); /* MODIFIED */
+        color: var(--dark-text);
         transition: background-color 0.3s ease, color 0.3s ease;
     }
     h5, h4 {
         font-family: 'Roboto Slab', serif;
-        color: var(--primary-accent-dark); /* MODIFIED to use accent */
+        color: var(--primary-accent-dark);
         transition: color 0.3s ease;
     }
     .container {
-        background-color: var(--content-bg); /* MODIFIED */
+        background-color: var(--content-bg);
         padding: 30px;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
     body.dark-mode .container {
-        background-color: var(--medium-bg); /* MODIFIED for dark mode container */
+        background-color: var(--medium-bg);
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
     .container:hover {
@@ -94,11 +82,11 @@
         box-shadow: 0 6px 15px rgba(0,0,0,0.4);
     }
     .result {
-        background: var(--medium-bg); /* MODIFIED */
+        background: var(--medium-bg);
         padding: 20px;
         margin-top: 20px;
         white-space: pre-wrap;
-        border-left: 4px solid var(--primary-accent); /* MODIFIED to use accent */
+        border-left: 4px solid var(--primary-accent);
         font-family: 'Courier New', monospace;
         min-height: 100px;
         border-radius: 8px;
@@ -108,8 +96,8 @@
         transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     body.dark-mode .result {
-        background: #232B33; /* MODIFIED slightly different dark for results */
-        border-left-color: var(--primary-accent); /* MODIFIED */
+        background: #232B33;
+        border-left-color: var(--primary-accent);
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .result-buttons {
@@ -153,36 +141,35 @@
         font-size: 20px;
         color: var(--dark-text);
     }
-    /* Table Styling for better readability */
     .result table.striped tbody tr:nth-child(odd) {
-        background-color: #f0f3f5; /* MODIFIED - Lighter alternating row */
+        background-color: #f0f3f5;
     }
     body.dark-mode .result table.striped tbody tr:nth-child(odd) {
-        background-color: var(--primary-accent-light); /* MODIFIED for dark mode odd rows */
+        background-color: var(--primary-accent-light);
     }
     .result table.striped tbody tr:nth-child(even) {
-        background-color: var(--content-bg); /* MODIFIED - Matches container/content background */
+        background-color: var(--content-bg);
     }
     body.dark-mode .result table.striped tbody tr:nth-child(even) {
-        background-color: var(--medium-bg); /* MODIFIED for dark mode even rows */
+        background-color: var(--medium-bg);
     }
     .result table th {
-        background-color: var(--primary-accent-dark); /* MODIFIED to use accent */
-        color: var(--light-text); /* MODIFIED (white text on dark blue header) */
+        background-color: var(--primary-accent-dark);
+        color: var(--light-text);
         padding: 14px 18px;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
     body.dark-mode .result table th {
-        background-color: var(--primary-accent-dark); /* MODIFIED for dark mode header */
-        color: var(--dark-text); /* MODIFIED (light text on accent header for dark mode) */
+        background-color: var(--primary-accent-dark);
+        color: var(--dark-text);
     }
     .result table td, .result table th {
         padding: 12px 15px;
-        border: 1px solid #dee2e6; /* MODIFIED - Standard light border */
+        border: 1px solid #dee2e6;
         transition: border-color 0.3s ease;
     }
     body.dark-mode .result table td, body.dark-mode .result table th {
-        border-color: #454d55; /* MODIFIED - Darker border for dark mode */
+        border-color: #454d55;
     }
     .result table {
         border-collapse: collapse;
@@ -205,34 +192,33 @@
     }
     .input-field input:focus + label,
     .input-field textarea:focus + label {
-        color: var(--primary-accent) !important; /* MODIFIED */
+        color: var(--primary-accent) !important;
     }
     .input-field input:focus,
     .input-field textarea:focus {
-        border-bottom: 1px solid var(--primary-accent) !important; /* MODIFIED */
-        box-shadow: 0 1px 0 0 var(--primary-accent) !important; /* MODIFIED */
+        border-bottom: 1px solid var(--primary-accent) !important;
+        box-shadow: 0 1px 0 0 var(--primary-accent) !important;
     }
     .input-field select:focus {
-        outline: 1px solid var(--primary-accent); /* MODIFIED */
+        outline: 1px solid var(--primary-accent);
     }
-    /* Dark Mode Input Field adjustments */
     body.dark-mode .input-field label {
         color: var(--dark-text) !important;
     }
     body.dark-mode .input-field input,
     body.dark-mode .input-field textarea {
         color: var(--dark-text);
-        border-bottom-color: var(--primary-accent-dark) !important; /* MODIFIED */
+        border-bottom-color: var(--primary-accent-dark) !important;
     }
     body.dark-mode .input-field input:focus,
     body.dark-mode .input-field textarea:focus {
-        border-bottom: 1px solid var(--primary-accent) !important; /* MODIFIED */
-        box-shadow: 0 1px 0 0 var(--primary-accent) !important; /* MODIFIED */
+        border-bottom: 1px solid var(--primary-accent) !important;
+        box-shadow: 0 1px 0 0 var(--primary-accent) !important;
     }
     body.dark-mode .input-field input[type=text]:not(.browser-default):focus:not([readonly]) + label,
     body.dark-mode .input-field input[type=password]:not(.browser-default):focus:not([readonly]) + label,
     body.dark-mode .input-field textarea.materialize-textarea:focus:not([readonly]) + label {
-        color: var(--primary-accent) !important; /* MODIFIED */
+        color: var(--primary-accent) !important;
     }
     body.dark-mode .input-field .caret {
         fill: var(--dark-text);
@@ -245,10 +231,9 @@
         color: var(--dark-text);
     }
     body.dark-mode .dropdown-content {
-        background-color: var(--medium-bg); /* MODIFIED */
+        background-color: var(--medium-bg);
     }
 
-    /* Button Styling */
     .btn, .btn-large, .btn-small, .btn-flat {
         border-radius: 6px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -258,7 +243,7 @@
         margin-right: 12px;
         text-transform: none;
         font-weight: 600;
-        color: var(--light-text); /* Ensure text color is light for most filled buttons */
+        color: var(--light-text);
     }
     .btn:hover, .btn-large:hover, .btn-small:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
@@ -269,47 +254,36 @@
         margin-right: 8px;
     }
 
-    /* Specific Button Colors - MODIFIED to use new accent system */
     .btn.blue, .btn.blue.darken-1 { background-color: var(--primary-accent) !important; }
     .btn.blue:hover, .btn.blue.darken-1:hover { background-color: var(--primary-accent-dark) !important; }
-
     .btn.green { background-color: var(--success-green) !important; }
-    .btn.green:hover { background-color: #218838 !important; } /* Darker success green */
-
-    .btn.orange.darken-2, .btn.orange { background-color: var(--warning-orange) !important; color: #212529 !important; } /* Ensure dark text on orange */
-    .btn.orange.darken-2:hover, .btn.orange:hover { background-color: #e0a800 !important; } /* Darker warning orange */
-
+    .btn.green:hover { background-color: #218838 !important; }
+    .btn.orange.darken-2, .btn.orange { background-color: var(--warning-orange) !important; color: #212529 !important; }
+    .btn.orange.darken-2:hover, .btn.orange:hover { background-color: #e0a800 !important; }
     .btn.red, .btn.red.darken-2 { background-color: var(--danger-red) !important; }
-    .btn.red:hover, .btn.red.darken-2:hover { background-color: #c82333 !important; } /* Darker danger red */
-
-    /* Purple buttons remapped to primary accent or can be a secondary accent if defined */
+    .btn.red:hover, .btn.red.darken-2:hover { background-color: #c82333 !important; }
     .btn.purple.darken-2, .btn.deep-purple.darken-2 { background-color: var(--primary-accent) !important; }
     .btn.purple.darken-2:hover, .btn.deep-purple.darken-2:hover { background-color: var(--primary-accent-dark) !important; }
-
-
-    .btn.grey.darken-1 { background-color: #6c757d !important; } /* Standard grey */
+    .btn.grey.darken-1 { background-color: #6c757d !important; }
     .btn.grey.darken-1:hover { background-color: #5a6268 !important; }
-    .btn.grey { background-color: #adb5bd !important; color: #212529 !important} /* Lighter grey, ensure dark text */
+    .btn.grey { background-color: #adb5bd !important; color: #212529 !important}
     .btn.grey:hover { background-color: #90989f !important; }
 
-
-    /* Floating Action Button specific */
-    .btn-floating.btn-large.green { /* If this is the 'add' button, map to accent or success */
-        background-color: var(--primary-accent) !important; /* MODIFIED to accent */
+    .btn-floating.btn-large.green {
+        background-color: var(--primary-accent) !important;
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     .btn-floating.btn-large.green:hover {
-        background-color: var(--primary-accent-dark) !important; /* MODIFIED to accent-dark */
+        background-color: var(--primary-accent-dark) !important;
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         transform: translateY(-3px);
     }
 
-    /* Dark Mode Toggle Button */
     #dark-mode-toggle {
         position: absolute;
         top: 20px;
         right: 20px;
-        background-color: #e9ecef; /* MODIFIED - Lighter grey for toggle */
+        background-color: #e9ecef;
         color: var(--dark-text);
         border-radius: 50%;
         width: 44px;
@@ -323,342 +297,125 @@
         z-index: 999;
     }
     #dark-mode-toggle:hover {
-        background-color: #ced4da; /* MODIFIED */
+        background-color: #ced4da;
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     body.dark-mode #dark-mode-toggle {
-        background-color: #343a40; /* MODIFIED - Dark grey for toggle in dark mode */
+        background-color: #343a40;
         color: var(--dark-text);
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
     body.dark-mode #dark-mode-toggle:hover {
-        background-color: #495057; /* MODIFIED */
+        background-color: #495057;
         box-shadow: 0 4px 8px rgba(0,0,0,0.4);
     }
     #dark-mode-toggle i.material-icons {
         font-size: 24px;
     }
 
-    .right-align {
-        margin-bottom: 20px;
-    }
-    .center-align {
-        margin-top: 25px;
-        margin-bottom: 25px;
-    }
-    #all-results {
-        max-height: 600px;
-        overflow-y: auto;
-        margin-top: 30px;
-    }
-    #all-results h5 {
-        margin-bottom: 15px;
-        border-bottom: 2px solid #dee2e6; /* MODIFIED */
-        padding-bottom: 10px;
-    }
-    body.dark-mode #all-results h5 {
-        border-bottom-color: #495057; /* MODIFIED */
-    }
-    .modal-content h5 {
-        margin-bottom: 20px;
-    }
-    .modal-content .input-field {
-        margin-top: 15px;
-        margin-bottom: 15px;
-    }
-    .modal-footer a {
-        margin-left: 10px;
-    }
-    /* Modal specific styling */
-    .modal {
-        background-color: var(--content-bg); /* MODIFIED */
-        transition: background-color 0.3s ease;
-    }
-    body.dark-mode .modal {
-        background-color: var(--medium-bg); /* MODIFIED */
-    }
-    body.dark-mode .modal .modal-content {
-        color: var(--dark-text);
-    }
-    body.dark-mode .modal .modal-footer {
-        background-color: #232a31; /* MODIFIED - Slightly different from modal body */
-        border-top-color: #343a40; /* MODIFIED */
-    }
+    .right-align { margin-bottom: 20px; }
+    .center-align { margin-top: 25px; margin-bottom: 25px; }
+    #all-results { max-height: 600px; overflow-y: auto; margin-top: 30px; }
+    #all-results h5 { margin-bottom: 15px; border-bottom: 2px solid #dee2e6; padding-bottom: 10px; }
+    body.dark-mode #all-results h5 { border-bottom-color: #495057; }
+    .modal-content h5 { margin-bottom: 20px; }
+    .modal-content .input-field { margin-top: 15px; margin-bottom: 15px; }
+    .modal-footer a { margin-left: 10px; }
+    .modal { background-color: var(--content-bg); transition: background-color 0.3s ease; }
+    body.dark-mode .modal { background-color: var(--medium-bg); }
+    body.dark-mode .modal .modal-content { color: var(--dark-text); }
+    body.dark-mode .modal .modal-footer { background-color: #232a31; border-top-color: #343a40; }
 
-    #login-modal {
-        max-width: 450px;
-        border-radius: 12px;
-        margin: auto;
-        overflow: hidden;
-    }
-    #login-modal .modal-content {
-        padding: 35px;
-        text-align: center;
-        background-color: var(--content-bg); /* MODIFIED */
-    }
-    body.dark-mode #login-modal .modal-content {
-        background-color: var(--medium-bg); /* MODIFIED */
-    }
-    #login-modal .modal-content h5 {
-        margin-bottom: 30px;
-        color: var(--primary-accent-dark); /* MODIFIED */
-    }
-    #login-modal .input-field {
-        margin-bottom: 25px;
-    }
-    #login-modal .modal-footer {
-        padding: 20px;
-        text-align: center;
-        background-color: var(--medium-bg); /* MODIFIED */
-        border-top: 1px solid #dee2e6; /* MODIFIED */
-        border-bottom-left-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
-    body.dark-mode #login-modal .modal-footer {
-        background-color: #232a31; /* MODIFIED */
-        border-top-color: #343a40; /* MODIFIED */
-    }
-    #login-modal .btn {
-        width: 100%;
-        margin-right: 0;
-        background-color: var(--primary-accent) !important; /* MODIFIED */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    #login-modal .btn:hover {
-        background-color: var(--primary-accent-dark) !important; /* MODIFIED */
-        box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-    }
-    #logout-button {
-        margin-left: auto;
-    }
-    #fullscreen-results-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        display: none;
-        justify-content: center;
-        align-items: center;
-        overflow-y: auto;
-    }
-    #fullscreen-results-content {
-        background-color: var(--content-bg); /* MODIFIED */
-        padding: 20px;
-        border-radius: 12px;
-        max-width: 95%;
-        max-height: 95%;
-        overflow: auto;
-        position: relative;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    }
-    body.dark-mode #fullscreen-results-content {
-        background-color: var(--medium-bg); /* MODIFIED */
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-    #fullscreen-results-content .close-button {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background-color: rgba(222, 226, 230, 0.85); /* MODIFIED */
-        border: none;
-        border-radius: 50%;
-        width: 38px;
-        height: 38px;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        z-index: 2;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    body.dark-mode #fullscreen-results-content .close-button {
-        background-color: rgba(0, 0, 0, 0.3);
-        color: var(--dark-text);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-    }
-    #fullscreen-results-content .close-button:hover {
-        background-color: rgba(206, 212, 218, 0.95); /* MODIFIED */
-        transform: rotate(90deg);
-    }
-    body.dark-mode #fullscreen-results-content .close-button:hover {
-        background-color: rgba(0, 0, 0, 0.4);
-    }
-    #fullscreen-results-content .close-button i.material-icons {
-        color: var(--dark-text);
-    }
-    #view-data-modal {
-        max-width: 95%;
-        max-height: 95%;
-        width: 95%;
-        height: 95%;
-        top: 2.5% !important;
-        transform: translate(-50%, 0%) !important;
-        left: 50% !important;
-        border-radius: 12px;
-    }
-    #view-data-modal .modal-content {
-        overflow-y: auto;
-        max-height: calc(100% - 70px);
-        padding-bottom: 0;
-    }
-    #view-data-modal table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    #view-data-modal table th,
-    #view-data-modal table td {
-        border: 1px solid #dee2e6; /* MODIFIED */
-        padding: 10px;
-        text-align: left;
-        white-space: nowrap;
-    }
-    body.dark-mode #view-data-modal table th,
-    body.dark-mode #view-data-modal table td {
-        border-color: #454d55; /* MODIFIED */
-    }
-    #view-data-modal table th {
-        background-color: #e9ecef; /* MODIFIED - Light grey header for modal table */
-        color: var(--dark-text);
-        font-weight: bold;
-    }
-    body.dark-mode #view-data-modal table th {
-        background-color: var(--primary-accent-dark); /* MODIFIED */
-        color: var(--dark-text); /* Ensure light text on dark header */
-    }
-    #view-data-table-container .spinner-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 200px;
-    }
+    #login-modal { max-width: 450px; border-radius: 12px; margin: auto; overflow: hidden; }
+    #login-modal .modal-content { padding: 35px; text-align: center; background-color: var(--content-bg); }
+    body.dark-mode #login-modal .modal-content { background-color: var(--medium-bg); }
+    #login-modal .modal-content h5 { margin-bottom: 30px; color: var(--primary-accent-dark); }
+    #login-modal .input-field { margin-bottom: 25px; }
+    #login-modal .modal-footer { padding: 20px; text-align: center; background-color: var(--medium-bg); border-top: 1px solid #dee2e6; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+    body.dark-mode #login-modal .modal-footer { background-color: #232a31; border-top-color: #343a40; }
+    #login-modal .btn { width: 100%; margin-right: 0; background-color: var(--primary-accent) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    #login-modal .btn:hover { background-color: var(--primary-accent-dark) !important; box-shadow: 0 6px 12px rgba(0,0,0,0.25); }
+    #logout-button { margin-left: auto; }
+
+    #fullscreen-results-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 1000; display: none; justify-content: center; align-items: center; overflow-y: auto; }
+    #fullscreen-results-content { background-color: var(--content-bg); padding: 20px; border-radius: 12px; max-width: 95%; max-height: 95%; overflow: auto; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+    body.dark-mode #fullscreen-results-content { background-color: var(--medium-bg); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+    #fullscreen-results-content .close-button { position: absolute; top: 15px; right: 15px; background-color: rgba(222, 226, 230, 0.85); border: none; border-radius: 50%; width: 38px; height: 38px; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; transition: background-color 0.3s ease, transform 0.2s ease; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+    body.dark-mode #fullscreen-results-content .close-button { background-color: rgba(0, 0, 0, 0.3); color: var(--dark-text); box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+    #fullscreen-results-content .close-button:hover { background-color: rgba(206, 212, 218, 0.95); transform: rotate(90deg); }
+    body.dark-mode #fullscreen-results-content .close-button:hover { background-color: rgba(0, 0, 0, 0.4); }
+    #fullscreen-results-content .close-button i.material-icons { color: var(--dark-text); }
+
+    #view-data-modal { max-width: 95%; max-height: 95%; width: 95%; height: 95%; top: 2.5% !important; transform: translate(-50%, 0%) !important; left: 50% !important; border-radius: 12px; }
+    #view-data-modal .modal-content { overflow-y: auto; max-height: calc(100% - 70px); padding-bottom: 0; }
+    #view-data-modal table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    #view-data-modal table th, #view-data-modal table td { border: 1px solid #dee2e6; padding: 10px; text-align: left; white-space: nowrap; }
+    body.dark-mode #view-data-modal table th, body.dark-mode #view-data-modal table td { border-color: #454d55; }
+    #view-data-modal table th { background-color: #e9ecef; color: var(--dark-text); font-weight: bold; }
+    body.dark-mode #view-data-modal table th { background-color: var(--primary-accent-dark); color: var(--dark-text); }
+    #view-data-table-container .spinner-container { display: flex; justify-content: center; align-items: center; min-height: 200px; }
+
     @media (max-width: 600px) {
-        body {
-            padding: 10px;
-        }
-        .container {
-            padding: 20px;
-        }
-        .btn {
-            margin-right: 8px;
-            margin-bottom: 12px;
-        }
-        .center-align {
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-        #all-results {
-            max-height: 400px;
-        }
-        #fullscreen-results-content {
-            max-width: 95%;
-            max-height: 95%;
-        }
-        #view-data-modal {
-            max-width: 95%;
-            width: 95%;
-            height: 95%;
-            top: 2.5% !important;
-            transform: translate(-50%, 0%) !important;
-            left: 50% !important;
-        }
-        #dark-mode-toggle {
-            top: 10px;
-            right: 10px;
-            width: 40px;
-            height: 40px;
-        }
-        #dark-mode-toggle i.material-icons {
-            font-size: 20px;
-        }
+        body { padding: 10px; }
+        .container { padding: 20px; }
+        .btn { margin-right: 8px; margin-bottom: 12px; }
+        .center-align { margin-top: 15px; margin-bottom: 15px; }
+        #all-results { max-height: 400px; }
+        #fullscreen-results-content { max-width: 95%; max-height: 95%; }
+        #view-data-modal { max-width: 95%; width: 95%; height: 95%; top: 2.5% !important; transform: translate(-50%, 0%) !important; left: 50% !important; }
+        #dark-mode-toggle { top: 10px; right: 10px; width: 40px; height: 40px; }
+        #dark-mode-toggle i.material-icons { font-size: 20px; }
     }
-    /* Custom styles for Quality and Bonus (using new palette vars if needed) */
-    .quality-green {
-        background-color: #d4edda; /* Lighter success green background */
-        color: #155724;      /* Darker success green text */
-        font-weight: bold;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-    body.dark-mode .quality-green {
-        background-color: #28a745; /* var(--success-green) */
-        color: #ffffff;
-    }
-    .quality-orange {
-        background-color: #fff3cd; /* Lighter warning orange background */
-        color: #856404;      /* Darker warning orange text */
-        font-weight: bold;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-    body.dark-mode .quality-orange {
-        background-color: #ffc107; /* var(--warning-orange) */
-        color: #212529; /* Dark text for contrast */
-    }
-    .quality-red {
-        background-color: #f8d7da; /* Lighter danger red background */
-        color: #721c24;      /* Darker danger red text */
-        font-weight: bold;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-    body.dark-mode .quality-red {
-        background-color: #dc3545; /* var(--danger-red) */
-        color: #ffffff;
-    }
-    .tech-id-highlight {
-        font-weight: bold;
-        color: var(--primary-accent-dark); /* MODIFIED */
-    }
-    .salary-highlight {
-        background-color: #e9ecef; /* MODIFIED - Light grey highlight */
-        color: var(--dark-text);   /* MODIFIED */
-        font-weight: bold;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-    body.dark-mode .salary-highlight {
-        background-color: #343a40; /* MODIFIED - Darker grey highlight */
-        color: var(--dark-text);   /* MODIFIED */
-    }
-    .tech-id-red-highlight { /* This is for error states, keep distinct red */
-        background-color: #f8d7da;
-        color: #721c24;
-        font-weight: bold;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-    body.dark-mode .tech-id-red-highlight {
-        background-color: #721c24;
-        color: #f8d7da;
-    }
-    .tech-id-orange-highlight { /* This is for warning states, keep distinct orange */
-        background-color: #fff3cd;
-        color: #856404;
-        font-weight: bold;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-    body.dark-mode .tech-id-orange-highlight {
-        background-color: #856404;
-        color: #fff3cd;
+    .quality-green { background-color: #d4edda; color: #155724; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    body.dark-mode .quality-green { background-color: #28a745; color: #ffffff; }
+    .quality-orange { background-color: #fff3cd; color: #856404; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    body.dark-mode .quality-orange { background-color: #ffc107; color: #212529; }
+    .quality-red { background-color: #f8d7da; color: #721c24; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    body.dark-mode .quality-red { background-color: #dc3545; color: #ffffff; }
+    .tech-id-highlight { font-weight: bold; color: var(--primary-accent-dark); }
+    .salary-highlight { background-color: #e9ecef; color: var(--dark-text); font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    body.dark-mode .salary-highlight { background-color: #343a40; color: var(--dark-text); }
+    .tech-id-red-highlight { background-color: #f8d7da; color: #721c24; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    body.dark-mode .tech-id-red-highlight { background-color: #721c24; color: #f8d7da; }
+    .tech-id-orange-highlight { background-color: #fff3cd; color: #856404; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+    body.dark-mode .tech-id-orange-highlight { background-color: #856404; color: #fff3cd; }
+
+    .spinner-layer.spinner-blue-only .circle-clipper .circle,
+    .spinner-layer.spinner-blue-only .gap-patch .circle { border-color: var(--primary-accent) !important; }
+    .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.left,
+    .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.right { border-color: var(--primary-accent) !important; }
+
+    /* === CSS FIX FOR MULTI-SELECT IN MODAL === */
+    #multiplier-modal .input-field select[multiple] {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 150px; /* Adjust this value as needed (e.g., 200px) */
+        overflow-y: auto;
+        background-color: #fff; /* Default light mode background */
+        border: 1px solid #9e9e9e; /* Default Materialize input border */
+        border-radius: 3px;
+        padding: 5px;
     }
 
-    /* Spinner color */
-    .spinner-layer.spinner-blue-only .circle-clipper .circle,
-    .spinner-layer.spinner-blue-only .gap-patch .circle {
-        border-color: var(--primary-accent) !important; /* MODIFIED */
+    body.dark-mode #multiplier-modal .input-field select[multiple] {
+        background-color: var(--medium-bg); /* Dark mode background */
+        border-color: var(--primary-accent-dark); /* Dark mode border */
+        color: var(--dark-text); /* Dark mode text color */
     }
-    .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.left,
-    .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.right {
-        border-color: var(--primary-accent) !important; /* MODIFIED */
+
+    body.dark-mode #multiplier-modal .input-field select[multiple] option {
+        background-color: var(--medium-bg); /* Dark mode option background */
+        color: var(--dark-text); /* Dark mode option text */
     }
-</style>
+
+    /* Ensure modal content itself can scroll if other elements also make it tall */
+    #multiplier-modal .modal-content {
+       overflow-y: auto; /* This is usually a Materialize default but good to ensure */
+    }
+    /* === END OF CSS FIX === */
+
+    </style>
 </head>
 <body>
     <button id="dark-mode-toggle">
@@ -766,6 +523,7 @@
                 <a href="#!" class="btn green" id="apply-multiplier">Apply & Calculate</a>
             </div>
         </div>
+
         <div id="add-project-modal" class="modal">
             <div class="modal-content">
                 <h5 id="modal-title">Add New Project</h5>
@@ -914,7 +672,7 @@
         const confirmationConfirmButton = document.getElementById('confirmation-confirm-button');
         const confirmationCancelButton = document.getElementById('confirmation-cancel-button');
         const generateTlDashboardButton = document.getElementById('generate-tl-dashboard-button');
-        const projectFilterSelectorForTotal = document.getElementById('project-filter-selector'); // MODIFIED: Added new DOM element
+        const projectFilterSelectorForTotal = document.getElementById('project-filter-selector');
 
         // --- Global State ---
         let activeProjectData = '';
@@ -971,7 +729,6 @@
             M.FormSelect.init(projectSelector);
         }
 
-        // MODIFIED: Added new function to populate project filter
         function populateProjectFilterSelector() {
             if (!projectFilterSelectorForTotal) return; 
             projectFilterSelectorForTotal.innerHTML = '<option value="" disabled>Select projects (default all)</option>'; 
@@ -1235,10 +992,8 @@
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
 
-        // MODIFIED: calculateTotalAcrossAllProjects function updated for filtering
         function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
-            // --- Get selected project names for filtering ---
             const selectedProjectNamesForFilter = projectFilterSelectorForTotal ? M.FormSelect.getInstance(projectFilterSelectorForTotal).getSelectedValues() : [];
 
             allResultsDiv.innerHTML = '';
@@ -1247,20 +1002,18 @@
             allCalculatedResults = [];
             let processingErrors = [];
             const allProjectsRawData = [];
-            let hasProjectsToProcess = false; // To check if any projects remain after filtering
+            let hasProjectsToProcess = false; 
 
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('tl_project_')) {
                     const projectName = key.replace('tl_project_', '');
 
-                    // --- FILTERING LOGIC ---
                     if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0 && !selectedProjectNamesForFilter.includes(projectName)) {
-                        continue; // Skip this project if filters are active and it's not selected
+                        continue; 
                     }
-                    // --- END FILTERING LOGIC ---
 
-                    hasProjectsToProcess = true; // A project will be processed
+                    hasProjectsToProcess = true; 
                     const projectDataString = safeGetLocalStorage(key);
                     if (projectDataString !== null) {
                         try {
@@ -1314,9 +1067,9 @@
                     missFixPoints: 0, incorrectCounting: 0, categoryPoints: Array(9).fill(0), categoryCounts: Array(9).fill(0),
                     totalPoints: 0, qualityPercentage: 0, bonusPercentage: 0, qualityBonus: 0, estimatedSalary: 0
                 };
-                allProjectsRawData.forEach(project => { // Iterate only through filtered projects
+                allProjectsRawData.forEach(project => { 
                     const result = calculateDetailsForTechIDInRaw(project.data, techID, project.size, project.ir);
-                    if (result && result._foundRowsCount > 0) { // Ensure techID was found in this specific project
+                    if (result && result._foundRowsCount > 0) { 
                         const agg = allProjectsAggregatedResults[techID];
                         agg.baseTotalPoints += result.totalPoints; agg.incorrectPointsValue += result.incorrectPointsValue;
                         agg.additionalFixPoints += result.additionalFixPoints; agg.excessiveFixPoints += result.excessiveFixPoints;
@@ -1352,7 +1105,6 @@
                 }
             });
             techIDsToRemove.forEach(techID => delete allProjectsAggregatedResults[techID]);
-
 
             let tableTitleText = `Totals Across ${ (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) ? 'Selected Projects' : 'All Projects'} (Multiplier: ${multiplier.toFixed(2)})`;
             if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) {
@@ -1396,7 +1148,6 @@
         }
 
 
-        // --- NEW TL DASHBOARD FUNCTION ---
         async function generateTlDashboard() {
             if (!isLoggedInAsTL) {
                 showToast('This report is for TLs only.', 'orange');
@@ -1642,12 +1393,10 @@
         function applyDarkModePreference(){const p=localStorage.getItem('darkMode'),e=p==='enabled';document.body.classList.toggle('dark-mode',e);darkModeToggle.querySelector('i').textContent=e?'brightness_4':'brightness_high';if(p!=='enabled'&&p!=='disabled')localStorage.setItem('darkMode','disabled')}
         darkModeToggle.addEventListener('click',()=>{localStorage.setItem('darkMode',document.body.classList.contains('dark-mode')?'disabled':'enabled');applyDarkModePreference()});
         
-        // MODIFIED: DOMContentLoaded for modal initializations
         document.addEventListener('DOMContentLoaded',()=>{
             document.body.style.display='none';
             applyDarkModePreference();
 
-            // General modal initialization (excluding those with special callbacks/options)
             document.querySelectorAll('.modal').forEach(modalElem => {
                 if (modalElem.id !== 'multiplier-modal' && modalElem.id !== 'login-modal' && modalElem.id !== 'confirmation-modal') {
                      M.Modal.init(modalElem, {
@@ -1657,7 +1406,6 @@
                 }
             });
 
-            // Specific initialization for multiplier-modal
             const multiplierModalElem = document.getElementById('multiplier-modal');
             if (multiplierModalElem) {
                 M.Modal.init(multiplierModalElem, {
@@ -1668,13 +1416,11 @@
                 });
             }
 
-            // Initialize login-modal (cannot be dismissed)
             const loginModalInstance = document.getElementById('login-modal');
             if (loginModalInstance) {
                 M.Modal.init(loginModalInstance, { dismissible: false });
             }
             
-            // Initialize confirmation-modal (cannot be dismissed)
             const confirmationModalInstance = document.getElementById('confirmation-modal');
             if (confirmationModalInstance) {
                  M.Modal.init(confirmationModalInstance, { dismissible: false });
@@ -1691,7 +1437,6 @@
             if(lmInstance) lmInstance.open();
             else{
                 console.error("Login modal instance could not be retrieved for opening.");
-                // Fallback if login modal somehow fails to init or open
                 mainAppContent.style.display='block';
                 loadProjectList();
                 updateButtonVisibility();
