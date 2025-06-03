@@ -385,36 +385,36 @@
     .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.left,
     .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.right { border-color: var(--primary-accent) !important; }
 
+    /* CSS for multi-select height (no longer used by project-filter-selector, but kept for general reference if needed elsewhere) */
+    /*
     #multiplier-modal .input-field select[multiple] {
         display: block;
         width: 100%;
         height: auto;
-        max-height: 150px; /* Adjust this value as needed (e.g., 200px) */
+        max-height: 150px;
         overflow-y: auto;
-        background-color: #fff; 
-        border: 1px solid #9e9e9e; 
+        background-color: #fff;
+        border: 1px solid #9e9e9e;
         border-radius: 3px;
         padding: 5px;
     }
 
     body.dark-mode #multiplier-modal .input-field select[multiple] {
-        background-color: var(--medium-bg); 
-        border-color: var(--primary-accent-dark); 
-        color: var(--dark-text); 
+        background-color: var(--medium-bg);
+        border-color: var(--primary-accent-dark);
+        color: var(--dark-text);
     }
 
     body.dark-mode #multiplier-modal .input-field select[multiple] option {
-        background-color: var(--medium-bg); 
-        color: var(--dark-text); 
+        background-color: var(--medium-bg);
+        color: var(--dark-text);
     }
-
+    */
     #multiplier-modal .modal-content {
        overflow-y: auto; 
     }
-
-    /* MODIFIED: CSS for hiding filter section */
-    .filter-section-hidden {
-        display: none;
+    .filter-section-hidden { /* This class is also no longer used with current setup */
+        /* display: none; */
     }
     </style>
 </head>
@@ -507,23 +507,13 @@
 
         <div id="multiplier-modal" class="modal">
             <div class="modal-content">
-                <h5>Enter Multiplier & Filter Projects</h5>
-
-                <div style="margin-bottom: 10px;">
-                     <button type="button" id="toggle-filter-visibility-btn" class="btn-small waves-effect waves-light orange darken-1">Hide Filters</button>
+                <h5>Enter Multiplier & Filter</h5>
+                <div class="input-field" style="margin-top: 10px; margin-bottom: 20px;">
+                    <label>
+                        <input type="checkbox" id="filter-by-current-project-chk" />
+                        <span id="filter-by-current-project-label">Only include currently loaded project</span>
+                    </label>
                 </div>
-
-                <div id="project-filter-wrapper">
-                    <div class="input-field" style="margin-top:0; margin-bottom: 10px;"> <div style="margin-bottom: 10px;"> <button type="button" id="filter-select-all-btn" class="btn-small waves-effect waves-light blue" style="margin-right: 5px; margin-bottom: 5px; margin-top:0;">Select All</button>
-                            <button type="button" id="filter-deselect-all-btn" class="btn-small waves-effect waves-light grey" style="margin-bottom: 5px; margin-top:0;">Deselect All</button>
-                        </div>
-                        <select multiple id="project-filter-selector">
-                            <option value="" disabled>Select projects to include (default all)</option>
-                            </select>
-                        <label for="project-filter-selector" class="active">Filter Projects (Optional)</label>
-                    </div>
-                </div>
-
                 <div class="input-field" style="margin-top: 25px;">
                     <input id="total-multiplier" type="number" value="1" step="0.01">
                     <label for="total-multiplier">Multiplier</label>
@@ -683,11 +673,9 @@
         const confirmationConfirmButton = document.getElementById('confirmation-confirm-button');
         const confirmationCancelButton = document.getElementById('confirmation-cancel-button');
         const generateTlDashboardButton = document.getElementById('generate-tl-dashboard-button');
-        const projectFilterSelectorForTotal = document.getElementById('project-filter-selector');
-        const filterSelectAllBtn = document.getElementById('filter-select-all-btn'); 
-        const filterDeselectAllBtn = document.getElementById('filter-deselect-all-btn'); 
-        const toggleFilterVisibilityBtn = document.getElementById('toggle-filter-visibility-btn'); // MODIFIED: Added
-        const projectFilterWrapper = document.getElementById('project-filter-wrapper'); // MODIFIED: Added
+        // MODIFIED: Removed old filter DOM elements
+        const filterByCurrentProjectChk = document.getElementById('filter-by-current-project-chk'); // MODIFIED: Added
+        const filterByCurrentProjectLabel = document.getElementById('filter-by-current-project-label'); // MODIFIED: Added
 
 
         // --- Global State ---
@@ -698,9 +686,7 @@
         let editingProjectName = null;
         let isLoggedInAsTL = false;
         let confirmPromiseResolve = null;
-        let lastSelectedProjectFilters = []; 
-        let isProjectFilterVisible = true; // MODIFIED: To track filter visibility, default true
-
+        // MODIFIED: Removed old filter global state variables (lastSelectedProjectFilters, isProjectFilterVisible)
 
         // --- Utility Functions ---
         function showToast(html, classes = '') { M.toast({ html, classes }); }
@@ -748,55 +734,7 @@
             M.FormSelect.init(projectSelector);
         }
 
-        function populateProjectFilterSelector() {
-            if (!projectFilterSelectorForTotal) return;
-            const currentScrollTop = projectFilterSelectorForTotal.scrollTop; 
-
-            projectFilterSelectorForTotal.innerHTML = '<option value="" disabled>Select projects (default all)</option>';
-            let projectFound = false;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('tl_project_')) {
-                    const name = key.replace('tl_project_', '');
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    if (lastSelectedProjectFilters.includes(name)) { 
-                        option.selected = true;
-                    }
-                    projectFilterSelectorForTotal.appendChild(option);
-                    projectFound = true;
-                }
-            }
-            if (!projectFound) {
-                 const noProjectsOption = document.createElement('option');
-                 noProjectsOption.value = "";
-                 noProjectsOption.disabled = true;
-                 noProjectsOption.selected = true;
-                 noProjectsOption.textContent = 'No projects found to filter';
-                 projectFilterSelectorForTotal.appendChild(noProjectsOption);
-            }
-            M.FormSelect.init(projectFilterSelectorForTotal);
-            projectFilterSelectorForTotal.scrollTop = currentScrollTop;
-        }
-
-        // MODIFIED: Function to update filter visibility UI
-        function updateFilterVisibilityUI() {
-            if (!projectFilterWrapper || !toggleFilterVisibilityBtn) return;
-
-            if (isProjectFilterVisible) {
-                projectFilterWrapper.classList.remove('filter-section-hidden');
-                toggleFilterVisibilityBtn.textContent = 'Hide Filters';
-                toggleFilterVisibilityBtn.classList.remove('blue'); // Ensure blue is removed
-                toggleFilterVisibilityBtn.classList.add('orange', 'darken-1');
-            } else {
-                projectFilterWrapper.classList.add('filter-section-hidden');
-                toggleFilterVisibilityBtn.textContent = 'Show Filters';
-                toggleFilterVisibilityBtn.classList.remove('orange', 'darken-1'); // Ensure orange is removed
-                toggleFilterVisibilityBtn.classList.add('blue');
-            }
-        }
-
+        // MODIFIED: Removed populateProjectFilterSelector and updateFilterVisibilityUI functions
 
         function addResultButtonsToAllResults(isSingleSearchResult = false) {
             const targetDiv = allResultsDiv;
@@ -1034,46 +972,55 @@
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
 
+        // MODIFIED: calculateTotalAcrossAllProjects to use the new checkbox filter
         function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
-            const selectedProjectNamesForFilter = projectFilterSelectorForTotal ? M.FormSelect.getInstance(projectFilterSelectorForTotal).getSelectedValues() : [];
-
-            lastSelectedProjectFilters = [...selectedProjectNamesForFilter]; 
+            const useFilterByCurrentProject = filterByCurrentProjectChk.checked && !filterByCurrentProjectChk.disabled;
 
             allResultsDiv.innerHTML = '';
             allProjectsAggregatedResults = {};
-            lastResult = '';
-            allCalculatedResults = [];
+            lastResult = ''; // Reset lastResult
+            allCalculatedResults = []; // Reset allCalculatedResults
             let processingErrors = [];
             const allProjectsRawData = [];
             let hasProjectsToProcess = false; 
+            let tableTitleText = "";
 
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('tl_project_')) {
-                    const projectName = key.replace('tl_project_', '');
-
-                    if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0 && !selectedProjectNamesForFilter.includes(projectName)) {
-                        continue; 
+            if (useFilterByCurrentProject && activeProjectData && activeProjectData.name) {
+                tableTitleText = `Totals for Project: ${activeProjectData.name} (Multiplier: ${multiplier.toFixed(2)})`;
+                allProjectsRawData.push({
+                    name: activeProjectData.name,
+                    data: String(activeProjectData.data),
+                    size: activeProjectData.size,
+                    ir: activeProjectData.ir
+                });
+                if (allProjectsRawData.length > 0) {
+                    hasProjectsToProcess = true;
+                }
+            } else {
+                tableTitleText = `Totals Across All Projects (Multiplier: ${multiplier.toFixed(2)})`;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('tl_project_')) {
+                        const projectName = key.replace('tl_project_', '');
+                        hasProjectsToProcess = true; 
+                        const projectDataString = safeGetLocalStorage(key);
+                        if (projectDataString !== null) {
+                            try {
+                                const project = JSON.parse(projectDataString);
+                                if (project && typeof project === 'object' && 'data' in project && 'size' in project && 'ir' in project) {
+                                    allProjectsRawData.push({ name: projectName, data: String(project.data), size: project.size, ir: project.ir });
+                                } else { processingErrors.push(`Project '${projectName}': Invalid structure.`); }
+                            } catch (e) { processingErrors.push(`Project '${projectName}': Parse error - ${e.message}`); }
+                        } else { processingErrors.push(`Project '${projectName}': Could not retrieve.`); }
                     }
-
-                    hasProjectsToProcess = true; 
-                    const projectDataString = safeGetLocalStorage(key);
-                    if (projectDataString !== null) {
-                        try {
-                            const project = JSON.parse(projectDataString);
-                            if (project && typeof project === 'object' && 'data' in project && 'size' in project && 'ir' in project) {
-                                allProjectsRawData.push({ name: projectName, data: String(project.data), size: project.size, ir: project.ir });
-                            } else { processingErrors.push(`Project '${projectName}': Invalid structure.`); }
-                        } catch (e) { processingErrors.push(`Project '${projectName}': Parse error - ${e.message}`); }
-                    } else { processingErrors.push(`Project '${projectName}': Could not retrieve.`); }
                 }
             }
 
             if (!hasProjectsToProcess) {
-                let message = '<p>No projects saved to calculate totals.</p>';
-                if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) {
-                    message = '<p>No projects matched the selected filter criteria, or the selected projects have no data.</p>';
+                let message = '<p>No projects available to calculate totals.</p>';
+                if (useFilterByCurrentProject) {
+                    message = '<p>No currently loaded project to calculate totals for.</p>';
                 }
                 allResultsDiv.innerHTML = message;
                 addResultButtonsToAllResults(false);
@@ -1098,7 +1045,7 @@
             });
 
             if (allUniqueTechIDsAggregated.size === 0) {
-                allResultsDiv.innerHTML = '<p>No TECH IDs found across the selected/available projects for aggregation.</p>';
+                allResultsDiv.innerHTML = `<p>No TECH IDs found in the selected project(s) for aggregation.</p>`;
                 addResultButtonsToAllResults(false);
                 const multiplierModalElem = document.getElementById('multiplier-modal');
                 if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).close();
@@ -1150,10 +1097,6 @@
             });
             techIDsToRemove.forEach(techID => delete allProjectsAggregatedResults[techID]);
 
-            let tableTitleText = `Totals Across ${ (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) ? 'Selected Projects' : 'All Projects'} (Multiplier: ${multiplier.toFixed(2)})`;
-            if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) {
-                tableTitleText += `<br><small style="font-size: 0.7em;">Filtered Projects: ${selectedProjectNamesForFilter.join(', ')}</small>`;
-            }
             let tableHtml = `<h5>${tableTitleText}</h5>`;
 
             if (Object.keys(allProjectsAggregatedResults).length === 0) {
@@ -1179,7 +1122,7 @@
                 tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td><td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
                 tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td></tr>`;
             });
-            tableHtml += `</tbody></table><h4 style="margin-top:20px">Team Total Estimated Salary (Filtered, w/ Multiplier): ${grandTotalSalary.toFixed(2)}</h4>`;
+            tableHtml += `</tbody></table><h4 style="margin-top:20px">Team Total Estimated Salary (w/ Multiplier): ${grandTotalSalary.toFixed(2)}</h4>`;
             
             if (processingErrors.length > 0) {
                 tableHtml += '<div class="card red lighten-5" style="margin-top:15px;"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings</span><ul>';
@@ -1440,7 +1383,6 @@
         document.addEventListener('DOMContentLoaded',()=>{
             document.body.style.display='none';
             applyDarkModePreference();
-            updateFilterVisibilityUI(); // MODIFIED: Set initial filter visibility state
 
             document.querySelectorAll('.modal').forEach(modalElem => {
                 if (modalElem.id !== 'multiplier-modal' && modalElem.id !== 'login-modal' && modalElem.id !== 'confirmation-modal') {
@@ -1456,8 +1398,17 @@
                 M.Modal.init(multiplierModalElem, {
                     dismissible: true,
                     onOpenStart: function() {
-                        populateProjectFilterSelector();
-                        updateFilterVisibilityUI(); // MODIFIED: Update filter visibility on modal open
+                        // MODIFIED: Update new checkbox state on modal open
+                        if (filterByCurrentProjectChk && filterByCurrentProjectLabel) {
+                            if (projectSelector.value && activeProjectData && activeProjectData.name) {
+                                filterByCurrentProjectChk.disabled = false;
+                                filterByCurrentProjectLabel.textContent = `Only include currently loaded project: ${activeProjectData.name}`;
+                            } else {
+                                filterByCurrentProjectChk.disabled = true;
+                                filterByCurrentProjectChk.checked = false; 
+                                filterByCurrentProjectLabel.textContent = 'Only include currently loaded project (No project loaded)';
+                            }
+                        }
                     }
                 });
             }
@@ -1475,37 +1426,8 @@
             confirmationConfirmButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(true);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
             confirmationCancelButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(false);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
             
-            if (filterSelectAllBtn) {
-                filterSelectAllBtn.addEventListener('click', () => {
-                    const options = projectFilterSelectorForTotal.options;
-                    for (let i = 0; i < options.length; i++) {
-                        if (!options[i].disabled) { 
-                            options[i].selected = true;
-                        }
-                    }
-                    M.FormSelect.init(projectFilterSelectorForTotal); 
-                });
-            }
-
-            if (filterDeselectAllBtn) {
-                filterDeselectAllBtn.addEventListener('click', () => {
-                    const options = projectFilterSelectorForTotal.options;
-                    for (let i = 0; i < options.length; i++) {
-                        options[i].selected = false; 
-                    }
-                    M.FormSelect.init(projectFilterSelectorForTotal); 
-                });
-            }
+            // MODIFIED: Removed event listeners for old filter buttons
             
-            // MODIFIED: Event listener for toggle filter visibility button
-            if (toggleFilterVisibilityBtn && projectFilterWrapper) {
-                toggleFilterVisibilityBtn.addEventListener('click', () => {
-                    isProjectFilterVisible = !isProjectFilterVisible;
-                    updateFilterVisibilityUI();
-                });
-            }
-            // ---
-
             M.FormSelect.init(document.querySelectorAll('select')); 
             M.updateTextFields();
             document.body.style.display='block';
