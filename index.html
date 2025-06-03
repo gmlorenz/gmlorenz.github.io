@@ -746,17 +746,24 @@
         </div>
         <div id="all-results" class="result z-depth-1" style="margin-top: 20px; max-height: 600px; overflow-y: auto;">
             </div>
+
         <div id="multiplier-modal" class="modal">
             <div class="modal-content">
-                <h5>Enter Multiplier</h5>
+                <h5>Enter Multiplier & Filter Projects</h5>
                 <div class="input-field">
+                    <select multiple id="project-filter-selector">
+                        <option value="" disabled>Select projects to include (default all)</option>
+                        </select>
+                    <label for="project-filter-selector">Filter Projects (Optional)</label>
+                </div>
+                <div class="input-field" style="margin-top: 25px;">
                     <input id="total-multiplier" type="number" value="1" step="0.01">
                     <label for="total-multiplier">Multiplier</label>
                 </div>
             </div>
             <div class="modal-footer">
                 <a href="#!" class="modal-close btn grey">Cancel</a>
-                <a href="#!" class="btn green" id="apply-multiplier">Apply Multiplier</a>
+                <a href="#!" class="btn green" id="apply-multiplier">Apply & Calculate</a>
             </div>
         </div>
         <div id="add-project-modal" class="modal">
@@ -907,6 +914,7 @@
         const confirmationConfirmButton = document.getElementById('confirmation-confirm-button');
         const confirmationCancelButton = document.getElementById('confirmation-cancel-button');
         const generateTlDashboardButton = document.getElementById('generate-tl-dashboard-button');
+        const projectFilterSelectorForTotal = document.getElementById('project-filter-selector'); // MODIFIED: Added new DOM element
 
         // --- Global State ---
         let activeProjectData = '';
@@ -962,6 +970,34 @@
             }
             M.FormSelect.init(projectSelector);
         }
+
+        // MODIFIED: Added new function to populate project filter
+        function populateProjectFilterSelector() {
+            if (!projectFilterSelectorForTotal) return; 
+            projectFilterSelectorForTotal.innerHTML = '<option value="" disabled>Select projects (default all)</option>'; 
+            let projectFound = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('tl_project_')) {
+                    const name = key.replace('tl_project_', '');
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    projectFilterSelectorForTotal.appendChild(option);
+                    projectFound = true;
+                }
+            }
+            if (!projectFound) {
+                 const noProjectsOption = document.createElement('option');
+                 noProjectsOption.value = "";
+                 noProjectsOption.disabled = true;
+                 noProjectsOption.selected = true;
+                 noProjectsOption.textContent = 'No projects found to filter';
+                 projectFilterSelectorForTotal.appendChild(noProjectsOption);
+            }
+            M.FormSelect.init(projectFilterSelectorForTotal); 
+        }
+
 
         function addResultButtonsToAllResults(isSingleSearchResult = false) {
             const targetDiv = allResultsDiv;
@@ -1199,21 +1235,32 @@
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
 
-        function calculateTotalAcrossAllProjects() { // This function is now only for the "All Projects Total" table, not the dashboard
+        // MODIFIED: calculateTotalAcrossAllProjects function updated for filtering
+        function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
+            // --- Get selected project names for filtering ---
+            const selectedProjectNamesForFilter = projectFilterSelectorForTotal ? M.FormSelect.getInstance(projectFilterSelectorForTotal).getSelectedValues() : [];
+
             allResultsDiv.innerHTML = '';
             allProjectsAggregatedResults = {};
             lastResult = '';
             allCalculatedResults = [];
             let processingErrors = [];
             const allProjectsRawData = [];
-            let hasProjects = false;
+            let hasProjectsToProcess = false; // To check if any projects remain after filtering
 
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('tl_project_')) {
-                    hasProjects = true;
                     const projectName = key.replace('tl_project_', '');
+
+                    // --- FILTERING LOGIC ---
+                    if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0 && !selectedProjectNamesForFilter.includes(projectName)) {
+                        continue; // Skip this project if filters are active and it's not selected
+                    }
+                    // --- END FILTERING LOGIC ---
+
+                    hasProjectsToProcess = true; // A project will be processed
                     const projectDataString = safeGetLocalStorage(key);
                     if (projectDataString !== null) {
                         try {
@@ -1226,9 +1273,16 @@
                 }
             }
 
-            if (!hasProjects) {
-                allResultsDiv.innerHTML = '<p>No projects saved to calculate totals.</p>';
-                addResultButtonsToAllResults(false); M.Modal.getInstance(document.getElementById('multiplier-modal')).close(); return;
+            if (!hasProjectsToProcess) {
+                let message = '<p>No projects saved to calculate totals.</p>';
+                if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) {
+                    message = '<p>No projects matched the selected filter criteria, or the selected projects have no data.</p>';
+                }
+                allResultsDiv.innerHTML = message;
+                addResultButtonsToAllResults(false);
+                const multiplierModalElem = document.getElementById('multiplier-modal');
+                if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).close();
+                return;
             }
 
             const allUniqueTechIDsAggregated = new Set();
@@ -1247,8 +1301,11 @@
             });
 
             if (allUniqueTechIDsAggregated.size === 0) {
-                allResultsDiv.innerHTML = '<p>No TECH IDs found across all projects for aggregation.</p>';
-                addResultButtonsToAllResults(false); M.Modal.getInstance(document.getElementById('multiplier-modal')).close(); return;
+                allResultsDiv.innerHTML = '<p>No TECH IDs found across the selected/available projects for aggregation.</p>';
+                addResultButtonsToAllResults(false);
+                const multiplierModalElem = document.getElementById('multiplier-modal');
+                if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).close();
+                return;
             }
 
             allUniqueTechIDsAggregated.forEach(techID => {
@@ -1257,9 +1314,9 @@
                     missFixPoints: 0, incorrectCounting: 0, categoryPoints: Array(9).fill(0), categoryCounts: Array(9).fill(0),
                     totalPoints: 0, qualityPercentage: 0, bonusPercentage: 0, qualityBonus: 0, estimatedSalary: 0
                 };
-                allProjectsRawData.forEach(project => {
+                allProjectsRawData.forEach(project => { // Iterate only through filtered projects
                     const result = calculateDetailsForTechIDInRaw(project.data, techID, project.size, project.ir);
-                    if (result) {
+                    if (result && result._foundRowsCount > 0) { // Ensure techID was found in this specific project
                         const agg = allProjectsAggregatedResults[techID];
                         agg.baseTotalPoints += result.totalPoints; agg.incorrectPointsValue += result.incorrectPointsValue;
                         agg.additionalFixPoints += result.additionalFixPoints; agg.excessiveFixPoints += result.excessiveFixPoints;
@@ -1269,22 +1326,54 @@
                     }
                 });
                 const aggRes = allProjectsAggregatedResults[techID];
-                const correctAgg = aggRes.baseTotalPoints - aggRes.incorrectPointsValue;
-                aggRes.qualityPercentage = (aggRes.baseTotalPoints > 0) ? (correctAgg / aggRes.baseTotalPoints) * 100 : 0;
-                aggRes.bonusPercentage = getBonusPercentage(aggRes.qualityPercentage);
-                aggRes.qualityBonus = aggRes.baseTotalPoints * (aggRes.bonusPercentage / 100);
-                aggRes.totalPoints = aggRes.baseTotalPoints * multiplier;
-                aggRes.estimatedSalary = (aggRes.baseTotalPoints * multiplier) + aggRes.qualityBonus;
+                if (aggRes.baseTotalPoints > 0) {
+                    const correctAgg = aggRes.baseTotalPoints - aggRes.incorrectPointsValue;
+                    aggRes.qualityPercentage = (correctAgg / aggRes.baseTotalPoints) * 100;
+                    aggRes.bonusPercentage = getBonusPercentage(aggRes.qualityPercentage);
+                    aggRes.qualityBonus = aggRes.baseTotalPoints * (aggRes.bonusPercentage / 100);
+                    aggRes.totalPoints = aggRes.baseTotalPoints * multiplier; 
+                    aggRes.estimatedSalary = aggRes.totalPoints + aggRes.qualityBonus; 
+                } else { 
+                    aggRes.qualityPercentage = 0;
+                    aggRes.bonusPercentage = 0;
+                    aggRes.qualityBonus = 0;
+                    aggRes.totalPoints = 0;
+                    aggRes.estimatedSalary = 0;
+                }
             });
 
-            let grandTotalSalary = 0; Object.values(allProjectsAggregatedResults).forEach(r => grandTotalSalary += r.estimatedSalary);
+            let grandTotalSalary = 0;
+            const techIDsToRemove = []; 
+            Object.entries(allProjectsAggregatedResults).forEach(([techID, r]) => {
+                if (r.baseTotalPoints === 0 && r.additionalFixPoints === 0 && r.excessiveFixPoints === 0 && r.missFixPoints === 0) { 
+                    techIDsToRemove.push(techID);
+                } else {
+                    grandTotalSalary += r.estimatedSalary;
+                }
+            });
+            techIDsToRemove.forEach(techID => delete allProjectsAggregatedResults[techID]);
 
-            let tableHtml = `<h5>Totals Across All Projects (Multiplier: ${multiplier.toFixed(2)})</h5>`;
+
+            let tableTitleText = `Totals Across ${ (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) ? 'Selected Projects' : 'All Projects'} (Multiplier: ${multiplier.toFixed(2)})`;
+            if (selectedProjectNamesForFilter && selectedProjectNamesForFilter.length > 0) {
+                tableTitleText += `<br><small style="font-size: 0.7em;">Filtered Projects: ${selectedProjectNamesForFilter.join(', ')}</small>`;
+            }
+            let tableHtml = `<h5>${tableTitleText}</h5>`;
+
+            if (Object.keys(allProjectsAggregatedResults).length === 0) {
+                 allResultsDiv.innerHTML = `<h5>${tableTitleText}</h5><p>No data to display for the selected criteria.</p>`;
+                 addResultButtonsToAllResults(false);
+                 const multiplierModalElem = document.getElementById('multiplier-modal');
+                 if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).close();
+                 return;
+            }
+
             tableHtml += '<table class="striped"><thead><tr>';
             const aggHeaders = ['TECH ID', ...Array.from({ length: 9 }, (_, i) => `CAT ${i+1} Pts`), ...Array.from({ length: 9 }, (_, i) => `CAT ${i+1} Ct`), 'Add.FP', 'Exc.FP', 'Miss.FP', 'Inc.Ct', 'Inc.PtsVal', 'BasePts', 'Qual%', 'Bonus%', 'BonusVal', 'Salary(w/M)'];
             aggHeaders.forEach(h => tableHtml += `<th>${h}</th>`); tableHtml += '</tr></thead><tbody>';
+
             Object.entries(allProjectsAggregatedResults).sort((a, b) => a[0].localeCompare(b[0])).forEach(([techID, result]) => {
-                const qualityClass = result.qualityPercentage === 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red');
+                const qualityClass = result.qualityPercentage >= 100 ? 'quality-green' : (result.qualityPercentage >= 77.50 ? 'quality-orange' : 'quality-red');
                 const techIdHighlightClass = techID.length < 6 ? 'tech-id-red-highlight' : 'tech-id-highlight';
                 let bonusClass = result.bonusPercentage >= 100 ? 'quality-green' : (result.bonusPercentage > 0 ? 'quality-orange' : 'quality-red');
                 tableHtml += `<tr><td class="${techIdHighlightClass}">${techID}</td>`;
@@ -1294,7 +1383,7 @@
                 tableHtml += `<td class="${qualityClass}">${result.qualityPercentage.toFixed(2)}%</td><td class="${bonusClass}">${result.bonusPercentage.toFixed(2)}%</td>`;
                 tableHtml += `<td class="${bonusClass}">${result.qualityBonus.toFixed(2)}</td><td class="salary-highlight">${result.estimatedSalary.toFixed(2)}</td></tr>`;
             });
-            tableHtml += `</tbody></table><h4 style="margin-top:20px">Team Total Estimated Salary (w/ Multiplier): ${grandTotalSalary.toFixed(2)}</h4>`;
+            tableHtml += `</tbody></table><h4 style="margin-top:20px">Team Total Estimated Salary (Filtered, w/ Multiplier): ${grandTotalSalary.toFixed(2)}</h4>`;
             
             if (processingErrors.length > 0) {
                 tableHtml += '<div class="card red lighten-5" style="margin-top:15px;"><div class="card-content red-text text-darken-4"><span class="card-title">Processing Warnings</span><ul>';
@@ -1302,8 +1391,10 @@
             }
             allResultsDiv.innerHTML = tableHtml;
             addResultButtonsToAllResults(false);
-            M.Modal.getInstance(document.getElementById('multiplier-modal')).close();
+            const multiplierModalElem = document.getElementById('multiplier-modal');
+            if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).close();
         }
+
 
         // --- NEW TL DASHBOARD FUNCTION ---
         async function generateTlDashboard() {
@@ -1315,10 +1406,9 @@
             allResultsDiv.innerHTML = ''; 
             lastResult = ''; allCalculatedResults = []; allProjectsAggregatedResults = {}; 
 
-            const allProjectsFromStorage = []; // Renamed for clarity
+            const allProjectsFromStorage = []; 
             let dashboardProcessingErrors = [];
 
-            // 1. Gather all project data from localStorage
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('tl_project_')) {
@@ -1328,7 +1418,7 @@
                         try {
                             const project = JSON.parse(projectDataString);
                             if (project && typeof project === 'object' && project.data && project.size) {
-                                allProjectsFromStorage.push({ name: projectName, ...project }); // Store raw project data
+                                allProjectsFromStorage.push({ name: projectName, ...project }); 
                             } else {
                                 dashboardProcessingErrors.push(`Project '${projectName}': Invalid data structure.`);
                             }
@@ -1352,7 +1442,6 @@
                 return;
             }
 
-            // --- Data for Summaries ---
             let grandTotalBasePoints = 0;
             let grandTotalCorrectPoints = 0;
             let grandTotalBaseSalary = 0;
@@ -1360,10 +1449,9 @@
             const shortTechIDsFound = new Set();
             const techIDsWithIncorrectEmptyCatIssue = new Set();
             
-            const projectSummariesForDashboard = []; // This will hold objects with the .summary property
+            const projectSummariesForDashboard = []; 
 
-            // Process each project for summaries and data quality checks
-            for (const projData of allProjectsFromStorage) { // Iterate the raw project data
+            for (const projData of allProjectsFromStorage) { 
                 let currentProjectTotalBasePoints = 0;
                 let currentProjectTotalCorrectPoints = 0;
                 let currentProjectTotalBaseSalary = 0;
@@ -1419,7 +1507,7 @@
                     }
                 }
                 const projectAvgQuality = currentProjectTotalBasePoints > 0 ? (currentProjectTotalCorrectPoints / currentProjectTotalBasePoints) * 100 : 0;
-                projectSummariesForDashboard.push({ // Store processed summary here
+                projectSummariesForDashboard.push({ 
                     name: projData.name,
                     isIr: projData.ir,
                     techCount: techIDsInCurrentProject.size,
@@ -1433,7 +1521,6 @@
                 grandTotalBaseSalary += currentProjectTotalBaseSalary;
             }
 
-            // --- I. Overall Performance Summary (HTML Generation) ---
             dashboardHtml += `<div class="dashboard-section"><h5>Overall Performance Summary</h5>`;
             dashboardHtml += `<p><strong>Total Projects:</strong> ${totalProjects}</p>`;
             dashboardHtml += `<p><strong>Total Unique Tech IDs:</strong> ${uniqueTechIDsAcrossAllProjects.size}</p>`;
@@ -1442,25 +1529,23 @@
             dashboardHtml += `<p><strong>Overall Weighted Quality % (All Projects):</strong> ${overallWeightedQuality.toFixed(2)}%</p>`;
             dashboardHtml += `<p><strong>Grand Total Estimated Base Salary (All Projects):</strong> ${grandTotalBaseSalary.toFixed(2)}</p></div>`;
 
-            // --- II. Project-Level Summary (HTML Generation) ---
             dashboardHtml += `<div class="dashboard-section"><h5>Project-Level Summaries</h5>`;
             if (projectSummariesForDashboard.length > 0) {
                 dashboardHtml += `<table class="striped responsive-table"><thead><tr><th>Project Name</th><th>IR</th><th>Techs</th><th>Base Points</th><th>Avg Quality %</th><th>Est. Base Salary</th></tr></thead><tbody>`;
-                projectSummariesForDashboard.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => { // Iterate projectSummariesForDashboard
+                projectSummariesForDashboard.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => { 
                     dashboardHtml += `<tr><td>${p.name}</td><td>${p.isIr ? 'Yes' : 'No'}</td><td>${p.techCount}</td><td>${p.basePoints.toFixed(2)}</td><td>${p.avgQuality.toFixed(2)}%</td><td>${p.baseSalary.toFixed(2)}</td></tr>`;
                 });
                 dashboardHtml += `</tbody></table>`;
             } else { dashboardHtml += `<p>No project data to summarize.</p>`; }
             dashboardHtml += `</div>`;
 
-            // --- III. IR Projects Summary (HTML Generation) ---
-            const irProjectSummariesForDashboard = projectSummariesForDashboard.filter(p => p.isIr); // Filter the processed summaries
+            const irProjectSummariesForDashboard = projectSummariesForDashboard.filter(p => p.isIr); 
             let irTotalBasePointsDisplay = 0; 
             let irTotalBaseSalaryDisplay = 0;
             dashboardHtml += `<div class="dashboard-section"><h5>IR Projects Summary</h5>`;
             if (irProjectSummariesForDashboard.length > 0) {
                 dashboardHtml += `<table class="striped responsive-table"><thead><tr><th>Project Name</th><th>Techs</th><th>Base Points</th><th>Avg Quality %</th><th>Est. Base Salary</th></tr></thead><tbody>`;
-                irProjectSummariesForDashboard.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => { // Iterate irProjectSummariesForDashboard
+                irProjectSummariesForDashboard.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => { 
                     dashboardHtml += `<tr><td>${p.name}</td><td>${p.techCount}</td><td>${p.basePoints.toFixed(2)}</td><td>${p.avgQuality.toFixed(2)}%</td><td>${p.baseSalary.toFixed(2)}</td></tr>`;
                     irTotalBasePointsDisplay += p.basePoints;
                     irTotalBaseSalaryDisplay += p.baseSalary;
@@ -1471,7 +1556,6 @@
             } else { dashboardHtml += `<p>No IR projects found.</p>`; }
             dashboardHtml += `</div>`;
             
-            // --- IV. Data Quality & Attention Areas (HTML Generation) ---
             dashboardHtml += `<div class="dashboard-section"><h5>Data Quality & Attention Areas</h5>`;
             dashboardHtml += `<h6>Error Inputs Tech ID:</h6>`;
             if (shortTechIDsFound.size > 0) {
@@ -1491,7 +1575,6 @@
             }
             dashboardHtml += `</div>`;
 
-            // --- V. Processing Errors ---
             if (dashboardProcessingErrors.length > 0) {
                 dashboardHtml += `<div class="dashboard-section"><h5>Dashboard Generation Warnings/Errors</h5><ul class="dashboard-list">`;
                 dashboardProcessingErrors.forEach(error => dashboardHtml += `<li>${error}</li>`);
@@ -1519,23 +1602,25 @@
             const tlElements = [addProjectButton, document.getElementById('edit-project'), document.getElementById('delete-project'),
                                 document.getElementById('copy-all-projects-json'), 
                                 generateTlDashboardButton 
-                                // Removed clearDataButton and autoFetchButton from here
                             ];
             const commonElements = [document.getElementById('search-button'), document.getElementById('calculate-all-button'),
                                     document.getElementById('calculate-all-projects-button'), document.getElementById('export-button'), 
                                     viewProjectDataButton,
-                                    clearDataButton,      // Added clearDataButton here
-                                    autoFetchButton       // Added autoFetchButton here
+                                    clearDataButton,      
+                                    autoFetchButton       
                                    ];
             
             tlElements.forEach(el => { if (el) el.style.display = isLoggedInAsTL ? 'inline-block' : 'none'; });
-            commonElements.forEach(el => { if(el) el.style.display = 'inline-block'; }); // These will always be shown if the element exists
+            commonElements.forEach(el => { if(el) el.style.display = 'inline-block'; }); 
         }
 
         // --- Event Listeners ---
         document.getElementById('search-button').addEventListener('click', searchTechID);
         document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
-        document.getElementById('calculate-all-projects-button').addEventListener('click',()=>M.Modal.getInstance(document.getElementById('multiplier-modal')).open());
+        document.getElementById('calculate-all-projects-button').addEventListener('click',()=> {
+            const multiplierModalElem = document.getElementById('multiplier-modal');
+            if (multiplierModalElem) M.Modal.getInstance(multiplierModalElem).open();
+        });
         applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
         if(generateTlDashboardButton) generateTlDashboardButton.addEventListener('click', generateTlDashboard);
 
@@ -1556,7 +1641,62 @@
         if(viewProjectDataButton)viewProjectDataButton.addEventListener('click',viewProjectData);
         function applyDarkModePreference(){const p=localStorage.getItem('darkMode'),e=p==='enabled';document.body.classList.toggle('dark-mode',e);darkModeToggle.querySelector('i').textContent=e?'brightness_4':'brightness_high';if(p!=='enabled'&&p!=='disabled')localStorage.setItem('darkMode','disabled')}
         darkModeToggle.addEventListener('click',()=>{localStorage.setItem('darkMode',document.body.classList.contains('dark-mode')?'disabled':'enabled');applyDarkModePreference()});
-        document.addEventListener('DOMContentLoaded',()=>{document.body.style.display='none';applyDarkModePreference();M.Modal.init(document.querySelectorAll('.modal'),{dismissible:true,onOpenEnd:el=>{if(el.id==='add-project-modal')M.textareaAutoResize(rawDataInput)}});const lm=M.Modal.getInstance(loginModal);if(lm)lm.options.dismissible=false;const cM=M.Modal.getInstance(confirmationModal);if(cM)cM.options.dismissible=false;confirmationConfirmButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(true);confirmPromiseResolve=null;M.Modal.getInstance(confirmationModal).close()});confirmationCancelButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(false);confirmPromiseResolve=null;M.Modal.getInstance(confirmationModal).close()});M.FormSelect.init(document.querySelectorAll('select'));M.updateTextFields();document.body.style.display='block';if(lm)lm.open();else{console.error("Login modal error.");mainAppContent.style.display='block';loadProjectList();updateButtonVisibility()}});
+        
+        // MODIFIED: DOMContentLoaded for modal initializations
+        document.addEventListener('DOMContentLoaded',()=>{
+            document.body.style.display='none';
+            applyDarkModePreference();
+
+            // General modal initialization (excluding those with special callbacks/options)
+            document.querySelectorAll('.modal').forEach(modalElem => {
+                if (modalElem.id !== 'multiplier-modal' && modalElem.id !== 'login-modal' && modalElem.id !== 'confirmation-modal') {
+                     M.Modal.init(modalElem, {
+                        dismissible: true,
+                        onOpenEnd: el => { if (el.id === 'add-project-modal') M.textareaAutoResize(rawDataInput); }
+                    });
+                }
+            });
+
+            // Specific initialization for multiplier-modal
+            const multiplierModalElem = document.getElementById('multiplier-modal');
+            if (multiplierModalElem) {
+                M.Modal.init(multiplierModalElem, {
+                    dismissible: true,
+                    onOpenStart: function() {
+                        populateProjectFilterSelector();
+                    }
+                });
+            }
+
+            // Initialize login-modal (cannot be dismissed)
+            const loginModalInstance = document.getElementById('login-modal');
+            if (loginModalInstance) {
+                M.Modal.init(loginModalInstance, { dismissible: false });
+            }
+            
+            // Initialize confirmation-modal (cannot be dismissed)
+            const confirmationModalInstance = document.getElementById('confirmation-modal');
+            if (confirmationModalInstance) {
+                 M.Modal.init(confirmationModalInstance, { dismissible: false });
+            }
+
+            confirmationConfirmButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(true);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
+            confirmationCancelButton.addEventListener('click',()=>{if(confirmPromiseResolve)confirmPromiseResolve(false);confirmPromiseResolve=null; M.Modal.getInstance(confirmationModal).close()});
+            
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+            document.body.style.display='block';
+            
+            const lmInstance = M.Modal.getInstance(loginModal);
+            if(lmInstance) lmInstance.open();
+            else{
+                console.error("Login modal instance could not be retrieved for opening.");
+                // Fallback if login modal somehow fails to init or open
+                mainAppContent.style.display='block';
+                loadProjectList();
+                updateButtonVisibility();
+            }
+        });
     </script>
 </body>
 </html>
