@@ -385,36 +385,32 @@
     .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.left,
     .preloader-wrapper.active .spinner-layer.spinner-blue-only .circle-clipper.right { border-color: var(--primary-accent) !important; }
 
-    /* === CSS FIX FOR MULTI-SELECT IN MODAL === */
     #multiplier-modal .input-field select[multiple] {
         display: block;
         width: 100%;
         height: auto;
         max-height: 150px; /* Adjust this value as needed (e.g., 200px) */
         overflow-y: auto;
-        background-color: #fff; /* Default light mode background */
-        border: 1px solid #9e9e9e; /* Default Materialize input border */
+        background-color: #fff; 
+        border: 1px solid #9e9e9e; 
         border-radius: 3px;
         padding: 5px;
     }
 
     body.dark-mode #multiplier-modal .input-field select[multiple] {
-        background-color: var(--medium-bg); /* Dark mode background */
-        border-color: var(--primary-accent-dark); /* Dark mode border */
-        color: var(--dark-text); /* Dark mode text color */
+        background-color: var(--medium-bg); 
+        border-color: var(--primary-accent-dark); 
+        color: var(--dark-text); 
     }
 
     body.dark-mode #multiplier-modal .input-field select[multiple] option {
-        background-color: var(--medium-bg); /* Dark mode option background */
-        color: var(--dark-text); /* Dark mode option text */
+        background-color: var(--medium-bg); 
+        color: var(--dark-text); 
     }
 
-    /* Ensure modal content itself can scroll if other elements also make it tall */
     #multiplier-modal .modal-content {
-       overflow-y: auto; /* This is usually a Materialize default but good to ensure */
+       overflow-y: auto; 
     }
-    /* === END OF CSS FIX === */
-
     </style>
 </head>
 <body>
@@ -682,6 +678,7 @@
         let editingProjectName = null;
         let isLoggedInAsTL = false;
         let confirmPromiseResolve = null;
+        let lastSelectedProjectFilters = []; // MODIFIED: To store last selected filters
 
         // --- Utility Functions ---
         function showToast(html, classes = '') { M.toast({ html, classes }); }
@@ -729,9 +726,12 @@
             M.FormSelect.init(projectSelector);
         }
 
+        // MODIFIED: To reapply last selected filters
         function populateProjectFilterSelector() {
-            if (!projectFilterSelectorForTotal) return; 
-            projectFilterSelectorForTotal.innerHTML = '<option value="" disabled>Select projects (default all)</option>'; 
+            if (!projectFilterSelectorForTotal) return;
+            const currentScrollTop = projectFilterSelectorForTotal.scrollTop; 
+
+            projectFilterSelectorForTotal.innerHTML = '<option value="" disabled>Select projects (default all)</option>';
             let projectFound = false;
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -740,6 +740,9 @@
                     const option = document.createElement('option');
                     option.value = name;
                     option.textContent = name;
+                    if (lastSelectedProjectFilters.includes(name)) { // Reapply stored selection
+                        option.selected = true;
+                    }
                     projectFilterSelectorForTotal.appendChild(option);
                     projectFound = true;
                 }
@@ -752,7 +755,8 @@
                  noProjectsOption.textContent = 'No projects found to filter';
                  projectFilterSelectorForTotal.appendChild(noProjectsOption);
             }
-            M.FormSelect.init(projectFilterSelectorForTotal); 
+            M.FormSelect.init(projectFilterSelectorForTotal);
+            projectFilterSelectorForTotal.scrollTop = currentScrollTop;
         }
 
 
@@ -992,9 +996,12 @@
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
 
+        // MODIFIED: To store the selected filters
         function calculateTotalAcrossAllProjects() {
             const multiplier = parseFloat(multiplierInput.value) || 1;
             const selectedProjectNamesForFilter = projectFilterSelectorForTotal ? M.FormSelect.getInstance(projectFilterSelectorForTotal).getSelectedValues() : [];
+
+            lastSelectedProjectFilters = [...selectedProjectNamesForFilter]; // Store current filters
 
             allResultsDiv.innerHTML = '';
             allProjectsAggregatedResults = {};
