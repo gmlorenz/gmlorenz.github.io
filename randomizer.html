@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randomize Seconds & Calculate Duration</title>
+    <script src="https://cdn.tailwindcss.com/3.4.3"></script>
+    <style>
+        /* Custom styles for centering and basic layout */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: "Inter", sans-serif; /* Using Inter font */
+            padding: 1rem; /* Add some padding for smaller screens */
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%; /* Make container responsive */
+            max-width: 700px; /* Limit max width */
+        }
+
+        /* Styles for the data table appearance */
+        .time-table {
+            width: 100%;
+            border-collapse: collapse; /* Remove space between borders */
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb; /* Light gray border */
+            border-radius: 0.25rem; /* Rounded corners */
+            overflow: hidden; /* Hide overflow for rounded corners */
+        }
+
+        .time-table th, .time-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb; /* Border between rows */
+        }
+
+         .time-table th {
+            background-color: #f9fafb; /* Light background for headers */
+            font-weight: bold;
+        }
+
+        .time-table td {
+            font-family: monospace; /* Monospace font for time display */
+        }
+
+        .time-table tbody tr:last-child td {
+            border-bottom: none; /* No border for the last row */
+        }
+
+        .button {
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            border-radius: 0.25rem; /* Rounded corners for buttons */
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue */
+        }
+        .button-secondary {
+            background-color: #d1d5db; /* Gray */
+            color: #1f2937; /* Dark gray text */
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #9ca3af; /* Darker gray */
+        }
+         /* Message box for copy confirmation */
+        .message-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            background-color: #d1fae5; /* Light green */
+            color: #065f46; /* Dark green text */
+            border: 1px solid #a7f3d0; /* Green border */
+            visibility: hidden; /* Initially hidden */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .message-box.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+         .message-box.error {
+            background-color: #fee2e2; /* Light red for error */
+            color: #991b1b; /* Dark red text */
+            border-color: #fca5a5; /* Red border */
+        }
+
+         /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .button {
+                width: 100%;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            .time-table th, .time-table td {
+                padding: 0.5rem; /* Reduce padding on small screens */
+            }
+        }
+
+        /* Basic Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally (flex) */
+            align-items: center; /* Center vertically (flex) */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative; /* For absolute positioning of close button */
+        }
+
+        .close-button {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        #timePointsEditor {
+            max-height: 60vh; /* Limit height and allow scroll */
+            overflow-y: auto;
+            margin-bottom: 1rem; /* Space before buttons */
+        }
+        /* Style for invalid inputs in the modal */
+        #timePointsEditor .input-error {
+            border-color: red !important; /* Make sure it overrides tailwind */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Randomizer</h2>
+        <p></p>
+
+        <table class="time-table">
+            <thead>
+                <tr>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody id="timeTableBody">
+            </tbody>
+        </table>
+
+        <button id="randomizeButton" class="button button-primary">Randomize Seconds & Calculate</button>
+        <button id="copyButton" class="button button-secondary">Copy Table Data</button>
+        <button id="settingsButton" class="button button-secondary">Settings</button>
+
+        <div id="messageBox" class="message-box"></div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span id="closeSettingsModalButton" class="close-button">&times;</span>
+            <h3 class="text-xl font-semibold mb-4">Edit Time Points (HH:MM)</h3>
+            <div id="timePointsEditor" class="mb-4">
+                </div>
+            <div class="text-right">
+                <button id="saveSettingsButton" class="button button-primary mr-2">Save & Apply</button>
+                <button id="cancelSettingsButton" class="button button-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the elements
+        const timeTableBody = document.getElementById('timeTableBody');
+        const randomizeButton = document.getElementById('randomizeButton');
+        const copyButton = document.getElementById('copyButton');
+        const messageBox = document.getElementById('messageBox');
+        // New elements for settings
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsModal = document.getElementById('settingsModal');
+        const timePointsEditor = document.getElementById('timePointsEditor');
+        const saveSettingsButton = document.getElementById('saveSettingsButton');
+        const cancelSettingsButton = document.getElementById('cancelSettingsButton');
+        const closeSettingsModalButton = document.getElementById('closeSettingsModalButton');
+
+        // Key for localStorage
+        const LOCAL_STORAGE_KEY = 'timeRandomizerSettings_userDefinedChronologicalTimePoints_v1'; // Added a version for future-proofing
+
+        // Store the provided time data
+        const originalData = [
+            { start: "04:00:33", end: "06:00:45", duration: "2:00:12" },
+            { start: "03:45:51", end: "04:00:33", duration: "0:14:42" },
+            { start: "02:00:13", end: "03:45:51", duration: "1:45:38" },
+            { start: "01:00:09", end: "02:00:13", duration: "1:00:04" },
+            { start: "23:15:01", end: "01:00:09", duration: "1:45:08" },
+            { start: "23:00:02", end: "23:15:01", duration: "0:14:59" },
+            { start: "21:00:15", end: "23:00:02", duration: "1:59:47" }
+        ];
+
+        let currentDisplayedData = []; // Array to hold the currently displayed data
+        let userDefinedChronologicalTimePoints = []; // Stores { originalReferenceTime: string, currentHour: number, currentMinute: number, uniqueId: string }
+
+        function formatTimeComponent(component) {
+            return component < 10 ? '0' + component : String(component);
+        }
+
+        function generateRandomSecond() {
+            return Math.floor(Math.random() * 60); // 0-59
+        }
+
+        function timeToSeconds(timeString) {
+            const parts = timeString.split(':');
+            if (parts.length === 3) {
+                const hours = parseInt(parts[0], 10) || 0;
+                const minutes = parseInt(parts[1], 10) || 0;
+                const seconds = parseInt(parts[2], 10) || 0;
+                return (hours * 3600) + (minutes * 60) + seconds;
+            }
+            return 0;
+        }
+
+        function secondsToTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            if (hours > 0) {
+                return `${hours}:${formatTimeComponent(minutes)}:${formatTimeComponent(seconds)}`;
+            } else {
+                return `0:${formatTimeComponent(minutes)}:${formatTimeComponent(seconds)}`;
+            }
+        }
+
+        function calculateDuration(startTime, endTime) {
+            const startSeconds = timeToSeconds(startTime);
+            const endSeconds = timeToSeconds(endTime);
+
+            if (endSeconds >= startSeconds) {
+                return secondsToTime(endSeconds - startSeconds);
+            } else {
+                const secondsInDay = 24 * 3600;
+                return secondsToTime(secondsInDay - startSeconds + endSeconds);
+            }
+        }
+
+        // MODIFIED FUNCTION: Initializes from localStorage or originalData
+        function initializeBaseTimePointsIfNeeded() {
+            const N_segments = originalData.length;
+            const expectedPointsCount = N_segments === 0 ? 0 : N_segments + 1;
+
+            // Try to load from localStorage
+            const storedSettingsString = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedSettingsString) {
+                try {
+                    const loadedPoints = JSON.parse(storedSettingsString);
+                    if (Array.isArray(loadedPoints) && loadedPoints.length === expectedPointsCount) {
+                        const isValidStructure = loadedPoints.every(p =>
+                            typeof p.currentHour === 'number' &&
+                            typeof p.currentMinute === 'number' &&
+                            typeof p.originalReferenceTime === 'string' &&
+                            typeof p.uniqueId === 'string'
+                        );
+
+                        if (isValidStructure) {
+                            userDefinedChronologicalTimePoints = loadedPoints;
+                            console.log("Loaded time points from localStorage.");
+                            return; // Successfully loaded and validated
+                        } else {
+                            console.warn("Stored settings have invalid structure. Re-initializing from originalData.");
+                            localStorage.removeItem(LOCAL_STORAGE_KEY);
+                        }
+                    } else {
+                        console.warn("Stored settings count mismatch (likely due to originalData change). Re-initializing from originalData.");
+                        localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    }
+                } catch (error) {
+                    console.error("Error parsing stored settings. Re-initializing from originalData.", error);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                }
+            }
+
+            // If localStorage loading failed or no data, initialize from originalData
+            console.log("Initializing time points from originalData.");
+            userDefinedChronologicalTimePoints = [];
+
+            if (N_segments === 0) return;
+
+            const tempChronologicalTimeStrings = [];
+            tempChronologicalTimeStrings.push(originalData[N_segments - 1].start);
+            for (let i = N_segments - 1; i >= 0; i--) {
+                tempChronologicalTimeStrings.push(originalData[i].end);
+            }
+
+            userDefinedChronologicalTimePoints = tempChronologicalTimeStrings.map((timeStr, index) => {
+                const parts = timeStr.split(':');
+                const hour = parseInt(parts[0], 10) || 0;
+                const minute = parseInt(parts[1], 10) || 0;
+                return {
+                    originalReferenceTime: timeStr, // This is the 'original' based on current originalData
+                    currentHour: hour,
+                    currentMinute: minute,
+                    uniqueId: `tp-${index}`
+                };
+            });
+        }
+
+
+        function randomizeAllSecondsAndCalculateDuration() {
+            initializeBaseTimePointsIfNeeded();
+
+            const N_segments = originalData.length;
+            if (N_segments === 0) {
+                currentDisplayedData = [];
+                updateDisplay();
+                hideMessageBox();
+                return;
+            }
+            
+            if (userDefinedChronologicalTimePoints.length !== N_segments + 1) {
+                console.error("Mismatch in time points count after initialization. This should not happen.");
+                showMessageBox("Error: Critical mismatch in time points. Please refresh.", true);
+                // Attempt re-initialization by clearing stored and forcing new.
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                userDefinedChronologicalTimePoints = [];
+                initializeBaseTimePointsIfNeeded(); // Try one more time
+                if (userDefinedChronologicalTimePoints.length !== N_segments + 1) {
+                     showMessageBox("Error: Could not initialize time points correctly. Please check originalData.", true);
+                     return;
+                }
+            }
+            
+            const randomizedChronologicalPoints = userDefinedChronologicalTimePoints.map(tp => {
+                const randomSecond = generateRandomSecond();
+                return `${formatTimeComponent(tp.currentHour)}:${formatTimeComponent(tp.currentMinute)}:${formatTimeComponent(randomSecond)}`;
+            });
+
+            currentDisplayedData = originalData.map((originalEntry, k_original) => {
+                const startIndexInRandomizedPoints = (N_segments - 1) - k_original;
+                const endIndexInRandomizedPoints = N_segments - k_original;
+
+                const newStartTime = randomizedChronologicalPoints[startIndexInRandomizedPoints];
+                const newEndTime = randomizedChronologicalPoints[endIndexInRandomizedPoints];
+                const newDuration = calculateDuration(newStartTime, newEndTime);
+
+                return {
+                    start: newStartTime,
+                    end: newEndTime,
+                    duration: newDuration,
+                };
+            });
+
+            updateDisplay();
+            hideMessageBox();
+        }
+
+        function updateDisplay() {
+            timeTableBody.innerHTML = '';
+            currentDisplayedData.forEach(entry => {
+                const row = document.createElement('tr');
+                const startCell = document.createElement('td');
+                startCell.textContent = entry.start;
+                row.appendChild(startCell);
+                const endCell = document.createElement('td');
+                endCell.textContent = entry.end;
+                row.appendChild(endCell);
+                const durationCell = document.createElement('td');
+                durationCell.textContent = entry.duration;
+                row.appendChild(durationCell);
+                timeTableBody.appendChild(row);
+            });
+        }
+
+        function copyTableDataToClipboard() {
+            if (currentDisplayedData.length === 0) {
+                showMessageBox('No data to copy.', true);
+                return;
+            }
+            let textToCopy = "Start Time\tEnd Time\tDuration\n";
+            currentDisplayedData.forEach(entry => {
+                textToCopy += `${entry.start}\t${entry.end}\t${entry.duration}\n`;
+            });
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => showMessageBox('Table data copied to clipboard!'))
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        showMessageBox('Failed to copy table data.', true);
+                    });
+            } else {
+                fallbackCopyTextToClipboard(textToCopy);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showMessageBox('Table data copied to clipboard (fallback)!');
+                } else {
+                    showMessageBox('Failed to copy table data (fallback).', true);
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                showMessageBox('Failed to copy table data (fallback).', true);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showMessageBox(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box visible';
+            if (isError) {
+                messageBox.classList.add('error');
+            } else {
+                messageBox.classList.remove('error');
+            }
+            setTimeout(hideMessageBox, 3000);
+        }
+
+        function hideMessageBox() {
+            messageBox.className = 'message-box';
+            messageBox.classList.remove('error');
+        }
+
+        function openSettingsModal() {
+            initializeBaseTimePointsIfNeeded(); // Ensure points are loaded or initialized
+            timePointsEditor.innerHTML = '';
+
+            if (userDefinedChronologicalTimePoints.length === 0 && originalData.length > 0) {
+                 showMessageBox('Could not initialize time points for settings. Please refresh.', true);
+                 return;
+            }
+
+
+            userDefinedChronologicalTimePoints.forEach((tp, index) => {
+                const pointDiv = document.createElement('div');
+                pointDiv.className = 'mb-4 p-3 border border-gray-200 rounded-md shadow-sm';
+
+                const label = document.createElement('label');
+                // Display the HH:MM part of the originalReferenceTime
+                const originalHHMM = tp.originalReferenceTime.substring(0, tp.originalReferenceTime.lastIndexOf(':'));
+                label.textContent = `Point ${index + 1} (Original: ${originalHHMM} HH:MM):`;
+                label.className = 'block text-sm font-medium text-gray-700 mb-1';
+                pointDiv.appendChild(label);
+
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'flex items-center space-x-2';
+
+                const hourInput = document.createElement('input');
+                hourInput.type = 'number';
+                hourInput.min = '0';
+                hourInput.max = '23';
+                hourInput.value = formatTimeComponent(tp.currentHour);
+                hourInput.dataset.index = index;
+                hourInput.dataset.type = 'hour';
+                hourInput.className = 'hour-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center';
+
+                const minuteInput = document.createElement('input');
+                minuteInput.type = 'number';
+                minuteInput.min = '0';
+                minuteInput.max = '59';
+                minuteInput.value = formatTimeComponent(tp.currentMinute);
+                minuteInput.dataset.index = index;
+                minuteInput.dataset.type = 'minute';
+                minuteInput.className = 'minute-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center';
+                
+                inputGroup.appendChild(document.createTextNode('H: '));
+                inputGroup.appendChild(hourInput);
+                inputGroup.appendChild(document.createTextNode(' M: '));
+                inputGroup.appendChild(minuteInput);
+                pointDiv.appendChild(inputGroup);
+
+                timePointsEditor.appendChild(pointDiv);
+            });
+            settingsModal.style.display = 'flex';
+        }
+
+        // MODIFIED FUNCTION: Saves settings to localStorage
+        function saveSettings() {
+            let allValid = true;
+            // Create a temporary copy to validate before applying to the main array
+            const tempNewTimePointsSettings = JSON.parse(JSON.stringify(userDefinedChronologicalTimePoints));
+
+            document.querySelectorAll('#timePointsEditor input').forEach(input => input.classList.remove('input-error'));
+
+            tempNewTimePointsSettings.forEach((tp_settings, index) => {
+                const hourInput = document.querySelector(`#timePointsEditor .hour-input[data-index="${index}"]`);
+                const minuteInput = document.querySelector(`#timePointsEditor .minute-input[data-index="${index}"]`);
+
+                const newHour = parseInt(hourInput.value, 10);
+                const newMinute = parseInt(minuteInput.value, 10);
+
+                if (isNaN(newHour) || newHour < 0 || newHour > 23) {
+                    allValid = false;
+                    hourInput.classList.add('input-error');
+                } else {
+                    tp_settings.currentHour = newHour;
+                }
+
+                if (isNaN(newMinute) || newMinute < 0 || newMinute > 59) {
+                    allValid = false;
+                    minuteInput.classList.add('input-error');
+                } else {
+                    tp_settings.currentMinute = newMinute;
+                }
+            });
+
+            if (allValid) {
+                userDefinedChronologicalTimePoints = tempNewTimePointsSettings; // Apply validated changes
+
+                // Save to localStorage
+                try {
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userDefinedChronologicalTimePoints));
+                    console.log("Settings saved to localStorage.");
+                } catch (error) {
+                    console.error("Error saving settings to localStorage:", error);
+                    showMessageBox('Failed to save settings locally. Changes are not persisted.', true);
+                    // Continue with in-memory changes for this session
+                }
+
+                settingsModal.style.display = 'none';
+                randomizeAllSecondsAndCalculateDuration(); // Re-run with new (and now saved) settings
+                showMessageBox('Settings saved and times updated!');
+            } else {
+                showMessageBox('Invalid input. Hours must be 0-23 and Minutes 0-59.', true);
+            }
+        }
+
+        function cancelSettings() {
+            document.querySelectorAll('#timePointsEditor input').forEach(input => input.classList.remove('input-error'));
+            settingsModal.style.display = 'none';
+        }
+
+        // Add event listeners
+        randomizeButton.addEventListener('click', randomizeAllSecondsAndCalculateDuration);
+        copyButton.addEventListener('click', copyTableDataToClipboard);
+        settingsButton.addEventListener('click', openSettingsModal);
+        saveSettingsButton.addEventListener('click', saveSettings);
+        cancelSettingsButton.addEventListener('click', cancelSettings);
+        closeSettingsModalButton.addEventListener('click', cancelSettings);
+
+        // Initial display
+        randomizeAllSecondsAndCalculateDuration();
+    </script>
+
+</body>
+</html>
