@@ -8,1079 +8,2167 @@ const firebaseConfig = {
   measurementId: "G-BY9CV5ZQ11"
 };
 
-let app, db, auth, signInBtn, signOutBtn, userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg, appContentDiv, loadingAuthMessageDiv, loadingOverlay;
+let app, db, auth;
+let signInBtn, signOutBtn, userInfoDisplayDiv, userNameP, userEmailP, userPhotoImg;
+let appContentDiv, loadingAuthMessageDiv, loadingOverlay;
 
-const TL_DASHBOARD_PIN = "1234",
-  ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails";
-
+const TL_DASHBOARD_PIN = "1234";
+const ALLOWED_EMAILS_DOC_REF_PATH = "settings/allowedEmails";
 let allowedEmailsFromFirestore = [];
 
 const TECH_IDS = ["4232JD", "7248AA", "4426KV", "4472JS", "7236LE", "4475JT", "7039NO", "7231NR", "7240HH", "7247JA", "7249SS", "7244AA", "7314VP"];
 TECH_IDS.sort();
 
 try {
-  if (typeof firebase === "undefined" || void 0 === firebase.initializeApp) throw Error("Firebase SDK not loaded. Ensure Firebase scripts are correctly included.");
-  if (app = firebase.initializeApp(firebaseConfig), void 0 === app.firestore) throw Error("Firestore SDK not loaded or initialized correctly with the app.");
-  if (db = firebase.firestore(), void 0 === app.auth) throw Error("Firebase Auth SDK not loaded or initialized correctly with the app.");
-  auth = firebase.auth(), console.log("Firebase initialized successfully (App, Firestore, Auth)!"), fetchAllowedEmails()
-} catch (e) {
-  console.error("CRITICAL: Error initializing Firebase: ", e.message);
-  let t = document.getElementById("loading-auth-message");
-  t ? t.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${e.message}</p>` : alert("CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: " + e.message)
+    if (typeof firebase === 'undefined' || typeof firebase.initializeApp === 'undefined') {
+        throw new Error("Firebase SDK not loaded. Ensure Firebase scripts are correctly included.");
+    }
+    app = firebase.initializeApp(firebaseConfig);
+
+    if (typeof app.firestore === 'undefined') {
+        throw new Error("Firestore SDK not loaded or initialized correctly with the app.");
+    }
+    db = firebase.firestore();
+
+    if (typeof app.auth === 'undefined') {
+        throw new Error("Firebase Auth SDK not loaded or initialized correctly with the app.");
+    }
+    auth = firebase.auth();
+    console.log("Firebase initialized successfully (App, Firestore, Auth)!");
+    fetchAllowedEmails(); // Initial fetch
+
+} catch (error) {
+    console.error("CRITICAL: Error initializing Firebase: ", error.message);
+    const loadingMessageElement = document.getElementById('loading-auth-message');
+    if (loadingMessageElement) {
+        loadingMessageElement.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${error.message}</p>`;
+    } else {
+        // Fallback if the specific element isn't found, though less ideal.
+        alert("CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: " + error.message);
+    }
 }
 
-const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4", "Fix5", "Fix6"],
-  STATUS_ORDER = {
-    Available: 1,
-    InProgressDay1: 2,
-    Day1Ended_AwaitingNext: 3,
-    InProgressDay2: 4,
-    Day2Ended_AwaitingNext: 5,
-    InProgressDay3: 6,
-    Completed: 7,
-    Reassigned_TechAbsent: 8
-  },
-  NUM_TABLE_COLUMNS = 15;
 
-let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn, projectFormModal, tlDashboardModal, settingsModal, closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn, newProjectForm, projectTableBody, tlDashboardContentElement, allowedEmailsList, addEmailInput, addEmailBtn, tlSummaryModal, closeTlSummaryBtn, tlSummaryContent, openTlSummaryBtn, projects = [],
-  groupVisibilityState = {},
-  isAppInitialized = !1,
-  firestoreListenerUnsubscribe = null,
-  batchIdSelect, fixCategoryFilter, monthFilter, currentSelectedBatchId = localStorage.getItem("currentSelectedBatchId") || "",
-  currentSelectedFixCategory = "",
-  currentSelectedMonth = localStorage.getItem("currentSelectedMonth") || "";
+const FIX_CATEGORIES_ORDER = ["Fix1", "Fix2", "Fix3", "Fix4", "Fix5", "Fix6"];
+const STATUS_ORDER = {
+    "Available": 1,
+    "InProgressDay1": 2,
+    "Day1Ended_AwaitingNext": 3,
+    "InProgressDay2": 4,
+    "Day2Ended_AwaitingNext": 5,
+    "InProgressDay3": 6,
+    "Day3Ended_AwaitingNext": 7,
+    "Completed": 8,
+    "Reassigned_TechAbsent": 9
+};
+const NUM_TABLE_COLUMNS = 15; // Number of columns in the main projects table
 
-function showLoading(e = "Loading...") {
-  loadingOverlay && (loadingOverlay.querySelector("p").textContent = e, loadingOverlay.style.display = "flex")
+// DOM Elements - these will be assigned in setupDOMReferences
+let openAddNewProjectBtn, openTlDashboardBtn, openSettingsBtn;
+let projectFormModal, tlDashboardModal, settingsModal;
+let closeProjectFormBtn, closeTlDashboardBtn, closeSettingsBtn;
+let newProjectForm, projectTableBody, tlDashboardContentElement;
+let allowedEmailsList, addEmailInput, addEmailBtn;
+let tlSummaryModal, closeTlSummaryBtn, tlSummaryContent, openTlSummaryBtn;
+
+let projects = [];
+let groupVisibilityState = {};
+let isAppInitialized = false;
+let firestoreListenerUnsubscribe = null;
+
+// Filter elements
+let batchIdSelect, fixCategoryFilter, monthFilter;
+let currentSelectedBatchId = localStorage.getItem('currentSelectedBatchId') || "";
+let currentSelectedFixCategory = ""; // Not stored in localStorage, reset on load
+let currentSelectedMonth = localStorage.getItem('currentSelectedMonth') || "";
+
+
+function showLoading(message = "Loading...") {
+    if (loadingOverlay) {
+        const p = loadingOverlay.querySelector('p');
+        if (p) p.textContent = message;
+        loadingOverlay.style.display = 'flex';
+    }
 }
 
 function hideLoading() {
-  loadingOverlay && (loadingOverlay.style.display = "none")
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
 }
 
 function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-function formatMillisToMinutes(e) {
-  return null === e || "number" != typeof e || e < 0 ? "N/A" : Math.floor(e / 6e4)
+function formatMillisToMinutes(millis) {
+    if (millis === null || typeof millis !== 'number' || millis < 0) {
+        return "N/A";
+    }
+    return Math.floor(millis / 60000);
 }
 
-function calculateDurationMs(e, t) {
-  let a = e,
-    i = t;
-  if (e && "function" == typeof e.toMillis && (a = e.toMillis()), t && "function" == typeof t.toMillis) i = t.toMillis();
-  else if ("number" == typeof e && "number" == typeof t);
-  else if (e && "function" == typeof e.toMillis && "number" == typeof t);
-  else if ("number" == typeof e && t && "function" == typeof t.toMillis);
-  else {
-    if (!e || !t) return null;
-    "number" == typeof e || isNaN(new Date(e).getTime()) || (a = new Date(e).getTime()), "number" == typeof t || isNaN(new Date(t).getTime()) || (i = new Date(t).getTime())
-  }
-  return !a || !i || i < a || isNaN(a) || isNaN(i) ? null : i - a
+function calculateDurationMs(startTime, finishTime) {
+    let startMillis = startTime;
+    let finishMillis = finishTime;
+
+    // Convert Firestore Timestamps to millis if they are objects with toMillis
+    if (startTime && typeof startTime.toMillis === 'function') {
+        startMillis = startTime.toMillis();
+    }
+    if (finishTime && typeof finishTime.toMillis === 'function') {
+        finishMillis = finishTime.toMillis();
+    } else if (typeof startTime === 'number' && typeof finishTime === 'number') {
+        // Already numbers, do nothing
+    } else if (startTime && typeof startTime.toMillis === 'function' && typeof finishTime === 'number') {
+        // start is Timestamp, finish is number (likely Date.now())
+    } else if (typeof startTime === 'number' && finishTime && typeof finishTime.toMillis === 'function') {
+        // start is number, finish is Timestamp
+    } else {
+         // Handle cases where one or both might be date strings or null before conversion
+        if (startTime && ! (typeof startTime === 'number') && !isNaN(new Date(startTime).getTime())) {
+            startMillis = new Date(startTime).getTime();
+        }
+        if (finishTime && ! (typeof finishTime === 'number') && !isNaN(new Date(finishTime).getTime())) {
+            finishMillis = new Date(finishTime).getTime();
+        }
+    }
+
+
+    if (!startMillis || !finishMillis || finishMillis < startMillis || isNaN(startMillis) || isNaN(finishMillis)) {
+        return null; // Or 0, depending on how you want to handle invalid/incomplete durations
+    }
+    return finishMillis - startMillis;
 }
+
 
 function loadGroupVisibilityState() {
-  try {
-    let e = localStorage.getItem("projectTrackerGroupVisibility");
-    groupVisibilityState = e ? JSON.parse(e) : {}
-  } catch (t) {
-    console.error("Error parsing group visibility state from localStorage:", t), groupVisibilityState = {}
-  }
+    try {
+        const storedState = localStorage.getItem('projectTrackerGroupVisibility');
+        groupVisibilityState = storedState ? JSON.parse(storedState) : {};
+    } catch (error) {
+        console.error("Error parsing group visibility state from localStorage:", error);
+        groupVisibilityState = {}; // Reset to default if parsing fails
+    }
 }
 
 function saveGroupVisibilityState() {
-  try {
-    localStorage.setItem("projectTrackerGroupVisibility", JSON.stringify(groupVisibilityState))
-  } catch (e) {
-    console.error("Error saving group visibility state to localStorage:", e), alert("Warning: Could not save your group visibility preferences.")
-  }
+    try {
+        localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(groupVisibilityState));
+    } catch (error) {
+        console.error("Error saving group visibility state to localStorage:", error);
+        alert("Warning: Could not save your group visibility preferences.");
+    }
 }
 
 async function fetchAllowedEmails() {
-  if (showLoading("Fetching allowed emails..."), !db) {
-    console.error("Firestore (db) not initialized. Cannot fetch allowed emails."), hideLoading();
-    return
-  }
-  try {
-    let e = db.doc(ALLOWED_EMAILS_DOC_REF_PATH),
-      t = await e.get();
-    allowedEmailsFromFirestore = t.exists ? t.data().emails || [] : ["znerolodarbe@gmail.com"]
-  } catch (a) {
-    console.error("Error fetching allowed emails:", a), allowedEmailsFromFirestore = ["znerolodarbe@gmail.com"]
-  } finally {
-    hideLoading()
-  }
+    showLoading("Fetching allowed emails...");
+    if (!db) {
+        console.error("Firestore (db) not initialized. Cannot fetch allowed emails.");
+        hideLoading();
+        return;
+    }
+    try {
+        const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+            allowedEmailsFromFirestore = docSnap.data().emails || [];
+        } else {
+            // If the document doesn't exist, perhaps initialize with a default admin
+            console.warn(`Document ${ALLOWED_EMAILS_DOC_REF_PATH} does not exist. No emails loaded initially.`);
+            allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"]; // Fallback or default
+        }
+    } catch (error) {
+        console.error("Error fetching allowed emails:", error);
+        // Fallback to a default if fetching fails to prevent locking out
+        allowedEmailsFromFirestore = ["ev.lorens.ebrado@gmail.com"];
+    } finally {
+        hideLoading();
+    }
 }
 
-async function updateAllowedEmailsInFirestore(e) {
-  if (showLoading("Updating allowed emails..."), !db) return alert("Database not initialized! Cannot update allowed emails."), hideLoading(), !1;
-  let t = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
-  try {
-    return await t.set({
-      emails: e
-    }), allowedEmailsFromFirestore = e, !0
-  } catch (a) {
-    return console.error("Error updating allowed emails in Firestore:", a), alert("Error saving allowed emails. Error: " + a.message), !1
-  } finally {
-    hideLoading()
-  }
+async function updateAllowedEmailsInFirestore(emailsArray) {
+    showLoading("Updating allowed emails...");
+    if (!db) {
+        alert("Database not initialized! Cannot update allowed emails.");
+        hideLoading();
+        return false;
+    }
+    const docRef = db.doc(ALLOWED_EMAILS_DOC_REF_PATH);
+    try {
+        await docRef.set({ emails: emailsArray });
+        allowedEmailsFromFirestore = emailsArray; // Update local cache
+        return true;
+    } catch (error) {
+        console.error("Error updating allowed emails in Firestore:", error);
+        alert("Error saving allowed emails. Error: " + error.message);
+        return false;
+    } finally {
+        hideLoading();
+    }
 }
+
 
 async function initializeFirebaseAndLoadData() {
-  if (showLoading("Loading projects..."), !db) {
-    projects = [], refreshAllViews(), hideLoading();
-    return
-  }
-  firestoreListenerUnsubscribe && firestoreListenerUnsubscribe(), loadGroupVisibilityState();
-  let e = db.collection("projects"),
-    t = await db.collection("projects").orderBy("creationTimestamp", "desc").get(),
-    a = new Set;
-  t.forEach(e => {
-    let t = e.data();
-    if (t.creationTimestamp) {
-      let i = t.creationTimestamp.toDate(),
-        n = `${i.getFullYear()}-${String(i.getMonth()+1).padStart(2,"0")}`;
-      a.add(n)
+    showLoading("Loading projects...");
+    if (!db) {
+        console.error("Firestore (db) not initialized. Cannot load project data.");
+        projects = []; // Clear projects if db is not available
+        refreshAllViews();
+        hideLoading();
+        return;
     }
-  }), monthFilter.innerHTML = '<option value="">All Months</option>', Array.from(a).sort((e, t) => t.localeCompare(e)).forEach(e => {
-    let [t, a] = e.split("-"),
-      i = new Date(t, parseInt(a) - 1, 1),
-      n = document.createElement("option");
-    n.value = e, n.textContent = i.toLocaleString("en-US", {
-      year: "numeric",
-      month: "long"
-    }), monthFilter.appendChild(n)
-  }), currentSelectedMonth && Array.from(a).includes(currentSelectedMonth) ? monthFilter.value = currentSelectedMonth : (currentSelectedMonth = "", monthFilter.value = "", localStorage.setItem("currentSelectedMonth", ""));
-  let i = db.collection("projects").orderBy("creationTimestamp", "desc");
-  if (currentSelectedMonth) {
-    let [n, r] = currentSelectedMonth.split("-"),
-      s = new Date(parseInt(n), parseInt(r) - 1, 1),
-      o = new Date(parseInt(n), parseInt(r), 0, 23, 59, 59, 999);
-    i = i.where("creationTimestamp", ">=", s).where("creationTimestamp", "<=", o)
-  }
-  let l = await i.get(),
-    d = new Set,
-    c = {};
-  if (l.forEach(e => {
-      let t = e.data();
-      t.batchId && (d.add(t.batchId), c[t.batchId] = t.baseProjectName)
-    }), batchIdSelect.innerHTML = "", 0 === d.size) {
-    let u = document.createElement("option");
-    u.value = "", u.textContent = "No batches available", u.disabled = !0, u.selected = !0, batchIdSelect.appendChild(u), currentSelectedBatchId = "", localStorage.setItem("currentSelectedBatchId", ""), projects = [], refreshAllViews(), hideLoading();
-    return
-  } {
-    let m = Array.from(d).sort((e, t) => {
-      let a = l.docs.find(t => t.data().batchId === e),
-        i = l.docs.find(e => e.data().batchId === t);
-      return a && i && a.data().creationTimestamp && i.data().creationTimestamp ? i.data().creationTimestamp.toMillis() - a.data().creationTimestamp.toMillis() : e.localeCompare(t)
-    });
-    m.forEach(e => {
-      let t = document.createElement("option");
-      t.value = e, t.textContent = `${c[e]||"Unknown Project"}`, batchIdSelect.appendChild(t)
-    }), currentSelectedBatchId && d.has(currentSelectedBatchId) || (currentSelectedBatchId = m[0], localStorage.setItem("currentSelectedBatchId", currentSelectedBatchId)), batchIdSelect.value !== currentSelectedBatchId && (batchIdSelect.value = currentSelectedBatchId)
-  }
-  currentSelectedBatchId && (e = e.where("batchId", "==", currentSelectedBatchId)), currentSelectedFixCategory && (e = e.where("fixCategory", "==", currentSelectedFixCategory)), e = e.orderBy("fixCategory").orderBy("areaTask");
-  try {
-    firestoreListenerUnsubscribe = e.onSnapshot(e => {
-      let t = [];
-      e.forEach(e => {
-        e.exists && "function" == typeof e.data && t.push({
-          id: e.id,
-          ...e.data()
-        })
-      }), (projects = t).forEach(e => {
-        let t = `${e.batchId}_${e.fixCategory}`;
-        void 0 === groupVisibilityState[t] && (groupVisibilityState[t] = {
-          isExpanded: !0
-        }), void 0 === e.breakDurationMinutes && (e.breakDurationMinutes = 0), void 0 === e.additionalMinutesManual && (e.additionalMinutesManual = 0), void 0 === e.startTimeDay3 && (e.startTimeDay3 = null), void 0 === e.finishTimeDay3 && (e.finishTimeDay3 = null), void 0 === e.durationDay3Ms && (e.durationDay3Ms = null)
-      }), refreshAllViews()
-    }, e => {
-      console.error("Error fetching projects: ", e), projects = [], refreshAllViews(), alert("Error loading projects: " + e.message)
-    })
-  } catch (g) {
-    console.error("Error setting up Firebase listener: ", g), alert("CRITICAL ERROR: Could not set up real-time project updates. Error: " + g.message)
-  } finally {
-    hideLoading()
-  }
+
+    // Unsubscribe from previous listener if it exists
+    if (firestoreListenerUnsubscribe) {
+        firestoreListenerUnsubscribe();
+        firestoreListenerUnsubscribe = null; // Clear it
+    }
+
+    loadGroupVisibilityState(); // Load visibility preferences
+
+    // 1. Populate Month Filter based on ALL projects first
+    let allProjectsQuery = db.collection("projects").orderBy("creationTimestamp", "desc");
+    try {
+        const allProjectsSnapshot = await allProjectsQuery.get();
+        const uniqueMonths = new Set();
+        allProjectsSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.creationTimestamp && data.creationTimestamp.toDate) {
+                const date = data.creationTimestamp.toDate();
+                const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                uniqueMonths.add(monthYear);
+            }
+        });
+
+        if (monthFilter) {
+            monthFilter.innerHTML = '<option value="">All Months</option>'; // Reset
+            Array.from(uniqueMonths).sort((a, b) => b.localeCompare(a)).forEach(monthYear => { // Sort descending
+                const [year, month] = monthYear.split('-');
+                const date = new Date(year, parseInt(month) - 1, 1);
+                const option = document.createElement('option');
+                option.value = monthYear;
+                option.textContent = date.toLocaleString('en-US', { year: 'numeric', month: 'long' });
+                monthFilter.appendChild(option);
+            });
+
+            // Restore selected month or default to ""
+            if (currentSelectedMonth && Array.from(uniqueMonths).includes(currentSelectedMonth)) {
+                monthFilter.value = currentSelectedMonth;
+            } else {
+                currentSelectedMonth = ""; // If stored month is no longer valid
+                monthFilter.value = "";
+                localStorage.setItem('currentSelectedMonth', "");
+            }
+        }
+    } catch (error) {
+        console.error("Error populating month filter:", error);
+    }
+
+    // 2. Populate Batch ID Filter based on (potentially) month-filtered projects
+    let batchQuery = db.collection("projects");
+    if (currentSelectedMonth && monthFilter && monthFilter.value) {
+        const [year, month] = currentSelectedMonth.split('-');
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999); // Last moment of the month
+        batchQuery = batchQuery.where("creationTimestamp", ">=", startDate)
+                               .where("creationTimestamp", "<=", endDate);
+    }
+    batchQuery = batchQuery.orderBy("creationTimestamp", "desc");
+
+
+    try {
+        const batchSnapshot = await batchQuery.get();
+        const batchIdMap = {}; // Stores batchId -> baseProjectName
+        batchSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.batchId && !batchIdMap[data.batchId]) {
+                batchIdMap[data.batchId] = data.baseProjectName || "Unknown Project";
+            }
+        });
+
+        const sortedBatchIds = Object.keys(batchIdMap).sort((a, b) => {
+            // Try to find the original creation timestamp for sorting batches if complex sort is needed
+            // For now, simple alphabetical or by discovery order (which is already by creationTimestamp desc)
+            const docA = batchSnapshot.docs.find(d => d.data().batchId === a);
+            const docB = batchSnapshot.docs.find(d => d.data().batchId === b);
+            if (docA && docB && docA.data().creationTimestamp && docB.data().creationTimestamp) {
+                return docB.data().creationTimestamp.toMillis() - docA.data().creationTimestamp.toMillis();
+            }
+            return b.localeCompare(a); // Fallback sort
+        });
+
+
+        if (batchIdSelect) {
+            batchIdSelect.innerHTML = ''; // Clear previous options
+            if (sortedBatchIds.length === 0) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No batches available";
+                option.disabled = true;
+                option.selected = true;
+                batchIdSelect.appendChild(option);
+                currentSelectedBatchId = ""; // Reset if no batches
+                localStorage.setItem('currentSelectedBatchId', "");
+                 projects = []; // Clear projects if no batches for this month
+                 refreshAllViews();
+                 hideLoading();
+                 return; // Stop further processing if no batches
+            } else {
+                 const allBatchesOption = document.createElement('option');
+                 allBatchesOption.value = "";
+                 allBatchesOption.textContent = "All Batches";
+                 batchIdSelect.appendChild(allBatchesOption);
+
+                sortedBatchIds.forEach(batchId => {
+                    const option = document.createElement('option');
+                    option.value = batchId;
+                    option.textContent = `${batchIdMap[batchId]} (${batchId.split('_')[1] || 'ID N/A'})`;
+                    batchIdSelect.appendChild(option);
+                });
+
+                if (currentSelectedBatchId && batchIdMap[currentSelectedBatchId]) {
+                    batchIdSelect.value = currentSelectedBatchId;
+                } else if (sortedBatchIds.length > 0 && !currentSelectedBatchId) { // If no batch was selected, default to "All Batches"
+                    batchIdSelect.value = ""; // Default to "All Batches"
+                    currentSelectedBatchId = "";
+                    localStorage.setItem('currentSelectedBatchId', currentSelectedBatchId);
+                } else { // If selected batch is no longer valid
+                    currentSelectedBatchId = "";
+                    batchIdSelect.value = "";
+                    localStorage.setItem('currentSelectedBatchId', "");
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error populating batch ID filter:", error);
+        if (batchIdSelect) {
+            batchIdSelect.innerHTML = '<option value="" disabled selected>Error loading batches</option>';
+        }
+    }
+
+
+    // 3. Construct the main query for projects table based on all filters
+    let projectsQuery = db.collection("projects");
+
+    if (currentSelectedMonth && monthFilter && monthFilter.value) {
+        const [year, month] = currentSelectedMonth.split('-');
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+        projectsQuery = projectsQuery.where("creationTimestamp", ">=", startDate)
+                                     .where("creationTimestamp", "<=", endDate);
+    }
+
+    if (currentSelectedBatchId && batchIdSelect && batchIdSelect.value) {
+        projectsQuery = projectsQuery.where("batchId", "==", currentSelectedBatchId);
+    }
+
+    if (currentSelectedFixCategory && fixCategoryFilter && fixCategoryFilter.value) {
+        projectsQuery = projectsQuery.where("fixCategory", "==", currentSelectedFixCategory);
+    }
+
+    // Add default sorting
+    projectsQuery = projectsQuery.orderBy("fixCategory").orderBy("areaTask"); // Firestore requires composite index for this
+
+    try {
+        firestoreListenerUnsubscribe = projectsQuery.onSnapshot(snapshot => {
+            const newProjects = [];
+            snapshot.forEach(doc => {
+                if (doc.exists && typeof doc.data === 'function') {
+                    newProjects.push({ id: doc.id, ...doc.data() });
+                }
+            });
+
+            projects = newProjects; // Update global projects array
+            projects.forEach(project => {
+                const groupKey = `${project.batchId}_${project.fixCategory}`;
+                if (typeof groupVisibilityState[groupKey] === 'undefined') {
+                    groupVisibilityState[groupKey] = { isExpanded: true }; // Default to expanded
+                }
+                // Ensure default values for potentially missing duration/time fields
+                if (typeof project.breakDurationMinutes === 'undefined') project.breakDurationMinutes = 0;
+                if (typeof project.additionalMinutesManual === 'undefined') project.additionalMinutesManual = 0;
+                if (typeof project.startTimeDay3 === 'undefined') project.startTimeDay3 = null;
+                if (typeof project.finishTimeDay3 === 'undefined') project.finishTimeDay3 = null;
+                if (typeof project.durationDay3Ms === 'undefined') project.durationDay3Ms = null;
+
+            });
+            refreshAllViews(); // Re-render the table
+        }, error => {
+            console.error("Error fetching projects with onSnapshot: ", error);
+            projects = []; // Clear projects on error
+            refreshAllViews();
+            alert("Error loading projects: " + error.message);
+        });
+    } catch (error) {
+        console.error("Error setting up Firebase listener (projectsQuery.onSnapshot): ", error);
+        alert("CRITICAL ERROR: Could not set up real-time project updates. Error: " + error.message);
+    } finally {
+        hideLoading();
+    }
 }
 
+
 function setupDOMReferences() {
-  openAddNewProjectBtn = document.getElementById("openAddNewProjectBtn"), openTlDashboardBtn = document.getElementById("openTlDashboardBtn"), openSettingsBtn = document.getElementById("openSettingsBtn"), projectFormModal = document.getElementById("projectFormModal"), tlDashboardModal = document.getElementById("tlDashboardModal"), settingsModal = document.getElementById("settingsModal"), closeProjectFormBtn = document.getElementById("closeProjectFormBtn"), closeTlDashboardBtn = document.getElementById("closeTlDashboardBtn"), closeSettingsBtn = document.getElementById("closeSettingsBtn"), newProjectForm = document.getElementById("newProjectForm"), projectTableBody = document.getElementById("projectTableBody"), tlDashboardContentElement = document.getElementById("tlDashboardContent"), allowedEmailsList = document.getElementById("allowedEmailsList"), addEmailInput = document.getElementById("addEmailInput"), addEmailBtn = document.getElementById("addEmailBtn"), tlSummaryModal = document.getElementById("tlSummaryModal"), closeTlSummaryBtn = document.getElementById("closeTlSummaryBtn"), tlSummaryContent = document.getElementById("tlSummaryContent"), openTlSummaryBtn = document.getElementById("openTlSummaryBtn"), loadingOverlay = document.getElementById("loadingOverlay"), batchIdSelect = document.getElementById("batchIdSelect"), fixCategoryFilter = document.getElementById("fixCategoryFilter"), monthFilter = document.getElementById("monthFilter")
+    // Buttons for opening modals
+    openAddNewProjectBtn = document.getElementById('openAddNewProjectBtn');
+    openTlDashboardBtn = document.getElementById('openTlDashboardBtn');
+    openSettingsBtn = document.getElementById('openSettingsBtn');
+    openTlSummaryBtn = document.getElementById('openTlSummaryBtn');
+
+    // Modals
+    projectFormModal = document.getElementById('projectFormModal');
+    tlDashboardModal = document.getElementById('tlDashboardModal');
+    settingsModal = document.getElementById('settingsModal');
+    tlSummaryModal = document.getElementById('tlSummaryModal');
+
+
+    // Close buttons for modals
+    closeProjectFormBtn = document.getElementById('closeProjectFormBtn');
+    closeTlDashboardBtn = document.getElementById('closeTlDashboardBtn');
+    closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    closeTlSummaryBtn = document.getElementById('closeTlSummaryBtn');
+
+    // Forms and content areas
+    newProjectForm = document.getElementById('newProjectForm');
+    projectTableBody = document.getElementById('projectTableBody');
+    tlDashboardContentElement = document.getElementById('tlDashboardContent');
+    allowedEmailsList = document.getElementById('allowedEmailsList');
+    addEmailInput = document.getElementById('addEmailInput');
+    addEmailBtn = document.getElementById('addEmailBtn');
+    tlSummaryContent = document.getElementById('tlSummaryContent');
+
+    // Loading overlay
+    loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Filters
+    batchIdSelect = document.getElementById('batchIdSelect');
+    fixCategoryFilter = document.getElementById('fixCategoryFilter');
+    monthFilter = document.getElementById('monthFilter');
 }
 
 function setupAuthRelatedDOMReferences() {
-  signInBtn = document.getElementById("signInBtn"), signOutBtn = document.getElementById("signOutBtn"), userInfoDisplayDiv = document.getElementById("user-info-display"), userNameP = document.getElementById("userName"), userEmailP = document.getElementById("userEmail"), userPhotoImg = document.getElementById("userPhoto"), appContentDiv = document.getElementById("app-content"), loadingAuthMessageDiv = document.getElementById("loading-auth-message")
+    signInBtn = document.getElementById('signInBtn');
+    signOutBtn = document.getElementById('signOutBtn');
+    userInfoDisplayDiv = document.getElementById('user-info-display');
+    userNameP = document.getElementById('userName');
+    userEmailP = document.getElementById('userEmail');
+    userPhotoImg = document.getElementById('userPhoto');
+    appContentDiv = document.getElementById('app-content');
+    loadingAuthMessageDiv = document.getElementById('loading-auth-message');
 }
+
 
 function attachEventListeners() {
-  openAddNewProjectBtn && (openAddNewProjectBtn.onclick = () => {
-    let e = prompt("Enter PIN to add new tracker:");
-    if ("1234" !== e) {
-      alert("Incorrect PIN.");
-      return
+    // Modal Openers
+    if (openAddNewProjectBtn) {
+        openAddNewProjectBtn.onclick = () => {
+            const pin = prompt("Enter PIN to add new tracker:");
+            if (pin !== TL_DASHBOARD_PIN) { // Assuming same PIN for now
+                alert("Incorrect PIN.");
+                return;
+            }
+            if (projectFormModal) projectFormModal.style.display = 'block';
+        };
     }
-    projectFormModal.style.display = "block"
-  }), closeProjectFormBtn && (closeProjectFormBtn.onclick = () => {
-    newProjectForm.reset(), projectFormModal.style.display = "none"
-  }), openTlDashboardBtn && (openTlDashboardBtn.onclick = () => {
-    let e = prompt("Enter PIN to access Project Settings:");
-    "1234" === e ? (tlDashboardModal.style.display = "block", renderTLDashboard()) : alert("Incorrect PIN.")
-  }), closeTlDashboardBtn && (closeTlDashboardBtn.onclick = () => {
-    tlDashboardModal.style.display = "none"
-  }), openSettingsBtn && (openSettingsBtn.onclick = () => {
-    let e = prompt("Enter PIN to access User Settings:");
-    if ("1234" !== e) {
-      alert("Incorrect PIN.");
-      return
+
+    if (openTlDashboardBtn) {
+        openTlDashboardBtn.onclick = () => {
+            const pin = prompt("Enter PIN to access Project Settings:");
+            if (pin === TL_DASHBOARD_PIN) {
+                if (tlDashboardModal) tlDashboardModal.style.display = 'block';
+                renderTLDashboard();
+            } else {
+                alert("Incorrect PIN.");
+            }
+        };
     }
-    settingsModal.style.display = "block", renderAllowedEmailsList()
-  }), closeSettingsBtn && (closeSettingsBtn.onclick = () => {
-    settingsModal.style.display = "none"
-  }), addEmailBtn && (addEmailBtn.onclick = handleAddEmail), openTlSummaryBtn && (openTlSummaryBtn.onclick = () => {
-    tlSummaryModal.style.display = "block", generateTlSummaryData()
-  }), closeTlSummaryBtn && (closeTlSummaryBtn.onclick = () => {
-    tlSummaryModal.style.display = "none"
-  }), batchIdSelect && (batchIdSelect.onchange = e => {
-    currentSelectedBatchId = e.target.value, localStorage.setItem("currentSelectedBatchId", currentSelectedBatchId), initializeFirebaseAndLoadData()
-  }), fixCategoryFilter && (fixCategoryFilter.onchange = e => {
-    currentSelectedFixCategory = e.target.value, initializeFirebaseAndLoadData()
-  }), monthFilter && (monthFilter.onchange = e => {
-    currentSelectedMonth = e.target.value, localStorage.setItem("currentSelectedMonth", currentSelectedMonth), currentSelectedBatchId = "", localStorage.setItem("currentSelectedBatchId", ""), initializeFirebaseAndLoadData()
-  }), "undefined" != typeof window && (window.onclick = e => {
-    e.target == projectFormModal && (projectFormModal.style.display = "none"), e.target == tlDashboardModal && (tlDashboardModal.style.display = "none"), e.target == settingsModal && (settingsModal.style.display = "none"), e.target == tlSummaryModal && (tlSummaryModal.style.display = "none")
-  }), newProjectForm && newProjectForm.addEventListener("submit", handleAddProjectSubmit), setupAuthEventListeners()
+
+    if (openSettingsBtn) {
+        openSettingsBtn.onclick = () => {
+            const pin = prompt("Enter PIN to access User Settings:");
+            if (pin === TL_DASHBOARD_PIN) { // Assuming same PIN
+                if (settingsModal) settingsModal.style.display = 'block';
+                renderAllowedEmailsList();
+            } else {
+                alert("Incorrect PIN.");
+            }
+        };
+    }
+     if (openTlSummaryBtn) {
+        openTlSummaryBtn.onclick = () => {
+            if (tlSummaryModal) tlSummaryModal.style.display = 'block';
+            generateTlSummaryData();
+        };
+    }
+
+
+    // Modal Closers
+    if (closeProjectFormBtn && projectFormModal && newProjectForm) {
+        closeProjectFormBtn.onclick = () => {
+            newProjectForm.reset();
+            projectFormModal.style.display = 'none';
+        };
+    }
+    if (closeTlDashboardBtn && tlDashboardModal) {
+        closeTlDashboardBtn.onclick = () => {
+            tlDashboardModal.style.display = 'none';
+        };
+    }
+    if (closeSettingsBtn && settingsModal) {
+        closeSettingsBtn.onclick = () => {
+            settingsModal.style.display = 'none';
+        };
+    }
+    if (closeTlSummaryBtn && tlSummaryModal) {
+        closeTlSummaryBtn.onclick = () => {
+            tlSummaryModal.style.display = 'none';
+        };
+    }
+
+
+    // Settings Modal - Add Email
+    if (addEmailBtn) {
+        addEmailBtn.onclick = handleAddEmail;
+    }
+
+
+    // Filter changes
+    if (batchIdSelect) {
+        batchIdSelect.onchange = (event) => {
+            currentSelectedBatchId = event.target.value;
+            localStorage.setItem('currentSelectedBatchId', currentSelectedBatchId);
+            initializeFirebaseAndLoadData(); // Reload data based on new batch
+        };
+    }
+    if (fixCategoryFilter) {
+        fixCategoryFilter.onchange = (event) => {
+            currentSelectedFixCategory = event.target.value;
+            // No localStorage for fixCategoryFilter, it's ephemeral
+            initializeFirebaseAndLoadData(); // Reload data
+        };
+    }
+     if (monthFilter) {
+        monthFilter.onchange = (event) => {
+            currentSelectedMonth = event.target.value;
+            localStorage.setItem('currentSelectedMonth', currentSelectedMonth);
+            // When month changes, batch ID might become invalid, so reset it and its storage
+            currentSelectedBatchId = "";
+            localStorage.setItem('currentSelectedBatchId', "");
+            initializeFirebaseAndLoadData(); // Reload data, which will repopulate batchIdSelect
+        };
+    }
+
+
+    // Close modals if clicked outside
+    if (typeof window !== 'undefined') {
+        window.onclick = (event) => {
+            if (projectFormModal && event.target == projectFormModal) {
+                projectFormModal.style.display = 'none';
+            }
+            if (tlDashboardModal && event.target == tlDashboardModal) {
+                tlDashboardModal.style.display = 'none';
+            }
+            if (settingsModal && event.target == settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+            if (tlSummaryModal && event.target == tlSummaryModal) {
+                tlSummaryModal.style.display = 'none';
+            }
+        };
+    }
+
+    // Form submission
+    if (newProjectForm) {
+        newProjectForm.addEventListener('submit', handleAddProjectSubmit);
+    }
+
+    setupAuthEventListeners(); // Auth specific listeners
 }
 
-async function handleAddProjectSubmit(e) {
-  if (e.preventDefault(), showLoading("Adding project(s)..."), !db) {
-    alert("Database not initialized!"), hideLoading();
-    return
-  }
-  let t = document.getElementById("fixCategorySelect").value,
-    a = parseInt(document.getElementById("numRows").value, 10),
-    i = document.getElementById("baseProjectName").value.trim(),
-    n = document.getElementById("gsd").value;
-  if (!i || isNaN(a) || a < 1) {
-    alert("Invalid input. Please ensure Project Name is not empty and Number of Tasks is at least 1."), hideLoading();
-    return
-  }
-  let r = "batch_" + generateId(),
-    s = firebase.firestore.FieldValue.serverTimestamp(),
-    o = db.batch();
-  try {
-    for (let l = 1; l <= a; l++) {
-      let d = {
-        batchId: r,
-        creationTimestamp: s,
-        fixCategory: t,
-        baseProjectName: i,
-        areaTask: `Area${String(l).padStart(2,"0")}`,
-        gsd: n,
-        assignedTo: "",
-        techNotes: "",
-        status: "Available",
-        startTimeDay1: null,
-        finishTimeDay1: null,
-        durationDay1Ms: null,
-        startTimeDay2: null,
-        finishTimeDay2: null,
-        durationDay2Ms: null,
-        startTimeDay3: null,
-        finishTimeDay3: null,
-        durationDay3Ms: null,
-        releasedToNextStage: !1,
-        lastModifiedTimestamp: s,
-        isReassigned: !1,
-        originalProjectId: null,
-        breakDurationMinutes: 0,
-        additionalMinutesManual: 0
-      };
-      o.set(db.collection("projects").doc(), d)
+async function handleAddProjectSubmit(event) {
+    event.preventDefault();
+    showLoading("Adding project(s)...");
+
+    if (!db) {
+        alert("Database not initialized!");
+        hideLoading();
+        return;
     }
-    await o.commit(), newProjectForm.reset(), currentSelectedBatchId = r, localStorage.setItem("currentSelectedBatchId", currentSelectedBatchId), currentSelectedMonth = "", localStorage.setItem("currentSelectedMonth", ""), initializeFirebaseAndLoadData()
-  } catch (c) {
-    console.error("Error adding projects: ", c), alert("Error adding projects: " + c.message)
-  } finally {
-    projectFormModal.style.display = "none", hideLoading()
-  }
+
+    const fixCategory = document.getElementById('fixCategorySelect').value;
+    const numRows = parseInt(document.getElementById('numRows').value, 10);
+    const baseProjectName = document.getElementById('baseProjectName').value.trim();
+    const gsd = document.getElementById('gsd').value;
+
+    if (!baseProjectName || isNaN(numRows) || numRows < 1) {
+        alert("Invalid input. Please ensure Project Name is not empty and Number of Tasks is at least 1.");
+        hideLoading();
+        return;
+    }
+
+    const batchId = `batch_${generateId()}`;
+    const creationTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+    const batch = db.batch();
+
+    try {
+        for (let i = 1; i <= numRows; i++) {
+            const projectData = {
+                batchId: batchId,
+                creationTimestamp: creationTimestamp,
+                fixCategory: fixCategory,
+                baseProjectName: baseProjectName,
+                areaTask: `Area${String(i).padStart(2, '0')}`,
+                gsd: gsd,
+                assignedTo: "",
+                techNotes: "",
+                status: "Available", // Initial status
+                startTimeDay1: null,
+                finishTimeDay1: null,
+                durationDay1Ms: null,
+                startTimeDay2: null,
+                finishTimeDay2: null,
+                durationDay2Ms: null,
+                startTimeDay3: null,
+                finishTimeDay3: null,
+                durationDay3Ms: null,
+                releasedToNextStage: false,
+                lastModifiedTimestamp: creationTimestamp,
+                isReassigned: false,
+                originalProjectId: null,
+                breakDurationMinutes: 0,
+                additionalMinutesManual: 0,
+            };
+            const newProjectRef = db.collection("projects").doc(); // Auto-generate ID
+            batch.set(newProjectRef, projectData);
+        }
+
+        await batch.commit();
+        if (newProjectForm) newProjectForm.reset();
+
+        // Set filters to show the newly added batch
+        currentSelectedBatchId = batchId;
+        localStorage.setItem('currentSelectedBatchId', currentSelectedBatchId);
+        currentSelectedMonth = ""; // Clear month filter to ensure new batch might be visible
+        localStorage.setItem('currentSelectedMonth', "");
+        if (monthFilter) monthFilter.value = "";
+        if (fixCategoryFilter) fixCategoryFilter.value = fixCategory; // Optionally select the fix category of added items
+        currentSelectedFixCategory = fixCategory;
+
+
+        initializeFirebaseAndLoadData(); // Refresh to show new projects
+
+    } catch (error) {
+        console.error("Error adding projects: ", error);
+        alert("Error adding projects: " + error.message);
+    } finally {
+        if (projectFormModal) projectFormModal.style.display = 'none';
+        hideLoading();
+    }
 }
 
 async function getManageableBatches() {
-  if (!db) return console.error("DB not initialized for getManageableBatches."), [];
-  showLoading("Loading batches for dashboard...");
-  try {
-    let e = await db.collection("projects").get(),
-      t = {};
-    return e.forEach(e => {
-      let a = e.data();
-      a && a.batchId && (t[a.batchId] || (t[a.batchId] = {
-        batchId: a.batchId,
-        baseProjectName: a.baseProjectName || "N/A",
-        tasksByFix: {}
-      }), a.fixCategory && (t[a.batchId].tasksByFix[a.fixCategory] || (t[a.batchId].tasksByFix[a.fixCategory] = []), t[a.batchId].tasksByFix[a.fixCategory].push(a)))
-    }), Object.values(t)
-  } catch (a) {
-    return console.error("Error fetching batches for dashboard:", a), alert("Error fetching batches for dashboard: " + a.message), []
-  } finally {
-    hideLoading()
-  }
+    if (!db) {
+        console.error("DB not initialized for getManageableBatches.");
+        return [];
+    }
+    showLoading("Loading batches for dashboard...");
+    try {
+        const projectsSnapshot = await db.collection("projects").get();
+        const batches = {}; // Use an object to group tasks by batchId
+
+        projectsSnapshot.forEach(doc => {
+            const task = doc.data();
+            if (task && task.batchId) {
+                if (!batches[task.batchId]) {
+                    batches[task.batchId] = {
+                        batchId: task.batchId,
+                        baseProjectName: task.baseProjectName || "N/A",
+                        tasksByFix: {} // Initialize tasksByFix for each batch
+                    };
+                }
+                if (task.fixCategory) {
+                    if (!batches[task.batchId].tasksByFix[task.fixCategory]) {
+                        batches[task.batchId].tasksByFix[task.fixCategory] = [];
+                    }
+                    batches[task.batchId].tasksByFix[task.fixCategory].push(task);
+                }
+            }
+        });
+        return Object.values(batches); // Convert the batches object to an array
+    } catch (error) {
+        console.error("Error fetching batches for dashboard:", error);
+        alert("Error fetching batches for dashboard: " + error.message);
+        return [];
+    } finally {
+        hideLoading();
+    }
 }
+
 
 async function renderTLDashboard() {
-  if (!tlDashboardContentElement) {
-    console.error("tlDashboardContentElement not found.");
-    return
-  }
-  tlDashboardContentElement.innerHTML = "";
-  let e = await getManageableBatches();
-  if (0 === e.length) {
-    tlDashboardContentElement.innerHTML = "<p>No project batches found.</p>";
-    return
-  }
-  e.forEach(e => {
-    if (!e || !e.batchId) return;
-    let t = document.createElement("div");
-    t.classList.add("dashboard-batch-item");
-    let a = document.createElement("h4");
-    a.textContent = `Batch: ${e.baseProjectName||"Unknown"} (ID: ${e.batchId.split("_")[1]||"N/A"})`, t.appendChild(a);
-    let i = document.createElement("p"),
-      n = e.tasksByFix ? Object.keys(e.tasksByFix).sort((e, t) => FIX_CATEGORIES_ORDER.indexOf(e) - FIX_CATEGORIES_ORDER.indexOf(t)) : [];
-    i.innerHTML = `<strong>Stages Present:</strong> ${n.join(", ")||"None"}`, t.appendChild(i);
-    let r = document.createElement("div");
-    r.classList.add("dashboard-batch-actions-release");
-    let s = "",
-      o = !1,
-      l = !0;
-    if (e.tasksByFix && FIX_CATEGORIES_ORDER.slice().reverse().forEach(t => {
-        !e.tasksByFix[t] || !(e.tasksByFix[t].length > 0) || s || (s = t, (l = e.tasksByFix[t].every(e => e && e.releasedToNextStage && "Reassigned_TechAbsent" !== e.status)) || (o = e.tasksByFix[t].filter(e => "Reassigned_TechAbsent" !== e.status).every(e => e && ("Completed" === e.status || "Day1Ended_AwaitingNext" === e.status || "Day2Ended_AwaitingNext" === e.status))))
-      }), s && !l) {
-      let d = FIX_CATEGORIES_ORDER.indexOf(s);
-      if (d < FIX_CATEGORIES_ORDER.length - 1) {
-        let c = FIX_CATEGORIES_ORDER[d + 1],
-          u = document.createElement("button");
-        u.textContent = `Release to ${c}`, u.classList.add("btn", "btn-release"), o || (u.disabled = !0, u.title = `Not all active tasks in ${s} are 'Completed' or 'Day 1 Ended' or 'Day 2 Ended'.`), u.onclick = () => releaseBatchToNextFix(e.batchId, s, c), r.appendChild(u)
-      }
-    } else if (l && s && FIX_CATEGORIES_ORDER.indexOf(s) < FIX_CATEGORIES_ORDER.length - 1) {
-      let m = document.createElement("p");
-      m.innerHTML = `<small><em>(Active tasks released from ${s})</em></small>`, r.appendChild(m)
+    if (!tlDashboardContentElement) {
+        console.error("tlDashboardContentElement not found.");
+        return;
     }
-    t.appendChild(r);
-    let g = document.createElement("div");
-    g.classList.add("dashboard-batch-actions-delete"), e.tasksByFix && FIX_CATEGORIES_ORDER.forEach(t => {
-      if (e.tasksByFix[t] && e.tasksByFix[t].length > 0) {
-        let a = document.createElement("button");
-        a.textContent = `Delete ${t} Tasks`, a.classList.add("btn", "btn-danger"), a.onclick = () => {
-          confirm(`Are you sure you want to delete all ${t} tasks for batch '${e.baseProjectName||"Unknown"}'? IRREVERSIBLE.`) && deleteSpecificFixTasksForBatch(e.batchId, t)
-        }, g.appendChild(a)
-      }
-    });
-    let y = document.createElement("button");
-    y.textContent = "Delete ALL Tasks for this Batch", y.classList.add("btn", "btn-danger"), y.onclick = () => {
-      confirm(`Are-you sure you want to delete ALL tasks for batch '${e.baseProjectName||"Unknown"}'? IRREVERSIBLE.`) && deleteProjectBatch(e.batchId)
-    }, g.appendChild(y), t.appendChild(g), tlDashboardContentElement.appendChild(t)
-  })
-}
+    tlDashboardContentElement.innerHTML = ""; // Clear previous content
 
-async function releaseBatchToNextFix(e, t, a) {
-  if (showLoading(`Releasing ${t} tasks...`), !db) {
-    alert("Database not initialized!"), hideLoading();
-    return
-  }
-  try {
-    let i = await db.collection("projects").where("batchId", "==", e).where("fixCategory", "==", t).where("releasedToNextStage", "==", !1).get();
-    if (i.empty) {
-      alert("No active tasks to release in the current stage for this batch."), refreshAllViews();
-      return
+    const batches = await getManageableBatches();
+
+    if (batches.length === 0) {
+        tlDashboardContentElement.innerHTML = "<p>No project batches found.</p>";
+        return;
     }
-    let n = [];
-    if (i.forEach(e => {
-        let t = e.data();
-        "Reassigned_TechAbsent" !== t.status && n.push({
-          id: e.id,
-          ...t
-        })
-      }), 0 === n.length) {
-      alert("No active tasks to release after filtering out reassigned ones."), refreshAllViews();
-      return
-    }
-    let r = n.every(e => e && ("Completed" === e.status || "Day1Ended_AwaitingNext" === e.status || "Day2Ended_AwaitingNext" === e.status));
-    if (!r) {
-      alert(`Not all active tasks in ${t} are 'Completed', 'Day 1 Ended', or 'Day 2 Ended'. Cannot release.`);
-      return
-    }
-    let s = firebase.firestore.FieldValue.serverTimestamp(),
-      o = db.batch();
-    for (let l of n) {
-      if (!l || !l.id) continue;
-      let d = db.collection("projects").where("batchId", "==", l.batchId).where("areaTask", "==", l.areaTask).where("fixCategory", "==", a),
-        c = await d.get();
-      if (c.empty) {
-        let u = {
-          batchId: l.batchId,
-          creationTimestamp: l.creationTimestamp,
-          fixCategory: a,
-          baseProjectName: l.baseProjectName,
-          areaTask: l.areaTask,
-          gsd: l.gsd,
-          assignedTo: l.assignedTo,
-          techNotes: "",
-          status: "Available",
-          startTimeDay1: null,
-          finishTimeDay1: null,
-          durationDay1Ms: null,
-          startTimeDay2: null,
-          finishTimeDay2: null,
-          durationDay2Ms: null,
-          startTimeDay3: null,
-          finishTimeDay3: null,
-          durationDay3Ms: null,
-          releasedToNextStage: !1,
-          lastModifiedTimestamp: s,
-          isReassigned: !1,
-          originalProjectId: l.id,
-          breakDurationMinutes: 0,
-          additionalMinutesManual: 0
+
+    batches.forEach(batch => {
+        if (!batch || !batch.batchId) return; // Skip if batch or batchId is undefined
+
+        const batchItemDiv = document.createElement('div');
+        batchItemDiv.classList.add('dashboard-batch-item');
+
+        const title = document.createElement('h4');
+        title.textContent = `Batch: ${batch.baseProjectName || "Unknown"} (ID: ${batch.batchId.split('_')[1] || "N/A"})`;
+        batchItemDiv.appendChild(title);
+
+        const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a,b) => FIX_CATEGORIES_ORDER.indexOf(a) - FIX_CATEGORIES_ORDER.indexOf(b)) : [];
+        const stagesP = document.createElement('p');
+        stagesP.innerHTML = `<strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}`;
+        batchItemDiv.appendChild(stagesP);
+
+
+        // Release Logic Section
+        const releaseActionsDiv = document.createElement('div');
+        releaseActionsDiv.classList.add('dashboard-batch-actions-release');
+
+        let currentHighestActiveFix = "";
+        let allTasksInHighestFixReleased = false;
+        let allTasksInHighestFixCompletable = true; // Assume true until a non-completable task is found
+
+        if (batch.tasksByFix) {
+            // Find the highest fix category that has tasks and is not fully released
+            FIX_CATEGORIES_ORDER.slice().reverse().forEach(fixCat => {
+                if (!currentHighestActiveFix && batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
+                    currentHighestActiveFix = fixCat;
+                    const activeTasksInFix = batch.tasksByFix[fixCat].filter(p => p.status !== "Reassigned_TechAbsent");
+
+                    if (activeTasksInFix.length > 0) {
+                        allTasksInHighestFixReleased = activeTasksInFix.every(p => p && p.releasedToNextStage);
+                        allTasksInHighestFixCompletable = activeTasksInFix.every(p =>
+                            p && (
+                                p.status === "Completed" ||
+                                p.status === "Day1Ended_AwaitingNext" ||
+                                p.status === "Day2Ended_AwaitingNext" ||
+                                p.status === "Day3Ended_AwaitingNext"
+                            )
+                        );
+                    } else { // If all tasks were reassigned, consider it releasable but also effectively released
+                        allTasksInHighestFixReleased = true;
+                        allTasksInHighestFixCompletable = true;
+                    }
+                }
+            });
+        }
+
+
+        if (currentHighestActiveFix && !allTasksInHighestFixReleased) {
+            const currentFixIndex = FIX_CATEGORIES_ORDER.indexOf(currentHighestActiveFix);
+            if (currentFixIndex < FIX_CATEGORIES_ORDER.length - 1) { // Check if there's a next stage
+                const nextFixCategory = FIX_CATEGORIES_ORDER[currentFixIndex + 1];
+                const releaseBtn = document.createElement('button');
+                releaseBtn.textContent = `Release to ${nextFixCategory}`;
+                releaseBtn.classList.add('btn', 'btn-release');
+                if (!allTasksInHighestFixCompletable) {
+                    releaseBtn.disabled = true;
+                    releaseBtn.title = `Not all active tasks in ${currentHighestActiveFix} are 'Completed' or 'Day X Ended'.`;
+                }
+                releaseBtn.onclick = () => releaseBatchToNextFix(batch.batchId, currentHighestActiveFix, nextFixCategory);
+                releaseActionsDiv.appendChild(releaseBtn);
+            }
+        } else if (allTasksInHighestFixReleased && currentHighestActiveFix && FIX_CATEGORIES_ORDER.indexOf(currentHighestActiveFix) < FIX_CATEGORIES_ORDER.length - 1) {
+             const releasedMsg = document.createElement('p');
+             releasedMsg.innerHTML = `<small><em>(Active tasks released from ${currentHighestActiveFix})</em></small>`;
+             releaseActionsDiv.appendChild(releasedMsg);
+        }
+        batchItemDiv.appendChild(releaseActionsDiv);
+
+
+        // Delete Logic Section
+        const deleteActionsDiv = document.createElement('div');
+        deleteActionsDiv.classList.add('dashboard-batch-actions-delete');
+        if (batch.tasksByFix) {
+            FIX_CATEGORIES_ORDER.forEach(fixCat => {
+                if (batch.tasksByFix[fixCat] && batch.tasksByFix[fixCat].length > 0) {
+                    const deleteFixBtn = document.createElement('button');
+                    deleteFixBtn.textContent = `Delete ${fixCat} Tasks`;
+                    deleteFixBtn.classList.add('btn', 'btn-danger');
+                    deleteFixBtn.onclick = () => {
+                        if (confirm(`Are you sure you want to delete all ${fixCat} tasks for batch '${batch.baseProjectName || "Unknown"}'? This is IRREVERSIBLE.`)) {
+                            deleteSpecificFixTasksForBatch(batch.batchId, fixCat);
+                        }
+                    };
+                    deleteActionsDiv.appendChild(deleteFixBtn);
+                }
+            });
+        }
+        const deleteAllBtn = document.createElement('button');
+        deleteAllBtn.textContent = "Delete ALL Tasks for this Batch";
+        deleteAllBtn.classList.add('btn', 'btn-danger');
+        deleteAllBtn.onclick = () => {
+            if (confirm(`Are you sure you want to delete ALL tasks for batch '${batch.baseProjectName || "Unknown"}'? This is IRREVERSIBLE.`)) {
+                deleteProjectBatch(batch.batchId);
+            }
         };
-        o.set(db.collection("projects").doc(), u)
-      }
-      o.update(db.collection("projects").doc(l.id), {
-        releasedToNextStage: !0,
-        lastModifiedTimestamp: s
-      })
-    }
-    await o.commit(), initializeFirebaseAndLoadData()
-  } catch (m) {
-    console.error("Error releasing batch:", m), alert("Error releasing batch: " + m.message)
-  } finally {
-    hideLoading()
-  }
+        deleteActionsDiv.appendChild(deleteAllBtn);
+        batchItemDiv.appendChild(deleteActionsDiv);
+
+        tlDashboardContentElement.appendChild(batchItemDiv);
+    });
 }
 
-async function deleteProjectBatch(e) {
-  if (showLoading("Deleting batch..."), !db || !e) {
-    alert("Invalid request to delete batch."), hideLoading();
-    return
-  }
-  try {
-    let t = await db.collection("projects").where("batchId", "==", e).get();
-    if (t.empty) {
-      console.log("No tasks found for batch ID to delete:", e), hideLoading();
-      return
+
+async function releaseBatchToNextFix(batchId, currentFixCategory, nextFixCategory) {
+    showLoading(`Releasing ${currentFixCategory} tasks...`);
+    if (!db) {
+        alert("Database not initialized!");
+        hideLoading();
+        return;
     }
-    let a = db.batch();
-    t.forEach(e => a.delete(e.ref)), await a.commit(), currentSelectedBatchId === e && (currentSelectedBatchId = "", localStorage.setItem("currentSelectedBatchId", "")), initializeFirebaseAndLoadData(), renderTLDashboard()
-  } catch (i) {
-    console.error(`Error deleting batch ${e}:`, i), alert("Error deleting batch: " + i.message)
-  } finally {
-    hideLoading()
-  }
+
+    try {
+        // Get all tasks in the current fix category for the batch that are not yet released
+        const querySnapshot = await db.collection("projects")
+            .where("batchId", "==", batchId)
+            .where("fixCategory", "==", currentFixCategory)
+            .where("releasedToNextStage", "==", false) // Only consider tasks not yet released
+            .get();
+
+        if (querySnapshot.empty) {
+            alert("No active tasks to release in the current stage for this batch.");
+            refreshAllViews(); // Refresh in case UI is out of sync
+            return;
+        }
+
+        const tasksToProcess = [];
+        querySnapshot.forEach(doc => {
+            const taskData = doc.data();
+            // Exclude tasks marked as 'Reassigned_TechAbsent' from being processed for new stage creation
+            // but still mark them as 'releasedToNextStage' to clear them from the current stage view.
+            if (taskData.status !== "Reassigned_TechAbsent") {
+                 tasksToProcess.push({ id: doc.id, ...taskData });
+            }
+        });
+
+        if (tasksToProcess.length === 0 && !querySnapshot.empty) { // All were reassigned
+             alert("All remaining tasks in this stage were reassigned. Marking them as released.");
+        } else if (tasksToProcess.length > 0 && !tasksToProcess.every(task =>
+            task && (task.status === "Completed" ||
+                     task.status === "Day1Ended_AwaitingNext" ||
+                     task.status === "Day2Ended_AwaitingNext" ||
+                     task.status === "Day3Ended_AwaitingNext")
+        )) {
+            alert(`Not all active (non-reassigned) tasks in ${currentFixCategory} are 'Completed', 'Day 1 Ended', 'Day 2 Ended', or 'Day 3 Ended'. Cannot release.`);
+            return;
+        }
+
+
+        const firestoreBatch = db.batch();
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+        for (const task of tasksToProcess) { // These are the non-reassigned ones
+            if (task && task.id) {
+                // Check if a task for the next fix category already exists for this areaTask
+                const existingNextFixQuery = await db.collection("projects")
+                    .where("batchId", "==", task.batchId)
+                    .where("areaTask", "==", task.areaTask)
+                    .where("fixCategory", "==", nextFixCategory)
+                    .limit(1)
+                    .get();
+
+                if (existingNextFixQuery.empty) {
+                    // Create new task for the next fix category
+                    const newNextFixTask = {
+                        batchId: task.batchId,
+                        creationTimestamp: task.creationTimestamp, // Preserve original batch creation time
+                        fixCategory: nextFixCategory,
+                        baseProjectName: task.baseProjectName,
+                        areaTask: task.areaTask,
+                        gsd: task.gsd,
+                        assignedTo: task.assignedTo, // Carry over assignee
+                        techNotes: "", // Reset notes
+                        status: "Available",
+                        startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
+                        startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                        startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+                        releasedToNextStage: false,
+                        lastModifiedTimestamp: serverTimestamp,
+                        isReassigned: false, // New task is not a reassignment itself
+                        originalProjectId: task.id, // Link to the task from the previous stage
+                        breakDurationMinutes: 0, // Reset break
+                        additionalMinutesManual: 0, // Reset additional time
+                    };
+                    const newDocRef = db.collection("projects").doc();
+                    firestoreBatch.set(newDocRef, newNextFixTask);
+                }
+                // Mark current task as released (regardless of whether a new one was created)
+                 const currentTaskRef = db.collection("projects").doc(task.id);
+                 firestoreBatch.update(currentTaskRef, {
+                    releasedToNextStage: true,
+                    lastModifiedTimestamp: serverTimestamp
+                });
+            }
+        }
+         // Also mark any 'Reassigned_TechAbsent' tasks in the current stage as released
+        querySnapshot.forEach(doc => {
+            if (doc.data().status === "Reassigned_TechAbsent") {
+                const reassignedTaskRef = db.collection("projects").doc(doc.id);
+                firestoreBatch.update(reassignedTaskRef, {
+                    releasedToNextStage: true,
+                    lastModifiedTimestamp: serverTimestamp
+                });
+            }
+        });
+
+
+        await firestoreBatch.commit();
+        initializeFirebaseAndLoadData(); // Refresh data and UI
+        // renderTLDashboard(); // Also refresh the dashboard view
+
+    } catch (error) {
+        console.error("Error releasing batch:", error);
+        alert("Error releasing batch: " + error.message);
+    } finally {
+        hideLoading();
+    }
 }
 
-async function deleteSpecificFixTasksForBatch(e, t) {
-  if (showLoading(`Deleting ${t} tasks...`), !db || !e || !t) {
-    alert("Invalid request to delete specific fix tasks."), hideLoading();
-    return
-  }
-  try {
-    let a = await db.collection("projects").where("batchId", "==", e).where("fixCategory", "==", t).get();
-    if (a.empty) {
-      console.log(`No ${t} tasks found for batch ID ${e} to delete.`), hideLoading();
-      return
+
+async function deleteProjectBatch(batchId) {
+    showLoading("Deleting batch...");
+    if (!db || !batchId) {
+        alert("Invalid request to delete batch.");
+        hideLoading();
+        return;
     }
-    let i = db.batch();
-    a.forEach(e => i.delete(e.ref)), await i.commit(), initializeFirebaseAndLoadData(), renderTLDashboard()
-  } catch (n) {
-    console.error(`Error deleting ${t} for batch ${e}:`, n), alert("Error deleting specific fix tasks: " + n.message)
-  } finally {
-    hideLoading()
-  }
+    try {
+        const querySnapshot = await db.collection("projects").where("batchId", "==", batchId).get();
+        if (querySnapshot.empty) {
+            console.log("No tasks found for batch ID to delete:", batchId);
+            hideLoading();
+            return;
+        }
+
+        const batch = db.batch();
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        if (currentSelectedBatchId === batchId) {
+            currentSelectedBatchId = ""; // Reset filter if current batch was deleted
+            localStorage.setItem('currentSelectedBatchId', "");
+        }
+        initializeFirebaseAndLoadData(); // Refresh main view
+        renderTLDashboard(); // Refresh TL dashboard
+
+    } catch (error) {
+        console.error(`Error deleting batch ${batchId}:`, error);
+        alert("Error deleting batch: " + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteSpecificFixTasksForBatch(batchId, fixCategory) {
+    showLoading(`Deleting ${fixCategory} tasks...`);
+    if (!db || !batchId || !fixCategory) {
+        alert("Invalid request to delete specific fix tasks.");
+        hideLoading();
+        return;
+    }
+    try {
+        const querySnapshot = await db.collection("projects")
+            .where("batchId", "==", batchId)
+            .where("fixCategory", "==", fixCategory)
+            .get();
+
+        if (querySnapshot.empty) {
+            console.log(`No ${fixCategory} tasks found for batch ID ${batchId} to delete.`);
+            hideLoading();
+            return;
+        }
+
+        const batch = db.batch();
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        initializeFirebaseAndLoadData(); // Refresh main view
+        renderTLDashboard(); // Refresh TL dashboard
+
+    } catch (error) {
+        console.error(`Error deleting ${fixCategory} for batch ${batchId}:`, error);
+        alert("Error deleting specific fix tasks: " + error.message);
+    } finally {
+        hideLoading();
+    }
 }
 
 function renderProjects() {
-  if (!projectTableBody) {
-    console.error("CRITICAL: projectTableBody not found.");
-    return
-  }
-  projectTableBody.innerHTML = "";
-  let e = [...projects];
-  e.sort((e, t) => {
-    if (!e || !t) return 0;
-    let a = FIX_CATEGORIES_ORDER.indexOf(e.fixCategory || ""),
-      i = FIX_CATEGORIES_ORDER.indexOf(t.fixCategory || "");
-    if (a < i) return -1;
-    if (a > i) return 1;
-    if ((e.areaTask || "") < (t.areaTask || "")) return -1;
-    if ((e.areaTask || "") > (t.areaTask || "")) return 1;
-    let n = STATUS_ORDER[e.status || ""] || 99,
-      r = STATUS_ORDER[t.status || ""] || 99;
-    return n < r ? -1 : n > r ? 1 : 0
-  });
-  let t = null,
-    a = null;
-  e.forEach(e => {
-    if (!e || !e.id || !e.batchId || !e.fixCategory) return;
-    if (e.batchId !== t) {
-      t = e.batchId, a = null;
-      let i = projectTableBody.insertRow();
-      i.classList.add("batch-header-row");
-      let n = i.insertCell();
-      n.setAttribute("colspan", 15..toString()), n.textContent = `Project Batch: ${e.baseProjectName||"Unknown"} (ID: ${e.batchId.split("_")[1]||"N/A"})`
+    if (!projectTableBody) {
+        console.error("CRITICAL: projectTableBody not found. Cannot render projects.");
+        return;
     }
-    if (e.fixCategory !== a) {
-      a = e.fixCategory;
-      let r = `${e.batchId}_${a}`;
-      void 0 === groupVisibilityState[r] && (groupVisibilityState[r] = {
-        isExpanded: !0
-      });
-      let s = projectTableBody.insertRow();
-      s.classList.add("fix-group-header");
-      let o = s.insertCell();
-      o.setAttribute("colspan", 15..toString());
-      let l = document.createElement("button");
-      l.classList.add("btn", "btn-group-toggle");
-      let d = groupVisibilityState[r]?.isExpanded !== !1;
-      l.textContent = d ? "−" : "+", l.title = d ? `Collapse ${a}` : `Expand ${a}`, o.appendChild(document.createTextNode(`${a} `)), o.appendChild(l), o.onclick = e => {
-        (e.target === l || e.target === o || o.contains(e.target)) && groupVisibilityState[r] && (groupVisibilityState[r].isExpanded = !groupVisibilityState[r].isExpanded, saveGroupVisibilityState(), renderProjects())
-      }
-    }
-    let c = projectTableBody.insertRow(),
-      u = `${e.batchId}_${e.fixCategory}`;
-    groupVisibilityState[u]?.isExpanded !== !1 || c.classList.add("hidden-group-row"), e.fixCategory && c.classList.add(`${e.fixCategory.toLowerCase()}-row`), e.isReassigned && c.classList.add("reassigned-task-highlight"), c.insertCell().textContent = e.fixCategory || "N/A";
-    let m = c.insertCell();
-    m.textContent = e.baseProjectName || "N/A", m.classList.add("wrap-text"), c.insertCell().textContent = e.areaTask || "N/A", c.insertCell().textContent = e.gsd || "N/A";
-    let g = c.insertCell(),
-      y = document.createElement("select");
-    y.classList.add("assigned-to-select"), y.disabled = "Reassigned_TechAbsent" === e.status;
-    let h = document.createElement("option");
-    h.value = "", h.textContent = "Select Tech ID", y.appendChild(h), TECH_IDS.forEach(e => {
-      let t = document.createElement("option");
-      t.value = e, t.textContent = e, y.appendChild(t)
-    }), y.value = e.assignedTo || "", y.onchange = async t => {
-      showLoading("Updating assignment...");
-      let a = t.target.value,
-        i = e.assignedTo || "";
-      if (!db || !e.id) {
-        alert("Database or project ID missing. Cannot update assignment."), t.target.value = e.assignedTo || "", hideLoading();
-        return
-      }
-      try {
-        await db.collection("projects").doc(e.id).update({
-          assignedTo: a,
-          lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }), e.assignedTo = a
-      } catch (n) {
-        console.error("Error updating assignedTo:", n), alert("Error updating assignment: " + n.message), t.target.value = i
-      } finally {
-        hideLoading()
-      }
-    }, g.appendChild(y);
-    let p = c.insertCell(),
-      b = document.createElement("span");
-    b.classList.add("status");
-    let f = (e.status || "Unknown").replace(/([A-Z])(?=[a-z0-9_])/g, " $1").trim();
+    projectTableBody.innerHTML = ""; // Clear existing rows
 
-    function D(e) {
-      if (!e) return "";
-      let t;
-      try {
-        if (t = "function" == typeof e.toDate ? e.toDate() : new Date(e), isNaN(t.getTime())) return ""
-      } catch (a) {
-        return ""
-      }
-      return t.toTimeString().slice(0, 5)
-    }
+    // Sort projects by fix category order, then area task, then status order
+    const sortedProjects = [...projects]; // Create a copy to sort
+    sortedProjects.sort((a, b) => {
+        if (!a || !b) return 0; // Should not happen if data is clean
 
-    async function T(e, t, a, i) {
-      if (showLoading(`Updating ${t}...`), !db || !e) {
-        alert("Database or project ID missing. Cannot update time."), hideLoading();
-        return
-      }
-      let n = null;
-      if (a) {
-        let r = new Date,
-          [s, o] = a.split(":").map(Number);
-        r.setHours(s, o, 0, 0), n = firebase.firestore.Timestamp.fromDate(r)
-      }
-      try {
-        let l = {
-          [t]: n,
-          lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.collection("projects").doc(e).update(l);
-        let d = { ...i,
-            [t]: n
-          },
-          c = "",
-          u = null,
-          m = null;
-        if (t.includes("Day1") ? (c = "durationDay1Ms", u = d.startTimeDay1, m = d.finishTimeDay1) : t.includes("Day2") ? (c = "durationDay2Ms", u = d.startTimeDay2, m = d.finishTimeDay2) : t.includes("Day3") && (c = "durationDay3Ms", u = d.startTimeDay3, m = d.finishTimeDay3), u && m && c) {
-          let g = calculateDurationMs(u, m);
-          await db.collection("projects").doc(e).update({
-            [c]: g,
-            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-          })
-        }
-      } catch (y) {
-        console.error(`Error updating ${t}:`, y), alert(`Error updating ${t}: ` + y.message)
-      } finally {
-        hideLoading()
-      }
-    }
-    "Day1Ended_AwaitingNext" === e.status && (f = "Started Day 1 Ended"), "Day2Ended_AwaitingNext" === e.status && (f = "Started Day 2 Ended"), "Reassigned_TechAbsent" === e.status && (f = "Re-Assigned"), b.textContent = f, b.classList.add(`status-${(e.status||"unknown").toLowerCase()}`);
-    let E = "Reassigned_TechAbsent" === e.status,
-      I = c.insertCell(),
-      M = document.createElement("input");
-    M.type = "time", M.value = D(e.startTimeDay1), M.disabled = E, M.onchange = t => T(e.id, "startTimeDay1", t.target.value, e), I.appendChild(M);
-    let C = c.insertCell(),
-      w = document.createElement("input");
-    w.type = "time", w.value = D(e.finishTimeDay1), w.disabled = E, w.onchange = t => T(e.id, "finishTimeDay1", t.target.value, e), C.appendChild(w);
-    let A = c.insertCell(),
-      L = document.createElement("input");
-    L.type = "time", L.value = D(e.startTimeDay2), L.disabled = E, L.onchange = t => T(e.id, "startTimeDay2", t.target.value, e), A.appendChild(L);
-    let S = c.insertCell(),
-      v = document.createElement("input");
-    v.type = "time", v.value = D(e.finishTimeDay2), v.disabled = E, v.onchange = t => T(e.id, "finishTimeDay2", t.target.value, e), S.appendChild(v);
-    let B = c.insertCell(),
-      k = document.createElement("input");
-    k.type = "time", k.value = D(e.startTimeDay3), k.disabled = E, k.onchange = t => T(e.id, "startTimeDay3", t.target.value, e), B.appendChild(k);
-    let j = c.insertCell(),
-      x = document.createElement("input");
-    x.type = "time", x.value = D(e.finishTimeDay3), x.disabled = E, x.onchange = t => T(e.id, "finishTimeDay3", t.target.value, e), j.appendChild(x);
-    let F = (e.durationDay1Ms || 0) + (e.durationDay2Ms || 0) + (e.durationDay3Ms || 0),
-      P = 6e4 * (e.breakDurationMinutes || 0),
-      N, $ = Math.max(0, F - P) + 6e4 * (e.additionalMinutesManual || 0);
-    0 === F && 0 === (e.breakDurationMinutes || 0) && 0 === (e.additionalMinutesManual || 0) && ($ = null);
-    let _ = c.insertCell();
-    _.textContent = formatMillisToMinutes($), _.classList.add("total-duration-column");
-    let R = c.insertCell(),
-      O = document.createElement("textarea");
-    O.value = e.techNotes || "", O.placeholder = "Notes", O.classList.add("tech-notes-input"), O.rows = 1, O.id = `techNotes_${e.id}`, O.disabled = "Reassigned_TechAbsent" === e.status, O.onchange = async t => {
-      showLoading("Updating tech notes...");
-      let a = t.target.value,
-        i = e.techNotes || "";
-      if (!db || !e.id) {
-        alert("Database or project ID missing. Cannot update notes."), t.target.value = e.techNotes || "", hideLoading();
-        return
-      }
-      try {
-        await db.collection("projects").doc(e.id).update({
-          techNotes: a,
-          lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }), e.techNotes = a
-      } catch (n) {
-        console.error("Error updating techNotes:", n), alert("Error updating tech notes: " + n.message), t.target.value = i
-      } finally {
-        hideLoading()
-      }
-    }, R.appendChild(O);
-    let U = c.insertCell(),
-      z = document.createElement("div");
-    z.classList.add("action-buttons-container");
-    let V = document.createElement("select");
-    V.classList.add("break-select"), V.id = `breakSelect_${e.id}`, V.title = "Select break time to deduct", V.disabled = E;
-    let H = document.createElement("option");
-    H.value = "0", H.textContent = "No Break", V.appendChild(H);
-    let G = document.createElement("option");
-    G.value = "15", G.textContent = "15m Break", V.appendChild(G);
-    let X = document.createElement("option");
-    X.value = "60", X.textContent = "1h Break", V.appendChild(X);
-    let W = document.createElement("option");
-    W.value = "90", W.textContent = "1h30m Break", V.appendChild(W), V.value = "number" == typeof e.breakDurationMinutes ? e.breakDurationMinutes.toString() : "0", V.onchange = async t => {
-      showLoading("Updating break duration...");
-      let a = parseInt(t.target.value, 10),
-        i = e.breakDurationMinutes || 0;
-      if (!db || !e.id) {
-        alert("Database or project ID missing. Cannot update break duration."), t.target.value = i.toString(), hideLoading();
-        return
-      }
-      try {
-        await db.collection("projects").doc(e.id).update({
-          breakDurationMinutes: a,
-          lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        let n = t.target.closest("tr");
-        if (n) {
-          let r = n.querySelector(".total-duration-column");
-          if (r) {
-            let s = (e.durationDay1Ms || 0) + (e.durationDay2Ms || 0) + (e.durationDay3Ms || 0),
-              o = 6e4 * (e.additionalMinutesManual || 0),
-              l = Math.max(0, s - 6e4 * a) + o;
-            0 === s && 0 === a && 0 === (e.additionalMinutesManual || 0) && (l = null), r.textContent = formatMillisToMinutes(l), e.breakDurationMinutes = a
-          }
-        }
-      } catch (d) {
-        console.error("Error updating break duration:", d), alert("Error updating break duration: " + d.message), t.target.value = i.toString()
-      } finally {
-        hideLoading()
-      }
-    }, z.appendChild(V);
-    let q = document.createElement("button");
-    q.textContent = "Start D1", q.classList.add("btn", "btn-day-start"), q.disabled = E || !["Available"].includes(e.status), q.onclick = () => {
-      e.id && updateProjectState(e.id, "startDay1")
-    }, z.appendChild(q);
-    let K = document.createElement("button");
-    K.textContent = "End D1", K.classList.add("btn", "btn-day-end"), K.disabled = E || "InProgressDay1" !== e.status, K.onclick = () => {
-      e.id && updateProjectState(e.id, "endDay1")
-    }, z.appendChild(K);
-    let J = document.createElement("button");
-    J.textContent = "Start D2", J.classList.add("btn", "btn-day-start"), J.disabled = E || !["Day1Ended_AwaitingNext"].includes(e.status), J.onclick = () => {
-      e.id && updateProjectState(e.id, "startDay2")
-    }, z.appendChild(J);
-    let Y = document.createElement("button");
-    Y.textContent = "End D2", Y.classList.add("btn", "btn-day-end"), Y.disabled = E || "InProgressDay2" !== e.status, Y.onclick = () => {
-      e.id && updateProjectState(e.id, "endDay2")
-    }, z.appendChild(Y);
-    let Z = document.createElement("button");
-    Z.textContent = "Start D3", Z.classList.add("btn", "btn-day-start"), Z.disabled = E || !["Day2Ended_AwaitingNext"].includes(e.status), Z.onclick = () => {
-      e.id && updateProjectState(e.id, "startDay3")
-    }, z.appendChild(Z);
-    let Q = document.createElement("button");
-    Q.textContent = "End D3", Q.classList.add("btn", "btn-day-end"), Q.disabled = E || "InProgressDay3" !== e.status, Q.onclick = () => {
-      e.id && updateProjectState(e.id, "endDay3")
-    }, z.appendChild(Q);
-    let ee = document.createElement("button");
-    ee.textContent = "Done", ee.classList.add("btn", "btn-mark-done"), ee.disabled = E || "Completed" === e.status, ee.onclick = () => {
-      e.id && updateProjectState(e.id, "markDone")
-    }, z.appendChild(ee);
-    let et = document.createElement("button");
-    et.textContent = "Re-Assign", et.classList.add("btn", "btn-warning"), et.title = "Re-assign task by creating a new entry.", et.disabled = "Completed" === e.status || E, et.onclick = () => {
-      let t = projects.find(t => t.id === e.id);
-      t && handleReassignment(t)
-    }, z.appendChild(et), U.appendChild(z)
-  })
-}
+        // Primary sort: Fix Category
+        const fixCategoryIndexA = FIX_CATEGORIES_ORDER.indexOf(a.fixCategory || "");
+        const fixCategoryIndexB = FIX_CATEGORIES_ORDER.indexOf(b.fixCategory || "");
+        if (fixCategoryIndexA < fixCategoryIndexB) return -1;
+        if (fixCategoryIndexA > fixCategoryIndexB) return 1;
 
-async function updateProjectState(e, t) {
-  if (showLoading("Updating project state..."), !db || !e) {
-    alert("Database not initialized or project ID missing for state update."), hideLoading();
-    return
-  }
-  let a = db.collection("projects").doc(e),
-    i;
-  try {
-    let n = await a.get();
-    if (!n.exists) {
-      console.warn("Project document not found:", e), hideLoading();
-      return
-    }
-    i = n.data()
-  } catch (r) {
-    console.error("Error fetching current project data for update:", r), alert("Error fetching project data: " + r.message), hideLoading();
-    return
-  }
-  if (!i || "Reassigned_TechAbsent" === i.status) {
-    console.warn("Attempted to update a reassigned or invalid project."), hideLoading();
-    return
-  }
-  let s = firebase.firestore.FieldValue.serverTimestamp(),
-    o = Date.now(),
-    l = {
-      lastModifiedTimestamp: s
-    },
-    d = i.status,
-    c = d;
-  switch (t) {
-    case "startDay1":
-      ["Available"].includes(i.status) && (l = { ...l,
-        status: "InProgressDay1",
-        startTimeDay1: s,
-        finishTimeDay1: null,
-        durationDay1Ms: null,
-        startTimeDay2: null,
-        finishTimeDay2: null,
-        durationDay2Ms: null,
-        startTimeDay3: null,
-        finishTimeDay3: null,
-        durationDay3Ms: null
-      }, c = "InProgressDay1");
-      break;
-    case "endDay1":
-      "InProgressDay1" === i.status && i.startTimeDay1 ? (l = { ...l,
-        status: "Day1Ended_AwaitingNext",
-        finishTimeDay1: s,
-        durationDay1Ms: calculateDurationMs(i.startTimeDay1, o)
-      }, c = "Day1Ended_AwaitingNext") : alert("Cannot end Day 1. Task is not in 'In Progress Day 1' status or start time is missing.");
-      break;
-    case "startDay2":
-      ["Day1Ended_AwaitingNext"].includes(i.status) && (l = { ...l,
-        status: "InProgressDay2",
-        startTimeDay2: s,
-        finishTimeDay2: null,
-        durationDay2Ms: null,
-        startTimeDay3: null,
-        finishTimeDay3: null,
-        durationDay3Ms: null
-      }, c = "InProgressDay2");
-      break;
-    case "endDay2":
-      "InProgressDay2" === i.status && i.startTimeDay2 ? (l = { ...l,
-        status: "Day2Ended_AwaitingNext",
-        finishTimeDay2: s,
-        durationDay2Ms: calculateDurationMs(i.startTimeDay2, o)
-      }, c = "Day2Ended_AwaitingNext") : alert("Cannot end Day 2. Task is not in 'In Progress Day 2' status or start time is missing.");
-      break;
-    case "startDay3":
-      ["Day2Ended_AwaitingNext"].includes(i.status) && (l = { ...l,
-        status: "InProgressDay3",
-        startTimeDay3: s,
-        finishTimeDay3: null,
-        durationDay3Ms: null
-      }, c = "InProgressDay3");
-      break;
-    case "endDay3":
-      "InProgressDay3" === i.status && i.startTimeDay3 ? (l = { ...l,
-        status: "Completed",
-        finishTimeDay3: s,
-        durationDay3Ms: calculateDurationMs(i.startTimeDay3, o)
-      }, c = "Completed") : alert("Cannot end Day 3. Task is not in 'In Progress Day 3' status or start time is missing.");
-      break;
-    case "markDone":
-      "Completed" !== i.status && (l.status = "Completed", c = "Completed", i.startTimeDay1 && !i.finishTimeDay1 && (l.finishTimeDay1 = s, l.durationDay1Ms = calculateDurationMs(i.startTimeDay1, o)), i.startTimeDay2 && !i.finishTimeDay2 && (l.finishTimeDay2 = s, l.durationDay2Ms = calculateDurationMs(i.startTimeDay2, o)), i.startTimeDay3 && !i.finishTimeDay3 && (l.finishTimeDay3 = s, l.durationDay3Ms = calculateDurationMs(i.startTimeDay3, o)), "Available" === i.status || (i.startTimeDay2 || !i.startTimeDay1 || i.finishTimeDay1 ? i.startTimeDay1 && i.finishTimeDay1 && !i.startTimeDay2 ? (l.startTimeDay2 = null, l.finishTimeDay2 = null, l.durationDay2Ms = null, l.startTimeDay3 = null, l.finishTimeDay3 = null, l.durationDay3Ms = null) : i.startTimeDay2 && !i.finishTimeDay2 ? (l.finishTimeDay2 = s, l.durationDay2Ms = calculateDurationMs(i.startTimeDay2, o), l.startTimeDay3 = null, l.finishTimeDay3 = null, l.durationDay3Ms = null) : i.startTimeDay2 && i.finishTimeDay2 && !i.startTimeDay3 && (l.startTimeDay3 = null, l.finishTimeDay3 = null, l.durationDay3Ms = null) : (l.finishTimeDay1 = s, l.durationDay1Ms = calculateDurationMs(i.startTimeDay1, o), l.startTimeDay2 = null, l.finishTimeDay2 = null, l.durationDay2Ms = null, l.startTimeDay3 = null, l.finishTimeDay3 = null, l.durationDay3Ms = null)));
-      break;
-    default:
-      hideLoading();
-      return
-  }
-  if (Object.keys(l).length > 1) try {
-    await a.update(l)
-  } catch (u) {
-    console.error(`Error updating project ${e}:`, u), alert("Error updating project status: " + u.message)
-  } finally {
-    hideLoading()
-  } else hideLoading()
-}
+        // Secondary sort: Area Task (alphanumerically)
+        const areaTaskA = a.areaTask || "";
+        const areaTaskB = b.areaTask || "";
+        if (areaTaskA < areaTaskB) return -1;
+        if (areaTaskA > areaTaskB) return 1;
 
-async function handleReassignment(e) {
-  if (!e || !e.id || "Reassigned_TechAbsent" === e.status || "Completed" === e.status) {
-    alert("Cannot re-assign. Task is already reassigned, completed, or invalid.");
-    return
-  }
-  let t = prompt(`Task for '${e.areaTask}'. Enter New Tech ID:`);
-  if (null === t || "" === t.trim()) {
-    alert("Reassignment cancelled. Tech ID cannot be empty.");
-    return
-  }
-  if (confirm(`Create NEW task for '${t.trim()}'? Current task will be closed and marked as 'Re-assigned'.`)) {
-    if (showLoading("Reassigning task..."), !db) {
-      alert("Database not initialized! Cannot re-assign."), hideLoading();
-      return
-    }
-    let a = db.batch(),
-      i = firebase.firestore.FieldValue.serverTimestamp(),
-      n = {
-        batchId: e.batchId,
-        baseProjectName: e.baseProjectName,
-        areaTask: e.areaTask,
-        gsd: e.gsd,
-        fixCategory: e.fixCategory,
-        assignedTo: t.trim(),
-        status: "Available",
-        startTimeDay1: null,
-        finishTimeDay1: null,
-        durationDay1Ms: null,
-        startTimeDay2: null,
-        finishTimeDay2: null,
-        durationDay2Ms: null,
-        startTimeDay3: null,
-        finishTimeDay3: null,
-        durationDay3Ms: null,
-        techNotes: `Reassigned from ${e.assignedTo||"N/A"}. Original Project ID: ${e.id}`,
-        creationTimestamp: i,
-        lastModifiedTimestamp: i,
-        isReassigned: !0,
-        originalProjectId: e.id,
-        releasedToNextStage: !1,
-        breakDurationMinutes: 0,
-        additionalMinutesManual: 0
-      },
-      r = db.collection("projects").doc();
-    a.set(r, n), a.update(db.collection("projects").doc(e.id), {
-      status: "Reassigned_TechAbsent",
-      lastModifiedTimestamp: i
+        // Tertiary sort: Status
+        const statusOrderA = STATUS_ORDER[a.status || ""] || 99; // Default to last if unknown
+        const statusOrderB = STATUS_ORDER[b.status || ""] || 99;
+        if (statusOrderA < statusOrderB) return -1;
+        if (statusOrderA > statusOrderB) return 1;
+
+        return 0; // Should be rare if IDs are unique
     });
-    try {
-      await a.commit(), initializeFirebaseAndLoadData()
-    } catch (s) {
-      console.error("Error in re-assignment:", s), alert("Error during re-assignment: " + s.message)
-    } finally {
-      hideLoading()
-    }
-  }
+
+
+    let currentBatchIdHeader = null;
+    let currentFixCategoryHeader = null;
+
+    sortedProjects.forEach(project => {
+        if (!project || !project.id || !project.batchId || !project.fixCategory) {
+             console.warn("Skipping rendering of invalid project object:", project);
+             return;
+        }
+
+        // Batch Header Row
+        if (project.batchId !== currentBatchIdHeader) {
+            currentBatchIdHeader = project.batchId;
+            currentFixCategoryHeader = null; // Reset fix category when batch changes
+            const batchRow = projectTableBody.insertRow();
+            batchRow.classList.add("batch-header-row");
+            const batchCell = batchRow.insertCell();
+            batchCell.setAttribute("colspan", NUM_TABLE_COLUMNS.toString());
+            batchCell.textContent = `Project Batch: ${project.baseProjectName || "Unknown"} (ID: ${project.batchId.split('_')[1] || "N/A"})`;
+        }
+
+        // Fix Category Group Header Row
+        if (project.fixCategory !== currentFixCategoryHeader) {
+            currentFixCategoryHeader = project.fixCategory;
+            const groupKey = `${project.batchId}_${currentFixCategoryHeader}`;
+
+            // Ensure groupVisibilityState has an entry for this new groupKey
+            if (typeof groupVisibilityState[groupKey] === 'undefined') {
+                groupVisibilityState[groupKey] = { isExpanded: true }; // Default to expanded
+                // saveGroupVisibilityState(); // Optionally save immediately, or on toggle
+            }
+
+
+            const groupHeaderRow = projectTableBody.insertRow();
+            groupHeaderRow.classList.add("fix-group-header");
+            const groupHeaderCell = groupHeaderRow.insertCell();
+            groupHeaderCell.setAttribute("colspan", NUM_TABLE_COLUMNS.toString());
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.classList.add('btn', 'btn-group-toggle');
+            const isExpanded = groupVisibilityState[groupKey]?.isExpanded !== false; // Default to true if undefined
+            toggleBtn.textContent = isExpanded ? "−" : "+"; // Minus for collapse, Plus for expand
+            toggleBtn.title = isExpanded ? `Collapse ${currentFixCategoryHeader}` : `Expand ${currentFixCategoryHeader}`;
+
+            groupHeaderCell.appendChild(document.createTextNode(`${currentFixCategoryHeader} `));
+            groupHeaderCell.appendChild(toggleBtn);
+
+            // Click listener for the entire cell to toggle
+            groupHeaderCell.onclick = (event) => {
+                 // Ensure the click is on the cell or the button itself, not other interactive elements if they were added
+                if (event.target === groupHeaderCell || event.target === toggleBtn || groupHeaderCell.contains(event.target)) {
+                    if (groupVisibilityState[groupKey]) {
+                        groupVisibilityState[groupKey].isExpanded = !groupVisibilityState[groupKey].isExpanded;
+                        saveGroupVisibilityState();
+                        renderProjects(); // Re-render to reflect expanded/collapsed state
+                    }
+                }
+            };
+        }
+
+        // Project Data Row
+        const row = projectTableBody.insertRow();
+        if (groupVisibilityState[`${project.batchId}_${project.fixCategory}`]?.isExpanded === false) {
+            row.classList.add("hidden-group-row");
+        }
+        if (project.fixCategory) {
+            row.classList.add(`${project.fixCategory.toLowerCase()}-row`);
+        }
+        if (project.isReassigned) {
+            row.classList.add("reassigned-task-highlight");
+        }
+
+
+        // 1. Fix Category
+        row.insertCell().textContent = project.fixCategory || "N/A";
+
+        // 2. Base Project Name
+        const projectNameCell = row.insertCell();
+        projectNameCell.textContent = project.baseProjectName || "N/A";
+        projectNameCell.classList.add("wrap-text"); // For potentially long names
+
+        // 3. Area/Task
+        row.insertCell().textContent = project.areaTask || "N/A";
+
+        // 4. GSD
+        row.insertCell().textContent = project.gsd || "N/A";
+
+        // 5. Assigned To (Dropdown)
+        const assignedToCell = row.insertCell();
+        const assignedToSelect = document.createElement('select');
+        assignedToSelect.classList.add('assigned-to-select');
+        assignedToSelect.disabled = project.status === "Reassigned_TechAbsent";
+
+        const defaultTechOption = document.createElement('option');
+        defaultTechOption.value = "";
+        defaultTechOption.textContent = "Select Tech ID";
+        assignedToSelect.appendChild(defaultTechOption);
+
+        TECH_IDS.forEach(techId => {
+            const option = document.createElement('option');
+            option.value = techId;
+            option.textContent = techId;
+            assignedToSelect.appendChild(option);
+        });
+        assignedToSelect.value = project.assignedTo || "";
+        assignedToSelect.onchange = async (event) => {
+            showLoading("Updating assignment...");
+            const newTechId = event.target.value;
+            const oldTechId = project.assignedTo || ""; // For reverting on error
+            if (!db || !project.id) {
+                alert("Database or project ID missing. Cannot update assignment.");
+                event.target.value = oldTechId; // Revert UI
+                hideLoading();
+                return;
+            }
+            try {
+                await db.collection("projects").doc(project.id).update({
+                    assignedTo: newTechId,
+                    lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                project.assignedTo = newTechId; // Update local data for consistency if needed elsewhere
+            } catch (error) {
+                console.error("Error updating assignedTo:", error);
+                alert("Error updating assignment: " + error.message);
+                event.target.value = oldTechId; // Revert select value on error
+            } finally {
+                hideLoading();
+            }
+        };
+        assignedToCell.appendChild(assignedToSelect);
+
+
+        // 6. Status (Text)
+        const statusCell = row.insertCell(); // <<< MODIFIED HERE: Capture the cell
+        const statusSpan = document.createElement('span');
+        statusSpan.classList.add('status');
+        let statusText = (project.status || "Unknown").replace(/([A-Z])(?=[a-z0-9_])/g, ' $1').trim(); // Add spaces before caps
+
+        // Custom status text transformations
+        if (project.status === "Day1Ended_AwaitingNext") statusText = "Started Day 1 Ended";
+        else if (project.status === "Day2Ended_AwaitingNext") statusText = "Started Day 2 Ended";
+        else if (project.status === "Day3Ended_AwaitingNext") statusText = "Started Day 3 Ended";
+        else if (project.status === "Reassigned_TechAbsent") statusText = "Re-Assigned";
+
+        statusSpan.textContent = statusText;
+        statusSpan.classList.add(`status-${(project.status || "unknown").toLowerCase()}`);
+        statusCell.appendChild(statusSpan); // <<< MODIFIED HERE: Append status to its cell
+
+
+        // Helper function to format Firestore Timestamp or JS Date to HH:MM string
+        function formatTime(timestampOrDate) {
+            if (!timestampOrDate) return "";
+            let date;
+            try {
+                if (timestampOrDate.toDate && typeof timestampOrDate.toDate === 'function') {
+                    date = timestampOrDate.toDate(); // Firestore Timestamp
+                } else if (timestampOrDate instanceof Date) {
+                    date = timestampOrDate; // JavaScript Date
+                } else {
+                     date = new Date(timestampOrDate); // Try parsing if string/number
+                }
+                if (isNaN(date.getTime())) return ""; // Invalid date
+            } catch (e) {
+                return ""; // Error during conversion
+            }
+            return date.toTimeString().slice(0, 5); // HH:MM
+        }
+
+        // Helper function to handle time input changes
+        async function updateTimeField(projectId, fieldName, newValue, projectData) {
+            showLoading(`Updating ${fieldName}...`);
+            if (!db || !projectId) {
+                alert("Database or project ID missing. Cannot update time.");
+                hideLoading();
+                return;
+            }
+
+            let firestoreTimestamp = null;
+            if (newValue) { // If newValue is not empty (e.g., "10:30")
+                const today = new Date();
+                const [hours, minutes] = newValue.split(':').map(Number);
+                today.setHours(hours, minutes, 0, 0); // Set seconds and ms to 0 for consistency
+                firestoreTimestamp = firebase.firestore.Timestamp.fromDate(today);
+            }
+
+            try {
+                await db.collection("projects").doc(projectId).update({
+                    [fieldName]: firestoreTimestamp,
+                    lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // After updating time, recalculate duration if applicable
+                let updatedProjectData = { ...projectData, [fieldName]: firestoreTimestamp }; // Simulate update
+                let durationFieldToUpdate = "";
+                let startTimeForCalc = null;
+                let finishTimeForCalc = null;
+
+                if (fieldName.includes("Day1")) {
+                    durationFieldToUpdate = "durationDay1Ms";
+                    startTimeForCalc = updatedProjectData.startTimeDay1;
+                    finishTimeForCalc = updatedProjectData.finishTimeDay1;
+                } else if (fieldName.includes("Day2")) {
+                    durationFieldToUpdate = "durationDay2Ms";
+                    startTimeForCalc = updatedProjectData.startTimeDay2;
+                    finishTimeForCalc = updatedProjectData.finishTimeDay2;
+                } else if (fieldName.includes("Day3")) {
+                     durationFieldToUpdate = "durationDay3Ms";
+                     startTimeForCalc = updatedProjectData.startTimeDay3;
+                     finishTimeForCalc = updatedProjectData.finishTimeDay3;
+                }
+
+                if (durationFieldToUpdate && startTimeForCalc && finishTimeForCalc) {
+                    const newDuration = calculateDurationMs(startTimeForCalc, finishTimeForCalc);
+                    await db.collection("projects").doc(projectId).update({
+                        [durationFieldToUpdate]: newDuration,
+                        lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                     // Note: The onSnapshot listener should pick this up and re-render the total duration.
+                }
+
+
+            } catch (error) {
+                console.error(`Error updating ${fieldName}:`, error);
+                alert(`Error updating ${fieldName}: ` + error.message);
+                // Potentially revert UI input value here if needed
+            } finally {
+                hideLoading();
+            }
+        }
+        const isTaskDisabled = project.status === "Reassigned_TechAbsent";
+
+        // 7. Start Time Day 1
+        const startTime1Cell = row.insertCell();
+        const startTime1Input = document.createElement('input');
+        startTime1Input.type = 'time';
+        startTime1Input.value = formatTime(project.startTimeDay1);
+        startTime1Input.disabled = isTaskDisabled;
+        startTime1Input.onchange = (event) => updateTimeField(project.id, 'startTimeDay1', event.target.value, project);
+        startTime1Cell.appendChild(startTime1Input);
+
+        // 8. Finish Time Day 1
+        const finishTime1Cell = row.insertCell();
+        const finishTime1Input = document.createElement('input');
+        finishTime1Input.type = 'time';
+        finishTime1Input.value = formatTime(project.finishTimeDay1);
+        finishTime1Input.disabled = isTaskDisabled;
+        finishTime1Input.onchange = (event) => updateTimeField(project.id, 'finishTimeDay1', event.target.value, project);
+        finishTime1Cell.appendChild(finishTime1Input);
+
+
+        // 9. Start Time Day 2
+        const startTime2Cell = row.insertCell();
+        const startTime2Input = document.createElement('input');
+        startTime2Input.type = 'time';
+        startTime2Input.value = formatTime(project.startTimeDay2);
+        startTime2Input.disabled = isTaskDisabled;
+        startTime2Input.onchange = (event) => updateTimeField(project.id, 'startTimeDay2', event.target.value, project);
+        startTime2Cell.appendChild(startTime2Input);
+
+        // 10. Finish Time Day 2
+        const finishTime2Cell = row.insertCell();
+        const finishTime2Input = document.createElement('input');
+        finishTime2Input.type = 'time';
+        finishTime2Input.value = formatTime(project.finishTimeDay2);
+        finishTime2Input.disabled = isTaskDisabled;
+        finishTime2Input.onchange = (event) => updateTimeField(project.id, 'finishTimeDay2', event.target.value, project);
+        finishTime2Cell.appendChild(finishTime2Input);
+
+        // 11. Start Time Day 3
+        const startTime3Cell = row.insertCell();
+        const startTime3Input = document.createElement('input');
+        startTime3Input.type = 'time';
+        startTime3Input.value = formatTime(project.startTimeDay3);
+        startTime3Input.disabled = isTaskDisabled;
+        startTime3Input.onchange = (event) => updateTimeField(project.id, 'startTimeDay3', event.target.value, project);
+        startTime3Cell.appendChild(startTime3Input);
+
+        // 12. Finish Time Day 3
+        const finishTime3Cell = row.insertCell();
+        const finishTime3Input = document.createElement('input');
+        finishTime3Input.type = 'time';
+        finishTime3Input.value = formatTime(project.finishTimeDay3);
+        finishTime3Input.disabled = isTaskDisabled;
+        finishTime3Input.onchange = (event) => updateTimeField(project.id, 'finishTimeDay3', event.target.value, project);
+        finishTime3Cell.appendChild(finishTime3Input);
+
+
+        // 13. Total Duration (Calculated, includes breaks and additional time)
+        const totalDurationMsDay1 = project.durationDay1Ms || 0;
+        const totalDurationMsDay2 = project.durationDay2Ms || 0;
+        const totalDurationMsDay3 = project.durationDay3Ms || 0;
+        const totalWorkDurationMs = totalDurationMsDay1 + totalDurationMsDay2 + totalDurationMsDay3;
+        const breakMs = (project.breakDurationMinutes || 0) * 60000;
+        const additionalMs = (project.additionalMinutesManual || 0) * 60000;
+
+        let finalAdjustedDurationMs = Math.max(0, totalWorkDurationMs - breakMs) + additionalMs;
+        // If all inputs are zero/null, display N/A instead of 0
+        if (totalWorkDurationMs === 0 && (project.breakDurationMinutes || 0) === 0 && (project.additionalMinutesManual || 0) === 0) {
+            finalAdjustedDurationMs = null; // So formatMillisToMinutes shows N/A
+        }
+
+
+        const totalDurationCell = row.insertCell();
+        totalDurationCell.textContent = formatMillisToMinutes(finalAdjustedDurationMs);
+        totalDurationCell.classList.add('total-duration-column');
+
+
+        // 14. Tech Notes (Textarea)
+        const techNotesCell = row.insertCell();
+        const techNotesInput = document.createElement('textarea');
+        techNotesInput.value = project.techNotes || "";
+        techNotesInput.placeholder = "Notes";
+        techNotesInput.classList.add('tech-notes-input');
+        techNotesInput.rows = 1; // Start small, can expand with CSS if needed
+        techNotesInput.id = `techNotes_${project.id}`;
+        techNotesInput.disabled = project.status === "Reassigned_TechAbsent";
+        techNotesInput.onchange = async (event) => {
+            showLoading("Updating tech notes...");
+            const newNotes = event.target.value;
+            const oldNotes = project.techNotes || "";
+             if (!db || !project.id) {
+                alert("Database or project ID missing. Cannot update notes.");
+                event.target.value = oldNotes; // Revert UI
+                hideLoading();
+                return;
+            }
+            try {
+                await db.collection("projects").doc(project.id).update({
+                    techNotes: newNotes,
+                    lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                project.techNotes = newNotes; // Update local cache
+            } catch (error) {
+                console.error("Error updating techNotes:", error);
+                alert("Error updating tech notes: " + error.message);
+                event.target.value = oldNotes; // Revert on error
+            } finally {
+                hideLoading();
+            }
+        };
+        techNotesCell.appendChild(techNotesInput);
+
+
+        // 15. Action Buttons & Break Select
+        const actionsCell = row.insertCell();
+        const actionButtonsDiv = document.createElement('div');
+        actionButtonsDiv.classList.add('action-buttons-container'); // For flex layout
+
+        // Break Duration Select
+        const breakSelect = document.createElement('select');
+        breakSelect.classList.add('break-select');
+        breakSelect.id = `breakSelect_${project.id}`;
+        breakSelect.title = "Select break time to deduct";
+        breakSelect.disabled = isTaskDisabled;
+        [
+            { value: "0", text: "No Break" },
+            { value: "15", text: "15m Break" },
+            // { value: "30", text: "30m Break" }, // Add if needed
+            { value: "60", text: "1h Break" },
+            { value: "90", text: "1h30m Break" }
+        ].forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            breakSelect.appendChild(option);
+        });
+        breakSelect.value = typeof project.breakDurationMinutes === 'number' ? project.breakDurationMinutes.toString() : "0";
+        breakSelect.onchange = async (event) => {
+            showLoading("Updating break duration...");
+            const newBreakMinutes = parseInt(event.target.value, 10);
+            const oldBreakMinutes = project.breakDurationMinutes || 0;
+            if (!db || !project.id) {
+                alert("Database or project ID missing. Cannot update break duration.");
+                event.target.value = oldBreakMinutes.toString();
+                hideLoading();
+                return;
+            }
+            try {
+                await db.collection("projects").doc(project.id).update({
+                    breakDurationMinutes: newBreakMinutes,
+                    lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                // The onSnapshot listener will trigger a re-render, updating total duration
+                project.breakDurationMinutes = newBreakMinutes; // Update local cache
+
+                // Manually update the displayed total duration in this row for immediate feedback
+                const currentRow = event.target.closest('tr');
+                if (currentRow) {
+                    const durationDisplayCell = currentRow.querySelector('.total-duration-column');
+                    if (durationDisplayCell) {
+                        const currentTotalWorkMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                        const currentAdditionalMs = (project.additionalMinutesManual || 0) * 60000;
+                        let newAdjustedDuration = Math.max(0, currentTotalWorkMs - (newBreakMinutes * 60000)) + currentAdditionalMs;
+                         if (currentTotalWorkMs === 0 && newBreakMinutes === 0 && (project.additionalMinutesManual || 0) === 0) {
+                            newAdjustedDuration = null;
+                        }
+                        durationDisplayCell.textContent = formatMillisToMinutes(newAdjustedDuration);
+                    }
+                }
+
+
+            } catch (error) {
+                console.error("Error updating break duration:", error);
+                alert("Error updating break duration: " + error.message);
+                event.target.value = oldBreakMinutes.toString();
+            } finally {
+                hideLoading();
+            }
+        };
+        actionButtonsDiv.appendChild(breakSelect);
+
+
+        // Action Buttons (Start D1, End D1, etc.)
+        const createActionButton = (text, className, disabledCondition, action) => {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.classList.add('btn', className);
+            button.disabled = isTaskDisabled || disabledCondition; // Also disable if task is reassigned
+            button.onclick = () => { if (project.id) updateProjectState(project.id, action, project); };
+            return button;
+        };
+
+        actionButtonsDiv.appendChild(createActionButton("Start D1", "btn-day-start", !["Available"].includes(project.status), "startDay1"));
+        actionButtonsDiv.appendChild(createActionButton("End D1", "btn-day-end", project.status !== "InProgressDay1", "endDay1"));
+        actionButtonsDiv.appendChild(createActionButton("Start D2", "btn-day-start", !["Day1Ended_AwaitingNext"].includes(project.status), "startDay2"));
+        actionButtonsDiv.appendChild(createActionButton("End D2", "btn-day-end", project.status !== "InProgressDay2", "endDay2"));
+        actionButtonsDiv.appendChild(createActionButton("Start D3", "btn-day-start", !["Day2Ended_AwaitingNext"].includes(project.status), "startDay3"));
+        actionButtonsDiv.appendChild(createActionButton("End D3", "btn-day-end", project.status !== "InProgressDay3", "endDay3"));
+        actionButtonsDiv.appendChild(createActionButton("Done", "btn-mark-done", project.status === "Completed", "markDone"));
+
+
+        const reassignBtn = document.createElement('button');
+        reassignBtn.textContent = "Re-Assign";
+        reassignBtn.classList.add('btn', 'btn-warning');
+        reassignBtn.title = "Re-assign task by creating a new entry. Current task will be closed.";
+        reassignBtn.disabled = project.status === "Completed" || isTaskDisabled;
+        reassignBtn.onclick = () => {
+            const currentProjectData = projects.find(p => p.id === project.id); // Get fresh data
+            if (currentProjectData) handleReassignment(currentProjectData);
+        };
+        actionButtonsDiv.appendChild(reassignBtn);
+
+        actionsCell.appendChild(actionButtonsDiv);
+    });
 }
+
+async function updateProjectState(projectId, action, currentProjectData) {
+    showLoading("Updating project state...");
+    if (!db || !projectId) {
+        alert("Database not initialized or project ID missing for state update.");
+        hideLoading();
+        return;
+    }
+
+    const projectRef = db.collection("projects").doc(projectId);
+    let projectSnapshotData;
+
+    // Fetch the latest project data directly, or use provided currentProjectData if fresh enough
+    // For critical state changes, always fetching might be safer.
+    try {
+        const docSnap = await projectRef.get();
+        if (!docSnap.exists) {
+            console.warn("Project document not found for update:", projectId);
+            hideLoading();
+            return;
+        }
+        projectSnapshotData = docSnap.data();
+    } catch (error) {
+        console.error("Error fetching current project data for state update:", error);
+        alert("Error fetching project data: " + error.message);
+        hideLoading();
+        return;
+    }
+
+
+    if (!projectSnapshotData || projectSnapshotData.status === "Reassigned_TechAbsent") {
+        console.warn("Attempted to update a reassigned or invalid project. State update cancelled.");
+        hideLoading();
+        return; // Do not update reassigned tasks
+    }
+
+
+    const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp(); // For setting times
+    const currentTimeMs = Date.now(); // For calculating durations with current time
+
+    let updates = { lastModifiedTimestamp: serverTimestamp };
+    let newStatus = projectSnapshotData.status; // Start with current status
+
+    switch (action) {
+        case "startDay1":
+            if (["Available"].includes(projectSnapshotData.status)) {
+                updates = {
+                    ...updates,
+                    status: "InProgressDay1",
+                    startTimeDay1: serverTimestamp,
+                    finishTimeDay1: null, durationDay1Ms: null,
+                    startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null, // Reset subsequent days
+                    startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+                };
+                newStatus = "InProgressDay1";
+            }
+            break;
+        case "endDay1":
+            if (projectSnapshotData.status === "InProgressDay1" && projectSnapshotData.startTimeDay1) {
+                updates = {
+                    ...updates,
+                    status: "Day1Ended_AwaitingNext",
+                    finishTimeDay1: serverTimestamp,
+                    durationDay1Ms: calculateDurationMs(projectSnapshotData.startTimeDay1, currentTimeMs)
+                };
+                newStatus = "Day1Ended_AwaitingNext";
+            } else {
+                alert("Cannot end Day 1. Task is not in 'In Progress Day 1' status or start time is missing.");
+            }
+            break;
+        case "startDay2":
+            if (["Day1Ended_AwaitingNext"].includes(projectSnapshotData.status)) {
+                updates = {
+                    ...updates,
+                    status: "InProgressDay2",
+                    startTimeDay2: serverTimestamp,
+                    finishTimeDay2: null, durationDay2Ms: null, // Reset current and subsequent day's end/duration
+                    startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+                };
+                newStatus = "InProgressDay2";
+            }
+            break;
+        case "endDay2":
+            if (projectSnapshotData.status === "InProgressDay2" && projectSnapshotData.startTimeDay2) {
+                updates = {
+                    ...updates,
+                    status: "Day2Ended_AwaitingNext",
+                    finishTimeDay2: serverTimestamp,
+                    durationDay2Ms: calculateDurationMs(projectSnapshotData.startTimeDay2, currentTimeMs)
+                };
+                newStatus = "Day2Ended_AwaitingNext";
+            } else {
+                alert("Cannot end Day 2. Task is not in 'In Progress Day 2' status or start time is missing.");
+            }
+            break;
+         case "startDay3":
+            if (["Day2Ended_AwaitingNext"].includes(projectSnapshotData.status)) {
+                updates = {
+                    ...updates,
+                    status: "InProgressDay3",
+                    startTimeDay3: serverTimestamp,
+                    finishTimeDay3: null, durationDay3Ms: null,
+                };
+                newStatus = "InProgressDay3";
+            }
+            break;
+        case "endDay3":
+            if (projectSnapshotData.status === "InProgressDay3" && projectSnapshotData.startTimeDay3) {
+                updates = {
+                    ...updates,
+                    status: "Day3Ended_AwaitingNext", // Or directly to "Completed" if that's the flow
+                    finishTimeDay3: serverTimestamp,
+                    durationDay3Ms: calculateDurationMs(projectSnapshotData.startTimeDay3, currentTimeMs)
+                };
+                newStatus = "Day3Ended_AwaitingNext"; // Or "Completed"
+            } else {
+                alert("Cannot end Day 3. Task is not in 'In Progress Day 3' status or start time is missing.");
+            }
+            break;
+        case "markDone":
+            if (projectSnapshotData.status !== "Completed") {
+                updates.status = "Completed";
+                newStatus = "Completed";
+                // If any day was started but not finished, finish it now.
+                if (projectSnapshotData.startTimeDay1 && !projectSnapshotData.finishTimeDay1) {
+                    updates.finishTimeDay1 = serverTimestamp;
+                    updates.durationDay1Ms = calculateDurationMs(projectSnapshotData.startTimeDay1, currentTimeMs);
+                }
+                if (projectSnapshotData.startTimeDay2 && !projectSnapshotData.finishTimeDay2) {
+                    updates.finishTimeDay2 = serverTimestamp;
+                    updates.durationDay2Ms = calculateDurationMs(projectSnapshotData.startTimeDay2, currentTimeMs);
+                }
+                 if (projectSnapshotData.startTimeDay3 && !projectSnapshotData.finishTimeDay3) {
+                    updates.finishTimeDay3 = serverTimestamp;
+                    updates.durationDay3Ms = calculateDurationMs(projectSnapshotData.startTimeDay3, currentTimeMs);
+                }
+                // If task was 'Available' and marked done, all durations remain null unless explicitly set
+                if (projectSnapshotData.status === "Available") {
+                    updates.startTimeDay1 = updates.startTimeDay1 || null;
+                    updates.finishTimeDay1 = updates.finishTimeDay1 || null;
+                    updates.durationDay1Ms = updates.durationDay1Ms || null;
+                     // etc. for day 2 & 3 ensure they are null if not started
+                    updates.startTimeDay2 = null; updates.finishTimeDay2 = null; updates.durationDay2Ms = null;
+                    updates.startTimeDay3 = null; updates.finishTimeDay3 = null; updates.durationDay3Ms = null;
+                } else if (projectSnapshotData.status === "Day1Ended_AwaitingNext" || projectSnapshotData.status === "InProgressDay1" ) {
+                    // if D1 was active or ended, but D2/D3 never started, ensure they are null
+                    updates.startTimeDay2 = null; updates.finishTimeDay2 = null; updates.durationDay2Ms = null;
+                    updates.startTimeDay3 = null; updates.finishTimeDay3 = null; updates.durationDay3Ms = null;
+                } else if (projectSnapshotData.status === "Day2Ended_AwaitingNext" || projectSnapshotData.status === "InProgressDay2") {
+                     updates.startTimeDay3 = null; updates.finishTimeDay3 = null; updates.durationDay3Ms = null;
+                }
+
+
+            }
+            break;
+        default:
+            hideLoading();
+            console.warn("Unknown action in updateProjectState:", action);
+            return; // Don't proceed if action is unknown
+    }
+
+    if (Object.keys(updates).length > 1) { // Ensure there's more than just lastModifiedTimestamp
+        try {
+            await projectRef.update(updates);
+            // onSnapshot will handle UI refresh
+        } catch (error) {
+            console.error(`Error updating project ${projectId} for action ${action}:`, error);
+            alert("Error updating project status: " + error.message);
+        } finally {
+            hideLoading();
+        }
+    } else {
+        hideLoading(); // No actual state change occurred
+    }
+}
+
+async function handleReassignment(projectToReassign) {
+    if (!projectToReassign || !projectToReassign.id ||
+        projectToReassign.status === "Reassigned_TechAbsent" ||
+        projectToReassign.status === "Completed") {
+        alert("Cannot re-assign. Task is already reassigned, completed, or invalid.");
+        return;
+    }
+
+    const newTechId = prompt(`Re-assigning task for '${projectToReassign.areaTask}'. Enter NEW Tech ID:`, projectToReassign.assignedTo || "");
+    if (newTechId === null || newTechId.trim() === "") { // User cancelled or entered empty
+        alert("Reassignment cancelled or Tech ID was empty.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to create a NEW task for '${newTechId.trim()}' based on this one? The current task (${projectToReassign.areaTask} for ${projectToReassign.assignedTo || 'Unassigned'}) will be closed and marked as 'Re-assigned'.`)) {
+        showLoading("Reassigning task...");
+        if (!db) {
+            alert("Database not initialized! Cannot re-assign.");
+            hideLoading();
+            return;
+        }
+
+        const batch = db.batch();
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+        // 1. Create the new reassigned task
+        const newProjectData = {
+            batchId: projectToReassign.batchId,
+            baseProjectName: projectToReassign.baseProjectName,
+            areaTask: projectToReassign.areaTask, // Keep same area/task identifier
+            gsd: projectToReassign.gsd,
+            fixCategory: projectToReassign.fixCategory,
+            assignedTo: newTechId.trim(),
+            status: "Available", // New task starts as Available
+            startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
+            startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+            techNotes: `Reassigned from ${projectToReassign.assignedTo || "N/A"}. Original Project ID: ${projectToReassign.id}`,
+            creationTimestamp: serverTimestamp, // New task has new creation time
+            lastModifiedTimestamp: serverTimestamp,
+            isReassigned: true, // Mark this new task as being a result of reassignment
+            originalProjectId: projectToReassign.id, // Link to the old task
+            releasedToNextStage: false, // Starts fresh in its stage
+            breakDurationMinutes: 0, // Reset breaks
+            additionalMinutesManual: 0, // Reset additional time
+        };
+        const newProjectRef = db.collection("projects").doc(); // New ID for the reassigned task
+        batch.set(newProjectRef, newProjectData);
+
+        // 2. Update the old task to "Reassigned_TechAbsent"
+        const oldProjectRef = db.collection("projects").doc(projectToReassign.id);
+        batch.update(oldProjectRef, {
+            status: "Reassigned_TechAbsent",
+            lastModifiedTimestamp: serverTimestamp,
+            // Optionally, clear assignedTo or add a note like "Closed due to reassignment"
+            // techNotes: (projectToReassign.techNotes || "") + "\nTask closed and reassigned on " + new Date().toLocaleString()
+        });
+
+        try {
+            await batch.commit();
+            initializeFirebaseAndLoadData(); // Refresh the view
+        } catch (error) {
+            console.error("Error in re-assignment transaction:", error);
+            alert("Error during re-assignment: " + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+}
+
 
 function refreshAllViews() {
-  try {
-    renderProjects()
-  } catch (e) {
-    console.error("Error during refreshAllViews:", e), alert("An error occurred while refreshing the project display. Please check the console.")
-  }
+    try {
+        renderProjects();
+        // If TL Dashboard is open, refresh it too (optional, depends on desired behavior)
+        // if (tlDashboardModal && tlDashboardModal.style.display === 'block') {
+        //     renderTLDashboard();
+        // }
+    } catch (error) {
+        console.error("Error during refreshAllViews:", error);
+        alert("An error occurred while refreshing the project display. Please check the console.");
+        // Potentially clear table body to indicate error state
+        if (projectTableBody) projectTableBody.innerHTML = '<tr><td colspan="'+NUM_TABLE_COLUMNS+'" style="color:red; text-align:center;">Error loading projects.</td></tr>';
+    }
 }
 
 async function renderAllowedEmailsList() {
-  if (!allowedEmailsList) {
-    console.error("allowedEmailsList element not found.");
-    return
-  }
-  if (showLoading("Rendering allowed emails..."), await fetchAllowedEmails(), allowedEmailsList.innerHTML = "", 0 === allowedEmailsFromFirestore.length) {
-    allowedEmailsList.innerHTML = "<li>No allowed emails configured. Please add at least one.</li>", hideLoading();
-    return
-  }
-  allowedEmailsFromFirestore.forEach(e => {
-    let t = document.createElement("li");
-    t.textContent = e;
-    let a = document.createElement("button");
-    a.textContent = "Remove", a.classList.add("btn", "btn-danger", "btn-small"), a.onclick = () => handleRemoveEmail(e), t.appendChild(a), allowedEmailsList.appendChild(t)
-  }), hideLoading()
+    if (!allowedEmailsList) {
+        console.error("allowedEmailsList element not found.");
+        return;
+    }
+    showLoading("Rendering allowed emails...");
+    // Fetch is now done on auth state change or initial load, so we use the cached list
+    // await fetchAllowedEmails(); // No longer needed here if already fetched
+
+    allowedEmailsList.innerHTML = ""; // Clear current list
+
+    if (allowedEmailsFromFirestore.length === 0) {
+        allowedEmailsList.innerHTML = "<li>No allowed emails configured. Please add at least one.</li>";
+        hideLoading();
+        return;
+    }
+
+    allowedEmailsFromFirestore.forEach(email => {
+        const li = document.createElement('li');
+        li.textContent = email;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = "Remove";
+        removeBtn.classList.add('btn', 'btn-danger', 'btn-small');
+        removeBtn.onclick = () => handleRemoveEmail(email);
+
+        li.appendChild(removeBtn);
+        allowedEmailsList.appendChild(li);
+    });
+    hideLoading();
 }
 
 async function handleAddEmail() {
-  if (showLoading("Adding email..."), !addEmailInput) {
-    hideLoading();
-    return
-  }
-  let e = addEmailInput.value.trim().toLowerCase();
-  if (!e || !e.includes("@") || !e.includes(".")){
-    alert("Please enter a valid email address (e.g., user@example.com)."), hideLoading();
-    return
-  }
-  if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(e)) {
-    alert("This email is already in the allowed list."), hideLoading();
-    return
-  }
-  let t = [...allowedEmailsFromFirestore, e].sort();
-  await updateAllowedEmailsInFirestore(t) && (addEmailInput.value = "", renderAllowedEmailsList())
+    showLoading("Adding email...");
+    if (!addEmailInput) {
+         hideLoading();
+         return;
+    }
+    const emailToAdd = addEmailInput.value.trim().toLowerCase();
+
+    if (!emailToAdd || !emailToAdd.includes('@') || !emailToAdd.includes('.')) { // Basic validation
+        alert("Please enter a valid email address (e.g., user@example.com).");
+        hideLoading();
+        return;
+    }
+
+    if (allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(emailToAdd)) {
+        alert("This email is already in the allowed list.");
+        hideLoading();
+        return;
+    }
+
+    const success = await updateAllowedEmailsInFirestore([...allowedEmailsFromFirestore, emailToAdd].sort());
+    if (success) {
+        addEmailInput.value = ""; // Clear input
+        renderAllowedEmailsList(); // Re-render the list
+    }
+    // hideLoading() is called within updateAllowedEmailsInFirestore
 }
 
-async function handleRemoveEmail(e) {
-  if (confirm(`Are you sure you want to remove ${e} from the allowed list? This will prevent them from logging in.`)) {
-    showLoading("Removing email...");
-    let t = allowedEmailsFromFirestore.filter(t => t !== e);
-    await updateAllowedEmailsInFirestore(t) && (renderAllowedEmailsList())
-  }
+async function handleRemoveEmail(emailToRemove) {
+    if (confirm(`Are you sure you want to remove ${emailToRemove} from the allowed list? This will prevent them from logging in.`)) {
+        showLoading("Removing email...");
+        const success = await updateAllowedEmailsInFirestore(allowedEmailsFromFirestore.filter(email => email !== emailToRemove));
+        if (success) {
+            renderAllowedEmailsList(); // Re-render
+        }
+        // hideLoading() is called within updateAllowedEmailsInFirestore
+    }
 }
 
 async function generateTlSummaryData() {
-  if (!tlSummaryContent) {
-    console.error("tlSummaryContent element not found.");
-    return
-  }
-  if (showLoading("Generating TL Summary..."), tlSummaryContent.innerHTML = "<p>Loading summary...</p>", !db) {
-    tlSummaryContent.innerHTML = '<p style="color:red;">Database not initialized. Cannot generate summary.</p>', hideLoading();
-    return
-  }
-  try {
-    let e = await db.collection("projects").get(),
-      t = [];
-    e.forEach(e => {
-      e.exists && "function" == typeof e.data && t.push({
-        id: e.id,
-        ...e.data()
-      })
-    });
-    let a = {},
-      i = {};
-    t.forEach(e => {
-      e.durationDay1Ms = "number" == typeof e.durationDay1Ms ? e.durationDay1Ms : 0, e.durationDay2Ms = "number" == typeof e.durationDay2Ms ? e.durationDay2Ms : 0, e.durationDay3Ms = "number" == typeof e.durationDay3Ms ? e.durationDay3Ms : 0, e.breakDurationMinutes = "number" == typeof e.breakDurationMinutes ? e.breakDurationMinutes : 0, e.additionalMinutesManual = "number" == typeof e.additionalMinutesManual ? e.additionalMinutesManual : 0;
-      let t = e.durationDay1Ms + e.durationDay2Ms + e.durationDay3Ms,
-        n = 6e4 * e.breakDurationMinutes,
-        r = 6e4 * e.additionalMinutesManual,
-        s = Math.max(0, t - n) + r;
-      if (s <= 0 && 0 === e.breakDurationMinutes && 0 === e.additionalMinutesManual) return;
-      let o = `${e.baseProjectName||"Unknown Project"}_${e.fixCategory||"Unknown Fix"}`;
-      a[o] || (a[o] = {
-        projectName: e.baseProjectName || "Unknown Project",
-        fixCategory: e.fixCategory || "Unknown Fix",
-        totalMinutes: 0
-      }), a[o].totalMinutes += Math.floor(s / 6e4);
-      let l = e.baseProjectName || "Unknown Project";
-      i[l] || (i[l] = {
-        projectName: l,
-        totalMinutes: 0
-      }), i[l].totalMinutes += Math.floor(s / 6e4)
-    });
-    let n = '<ul style="list-style: none; padding: 0;">',
-      r = Object.keys(i).sort();
-    r.length > 0 && (n += "<h3>Overall Project Totals (All Fix Categories)</h3>", r.forEach(e => {
-      let t = i[e],
-        a = (t.totalMinutes / 60).toFixed(2);
-      n += `
+    if (!tlSummaryContent) {
+        console.error("tlSummaryContent element not found.");
+        return;
+    }
+    showLoading("Generating TL Summary...");
+    tlSummaryContent.innerHTML = "<p>Loading summary...</p>";
+
+    if (!db) {
+        tlSummaryContent.innerHTML = '<p style="color:red;">Database not initialized. Cannot generate summary.</p>';
+        hideLoading();
+        return;
+    }
+
+    try {
+        const projectsSnapshot = await db.collection("projects").get();
+        let allProjectsData = [];
+        projectsSnapshot.forEach(doc => {
+            if (doc.exists && typeof doc.data === 'function') {
+                allProjectsData.push({ id: doc.id, ...doc.data() });
+            }
+        });
+
+        const projectFixCategoryTotals = {}; // Key: projectname_fixcategory, Value: { projectName, fixCategory, totalMinutes }
+        const overallProjectTotals = {}; // Key: projectname, Value: { projectName, totalMinutes }
+
+        allProjectsData.forEach(p => {
+            // Ensure numeric values for durations and adjustments
+            const dur1 = typeof p.durationDay1Ms === 'number' ? p.durationDay1Ms : 0;
+            const dur2 = typeof p.durationDay2Ms === 'number' ? p.durationDay2Ms : 0;
+            const dur3 = typeof p.durationDay3Ms === 'number' ? p.durationDay3Ms : 0;
+            const breakMins = typeof p.breakDurationMinutes === 'number' ? p.breakDurationMinutes : 0;
+            const addMins = typeof p.additionalMinutesManual === 'number' ? p.additionalMinutesManual : 0;
+
+            const totalWorkMs = dur1 + dur2 + dur3;
+            const breakMs = breakMins * 60000;
+            const additionalMs = addMins * 60000;
+            let adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
+
+            // Skip if no effective time contributed
+            if (adjustedNetMs <= 0 && breakMins === 0 && addMins === 0 && totalWorkMs === 0) {
+                return;
+            }
+            const minutes = Math.floor(adjustedNetMs / 60000);
+            if (minutes <= 0) return; // Only count positive minutes
+
+            const projName = p.baseProjectName || "Unknown Project";
+            const fixCat = p.fixCategory || "Unknown Fix";
+            const summaryKey = `${projName}_${fixCat}`;
+
+            // Project + Fix Category Total
+            if (!projectFixCategoryTotals[summaryKey]) {
+                projectFixCategoryTotals[summaryKey] = { projectName: projName, fixCategory: fixCat, totalMinutes: 0 };
+            }
+            projectFixCategoryTotals[summaryKey].totalMinutes += minutes;
+
+            // Overall Project Total
+            if (!overallProjectTotals[projName]) {
+                overallProjectTotals[projName] = { projectName: projName, totalMinutes: 0 };
+            }
+            overallProjectTotals[projName].totalMinutes += minutes;
+        });
+
+        let summaryHtml = '<ul style="list-style: none; padding: 0;">';
+
+        // Overall Totals First
+        const sortedOverallKeys = Object.keys(overallProjectTotals).sort();
+        if (sortedOverallKeys.length > 0) {
+            summaryHtml += "<h3>Overall Project Totals (All Fix Categories)</h3>";
+            sortedOverallKeys.forEach(key => {
+                const data = overallProjectTotals[key];
+                const hoursDecimal = (data.totalMinutes / 60).toFixed(2);
+                summaryHtml += `
                     <li class="tl-summary-overall-total">
-                        <strong>Project:</strong> ${t.projectName}<br>
-                        <strong>Total Across All Fixes:</strong> ${t.totalMinutes} minutes<br>
-                        <strong>Decimal:</strong> ${a} hours
+                        <strong>Project:</strong> ${data.projectName}<br>
+                        <strong>Total Across All Fixes:</strong> ${data.totalMinutes} minutes<br>
+                        <strong>Decimal:</strong> ${hoursDecimal} hours
                     </li>
-                `
-    }), n += '<hr style="margin: 20px 0;">'), n += "<h3>Totals by Project and Fix Category</h3>";
-    let s = Object.keys(a).sort();
-    s.forEach(e => {
-      let t = a[e],
-        i = (t.totalMinutes / 60).toFixed(2);
-      n += `
+                `;
+            });
+            summaryHtml += '<hr style="margin: 20px 0;">';
+        }
+
+
+        summaryHtml += "<h3>Totals by Project and Fix Category</h3>";
+        const sortedFixCatKeys = Object.keys(projectFixCategoryTotals).sort();
+
+        if (sortedFixCatKeys.length > 0) {
+            sortedFixCatKeys.forEach(key => {
+                const data = projectFixCategoryTotals[key];
+                 const hoursDecimal = (data.totalMinutes / 60).toFixed(2);
+                summaryHtml += `
                 <li style="margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dotted #eee;">
-                    <strong>Project Name:</strong> ${t.projectName} (${t.fixCategory})<br>
-                    <strong>Total:</strong> ${t.totalMinutes} minutes<br>
-                    <strong>Decimal:</strong> ${i} hours
+                    <strong>Project Name:</strong> ${data.projectName} (${data.fixCategory})<br>
+                    <strong>Total:</strong> ${data.totalMinutes} minutes<br>
+                    <strong>Decimal:</strong> ${hoursDecimal} hours
                 </li>
-            `
-    }), 0 === s.length && 0 === r.length ? n = "<p>No project time data found to generate a summary.</p>" : n += "</ul>", tlSummaryContent.innerHTML = n
-  } catch (o) {
-    console.error("Error generating TL Summary:", o), tlSummaryContent.innerHTML = '<p style="color:red;">Error generating summary: ' + o.message + "</p>", alert("Error generating TL Summary: " + o.message)
-  } finally {
-    hideLoading()
-  }
+            `;
+            });
+        }
+
+
+        if (sortedFixCatKeys.length === 0 && sortedOverallKeys.length === 0) {
+            summaryHtml = "<p>No project time data found to generate a summary.</p>";
+        } else {
+             summaryHtml += "</ul>";
+        }
+
+
+        tlSummaryContent.innerHTML = summaryHtml;
+
+    } catch (error) {
+        console.error("Error generating TL Summary:", error);
+        tlSummaryContent.innerHTML = `<p style="color:red;">Error generating summary: ${error.message}</p>`;
+        alert("Error generating TL Summary: " + error.message);
+    } finally {
+        hideLoading();
+    }
 }
 
+
+// --- AUTHENTICATION ---
 function setupAuthEventListeners() {
-  let e = new firebase.auth.GoogleAuthProvider;
-  e.addScope("email"), signInBtn ? signInBtn.addEventListener("click", () => {
-    if (showLoading("Signing in..."), !auth) {
-      console.error("Auth not initialized"), hideLoading();
-      return
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email'); // Ensure email scope is requested
+
+    if (signInBtn) {
+        signInBtn.addEventListener('click', () => {
+            showLoading("Signing in...");
+            if (!auth) {
+                console.error("Auth not initialized");
+                hideLoading();
+                return;
+            }
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // This is handled by onAuthStateChanged, but good for logging
+                    console.log("Sign-in attempt successful for: ", result.user.email);
+                    // onAuthStateChanged will take care of UI updates and data loading
+                })
+                .catch((error) => {
+                    console.error("Sign-in error: ", error);
+                    let errorMessage = "Error signing in: " + error.message;
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = "Sign-in process was cancelled. Please try again.";
+                    } else if (error.code === 'auth/cancelled-popup-request') {
+                         errorMessage = "Sign-in process was interrupted. Please try again.";
+                    } else if (error.code === 'auth/popup-blocked') {
+                        errorMessage = "Sign-in pop-up was blocked by the browser. Please allow pop-ups for this site and try again.";
+                    } else if (error.code === 'auth/network-request-failed') {
+                        errorMessage = "Network error. Please check your internet connection.";
+                    }
+                    alert(errorMessage);
+
+                    // Ensure UI reflects signed-out state on critical sign-in failure
+                    if (userInfoDisplayDiv && signInBtn && appContentDiv && loadingAuthMessageDiv) {
+                        userInfoDisplayDiv.style.display = 'none';
+                        signInBtn.style.display = 'block';
+                        appContentDiv.style.display = 'none';
+                        loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>";
+                        loadingAuthMessageDiv.style.display = 'block';
+                    }
+                    hideLoading();
+                });
+        });
+    } else {
+        console.error("Sign-in button not found during event listener setup.");
     }
-    auth.signInWithPopup(e).then(e => {
-      console.log("Sign-in attempt successful for: ", e.user.email)
-    }).catch(e => {
-      console.error("Sign-in error: ", e);
-      let t = "Error signing in: " + e.message;
-      "auth/popup-closed-by-user" === e.code ? t = "Sign-in process was cancelled. Please try again." : "auth/cancelled-popup-request" === e.code ? t = "Sign-in process was interrupted. Please try again." : "auth/popup-blocked" === e.code ? t = "Sign-in pop-up was blocked by the browser. Please allow pop-ups for this site and try again." : "auth/network-request-failed" === e.code && (t = "Network error. Please check your internet connection."), alert(t), loadingAuthMessageDiv && signInBtn && userInfoDisplayDiv && appContentDiv && (userInfoDisplayDiv.style.display = "none", signInBtn.style.display = "block", appContentDiv.style.display = "none", loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>", loadingAuthMessageDiv.style.display = "block"), hideLoading()
-    })
-  }) : console.error("Sign-in button not found during event listener setup."), signOutBtn ? signOutBtn.addEventListener("click", () => {
-    if (showLoading("Signing out..."), !auth) {
-      console.error("Auth not initialized"), hideLoading();
-      return
+
+    if (signOutBtn) {
+        signOutBtn.addEventListener('click', () => {
+            showLoading("Signing out...");
+            if (!auth) {
+                console.error("Auth not initialized");
+                hideLoading();
+                return;
+            }
+            auth.signOut()
+                .then(() => {
+                    console.log("User signed out successfully by clicking button.");
+                    // onAuthStateChanged will handle UI reset and data clearing.
+                })
+                .catch((error) => {
+                    console.error("Sign-out error: ", error);
+                    alert("Error signing out: " + error.message);
+                    hideLoading(); // Still hide loading on error
+                });
+        });
+    } else {
+        console.error("Sign-out button not found during event listener setup.");
     }
-    auth.signOut().then(() => {
-      console.log("User signed out successfully by clicking button.")
-    }).catch(e => {
-      console.error("Sign-out error: ", e), alert("Error signing out: " + e.message), hideLoading()
-    })
-  }) : console.error("Sign-out button not found during event listener setup.")
 }
+
 
 function initializeAppComponents() {
-  isAppInitialized ? (console.log("App components already initialized or re-initializing data load."), initializeFirebaseAndLoadData()) : (console.log("Initializing app components (DOM refs, event listeners, Firestore data)..."), setupDOMReferences(), attachEventListeners(), initializeFirebaseAndLoadData(), isAppInitialized = !0)
+    if (isAppInitialized) {
+        console.log("App components already initialized. Re-initializing data load.");
+        initializeFirebaseAndLoadData(); // Re-fetch data with current filters
+    } else {
+        console.log("Initializing app components (DOM refs, event listeners, Firestore data)...");
+        setupDOMReferences(); // Ensure all DOM refs are fresh
+        attachEventListeners(); // Attach all event listeners
+        initializeFirebaseAndLoadData(); // Initial data load
+        isAppInitialized = true;
+    }
 }
 
-auth ? auth.onAuthStateChanged(async e => {
-  if (setupDOMReferences(), setupAuthRelatedDOMReferences(), !userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv || !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
-    console.error("One or more critical UI elements for auth state change not found. Aborting UI update."), hideLoading();
-    return
-  }
-  if (e) {
-    showLoading("Checking authorization..."), await fetchAllowedEmails();
-    let t = e.email ? e.email.toLowerCase() : "";
-    e.email && allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(t) ? (console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", e.displayName, e.email), userNameP.textContent = e.displayName || "Name not available", userEmailP.textContent = e.email || "Email not available", userPhotoImg.src = e.photoURL || "default-user.png", userInfoDisplayDiv.style.display = "flex", signInBtn.style.display = "none", loadingAuthMessageDiv.style.display = "none", appContentDiv.style.display = "block", openSettingsBtn.style.display = "block", initializeAppComponents()) : (console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", e.email), alert("Access Denied: Your email address (" + (e.email || "N/A") + ") is not authorized to use this application. You will be signed out."), auth.signOut().then(() => {
-      console.log("Unauthorized user automatically signed out."), loadingAuthMessageDiv.innerHTML = "<p>Access Denied. Please sign in with an authorized account.</p>", userInfoDisplayDiv.style.display = "none", signInBtn.style.display = "block", appContentDiv.style.display = "none", loadingAuthMessageDiv.style.display = "block", openSettingsBtn.style.display = "none", projects = [], projectTableBody && (projectTableBody.innerHTML = ""), tlDashboardContentElement && (tlDashboardContentElement.innerHTML = ""), allowedEmailsList && (allowedEmailsList.innerHTML = ""), firestoreListenerUnsubscribe && (firestoreListenerUnsubscribe(), firestoreListenerUnsubscribe = null, console.log("Firestore listener detached for unauthorized user sign out.")), isAppInitialized = !1, hideLoading()
-    }).catch(e => {
-      console.error("Error signing out unauthorized user:", e), alert("Error signing out unauthorized user: " + e.message), userInfoDisplayDiv.style.display = "none", signInBtn.style.display = "block", appContentDiv.style.display = "none", loadingAuthMessageDiv.innerHTML = "<p>Access Denied. Error during sign out. Please refresh.</p>", loadingAuthMessageDiv.style.display = "block", openSettingsBtn.style.display = "none", hideLoading()
-    }))
-  } else console.log("Auth state changed: User is SIGNED OUT"), userNameP.textContent = "", userEmailP.textContent = "", userPhotoImg.src = "", userInfoDisplayDiv.style.display = "none", signInBtn.style.display = "block", appContentDiv.style.display = "none", openSettingsBtn.style.display = "none", -1 === loadingAuthMessageDiv.innerHTML.indexOf("Access Denied") && (loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>"), loadingAuthMessageDiv.style.display = "block", projects = [], projectTableBody && (projectTableBody.innerHTML = ""), tlDashboardContentElement && (tlDashboardContentElement.innerHTML = ""), allowedEmailsList && (allowedEmailsList.innerHTML = ""), firestoreListenerUnsubscribe && (firestoreListenerUnsubscribe(), firestoreListenerUnsubscribe = null, console.log("Firestore listener detached on sign out.")), isAppInitialized = !1, console.log("App content hidden, project data cleared, and Firestore listener detached."), hideLoading()
-}) : (console.error("Firebase Auth is not initialized. UI updates based on auth state will not occur."), loadingAuthMessageDiv && (loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>', loadingAuthMessageDiv.style.display = "block")), document.addEventListener("DOMContentLoaded", () => {
-  if (console.log("DOM fully loaded."), setupDOMReferences(), setupAuthRelatedDOMReferences(), auth) setupAuthEventListeners(), console.log("Auth UI and event listeners set up.");
-  else {
-    console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
-    let e = document.getElementById("auth-container");
-    e && loadingAuthMessageDiv && (loadingAuthMessageDiv.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>', loadingAuthMessageDiv.style.display = "block")
-  }
+
+if (auth) { // Only proceed if Firebase Auth was initialized
+    auth.onAuthStateChanged(async (user) => {
+        // Ensure basic auth UI elements are set up before trying to use them
+        setupDOMReferences(); // Call this first to ensure all general DOM elements are available
+        setupAuthRelatedDOMReferences(); // Then setup specific auth-related ones
+
+        // Critical check for UI elements needed for auth state changes
+        if (!userNameP || !userEmailP || !userPhotoImg || !userInfoDisplayDiv ||
+            !signInBtn || !appContentDiv || !loadingAuthMessageDiv || !openSettingsBtn) {
+            console.error("One or more critical UI elements for auth state change not found. Aborting UI update.");
+            const loadingMsgElem = document.getElementById('loading-auth-message') || loadingAuthMessageDiv;
+            if(loadingMsgElem) {
+                loadingMsgElem.innerHTML = '<p style="color:red; font-weight:bold;">UI Error: Critical elements missing. Please refresh.</p>';
+                loadingMsgElem.style.display = 'block';
+            }
+            hideLoading();
+            return;
+        }
+
+
+        if (user) {
+            showLoading("Checking authorization...");
+            await fetchAllowedEmails(); // Ensure we have the latest list
+            const userEmailLower = user.email ? user.email.toLowerCase() : "";
+
+            if (user.email && allowedEmailsFromFirestore.map(e => e.toLowerCase()).includes(userEmailLower)) {
+                console.log("Auth state changed: User is SIGNED IN and ALLOWED - ", user.displayName, user.email);
+                userNameP.textContent = user.displayName || "Name not available";
+                userEmailP.textContent = user.email || "Email not available";
+                if (userPhotoImg) userPhotoImg.src = user.photoURL || 'default-user.png'; // Simple default
+                userInfoDisplayDiv.style.display = 'flex';
+                signInBtn.style.display = 'none';
+                loadingAuthMessageDiv.style.display = 'none';
+                appContentDiv.style.display = 'block';
+                if (openSettingsBtn) openSettingsBtn.style.display = 'block'; // Show settings if allowed
+
+                initializeAppComponents(); // Load data, setup listeners etc.
+
+            } else {
+                console.warn("Auth state changed: User SIGNED IN but NOT ALLOWED - ", user.email);
+                alert("Access Denied: Your email address (" + (user.email || "N/A") + ") is not authorized to use this application. You will be signed out.");
+                auth.signOut().then(() => {
+                    console.log("Unauthorized user automatically signed out.");
+                    loadingAuthMessageDiv.innerHTML = "<p>Access Denied. Please sign in with an authorized account.</p>";
+                    // Reset UI to signed-out state
+                    userInfoDisplayDiv.style.display = 'none';
+                    signInBtn.style.display = 'block';
+                    appContentDiv.style.display = 'none';
+                    loadingAuthMessageDiv.style.display = 'block';
+                    if (openSettingsBtn) openSettingsBtn.style.display = 'none';
+
+                    projects = []; // Clear data
+                    if (projectTableBody) projectTableBody.innerHTML = "";
+                    if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = "";
+                    if (allowedEmailsList) allowedEmailsList.innerHTML = "";
+
+                    if (firestoreListenerUnsubscribe) {
+                        firestoreListenerUnsubscribe();
+                        firestoreListenerUnsubscribe = null;
+                        console.log("Firestore listener detached for unauthorized user sign out.");
+                    }
+                    isAppInitialized = false; // Reset app state
+                    hideLoading();
+                }).catch(err => {
+                    console.error("Error signing out unauthorized user:", err);
+                    alert("Access Denied. Error during sign out: "+ err.message + " Please refresh.");
+                    // Still try to reset UI
+                    userInfoDisplayDiv.style.display = 'none';
+                    signInBtn.style.display = 'block';
+                    appContentDiv.style.display = 'none';
+                    loadingAuthMessageDiv.innerHTML = "<p>Access Denied. Error during sign out. Please refresh.</p>";
+                    loadingAuthMessageDiv.style.display = 'block';
+                    if (openSettingsBtn) openSettingsBtn.style.display = 'none';
+                    hideLoading();
+                });
+            }
+        } else {
+            // User is signed out
+            console.log("Auth state changed: User is SIGNED OUT");
+            userNameP.textContent = "";
+            userEmailP.textContent = "";
+            if (userPhotoImg) userPhotoImg.src = "";
+            userInfoDisplayDiv.style.display = 'none';
+            signInBtn.style.display = 'block';
+            appContentDiv.style.display = 'none';
+            if (openSettingsBtn) openSettingsBtn.style.display = 'none';
+
+            // Only update loading message if it's not already showing an access denied message
+            if (loadingAuthMessageDiv.innerHTML.indexOf("Access Denied") === -1) {
+                 loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>";
+            }
+            loadingAuthMessageDiv.style.display = 'block';
+
+
+            projects = []; // Clear data
+            if (projectTableBody) projectTableBody.innerHTML = "";
+            if (tlDashboardContentElement) tlDashboardContentElement.innerHTML = "";
+            if (allowedEmailsList) allowedEmailsList.innerHTML = "";
+
+            if (firestoreListenerUnsubscribe) {
+                firestoreListenerUnsubscribe();
+                firestoreListenerUnsubscribe = null;
+                console.log("Firestore listener detached on sign out.");
+            }
+            isAppInitialized = false; // Reset app state
+            console.log("App content hidden, project data cleared, and Firestore listener detached.");
+            hideLoading();
+        }
+    });
+} else {
+    console.error("Firebase Auth is not initialized. UI updates based on auth state will not occur.");
+    const loadingMessageElement = document.getElementById('loading-auth-message');
+    if (loadingMessageElement) {
+        loadingMessageElement.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check the console and refresh.</p>';
+        loadingMessageElement.style.display = 'block';
+    }
+}
+
+
+// DOMContentLoaded listener to kick things off
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM fully loaded.");
+    setupDOMReferences(); // Initial DOM references setup
+    setupAuthRelatedDOMReferences(); // Auth specific DOM references
+
+    if (auth) { // Check if Firebase Auth was initialized successfully earlier
+        setupAuthEventListeners(); // Setup sign-in/out button listeners
+        console.log("Auth UI and event listeners set up on DOMContentLoaded.");
+        // onAuthStateChanged will handle the rest based on current auth state
+    } else {
+        console.error("Firebase Auth not available on DOMContentLoaded. Auth UI setup skipped.");
+        const authContainer = document.getElementById('auth-container'); // Or a more general app container
+        const loadingMsg = loadingAuthMessageDiv || document.getElementById('loading-auth-message'); // Try to get it again
+        if (authContainer && loadingMsg) {
+            loadingMsg.innerHTML = '<p style="color:red; font-weight:bold;">Authentication services could not be loaded. Please check console and refresh.</p>';
+            loadingMsg.style.display = 'block';
+            if (signInBtn) signInBtn.style.display = 'none'; // Hide sign-in if auth failed to load
+        }
+    }
 });
