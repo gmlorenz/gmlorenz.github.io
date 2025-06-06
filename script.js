@@ -511,63 +511,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             
-           async updateTimeField(projectId, fieldName, newValue) {
+          async updateTimeField(projectId, fieldName, newValue) {
                 this.methods.showLoading.call(this, `Updating ${fieldName}...`);
                 const projectRef = this.db.collection("projects").doc(projectId);
 
                 try {
-                    const doc = await projectRef.get();
-                    if (!doc.exists) throw new Error("Document not found.");
-
-                    const projectData = doc.data();
-                    let firestoreTimestamp = null;
-                    const dayMatch = fieldName.match(/Day(\d)/);
-                    
-                    if (!dayMatch) {
-                        throw new Error("Invalid field name for time update.");
-                    }
-
-                    const dayNum = dayMatch[1];
-
-                    if (newValue) {
-                        const [hours, minutes] = newValue.split(':').map(Number);
-                        if (!isNaN(hours) && !isNaN(minutes)) {
-                            
-                            // --- MODIFICATION START ---
-                            // This logic is now more robust. It checks for any existing timestamp for the
-                            // current day's work (start or finish) before falling back to the project's
-                            // creation timestamp. This ensures both times are anchored to the same, correct date.
-
-                            const startFieldForDay = `startTimeDay${dayNum}`;
-                            const finishFieldForDay = `finishTimeDay${dayNum}`;
-
-                            const baseDate = projectData[startFieldForDay]?.toDate() ||
-                                             projectData[finishFieldForDay]?.toDate() ||
-                                             projectData.creationTimestamp?.toDate() ||
-                                             new Date(); // Fallback to current time if nothing exists
-                            // --- MODIFICATION END ---
-
-                            const year = baseDate.getFullYear();
-                            const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-                            const day = String(baseDate.getDate()).padStart(2, '0');
-                            const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-
-                            // Timezone is hardcoded to +08:00 (Philippines Standard Time)
-                            const isoStringWithTimezone = `${year}-${month}-${day}T${time}+08:00`;
-                            firestoreTimestamp = firebase.firestore.Timestamp.fromDate(new Date(isoStringWithTimezone));
+                    // --- MODIFICATION START ---
+                    // The entire logic is now wrapped in a Firestore Transaction.
+                    // This prevents race conditions by ensuring the read and update happen together atomically.
+                    await this.db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(projectRef);
+                        if (!doc.exists) {
+                            throw new Error("Document not found.");
                         }
-                    }
 
-                    const durationFieldToUpdate = `durationDay${dayNum}Ms`;
-                    const newStartTime = fieldName.includes("startTime") ? firestoreTimestamp : projectData[`startTimeDay${dayNum}`];
-                    const newFinishTime = fieldName.includes("finishTime") ? firestoreTimestamp : projectData[`finishTimeDay${dayNum}`];
-                    const newDuration = this.methods.calculateDurationMs.call(this, newStartTime, newFinishTime);
+                        const projectData = doc.data();
+                        let firestoreTimestamp = null;
+                        const dayMatch = fieldName.match(/Day(\d)/);
 
-                    await projectRef.update({
-                        [fieldName]: firestoreTimestamp,
-                        [durationFieldToUpdate]: newDuration,
-                        lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        if (!dayMatch) {
+                            throw new Error("Invalid field name for time update.");
+                        }
+
+                        const dayNum = dayMatch[1];
+
+                        if (newValue) {
+                            const [hours, minutes] = newValue.split(':').map(Number);
+                            if (!isNaN(hours) && !isNaN(minutes)) {
+                                const startFieldForDay = `startTimeDay${dayNum}`;
+                                const finishFieldForDay = `finishTimeDay${dayNum}`;
+                                const baseDate = projectData[startFieldForDay]?.toDate() ||
+                                                 projectData[finishFieldForDay]?.toDate() ||
+                                                 projectData.creationTimestamp?.toDate() ||
+                                                 new Date();
+
+                                const year = baseDate.getFullYear();
+                                const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+                                const day = String(baseDate.getDate()).padStart(2, '0');
+                                const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+                                const isoStringWithTimezone = `${year}-${month}-${day}T${time}+08:00`;
+                                firestoreTimestamp = firebase.firestore.Timestamp.fromDate(new Date(isoStringWithTimezone));
+                            }
+                        }
+
+                        const durationFieldToUpdate = `durationDay${dayNum}Ms`;
+                        const newStartTime = fieldName.includes("startTime") ? firestoreTimestamp : projectData[`startTimeDay${dayNum}`];
+                        const newFinishTime = fieldName.includes("finishTime") ? firestoreTimestamp : projectData[`finishTimeDay${dayNum}`];
+                        const newDuration = this.methods.calculateDurationMs.call(this, newStartTime, newFinishTime);
+
+                        // Use the transaction to update the document
+                        transaction.update(projectRef, {
+                            [fieldName]: firestoreTimestamp,
+                            [durationFieldToUpdate]: newDuration,
+                            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     });
+                    // --- MODIFICATION END ---
 
                 } catch (error) {
                     console.error(`Error updating ${fieldName}:`, error);
@@ -576,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.methods.hideLoading.call(this);
                 }
             },
-
+            
             async updateProjectState(projectId, action) {
                 this.methods.showLoading.call(this, "Updating project state...");
                 const projectRef = this.db.collection("projects").doc(projectId);
