@@ -511,14 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             
-          async updateTimeField(projectId, fieldName, newValue) {
+         async updateTimeField(projectId, fieldName, newValue) {
                 this.methods.showLoading.call(this, `Updating ${fieldName}...`);
                 const projectRef = this.db.collection("projects").doc(projectId);
 
                 try {
-                    // --- MODIFICATION START ---
-                    // The entire logic is now wrapped in a Firestore Transaction.
-                    // This prevents race conditions by ensuring the read and update happen together atomically.
                     await this.db.runTransaction(async (transaction) => {
                         const doc = await transaction.get(projectRef);
                         if (!doc.exists) {
@@ -534,12 +531,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         const dayNum = dayMatch[1];
+                        const startFieldForDay = `startTimeDay${dayNum}`;
+                        const finishFieldForDay = `finishTimeDay${dayNum}`;
 
                         if (newValue) {
                             const [hours, minutes] = newValue.split(':').map(Number);
                             if (!isNaN(hours) && !isNaN(minutes)) {
-                                const startFieldForDay = `startTimeDay${dayNum}`;
-                                const finishFieldForDay = `finishTimeDay${dayNum}`;
                                 const baseDate = projectData[startFieldForDay]?.toDate() ||
                                                  projectData[finishFieldForDay]?.toDate() ||
                                                  projectData.creationTimestamp?.toDate() ||
@@ -554,19 +551,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
-                        const durationFieldToUpdate = `durationDay${dayNum}Ms`;
-                        const newStartTime = fieldName.includes("startTime") ? firestoreTimestamp : projectData[`startTimeDay${dayNum}`];
-                        const newFinishTime = fieldName.includes("finishTime") ? firestoreTimestamp : projectData[`finishTimeDay${dayNum}`];
-                        const newDuration = this.methods.calculateDurationMs.call(this, newStartTime, newFinishTime);
+                        // --- MODIFICATION START ---
+                        // The previous complex logic has been replaced with this clear if/else block.
+                        // This robustly assigns the new and existing values to the correct variables for calculation.
+                        let newStartTime, newFinishTime;
 
-                        // Use the transaction to update the document
+                        if (fieldName.includes("startTime")) {
+                            // If we are editing the START time:
+                            newStartTime = firestoreTimestamp; // The new value is the start time.
+                            newFinishTime = projectData[finishFieldForDay]; // The existing value is the finish time.
+                        } else {
+                            // If we are editing the FINISH time:
+                            newStartTime = projectData[startFieldForDay]; // The existing value is the start time.
+                            newFinishTime = firestoreTimestamp; // The new value is the finish time.
+                        }
+                        
+                        const durationFieldToUpdate = `durationDay${dayNum}Ms`;
+                        const newDuration = this.methods.calculateDurationMs.call(this, newStartTime, newFinishTime);
+                        // --- MODIFICATION END ---
+                        
                         transaction.update(projectRef, {
                             [fieldName]: firestoreTimestamp,
                             [durationFieldToUpdate]: newDuration,
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     });
-                    // --- MODIFICATION END ---
 
                 } catch (error) {
                     console.error(`Error updating ${fieldName}:`, error);
