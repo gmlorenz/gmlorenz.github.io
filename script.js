@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             // MODIFIED: Increased column count to accommodate new break selectors
-            NUM_TABLE_COLUMNS: 17
+            NUM_TABLE_COLUMNS: 18
         },
 
         // --- 2. FIREBASE SERVICES ---
