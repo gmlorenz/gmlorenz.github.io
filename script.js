@@ -7,8 +7,11 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.1.0
+ * @version 2.2.0
  * @author Gemini AI Refactor
+ * @changeLog
+ * - Implemented separate break time selections for Day 1, Day 2, and Day 3.
+ * - Updated data structure, UI, and all calculations to support per-day breaks.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -39,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            NUM_TABLE_COLUMNS: 15
+            // MODIFIED: Increased column count to accommodate new break selectors
+            NUM_TABLE_COLUMNS: 17
         },
 
         // --- 2. FIREBASE SERVICES ---
@@ -141,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...this.elements,
                     signInBtn: document.getElementById('signInBtn'),
                     signOutBtn: document.getElementById('signOutBtn'),
-                    clearDataBtn: document.getElementById('clearDataBtn'), // Modified
+                    clearDataBtn: document.getElementById('clearDataBtn'),
                     userInfoDisplayDiv: document.getElementById('user-info-display'),
                     userNameP: document.getElementById('userName'),
                     userEmailP: document.getElementById('userEmail'),
@@ -194,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 attachClick(self.elements.closeTlSummaryBtn, () => { self.elements.tlSummaryModal.style.display = 'none'; });
 
                 attachClick(self.elements.addEmailBtn, self.methods.handleAddEmail.bind(self));
-                attachClick(self.elements.clearDataBtn, self.methods.handleClearData.bind(self)); // Modified
+                attachClick(self.elements.clearDataBtn, self.methods.handleClearData.bind(self));
 
                 if (self.elements.newProjectForm) {
                     self.elements.newProjectForm.addEventListener('submit', self.methods.handleAddProjectSubmit.bind(self));
@@ -265,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 this.elements.userInfoDisplayDiv.style.display = 'flex';
                 this.elements.signInBtn.style.display = 'none';
-                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'none'; // Modified
+                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'none';
                 this.elements.appContentDiv.style.display = 'block';
                 this.elements.loadingAuthMessageDiv.style.display = 'none';
                 if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'block';
@@ -279,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSignedOutUser() {
                 this.elements.userInfoDisplayDiv.style.display = 'none';
                 this.elements.signInBtn.style.display = 'block';
-                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'block'; // Modified
+                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'block';
                 this.elements.appContentDiv.style.display = 'none';
                 this.elements.loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>";
                 this.elements.loadingAuthMessageDiv.style.display = 'block';
@@ -353,37 +357,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectsQuery = projectsQuery.orderBy("creationTimestamp", "desc");
 
                 this.firestoreListenerUnsubscribe = projectsQuery.onSnapshot(snapshot => {
-                    // This is the success callback
                     const newProjects = [];
                     snapshot.forEach(doc => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
                     });
                     this.state.projects = newProjects.map(p => ({
-                        breakDurationMinutes: 0,
+                        // Ensure default values for new fields if they don't exist in Firestore yet
+                        breakDurationMinutesDay1: 0,
+                        breakDurationMinutesDay2: 0,
+                        breakDurationMinutesDay3: 0,
                         additionalMinutesManual: 0,
                         ...p
                     }));
                     this.methods.refreshAllViews.call(this);
-
-                    // --- ADD THIS LINE ---
-                    // Hide loading overlay on successful data load
-                    this.methods.hideLoading.call(this);
-
                 }, error => {
-                    // This is the error callback
                     console.error("Error fetching projects:", error);
                     this.state.projects = [];
                     this.methods.refreshAllViews.call(this);
                     alert("Error loading projects: " + error.message);
-                    
-                    // --- ADD THIS LINE ---
-                    // Crucially, hide loading overlay on error to reveal the popup
-                    this.methods.hideLoading.call(this); 
                 });
-
-                // --- REMOVE THIS LINE ---
-                // this.methods.hideLoading.call(this);
-              //  this.methods.hideLoading.call(this);
+                this.methods.hideLoading.call(this);
             },
 
             async populateMonthFilter() {
@@ -486,7 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                             startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                             releasedToNextStage: false, isReassigned: false, originalProjectId: null,
-                            lastModifiedTimestamp: creationTimestamp, breakDurationMinutes: 0, additionalMinutesManual: 0,
+                            lastModifiedTimestamp: creationTimestamp, 
+                            // MODIFIED: Replaced single break field with per-day fields
+                            breakDurationMinutesDay1: 0,
+                            breakDurationMinutesDay2: 0,
+                            breakDurationMinutesDay3: 0,
+                            additionalMinutesManual: 0,
                         };
                         const newProjectRef = this.db.collection("projects").doc();
                         batch.set(newProjectRef, projectData);
@@ -689,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${(project.status || "Unknown").replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}</span>`;
 
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
+                    
                     const createTimeInput = (timeValue, fieldName) => {
                         const cell = row.insertCell();
                         const input = document.createElement('input');
@@ -698,17 +697,48 @@ document.addEventListener('DOMContentLoaded', () => {
                         input.onchange = (e) => this.methods.updateTimeField.call(this, project.id, fieldName, e.target.value);
                         cell.appendChild(input);
                     };
+
+                    // NEW: Helper function to create a break dropdown for a specific day
+                    const createBreakSelect = (day, currentProject) => {
+                        const cell = row.insertCell();
+                        cell.className = "break-cell";
+                        const select = document.createElement('select');
+                        select.className = 'break-select';
+                        select.disabled = currentProject.status === "Reassigned_TechAbsent";
+                        select.innerHTML = `<option value="0">No Break</option><option value="15">15m</option><option value="60">1h</option><option value="75">1h15m</option><option value="90">1h30m</option>`;
+                        
+                        // Set the value from the correct day-specific field
+                        select.value = currentProject[`breakDurationMinutesDay${day}`] || 0;
+                    
+                        // Update the correct day-specific field on change
+                        select.onchange = (e) => this.db.collection("projects").doc(currentProject.id).update({
+                            [`breakDurationMinutesDay${day}`]: parseInt(e.target.value, 10),
+                            lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        cell.appendChild(select);
+                    };
+                    
+                    // MODIFIED: Create inputs and break selectors for each day
                     createTimeInput(project.startTimeDay1, 'startTimeDay1');
                     createTimeInput(project.finishTimeDay1, 'finishTimeDay1');
+                    createBreakSelect(1, project); 
+
                     createTimeInput(project.startTimeDay2, 'startTimeDay2');
                     createTimeInput(project.finishTimeDay2, 'finishTimeDay2');
+                    createBreakSelect(2, project);
+
                     createTimeInput(project.startTimeDay3, 'startTimeDay3');
                     createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
-
+                    createBreakSelect(3, project);
+                    
+                    // MODIFIED: Updated calculation to use per-day break fields
                     const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                    const breakMs = (project.breakDurationMinutes || 0) * 60000;
+                    const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
+                                         (project.breakDurationMinutesDay2 || 0) +
+                                         (project.breakDurationMinutesDay3 || 0)) * 60000;
                     const additionalMs = (project.additionalMinutesManual || 0) * 60000;
-                    const finalAdjustedDurationMs = Math.max(0, totalDurationMs - breakMs) + additionalMs;
+                    const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+                    
                     const totalDurationCell = row.insertCell();
                     totalDurationCell.textContent = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
                     totalDurationCell.className = 'total-duration-column';
@@ -725,13 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const actionButtonsDiv = document.createElement('div');
                     actionButtonsDiv.className = 'action-buttons-container';
 
-                    const breakSelect = document.createElement('select');
-                    breakSelect.className = 'break-select';
-                    breakSelect.disabled = project.status === "Reassigned_TechAbsent";
-                    breakSelect.innerHTML = `<option value="0">No Break</option><option value="15">15m Break</option><option value="60">1h Break</option><option value="75">1h15m Break</option><option value="90">1h30m Break</option>`;
-                    breakSelect.value = project.breakDurationMinutes || 0;
-                    breakSelect.onchange = (e) => this.db.collection("projects").doc(project.id).update({ breakDurationMinutes: parseInt(e.target.value, 10), lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                    actionButtonsDiv.appendChild(breakSelect);
+                    // REMOVED: Old single break selector was here. It's now per-day.
                     
                     const createActionButton = (text, className, disabled, action) => {
                         const button = document.createElement('button');
@@ -878,11 +902,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const deleteActionsDiv = document.createElement('div');
                     deleteActionsDiv.className = 'dashboard-batch-actions-delete';
-                     if (batch.tasksByFix) {
+                    if (batch.tasksByFix && stagesPresent.length > 0) {
+                        const highestStagePresent = stagesPresent[stagesPresent.length - 1];
+
                         stagesPresent.forEach(fixCat => {
                             const btn = document.createElement('button');
                             btn.textContent = `Delete ${fixCat} Tasks`;
                             btn.className = 'btn btn-danger';
+                            
+                            if (fixCat !== highestStagePresent) {
+                                btn.disabled = true;
+                                btn.title = `You must first delete the '${highestStagePresent}' tasks to enable this.`;
+                            }
+
                             btn.onclick = () => {
                                 if (confirm(`Are you sure you want to delete all ${fixCat} tasks for project '${batch.baseProjectName}'? This is IRREVERSIBLE.`)) {
                                     this.methods.deleteSpecificFixTasksForBatch.call(this, batch.batchId, fixCat);
@@ -892,7 +924,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                     batchItemDiv.appendChild(deleteActionsDiv);
-
                     const deleteAllContainer = document.createElement('div');
                     deleteAllContainer.style.marginTop = '15px';
                     deleteAllContainer.style.borderTop = '1px solid #cc0000';
@@ -992,15 +1023,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (task.status === "Reassigned_TechAbsent") continue;
 
                         const newNextFixTask = { ...task,
-                        fixCategory: nextFixCategory, status: "Available",
-                        techNotes: "", // <-- Add this to clear notes
-                        breakDurationMinutes: 0, // <-- Add this to reset break time
-                        additionalMinutesManual: 0, // <-- Add this to reset additional time
-                        startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
-                        startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
-                        startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                        releasedToNextStage: false, lastModifiedTimestamp: serverTimestamp,
-                        originalProjectId: task.id,
+                            fixCategory: nextFixCategory, status: "Available",
+                            techNotes: "", 
+                            additionalMinutesManual: 0,
+                            // MODIFIED: Reset all per-day break fields
+                            breakDurationMinutesDay1: 0,
+                            breakDurationMinutesDay2: 0,
+                            breakDurationMinutesDay3: 0,
+                            startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
+                            startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+                            releasedToNextStage: false, lastModifiedTimestamp: serverTimestamp,
+                            originalProjectId: task.id,
                         };
                         delete newNextFixTask.id;
                         const newDocRef = this.db.collection("projects").doc();
@@ -1048,7 +1082,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                         startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                        breakDurationMinutes: 0, additionalMinutesManual: 0,
+                        // MODIFIED: Reset all per-day break fields
+                        breakDurationMinutesDay1: 0,
+                        breakDurationMinutesDay2: 0,
+                        breakDurationMinutesDay3: 0,
+                        additionalMinutesManual: 0,
                         lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } catch (error) {
@@ -1126,7 +1164,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                         startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                        releasedToNextStage: false, breakDurationMinutes: 0, additionalMinutesManual: 0,
+                        releasedToNextStage: false, 
+                        // MODIFIED: Reset all per-day break fields
+                        breakDurationMinutesDay1: 0,
+                        breakDurationMinutesDay2: 0,
+                        breakDurationMinutesDay3: 0,
+                        additionalMinutesManual: 0,
                     };
                     delete newProjectData.id;
                     
@@ -1182,7 +1225,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // --- START: NEW METHOD ---
             handleClearData() {
                 if (confirm("Are you sure you want to clear all locally stored application data? This will reset your filters and view preferences but will not affect any data on the server.")) {
                     try {
@@ -1197,7 +1239,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             },
-            // --- END: NEW METHOD ---
 
             async generateTlSummaryData() {
                 if (!this.elements.tlSummaryContent) return;
@@ -1210,7 +1251,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
-                        const breakMs = (p.breakDurationMinutes || 0) * 60000;
+                        
+                        // MODIFIED: Updated break calculation to sum per-day values
+                        const breakMs = ((p.breakDurationMinutesDay1 || 0) +
+                                         (p.breakDurationMinutesDay2 || 0) +
+                                         (p.breakDurationMinutesDay3 || 0)) * 60000;
+
                         const additionalMs = (p.additionalMinutesManual || 0) * 60000;
                         const adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
                         if (adjustedNetMs <= 0) return;
@@ -1239,11 +1285,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 summaryHtml += `<li style="background-color: ${bgColor}; padding: 8px; margin-bottom: 5px; border-radius: 4px;"><strong>${projName} - ${fixCat}:</strong> ${totalMinutes} minutes (${hoursDecimal} hours)</li>`;
                             });
                         });
-                        summaryHtml += "</ul>";
                     }
-                    this.elements.tlSummaryContent.innerHTML = summaryHtml;
+                    this.elements.tlSummaryContent.innerHTML = summaryHtml + "</ul>";
                 } catch (error) {
-                    console.error("Error generating TL Summary:", error);
+                    console.error("Error generating TL summary:", error);
                     this.elements.tlSummaryContent.innerHTML = `<p style="color:red;">Error generating summary: ${error.message}</p>`;
                 } finally {
                     this.methods.hideLoading.call(this);
@@ -1252,6 +1297,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- APPLICATION START ---
+    // --- KICK OFF THE APPLICATION ---
     ProjectTrackerApp.init();
+
 });
