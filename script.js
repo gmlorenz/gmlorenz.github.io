@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             async renderTLDashboard() { /* Full refactored code... */ },
             async getManageableBatches() { /* Full refactored code... */ },
-            async releaseBatchToNextFix(batchId, currentFix, nextFix) { /* Full refactored code... */ },
+            async (batchId, currentFix, nextFix) { /* Full refactored code... */ },
             
             // --- UTILITY METHODS ---
             
@@ -891,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 releaseBtn.className = 'btn btn-primary';
                                 releaseBtn.onclick = () => {
                                     if (confirm(`Are you sure you want to release all remaining tasks from ${currentFix} to ${nextFix} for project '${batch.baseProjectName}'?`)) {
-                                        this.methods.releaseBatchToNextFix.call(this, batch.batchId, currentFix, nextFix);
+                                        this.methods..call(this, batch.batchId, currentFix, nextFix);
                                     }
                                 };
                                 releaseActionsDiv.appendChild(releaseBtn);
@@ -1011,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            async releaseBatchToNextFix(batchId, currentFixCategory, nextFixCategory) {
+          async releaseBatchToNextFix(batchId, currentFixCategory, nextFixCategory) {
                 this.methods.showLoading.call(this, `Releasing ${currentFixCategory} tasks...`);
                 try {
                     const snapshot = await this.db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", currentFixCategory).where("releasedToNextStage", "==", false).get();
@@ -1026,7 +1026,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             fixCategory: nextFixCategory, status: "Available",
                             techNotes: "", 
                             additionalMinutesManual: 0,
-                            // MODIFIED: Reset all per-day break fields
                             breakDurationMinutesDay1: 0,
                             breakDurationMinutesDay2: 0,
                             breakDurationMinutesDay3: 0,
@@ -1043,7 +1042,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         firestoreBatch.update(doc.ref, { releasedToNextStage: true, lastModifiedTimestamp: serverTimestamp });
                     }
                     await firestoreBatch.commit();
+                    
+                    // --- MODIFICATION START ---
+
+                    // 1. Show a success notification to the user.
+                    alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
+
+                    // 2. Reload the main project data in the background.
                     this.methods.initializeFirebaseAndLoadData.call(this);
+
+                    // 3. Explicitly re-render the Project Settings (TL Dashboard) dialog content.
+                    await this.methods.renderTLDashboard.call(this);
+                    
+                    // --- MODIFICATION END ---
+
                 } catch (error) {
                     console.error("Error releasing batch:", error);
                     alert("Error releasing batch: " + error.message);
@@ -1051,7 +1063,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.methods.hideLoading.call(this);
                 }
             },
-
             async deleteSpecificFixTasksForBatch(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Deleting ${fixCategory} tasks...`);
                 try {
