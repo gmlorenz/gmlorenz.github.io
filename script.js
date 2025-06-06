@@ -7,11 +7,12 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.2.0
+ * @version 2.4.0
  * @author Gemini AI Refactor
  * @changeLog
- * - Implemented separate break time selections for Day 1, Day 2, and Day 3.
- * - Updated data structure, UI, and all calculations to support per-day breaks.
+ * - Implemented project-based pagination (2 projects per page) for the default unfiltered view.
+ * - Added a new filter to sort projects by "Newest First" or "Oldest First".
+ * - Pagination controls are now displayed and managed directly from the script.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -42,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            // MODIFIED: Increased column count to accommodate new break selectors
             NUM_TABLE_COLUMNS: 18
         },
 
@@ -61,7 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
             filters: {
                 batchId: localStorage.getItem('currentSelectedBatchId') || "",
                 fixCategory: "",
-                month: localStorage.getItem('currentSelectedMonth') || ""
+                month: localStorage.getItem('currentSelectedMonth') || "",
+                sortBy: localStorage.getItem('currentSortBy') || 'newest'
+            },
+            pagination: {
+                currentPage: 1,
+                projectsPerPage: 2,
+                paginatedProjectNameList: [],
+                totalPages: 0,
+                sortOrderForPaging: 'newest' // Track which sort order the list was built for
             }
         },
 
@@ -71,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         /**
          * =================================================================
          * INITIALIZATION METHOD
-         * This is the entry point for the entire application.
          * =================================================================
          */
         init() {
@@ -104,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         /**
          * =================================================================
          * ALL APPLICATION METHODS
-         * All functions are now organized as methods of this object.
          * =================================================================
          */
         methods: {
@@ -128,15 +134,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     closeTlSummaryBtn: document.getElementById('closeTlSummaryBtn'),
                     newProjectForm: document.getElementById('newProjectForm'),
                     projectTableBody: document.getElementById('projectTableBody'),
+                    loadingOverlay: document.getElementById('loadingOverlay'),
+                    batchIdSelect: document.getElementById('batchIdSelect'),
+                    fixCategoryFilter: document.getElementById('fixCategoryFilter'),
+                    monthFilter: document.getElementById('monthFilter'),
+                    sortByFilter: document.getElementById('sortByFilter'),
+                    paginationControls: document.getElementById('paginationControls'),
+                    prevPageBtn: document.getElementById('prevPageBtn'),
+                    nextPageBtn: document.getElementById('nextPageBtn'),
+                    pageInfo: document.getElementById('pageInfo'),
                     tlDashboardContentElement: document.getElementById('tlDashboardContent'),
                     allowedEmailsList: document.getElementById('allowedEmailsList'),
                     addEmailInput: document.getElementById('addEmailInput'),
                     addEmailBtn: document.getElementById('addEmailBtn'),
                     tlSummaryContent: document.getElementById('tlSummaryContent'),
-                    loadingOverlay: document.getElementById('loadingOverlay'),
-                    batchIdSelect: document.getElementById('batchIdSelect'),
-                    fixCategoryFilter: document.getElementById('fixCategoryFilter'),
-                    monthFilter: document.getElementById('monthFilter'),
                 };
             },
 
@@ -199,22 +210,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 attachClick(self.elements.addEmailBtn, self.methods.handleAddEmail.bind(self));
                 attachClick(self.elements.clearDataBtn, self.methods.handleClearData.bind(self));
+                attachClick(self.elements.nextPageBtn, self.methods.handleNextPage.bind(self));
+                attachClick(self.elements.prevPageBtn, self.methods.handlePrevPage.bind(self));
+
 
                 if (self.elements.newProjectForm) {
                     self.elements.newProjectForm.addEventListener('submit', self.methods.handleAddProjectSubmit.bind(self));
                 }
 
+                const resetPaginationAndReload = () => {
+                    self.state.pagination.currentPage = 1;
+                    self.state.pagination.paginatedProjectNameList = [];
+                    self.methods.initializeFirebaseAndLoadData.call(self);
+                };
+
                 if (self.elements.batchIdSelect) {
                     self.elements.batchIdSelect.onchange = (e) => {
                         self.state.filters.batchId = e.target.value;
                         localStorage.setItem('currentSelectedBatchId', self.state.filters.batchId);
-                        self.methods.initializeFirebaseAndLoadData.call(self);
+                        resetPaginationAndReload();
                     };
                 }
                 if (self.elements.fixCategoryFilter) {
                     self.elements.fixCategoryFilter.onchange = (e) => {
                         self.state.filters.fixCategory = e.target.value;
-                        self.methods.initializeFirebaseAndLoadData.call(self);
+                        resetPaginationAndReload();
                     };
                 }
                 if (self.elements.monthFilter) {
@@ -223,7 +243,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('currentSelectedMonth', self.state.filters.month);
                         self.state.filters.batchId = "";
                         localStorage.setItem('currentSelectedBatchId', "");
-                        self.methods.initializeFirebaseAndLoadData.call(self);
+                        resetPaginationAndReload();
+                    };
+                }
+                
+                if (self.elements.sortByFilter) {
+                    self.elements.sortByFilter.value = self.state.filters.sortBy;
+                    self.elements.sortByFilter.onchange = (e) => {
+                        self.state.filters.sortBy = e.target.value;
+                        localStorage.setItem('currentSortBy', e.target.value);
+                        resetPaginationAndReload();
                     };
                 }
 
@@ -236,7 +265,20 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
 
-            // --- AUTHENTICATION FLOW ---
+            handleNextPage() {
+                if (this.state.pagination.currentPage < this.state.pagination.totalPages) {
+                    this.state.pagination.currentPage++;
+                    this.methods.initializeFirebaseAndLoadData.call(this);
+                }
+            },
+
+            handlePrevPage() {
+                if (this.state.pagination.currentPage > 1) {
+                    this.state.pagination.currentPage--;
+                    this.methods.initializeFirebaseAndLoadData.call(this);
+                }
+            },
+
 
             listenForAuthStateChanges() {
                 if (!this.auth) {
@@ -324,45 +366,78 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
 
-            // --- DATA HANDLING AND FIREBASE INTERACTIONS ---
-
             async initializeFirebaseAndLoadData() {
                 this.methods.showLoading.call(this, "Loading projects...");
-                if (!this.db) {
-                    console.error("Firestore not initialized.");
+                if (!this.db || !this.elements.paginationControls) {
+                    console.error("Firestore or crucial UI elements not initialized.");
                     this.methods.hideLoading.call(this);
                     return;
                 }
                 if (this.firestoreListenerUnsubscribe) this.firestoreListenerUnsubscribe();
-
+            
                 this.methods.loadGroupVisibilityState.call(this);
-
                 await this.methods.populateMonthFilter.call(this);
                 await this.methods.populateProjectNameFilter.call(this);
-
+            
+                const sortDirection = this.state.filters.sortBy === 'oldest' ? 'asc' : 'desc';
+                const isUnfilteredView = !this.state.filters.month && !this.state.filters.batchId && !this.state.filters.fixCategory;
+                
                 let projectsQuery = this.db.collection("projects");
-
-                if (this.state.filters.month) {
-                    const [year, month] = this.state.filters.month.split('-');
-                    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-                    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
-                    projectsQuery = projectsQuery.where("creationTimestamp", ">=", startDate).where("creationTimestamp", "<=", endDate);
+            
+                if (isUnfilteredView) {
+                    this.elements.paginationControls.style.display = 'block';
+            
+                    // Rebuild the project name list if it's empty or if the sort order has changed
+                    if (this.state.pagination.paginatedProjectNameList.length === 0 || this.state.pagination.sortOrderForPaging !== this.state.filters.sortBy) {
+                        this.methods.showLoading.call(this, "Building project list for pagination...");
+                        const allTasksSnapshot = await this.db.collection("projects").orderBy("creationTimestamp", sortDirection).get();
+                        const uniqueNames = new Set();
+                        const sortedNames = [];
+                        allTasksSnapshot.forEach(doc => {
+                            const name = doc.data().baseProjectName;
+                            if (name && !uniqueNames.has(name)) {
+                                uniqueNames.add(name);
+                                sortedNames.push(name);
+                            }
+                        });
+                        this.state.pagination.paginatedProjectNameList = sortedNames;
+                        this.state.pagination.totalPages = Math.ceil(sortedNames.length / this.state.pagination.projectsPerPage);
+                        this.state.pagination.sortOrderForPaging = this.state.filters.sortBy; // Store the sort order
+                    }
+            
+                    const startIndex = (this.state.pagination.currentPage - 1) * this.state.pagination.projectsPerPage;
+                    const endIndex = startIndex + this.state.pagination.projectsPerPage;
+                    const projectsToDisplay = this.state.pagination.paginatedProjectNameList.slice(startIndex, endIndex);
+            
+                    if (projectsToDisplay.length > 0) {
+                        projectsQuery = projectsQuery.where("baseProjectName", "in", projectsToDisplay);
+                    } else {
+                        projectsQuery = projectsQuery.where("baseProjectName", "==", "no-projects-exist-yet-dummy-value");
+                    }
+                } else {
+                    this.elements.paginationControls.style.display = 'none';
+                    if (this.state.filters.month) {
+                        const [year, month] = this.state.filters.month.split('-');
+                        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+                        projectsQuery = projectsQuery.where("creationTimestamp", ">=", startDate).where("creationTimestamp", "<=", endDate);
+                    }
+                    if (this.state.filters.batchId) {
+                        projectsQuery = projectsQuery.where("baseProjectName", "==", this.state.filters.batchId);
+                    }
+                    if (this.state.filters.fixCategory) {
+                        projectsQuery = projectsQuery.where("fixCategory", "==", this.state.filters.fixCategory);
+                    }
                 }
-                if (this.state.filters.batchId) {
-                    projectsQuery = projectsQuery.where("baseProjectName", "==", this.state.filters.batchId);
-                }
-                if (this.state.filters.fixCategory) {
-                    projectsQuery = projectsQuery.where("fixCategory", "==", this.state.filters.fixCategory);
-                }
-                projectsQuery = projectsQuery.orderBy("creationTimestamp", "desc");
-
+            
+                projectsQuery = projectsQuery.orderBy("creationTimestamp", sortDirection);
+            
                 this.firestoreListenerUnsubscribe = projectsQuery.onSnapshot(snapshot => {
                     const newProjects = [];
                     snapshot.forEach(doc => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
                     });
                     this.state.projects = newProjects.map(p => ({
-                        // Ensure default values for new fields if they don't exist in Firestore yet
                         breakDurationMinutesDay1: 0,
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
@@ -376,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.methods.refreshAllViews.call(this);
                     alert("Error loading projects: " + error.message);
                 });
-                this.methods.hideLoading.call(this);
             },
 
             async populateMonthFilter() {
@@ -480,7 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                             releasedToNextStage: false, isReassigned: false, originalProjectId: null,
                             lastModifiedTimestamp: creationTimestamp, 
-                            // MODIFIED: Replaced single break field with per-day fields
                             breakDurationMinutesDay1: 0,
                             breakDurationMinutesDay2: 0,
                             breakDurationMinutesDay3: 0,
@@ -511,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             
-         async updateTimeField(projectId, fieldName, newValue) {
+            async updateTimeField(projectId, fieldName, newValue) {
                 this.methods.showLoading.call(this, `Updating ${fieldName}...`);
                 const projectRef = this.db.collection("projects").doc(projectId);
 
@@ -551,24 +624,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
-                        // --- MODIFICATION START ---
-                        // The previous complex logic has been replaced with this clear if/else block.
-                        // This robustly assigns the new and existing values to the correct variables for calculation.
                         let newStartTime, newFinishTime;
 
                         if (fieldName.includes("startTime")) {
-                            // If we are editing the START time:
-                            newStartTime = firestoreTimestamp; // The new value is the start time.
-                            newFinishTime = projectData[finishFieldForDay]; // The existing value is the finish time.
+                            newStartTime = firestoreTimestamp;
+                            newFinishTime = projectData[finishFieldForDay];
                         } else {
-                            // If we are editing the FINISH time:
-                            newStartTime = projectData[startFieldForDay]; // The existing value is the start time.
-                            newFinishTime = firestoreTimestamp; // The new value is the finish time.
+                            newStartTime = projectData[startFieldForDay];
+                            newFinishTime = firestoreTimestamp;
                         }
                         
                         const durationFieldToUpdate = `durationDay${dayNum}Ms`;
                         const newDuration = this.methods.calculateDurationMs.call(this, newStartTime, newFinishTime);
-                        // --- MODIFICATION END ---
                         
                         transaction.update(projectRef, {
                             [fieldName]: firestoreTimestamp,
@@ -630,36 +697,59 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
 
-            // --- UI RENDERING ---
-
             refreshAllViews() {
                 try {
                     this.methods.renderProjects.call(this);
+                    this.methods.updatePaginationUI.call(this);
                 } catch (error) {
                     console.error("Error during refreshAllViews:", error);
                     if (this.elements.projectTableBody) this.elements.projectTableBody.innerHTML = `<tr><td colspan="${this.config.NUM_TABLE_COLUMNS}" style="color:red;text-align:center;">Error loading projects.</td></tr>`;
                 }
+                 this.methods.hideLoading.call(this);
+            },
+            
+            updatePaginationUI() {
+                if (!this.elements.paginationControls || this.elements.paginationControls.style.display === 'none') {
+                    return;
+                }
+                const { currentPage, totalPages } = this.state.pagination;
+                if (totalPages > 0) {
+                    this.elements.pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+                } else {
+                    this.elements.pageInfo.textContent = "No projects found";
+                }
+                this.elements.prevPageBtn.disabled = currentPage <= 1;
+                this.elements.nextPageBtn.disabled = currentPage >= totalPages;
             },
             
             renderProjects() {
                 if (!this.elements.projectTableBody) return;
                 this.elements.projectTableBody.innerHTML = "";
 
+                const sortDirection = this.state.filters.sortBy === 'oldest' ? 1 : -1;
                 const sortedProjects = [...this.state.projects].sort((a, b) => {
-                    const nameA = a.baseProjectName || "";
-                    const nameB = b.baseProjectName || "";
-                    const fixA = this.config.FIX_CATEGORIES.ORDER.indexOf(a.fixCategory || "");
-                    const fixB = this.config.FIX_CATEGORIES.ORDER.indexOf(b.fixCategory || "");
-                    const areaA = a.areaTask || "";
-                    const areaB = b.areaTask || "";
+                    const timeA = a.creationTimestamp?.toMillis() || 0;
+                    const timeB = b.creationTimestamp?.toMillis() || 0;
 
-                    if (nameA < nameB) return -1; if (nameA > nameB) return 1;
-                    if (fixA < fixB) return -1; if (fixA > fixB) return 1;
-                    if (areaA < areaB) return -1; if (areaA > areaB) return 1;
-                    return 0;
+                    if (a.baseProjectName < b.baseProjectName) return -1;
+                    if (a.baseProjectName > b.baseProjectName) return 1;
+                    
+                    if (this.config.FIX_CATEGORIES.ORDER.indexOf(a.fixCategory) < this.config.FIX_CATEGORIES.ORDER.indexOf(b.fixCategory)) return -1;
+                    if (this.config.FIX_CATEGORIES.ORDER.indexOf(a.fixCategory) > this.config.FIX_CATEGORIES.ORDER.indexOf(b.fixCategory)) return 1;
+
+                    if (a.areaTask < b.areaTask) return -1;
+                    if (a.areaTask > b.areaTask) return 1;
+                    
+                    return (timeA - timeB) * sortDirection;
                 });
 
                 let currentBaseProjectNameHeader = null, currentFixCategoryHeader = null;
+
+                 if (sortedProjects.length === 0) {
+                    const row = this.elements.projectTableBody.insertRow();
+                    row.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}" style="text-align:center; padding: 20px;">No projects to display for the current filter or page.</td>`;
+                    return;
+                }
 
                 sortedProjects.forEach(project => {
                     if (!project?.id || !project.baseProjectName || !project.fixCategory) return;
@@ -724,7 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.appendChild(input);
                     };
 
-                    // NEW: Helper function to create a break dropdown for a specific day
                     const createBreakSelect = (day, currentProject) => {
                         const cell = row.insertCell();
                         cell.className = "break-cell";
@@ -733,10 +822,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         select.disabled = currentProject.status === "Reassigned_TechAbsent";
                         select.innerHTML = `<option value="0">No Break</option><option value="15">15m</option><option value="60">1h</option><option value="75">1h15m</option><option value="90">1h30m</option>`;
                         
-                        // Set the value from the correct day-specific field
                         select.value = currentProject[`breakDurationMinutesDay${day}`] || 0;
                     
-                        // Update the correct day-specific field on change
                         select.onchange = (e) => this.db.collection("projects").doc(currentProject.id).update({
                             [`breakDurationMinutesDay${day}`]: parseInt(e.target.value, 10),
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -744,7 +831,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.appendChild(select);
                     };
                     
-                    // MODIFIED: Create inputs and break selectors for each day
                     createTimeInput(project.startTimeDay1, 'startTimeDay1');
                     createTimeInput(project.finishTimeDay1, 'finishTimeDay1');
                     createBreakSelect(1, project); 
@@ -757,7 +843,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
                     createBreakSelect(3, project);
                     
-                    // MODIFIED: Updated calculation to use per-day break fields
                     const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
                     const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
                                          (project.breakDurationMinutesDay2 || 0) +
@@ -780,8 +865,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const actionsCell = row.insertCell();
                     const actionButtonsDiv = document.createElement('div');
                     actionButtonsDiv.className = 'action-buttons-container';
-
-                    // REMOVED: Old single break selector was here. It's now per-day.
                     
                     const createActionButton = (text, className, disabled, action) => {
                         const button = document.createElement('button');
@@ -807,14 +890,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionsCell.appendChild(actionButtonsDiv);
                 });
             },
-
-            // --- ALL OTHER HELPER AND LOGIC FUNCTIONS ---
-            
-            async renderTLDashboard() { /* Full refactored code... */ },
-            async getManageableBatches() { /* Full refactored code... */ },
-            async (batchId, currentFix, nextFix) { /* Full refactored code... */ },
-            
-            // --- UTILITY METHODS ---
             
             showLoading(message = "Loading...") { if (this.elements.loadingOverlay) { this.elements.loadingOverlay.querySelector('p').textContent = message; this.elements.loadingOverlay.style.display = 'flex'; } },
             hideLoading() { if (this.elements.loadingOverlay) { this.elements.loadingOverlay.style.display = 'none'; } },
@@ -1069,18 +1144,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await firestoreBatch.commit();
                     
-                    // --- MODIFICATION START ---
-
-                    // 1. Show a success notification to the user.
                     alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
 
-                    // 2. Reload the main project data in the background.
                     this.methods.initializeFirebaseAndLoadData.call(this);
-
-                    // 3. Explicitly re-render the Project Settings (TL Dashboard) dialog content.
                     await this.methods.renderTLDashboard.call(this);
-                    
-                    // --- MODIFICATION END ---
 
                 } catch (error) {
                     console.error("Error releasing batch:", error);
@@ -1114,12 +1181,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const doc = await projectRef.get();
                     if (!doc.exists) throw new Error("Project not found.");
                     
-                    // MODIFICATION: The 'resetNotes' variable has been removed.
-                    // The 'techNotes' field is now updated to be an empty string "".
                     await projectRef.update({
                         status: "Available",
                         assignedTo: "",
-                        techNotes: "", // This line has been changed.
+                        techNotes: "",
                         startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                         startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
@@ -1205,7 +1270,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                         startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
                         releasedToNextStage: false, 
-                        // MODIFIED: Reset all per-day break fields
                         breakDurationMinutesDay1: 0,
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
@@ -1271,6 +1335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.removeItem('currentSelectedBatchId');
                         localStorage.removeItem('currentSelectedMonth');
                         localStorage.removeItem('projectTrackerGroupVisibility');
+                        localStorage.removeItem('currentSortBy');
                         alert("Local application data has been cleared. The page will now reload.");
                         location.reload();
                     } catch (e) {
@@ -1292,7 +1357,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
                         
-                        // MODIFIED: Updated break calculation to sum per-day values
                         const breakMs = ((p.breakDurationMinutesDay1 || 0) +
                                          (p.breakDurationMinutesDay2 || 0) +
                                          (p.breakDurationMinutesDay3 || 0)) * 60000;
