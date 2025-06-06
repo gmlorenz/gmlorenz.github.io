@@ -891,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 releaseBtn.className = 'btn btn-primary';
                                 releaseBtn.onclick = () => {
                                     if (confirm(`Are you sure you want to release all remaining tasks from ${currentFix} to ${nextFix} for project '${batch.baseProjectName}'?`)) {
-                                        this.methods..call(this, batch.batchId, currentFix, nextFix);
+                                        this.methods.releaseBatchToNextFix.call(this, batch.batchId, currentFix, nextFix);
                                     }
                                 };
                                 releaseActionsDiv.appendChild(releaseBtn);
