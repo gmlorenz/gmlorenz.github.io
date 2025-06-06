@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setupAuthRelatedDOMReferences() {
                 this.elements = {
                     ...this.elements,
-                    signInBtn: document.getElementById('signInBtn'),
+                    const signInBtn = document.getElementById('googleSignInBtn');
                     signOutBtn: document.getElementById('signOutBtn'),
                     clearDataBtn: document.getElementById('clearDataBtn'),
                     userInfoDisplayDiv: document.getElementById('user-info-display'),
