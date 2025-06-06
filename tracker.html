@@ -4,89 +4,70 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Team123 - Project Tracker</title>
+        <!-- Added Google Font: Inter -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
         <style>
-            /* Global settings and font */
-            :root {
-                --primary-font: 'Inter', Arial, sans-serif;
-                --primary-text: #2c3e50;
-                --secondary-text: #6c757d;
-                --background-light: #f4f7f6;
-                --background-gradient-start: #f0f2f5;
-                --background-gradient-end: #e6e9ee;
-                --card-background: #ffffff;
-                --primary-accent: #3498db;
-                --danger-accent: #e74c3c;
-                --success-accent: #2ecc71;
-                --info-accent: #17a2b8;
-                --warning-accent: #f39c12;
-            }
-
-            body { 
-                font-family: var(--primary-font); 
-                margin: 0; 
-                background-color: var(--background-light); 
-                color: var(--primary-text); 
-                line-height: 1.6;
-                transition: background-color 0.5s ease; 
-            }
-
             /* ====================================================== */
-            /* START: BEAUTIFIED LOGIN UI STYLES                      */
+            /* START: NEW LOGIN UI STYLES                             */
             /* ====================================================== */
-            
-            /* This class is on the body when the login UI is active */
             body.login-view-active {
-                background: linear-gradient(135deg, var(--background-gradient-start), var(--background-gradient-end));
+                font-family: 'Inter', Arial, sans-serif;
+                background: linear-gradient(135deg, #f0f2f5, #e6e9ee);
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 min-height: 100vh;
                 padding: 20px;
                 box-sizing: border-box;
+                margin: 0;
             }
-            
-            /* When login is active, the main app container is hidden */
-            body.login-view-active .app-container {
+
+            /* Hide original containers when login is active */
+            body.login-view-active .container,
+            body.login-view-active #loading-auth-message {
                 display: none;
             }
             body.login-view-active #auth-wrapper {
                 display: block;
             }
 
-            /* The login "card" - replacing the old #auth-container style */
-            #auth-container {
-                background-color: var(--card-background);
+            #auth-wrapper {
+                width: 100%;
+                max-width: 420px;
+            }
+            
+            #auth-wrapper .login-card {
+                background-color: #ffffff;
                 padding: 40px 50px;
                 border-radius: 12px;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.1);
                 text-align: center;
-                width: 100%;
-                max-width: 420px;
                 transition: all 0.3s ease-out;
             }
-            #auth-container h2 {
+            #auth-wrapper .login-card h2 {
+                font-family: 'Inter', Arial, sans-serif;
                 font-size: 1.8em;
                 margin-bottom: 8px;
-                color: var(--primary-text);
+                color: #2c3e50;
                 font-weight: 600;
             }
-            #auth-container .auth-welcome-text {
-                color: var(--secondary-text);
+            #auth-wrapper .login-card p {
+                color: #6c757d;
                 margin-bottom: 30px;
                 font-size: 1.1em;
             }
-
-            /* --- NEW Google Sign-In Button Style --- */
-            #signInBtn {
-                display: inline-flex; /* Aligns logo and text */
+            #auth-wrapper #googleSignInBtn {
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 15px; /* Space between logo and text */
+                gap: 15px;
                 background-color: #ffffff;
                 color: #333;
                 border: 1px solid #ccc;
                 font-size: 1.05em;
-                font-family: var(--primary-font);
+                font-family: 'Inter', Arial, sans-serif;
                 font-weight: 500;
                 padding: 12px 24px;
                 border-radius: 8px;
@@ -95,168 +76,316 @@
                 width: 100%;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }
-            #signInBtn:hover {
+            #auth-wrapper #googleSignInBtn:hover {
                 border-color: #b3b3b3;
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
                 transform: translateY(-2px);
             }
-            .google-icon { width: 22px; height: 22px; }
+            #auth-wrapper .google-icon {
+                width: 22px;
+                height: 22px;
+            }
 
-            /* --- STYLES FOR THE POST-LOGIN HEADER BAR --- */
-            #auth-container.app-mode {
+            /* ====================================================== */
+            /* END: NEW LOGIN UI STYLES                               */
+            /* ====================================================== */
+            
+            /* ====================================================== */
+            /* START: YOUR ORIGINAL CODE STYLES (UNCHANGED)           */
+            /* ====================================================== */
+            body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
+            .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
+            /* Styles for Auth Section */
+            #auth-container {
                 padding: 10px 15px;
                 min-height: 60px;
+                text-align: center;
                 border-bottom: 1px solid #eee;
                 margin-bottom: 15px;
                 background-color: #f8f9fa;
                 border-radius: 5px;
                 display: flex;
-                flex-direction: row; /* Horizontal layout for top bar */
+                flex-direction: column;
                 align-items: center;
-                justify-content: space-between; /* Space out items */
-                gap: 15px;
-                max-width: 100%;
-                box-shadow: none;
+                justify-content: center;
             }
-            
-            #auth-container.app-mode #login-initial-view { display:none; }
-            #auth-container.app-mode #user-info-display { 
+            #auth-container h2 {
+                font-size: 1.1em;
+                margin-bottom: 8px;
+                color: #333;
+            }
+            #user-info-display {
                 display: flex;
-                flex-direction: row; 
                 align-items: center;
+                justify-content: center;
                 gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 5px;
             }
-            #auth-container.app-mode #user-info-display img { 
-                width: 40px; 
-                height: 40px; 
+            #user-info-display img {
                 border-radius: 50%;
+                width: 40px;
+                height: 40px;
                 border: 2px solid #ddd;
+                object-fit: cover;
             }
-            #auth-container.app-mode .user-details { text-align: left; }
-            #auth-container.app-mode .user-details p { margin: 0; font-size: 0.9em; }
-            #auth-container.app-mode .user-details p:first-child { font-weight: bold; }
-            #auth-container.app-mode #signOutBtn { margin-top: 0; }
+            #user-info-display .user-details p {
+                margin: 0;
+                font-size: 0.9em;
+            }
+            #user-info-display .user-details p:first-child {
+                font-weight: bold;
+            }
+            #signInBtn, #signOutBtn, #clearDataBtn {
+                padding: 8px 18px;
+                font-size: 1em;
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                transition: background-color 0.3s ease;
+                margin-top: 8px;
+            }
+            #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
+            #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
+            #clearDataBtn { background-color: #6c757d; color: white; } #clearDataBtn:hover { background-color: #5a6268; }
             
-            /* ====================================================== */
-            /* END: BEAUTIFIED LOGIN UI STYLES                        */
-            /* ====================================================== */
-
-
-            /* --- Your Original Application Styles --- */
-            .container { width: 98%; max-width: 1900px; margin: 20px auto; padding: 10px; background-color: var(--card-background); box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px; }
-            .app-container { display: none; }
-            h1 { font-size: 1.8em; text-align: left; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+            /* Initially hide app content and show loading/auth message */
+            #app-content { display: none; }
+            #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
+            
+            h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
             h2 { font-size: 1.3em; }
             h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
             
-            .action-bar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
-            .btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: all 0.2s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
-            .btn-lg { padding: 10px 16px; font-size: 1em; }
-            .btn-danger { background-color: var(--danger-accent); color: white; } .btn-danger:hover { background-color: #c0392b; }
-            .btn-primary { background-color: var(--primary-accent); color: white; } .btn-primary:hover { background-color: #2980b9; }
-            .btn-success { background-color: var(--success-accent); color: white; } .btn-success:hover { background-color: #27ae60; }
-            .btn-info { background-color: var(--info-accent); color: white; } .btn-info:hover { background-color: #138496; }
-            
-            .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
-            .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; border-radius: 8px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
+            .action-bar {
+                margin-bottom: 15px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-start;
+            }
+            .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+            .btn-lg { padding: 7px 12px; font-size: 0.9em; }
+            .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
+            .btn-group-toggle:hover { background-color: #95a5a6;}
+            .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
+            .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
+            .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
+            .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
+            .btn-day-start { background-color: #007bff; color: white; }
+            .btn-day-start:hover { background-color: #0056b3; }
+            .btn-day-end { background-color: #fd7e14; color: white; }
+            .btn-day-end:hover { background-color: #c85e08; }
+            .btn-warning { background-color: #f39c12; color: white; }
+            .btn-warning:hover { background-color: #e67e22; }
+            .btn-info { background-color: #17a2b8; color: white; }
+            .btn-info:hover { background-color: #138496; }
+            .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
+
+            .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+            .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
             #projectFormModal .modal-content { max-width: 480px; }
-            .close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+            #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
+            #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
+            #tlSummaryModal .modal-content { max-width: 600px; max-height: 85vh; overflow-y: auto;}
+            .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
             
-            /* ... (The rest of your original CSS styles) ... */
             #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
-            #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9em; }
-            #newProjectForm button[type="submit"] { margin-top: 15px; width: 100%;}
-            #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9em; }
-            #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+            #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
+            #newProjectForm button[type="submit"] { margin-top: 12px; }
+            
+            #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+            #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
             #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+            #projectTable td.wrap-text { white-space: normal; }
+            
+            #projectTable select.assigned-to-select,
+            #projectTable select.break-select,
+            #projectTable input[type="time"],
+            #projectTable textarea.tech-notes-input,
+            #projectTable input[type="number"].additional-minutes-input {
+                width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff;
+            }
+            
+            .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
+            .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
+            .hidden-group-row { display: none; }
+            #projectTable td.total-duration-column { font-weight: bold; background-color: #c0392b; color: white; }
+            
+            .reassigned-task-highlight { background-color: #FFF9C4 !important; }
+            #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):hover { background-color: #d0e0f0 !important; }
+            
+            .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
+            .status-available { background-color: #3498db; }
+            .status-inprogressday1, .status-day1ended_awaitingnext, .status-inprogressday2, .status-day2ended_awaitingnext { background-color: #f39c12; }
+            .status-inprogressday3 { background-color: #e9630e; }
+            .status-completed { background-color: #2ecc71; }
+            .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
+            
+            #tlDashboardContent { margin-top:15px; }
+            .dashboard-batch-item { border: 1px solid #bdc3c7; padding: 10px; margin-bottom: 10px; background-color: #fff; border-radius: 4px; }
+            
+            #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
+            #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
+            #allowedEmailsList li:last-child { border-bottom: none; }
+            #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
+            .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;}
+
+            .group-selector-controls { display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
+            .group-selector-controls label { font-size: 0.9em; font-weight: bold; color: #555; }
+            .group-selector-controls select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; min-width: 150px; }
+            
+            #loadingOverlay {
+                display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; background-color: rgba(0,0,0,0.5); z-index: 9999; cursor: wait;
+                justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 1.2em; font-weight: bold;
+            }
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #fff;
+                width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
+            }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+             /* ====================================================== */
+            /* END: YOUR ORIGINAL CODE STYLES (UNCHANGED)             */
+            /* ====================================================== */
         </style>
-        <!-- Added Google Font: Inter -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
         <link rel="icon" type="image/png" href="icon.png">
     </head>
     <!-- Add the login-view-active class to the body by default -->
     <body class="login-view-active">
+        
+        <!-- This wrapper holds the new login card and is only visible on page load -->
+        <div id="auth-wrapper" style="display: none;">
+            <div class="login-card">
+                <h2>Project Tracker</h2>
+                <p>Sign in to continue to Team123</p>
+                <!-- This new button will be used for the sign-in action -->
+                <button id="googleSignInBtn">
+                    <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        <path d="M1 1h22v22H1z" fill="none"/>
+                    </svg>
+                    <span>Sign in with Google</span>
+                </button>
+            </div>
+        </div>
 
-        <!-- This wrapper holds the login card initially -->
-        <div id="auth-wrapper">
-             <div id="auth-container">
-                <!-- This view is shown before login -->
-                <div id="login-initial-view">
-                    <h2>Project Tracker</h2>
-                    <p class="auth-welcome-text">Sign in to continue to Team123</p>
-                    <button id="signInBtn">
-                        <!-- Google G Logo SVG -->
-                        <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                            <path d="M1 1h22v22H1z" fill="none"/>
-                        </svg>
-                        <span>Sign in with Google</span>
-                    </button>
-                </div>
-                <!-- This view is shown after successful login, inside the app header -->
+        <!-- This is your original HTML structure, it will be shown after login -->
+        <div class="container">
+            <div id="auth-container">
+                <h2>Project Tracker Login</h2>
+                <!-- This original button can be hidden or removed, as the new button triggers the sign-in -->
+                <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+                <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
                 <div id="user-info-display" style="display: none;">
-                    <img id="userPhoto" src="https://placehold.co/100x100/EFEFEF/333333?text=U" alt="User Photo">
+                    <img id="userPhoto" src="" alt="User Photo">
                     <div class="user-details">
-                        <p id="userName">User Name</p>
-                        <p id="userEmail">user.email@example.com</p>
+                        <p id="userName"></p>
+                        <p id="userEmail"></p>
                     </div>
                     <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- This is the main application container. It's hidden by default -->
-        <div class="container app-container">
-            <!-- App content will be dynamically shown here. -->
-            <!-- The #auth-container will be moved here by JS and styled as a header. -->
-            <h1>Team123 - Project Tracker</h1>
-            <div class="action-bar">
-                <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
-                <!-- Other buttons... -->
+                 <button id="clearDataBtn" style="display: none;">Clear Local App Data</button>
             </div>
             
-             <!-- Add Project Modal -->
-            <div id="projectFormModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-button" id="closeProjectFormBtn">&times;</span>
-                    <h2>Add New Tracker</h2>
-                    <form id="newProjectForm">
-                        <label for="numRows">Number of Areas:</label>
-                        <input type="number" id="numRows" value="1" min="1" required>
-                        <label for="baseProjectName">Project Name:</label>
-                        <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
-                        <label for="gsd">GSD:</label>
-                        <select id="gsd" required>
-                            <option value="3in">3in</option> <option value="4in">4in</option> 
-                            <option value="6in">6in</option> <option value="9in">9in</option>
-                        </select>
-                        <button type="submit" class="btn btn-success btn-lg">Add Project(s)</button>
-                    </form>
+            <div id="loading-auth-message"><p>Please sign in to access the Project Tracker.</p></div>
+            
+            <div id="app-content">
+                <h1>Team123 - Project Tracker</h1>
+                <div class="action-bar">
+                    <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
+                    <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
+                    <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
+                    <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
+                </div>
+                
+                <!-- Add Project Modal -->
+                <div id="projectFormModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-button" id="closeProjectFormBtn">&times;</span>
+                        <h2>Add New Tracker</h2>
+                        <form id="newProjectForm">
+                            <label for="numRows">Number of Area:</label>
+                            <input type="number" id="numRows" value="1" min="1" required>
+                            <label for="baseProjectName">Project Name:</label>
+                            <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
+                            <label for="gsd">GSD:</label>
+                            <select id="gsd" required>
+                                <option value="3in">3in</option> <option value="4in">4in</option> 
+                                <option value="6in">6in</option> <option value="9in">9in</option>
+                            </select>
+                            <button type="submit" class="btn btn-success">Add Project(s)</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- TL Dashboard Modal -->
+                <div id="tlDashboardModal" class="modal"><div class="modal-content"><span class="close-button" id="closeTlDashboardBtn">&times;</span><h2>👑 Project Settings</h2><div id="tlDashboardContent"></div></div></div>
+                <!-- Settings Modal -->
+                <div id="settingsModal" class="modal"><div class="modal-content"><span class="close-button" id="closeSettingsBtn">&times;</span><h2>⚙️ User Settings</h2><h3>Manage Allowed User Emails</h3><ul id="allowedEmailsList"></ul><div class="settings-input-group"><input type="email" id="addEmailInput" placeholder="Enter new allowed email"><button id="addEmailBtn" class="btn btn-success">Add Email</button></div></div></div>
+                <!-- TL Summary Modal -->
+                <div id="tlSummaryModal" class="modal"><div class="modal-content"><span class="close-button" id="closeTlSummaryBtn">&times;</span><h2>📝 TL Summary</h2><div id="tlSummaryContent"><p>Loading summary...</p></div></div></div>
+
+                <h3>Project Overview</h3>
+                <div class="group-selector-controls">
+                    <label for="monthFilter">Month:</label>
+                    <select id="monthFilter"><option value="">All Months</option></select>
+                    <label for="batchIdSelect">Project:</label>
+                    <select id="batchIdSelect"><option value="">All Projects</option></select>
+                    <label for="fixCategoryFilter">Fix Category:</label>
+                    <select id="fixCategoryFilter">
+                        <option value="">All</option> <option value="Fix1">Fix1</option> <option value="Fix2">Fix2</option>
+                        <option value="Fix3">Fix3</option> <option value="Fix4">Fix4</option> <option value="Fix5">Fix5</option> <option value="Fix6">Fix6</option>
+                    </select>
+                </div>
+                
+                <div style="overflow-x:auto;">
+                    <table id="projectTable">
+                        <thead>
+                            <tr>
+                                <th>Fix Cat</th>
+                                <th>Project Name</th>
+                                <th>Area/Task</th>
+                                <th>GSD</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                                <!-- Day 1 Columns -->
+                                <th>Day 1 Start</th>
+                                <th>Day 1 Finish</th>
+                                <th>Day 1 Break</th>
+                                <!-- Day 2 Columns -->
+                                <th>Day 2 Start</th>
+                                <th>Day 2 Finish</th>
+                                <th>Day 2 Break</th>
+                                <!-- Day 3 Columns -->
+                                <th>Day 3 Start</th>
+                                <th>Day 3 Finish</th>
+                                <th>Day 3 Break</th>
+                                <!-- Summary & Action Columns -->
+                                <th>Total (min)</th>
+                                <th>Tech Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectTableBody"></tbody>
+                    </table>
+            <div id="paginationControls" style="display: none; text-align: center; padding: 15px;">
+            <button id="prevPageBtn" class="btn">« Previous</button>
+            <span id="pageInfo" style="margin: 0 15px; font-weight: bold;"></span>
+            <button id="nextPageBtn" class="btn">Next »</button>
+            </div>
                 </div>
             </div>
-            
-            <div style="overflow-x:auto;">
-                <table id="projectTable">
-                    <thead>
-                        <tr>
-                           <th>Fix Cat</th>
-                           <th>Project Name</th>
-                           <!-- Other headers... -->
-                           <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="projectTableBody">
-                        <!-- Project rows will be added here -->
-                    </tbody>
-                </table>
-            </div>
         </div>
-        
+      
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
         <!-- Firebase SDKs -->
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -264,80 +393,79 @@
         
         <!-- Your application script -->
         <script>
-            // Example of how your script.js might handle the view transition
-            
-            function onSignInSuccess(user) {
-                const body = document.querySelector('body');
-                const authWrapper = document.getElementById('auth-wrapper');
-                const authContainer = document.getElementById('auth-container');
-                const appContainer = document.querySelector('.app-container');
-                const loginInitialView = document.getElementById('login-initial-view');
-                const userInfoDisplay = document.getElementById('user-info-display');
+            // This script should be replaced by your script.js file.
+            // It demonstrates how to transition between the login UI and the main app.
 
-                // 1. Remove the login-view class to change body styles
-                body.classList.remove('login-view-active');
-                
-                // 2. Hide the main login card wrapper
-                authWrapper.style.display = 'none';
-
-                // 3. Move the auth container to become the header of the main app
-                appContainer.prepend(authContainer);
-                authContainer.classList.add('app-mode');
-
-                // 4. Show the main app container
-                appContainer.style.display = 'block';
-
-                // 5. Update user info in the header (uncomment and use in your real app)
-                /*
-                if(user) {
-                    document.getElementById('userName').textContent = user.displayName || 'Anonymous';
-                    document.getElementById('userEmail').textContent = user.email || 'No email';
-                    document.getElementById('userPhoto').src = user.photoURL || 'https://placehold.co/100x100/EFEFEF/333333?text=U';
-                }
-                */
-
-                // 6. Swap the views inside the auth container
-                loginInitialView.style.display = 'none';
-                userInfoDisplay.style.display = 'flex';
-            }
-
-            // --- Event Listeners ---
             document.addEventListener('DOMContentLoaded', () => {
-                const signInBtn = document.getElementById('signInBtn');
+                const body = document.body;
+                const authWrapper = document.getElementById('auth-wrapper');
+                const mainContainer = document.querySelector('.container');
+                const loadingMessage = document.getElementById('loading-auth-message');
+                const googleSignInBtn = document.getElementById('googleSignInBtn'); // New button
+                const signOutBtn = document.getElementById('signOutBtn'); // Original sign out button
                 
-                // This is a dummy listener for demonstration.
-                // In your real app, this logic would be inside your Firebase auth observer.
-                signInBtn.addEventListener('click', () => {
-                    console.log('Simulating sign-in...');
-                    // In a real app, you would call your Firebase Google Sign-In function here.
-                    // On success, Firebase's onAuthStateChanged observer would trigger the UI update.
-                    // For this demo, we'll just call the function directly with a mock user object.
-                    const mockUser = {
+                // This function displays the new login UI
+                function showLoginView() {
+                    body.classList.add('login-view-active');
+                    authWrapper.style.display = 'block';
+                    mainContainer.style.display = 'none';
+                }
+
+                // This function displays the main application after a successful login
+                function showAppView(user) {
+                    body.classList.remove('login-view-active');
+                    authWrapper.style.display = 'none';
+                    mainContainer.style.display = 'block';
+                    loadingMessage.style.display = 'none';
+
+                    // Your existing logic to show user info and app content
+                    const authContainer = document.getElementById('auth-container');
+                    const originalSignInBtn = document.getElementById('signInBtn');
+                    const userInfoDisplay = document.getElementById('user-info-display');
+                    const appContent = document.getElementById('app-content');
+
+                    originalSignInBtn.style.display = 'none';
+                    authContainer.querySelector('h2').style.display = 'none';
+                    
+                    document.getElementById('userName').textContent = user.displayName || 'Anonymous';
+                    document.getElementById('userEmail').textContent = user.email || 'No email provided';
+                    document.getElementById('userPhoto').src = user.photoURL || `https://placehold.co/40x40/EFEFEF/333333?text=${user.displayName?.[0] || 'U'}`;
+                    userInfoDisplay.style.display = 'flex';
+                    
+                    // Show the main application content
+                    appContent.style.display = 'block';
+                }
+
+                // --- FAKE AUTHENTICATION FOR DEMO ---
+                // Replace this with your actual Firebase onAuthStateChanged observer
+                let currentUser = null; // a fake current user
+
+                if (!currentUser) {
+                    showLoginView();
+                }
+
+                googleSignInBtn.addEventListener('click', () => {
+                    console.log("Simulating Google Sign-In...");
+                    // In a real app, this is where you'd call firebase.auth().signInWithPopup(...)
+                    // On success, the onAuthStateChanged observer would fire and call showAppView.
+                    currentUser = {
                         displayName: 'Demo User',
                         email: 'demo@example.com',
-                        photoURL: 'https://placehold.co/100x100/3498db/ffffff?text=D'
+                        photoURL: `https://placehold.co/40x40/3498db/ffffff?text=D`
                     };
-                    onSignInSuccess(mockUser); 
+                    showAppView(currentUser);
                 });
-
-                // Modal listeners for demo
-                const openModalBtn = document.getElementById('openAddNewProjectBtn');
-                const closeModalBtn = document.getElementById('closeProjectFormBtn');
-                const modal = document.getElementById('projectFormModal');
-
-                if (openModalBtn) {
-                    openModalBtn.addEventListener('click', () => modal.style.display = 'flex');
-                }
-                if (closeModalBtn) {
-                    closeModalBtn.addEventListener('click', () => modal.style.display = 'none');
-                }
-                window.addEventListener('click', (event) => {
-                    if (event.target == modal) {
-                        modal.style.display = 'none';
-                    }
+                
+                signOutBtn.addEventListener('click', () => {
+                     console.log("Simulating Sign-Out...");
+                     currentUser = null;
+                     // In your real app, this would hide user info and call showLoginView().
+                     // For this demo, we'll just reload to restart the flow.
+                     window.location.reload();
                 });
+                
+                // Your existing modal listeners can go here...
             });
-
         </script>
     </body>
 </html>
