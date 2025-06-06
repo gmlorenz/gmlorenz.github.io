@@ -1081,20 +1081,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            async resetProjectTask(projectId) {
+           async resetProjectTask(projectId) {
                 this.methods.showLoading.call(this, "Resetting task...");
                 const projectRef = this.db.collection("projects").doc(projectId);
                 try {
                     const doc = await projectRef.get();
                     if (!doc.exists) throw new Error("Project not found.");
                     
-                    const resetNotes = `Task Reset by TL on ${new Date().toLocaleDateString('en-US')}. Original Notes: "${doc.data().techNotes || ""}"`;
+                    // MODIFICATION: The 'resetNotes' variable has been removed.
+                    // The 'techNotes' field is now updated to be an empty string "".
                     await projectRef.update({
-                        status: "Available", assignedTo: "", techNotes: resetNotes,
+                        status: "Available",
+                        assignedTo: "",
+                        techNotes: "", // This line has been changed.
                         startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                         startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                         startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                        // MODIFIED: Reset all per-day break fields
                         breakDurationMinutesDay1: 0,
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
