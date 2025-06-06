@@ -1266,7 +1266,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                             startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                             startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                            releasedToNextStage: false, lastModifiedTimestamp: serverTimestamp,
+                            releasedToNextStage: false, 
+                            isReassigned: false,
                             originalProjectId: task.id,
                         };
                         delete newNextFixTask.id;
