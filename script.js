@@ -7,12 +7,12 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.4.0
+ * @version 2.5.0
  * @author Gemini AI Refactor
  * @changeLog
- * - Implemented project-based pagination (2 projects per page) for the default unfiltered view.
- * - Added a new filter to sort projects by "Newest First" or "Oldest First".
- * - Pagination controls are now displayed and managed directly from the script.
+ * - Extended pagination to work when filtering by a specific month.
+ * - The app now paginates through all projects within the selected month.
+ * - Refined data loading logic to handle pagination with month filters efficiently.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectsPerPage: 2,
                 paginatedProjectNameList: [],
                 totalPages: 0,
-                sortOrderForPaging: 'newest' // Track which sort order the list was built for
+                sortOrderForPaging: 'newest',
+                monthForPaging: '' // Track which month the list was built for
             }
         },
 
@@ -380,17 +381,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 await this.methods.populateProjectNameFilter.call(this);
             
                 const sortDirection = this.state.filters.sortBy === 'oldest' ? 'asc' : 'desc';
-                const isUnfilteredView = !this.state.filters.month && !this.state.filters.batchId && !this.state.filters.fixCategory;
+                // MODIFIED: Pagination is active if no specific project/fix is selected
+                const shouldPaginate = !this.state.filters.batchId && !this.state.filters.fixCategory;
                 
                 let projectsQuery = this.db.collection("projects");
             
-                if (isUnfilteredView) {
+                if (shouldPaginate) {
                     this.elements.paginationControls.style.display = 'block';
             
-                    // Rebuild the project name list if it's empty or if the sort order has changed
-                    if (this.state.pagination.paginatedProjectNameList.length === 0 || this.state.pagination.sortOrderForPaging !== this.state.filters.sortBy) {
+                    // Rebuild paginated list if it's empty, or if sort/month filters changed
+                    if (this.state.pagination.paginatedProjectNameList.length === 0 || 
+                        this.state.pagination.sortOrderForPaging !== this.state.filters.sortBy ||
+                        this.state.pagination.monthForPaging !== this.state.filters.month) {
+                        
                         this.methods.showLoading.call(this, "Building project list for pagination...");
-                        const allTasksSnapshot = await this.db.collection("projects").orderBy("creationTimestamp", sortDirection).get();
+                        
+                        let nameQuery = this.db.collection("projects");
+                        
+                        // If a month is selected, filter the query for building the project name list
+                        if (this.state.filters.month) {
+                            const [year, month] = this.state.filters.month.split('-');
+                            const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                            const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+                            nameQuery = nameQuery.where("creationTimestamp", ">=", startDate).where("creationTimestamp", "<=", endDate);
+                        }
+            
+                        const allTasksSnapshot = await nameQuery.orderBy("creationTimestamp", sortDirection).get();
                         const uniqueNames = new Set();
                         const sortedNames = [];
                         allTasksSnapshot.forEach(doc => {
@@ -400,9 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 sortedNames.push(name);
                             }
                         });
+            
                         this.state.pagination.paginatedProjectNameList = sortedNames;
                         this.state.pagination.totalPages = Math.ceil(sortedNames.length / this.state.pagination.projectsPerPage);
-                        this.state.pagination.sortOrderForPaging = this.state.filters.sortBy; // Store the sort order
+                        this.state.pagination.sortOrderForPaging = this.state.filters.sortBy;
+                        this.state.pagination.monthForPaging = this.state.filters.month;
                     }
             
                     const startIndex = (this.state.pagination.currentPage - 1) * this.state.pagination.projectsPerPage;
@@ -414,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         projectsQuery = projectsQuery.where("baseProjectName", "==", "no-projects-exist-yet-dummy-value");
                     }
-                } else {
+                } else { // Specific Project or Fix Category is selected, so no pagination
                     this.elements.paginationControls.style.display = 'none';
                     if (this.state.filters.month) {
                         const [year, month] = this.state.filters.month.split('-');
@@ -433,10 +451,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectsQuery = projectsQuery.orderBy("creationTimestamp", sortDirection);
             
                 this.firestoreListenerUnsubscribe = projectsQuery.onSnapshot(snapshot => {
-                    const newProjects = [];
+                    let newProjects = [];
                     snapshot.forEach(doc => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
                     });
+            
+                    // Client-side filtering for month, ONLY when paginating with a month filter.
+                    // This works around Firestore's limitation on combining 'in' and range filters in a single query.
+                    if (shouldPaginate && this.state.filters.month) {
+                        const [year, month] = this.state.filters.month.split('-');
+                        const startDateMs = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
+                        const endDateMs = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999).getTime();
+                        
+                        newProjects = newProjects.filter(p => {
+                            if (p.creationTimestamp?.toMillis) {
+                                const projectDateMs = p.creationTimestamp.toMillis();
+                                return projectDateMs >= startDateMs && projectDateMs <= endDateMs;
+                            }
+                            return false;
+                        });
+                    }
+                    
                     this.state.projects = newProjects.map(p => ({
                         breakDurationMinutesDay1: 0,
                         breakDurationMinutesDay2: 0,
