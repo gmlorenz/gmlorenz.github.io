@@ -7,9 +7,10 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.5.0
+ * @version 2.6.0
  * @author Gemini AI Refactor
  * @changeLog
+ * - Added "Add Extra Area" button in Project Settings to add new tasks to the latest fix stage of a project.
  * - Extended pagination to work when filtering by a specific month.
  * - The app now paginates through all projects within the selected month.
  * - Refined data loading logic to handle pagination with month filters efficiently.
@@ -381,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 await this.methods.populateProjectNameFilter.call(this);
             
                 const sortDirection = this.state.filters.sortBy === 'oldest' ? 'asc' : 'desc';
-                // MODIFIED: Pagination is active if no specific project/fix is selected
                 const shouldPaginate = !this.state.filters.batchId && !this.state.filters.fixCategory;
                 
                 let projectsQuery = this.db.collection("projects");
@@ -389,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (shouldPaginate) {
                     this.elements.paginationControls.style.display = 'block';
             
-                    // Rebuild paginated list if it's empty, or if sort/month filters changed
                     if (this.state.pagination.paginatedProjectNameList.length === 0 || 
                         this.state.pagination.sortOrderForPaging !== this.state.filters.sortBy ||
                         this.state.pagination.monthForPaging !== this.state.filters.month) {
@@ -398,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         let nameQuery = this.db.collection("projects");
                         
-                        // If a month is selected, filter the query for building the project name list
                         if (this.state.filters.month) {
                             const [year, month] = this.state.filters.month.split('-');
                             const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -432,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         projectsQuery = projectsQuery.where("baseProjectName", "==", "no-projects-exist-yet-dummy-value");
                     }
-                } else { // Specific Project or Fix Category is selected, so no pagination
+                } else { 
                     this.elements.paginationControls.style.display = 'none';
                     if (this.state.filters.month) {
                         const [year, month] = this.state.filters.month.split('-');
@@ -456,8 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
                     });
             
-                    // Client-side filtering for month, ONLY when paginating with a month filter.
-                    // This works around Firestore's limitation on combining 'in' and range filters in a single query.
                     if (shouldPaginate && this.state.filters.month) {
                         const [year, month] = this.state.filters.month.split('-');
                         const startDateMs = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
@@ -974,7 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!batches[task.batchId]) batches[task.batchId] = { batchId: task.batchId, baseProjectName: task.baseProjectName || "N/A", tasksByFix: {} };
                             if (task.fixCategory) {
                                 if (!batches[task.batchId].tasksByFix[task.fixCategory]) batches[task.batchId].tasksByFix[task.fixCategory] = [];
-                                batches[task.batchId].tasksByFix[task.fixCategory].push(task);
+                                batches[task.batchId].tasksByFix[task.fixCategory].push({id: doc.id, ...task});
                             }
                         }
                     });
@@ -1035,6 +1031,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     batchItemDiv.appendChild(releaseActionsDiv);
+
+                    // --- NEW: Add Extra Area Button ---
+                    const addAreaBtn = document.createElement('button');
+                    addAreaBtn.textContent = 'Add Extra Area';
+                    addAreaBtn.className = 'btn btn-success';
+                    addAreaBtn.style.marginLeft = '10px';
+                    addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
+                    releaseActionsDiv.appendChild(addAreaBtn);
+
 
                     const deleteActionsDiv = document.createElement('div');
                     deleteActionsDiv.className = 'dashboard-batch-actions-delete';
@@ -1106,6 +1111,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
+            },
+
+            async handleAddExtraArea(batchId, baseProjectName) {
+                this.methods.showLoading.call(this, 'Analyzing project...');
+                try {
+                    const projectTasksSnapshot = await this.db.collection("projects")
+                        .where("batchId", "==", batchId)
+                        .get();
+
+                    if (projectTasksSnapshot.empty) {
+                        throw new Error("Could not find any tasks for this project.");
+                    }
+
+                    const allTasks = [];
+                    projectTasksSnapshot.forEach(doc => allTasks.push(doc.data()));
+
+                    const fixOrder = this.config.FIX_CATEGORIES.ORDER;
+                    let latestFixCategory = allTasks.reduce((latest, task) => {
+                        const currentIndex = fixOrder.indexOf(task.fixCategory);
+                        const latestIndex = fixOrder.indexOf(latest);
+                        return currentIndex > latestIndex ? task.fixCategory : latest;
+                    }, 'Fix1');
+
+                    const tasksInLatestFix = allTasks.filter(task => task.fixCategory === latestFixCategory);
+                    const lastTask = tasksInLatestFix.reduce((latest, task) => {
+                         const currentNum = parseInt(task.areaTask.replace('Area', ''), 10);
+                         const latestNum = parseInt(latest.areaTask.replace('Area', ''), 10);
+                         return currentNum > latestNum ? task : latest;
+                    });
+                    
+                    const lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10);
+
+                    const numToAdd = parseInt(prompt(`Adding extra areas to "${baseProjectName}" - ${latestFixCategory}.\nLast area is "${lastTask.areaTask}".\n\nHow many extra areas do you want to add?`), 10);
+
+                    if (isNaN(numToAdd) || numToAdd < 1) {
+                        alert("Invalid number. Please enter a positive number.");
+                        return;
+                    }
+
+                    this.methods.showLoading.call(this, `Adding ${numToAdd} extra area(s)...`);
+
+                    const firestoreBatch = this.db.batch();
+                    const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+                    for (let i = 1; i <= numToAdd; i++) {
+                        const newAreaNumber = lastAreaNumber + i;
+                        const newAreaTask = `Area${String(newAreaNumber).padStart(2, '0')}`;
+                        
+                        const newTaskData = {
+                            ...lastTask, // Inherit properties like batchId, gsd, etc.
+                            areaTask: newAreaTask,
+                            assignedTo: "",
+                            techNotes: "",
+                            status: "Available",
+                            startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
+                            startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
+                            startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
+                            releasedToNextStage: false,
+                            isReassigned: false,
+                            originalProjectId: null,
+                            breakDurationMinutesDay1: 0,
+                            breakDurationMinutesDay2: 0,
+                            breakDurationMinutesDay3: 0,
+                            additionalMinutesManual: 0,
+                            creationTimestamp: serverTimestamp,
+                            lastModifiedTimestamp: serverTimestamp
+                        };
+
+                        const newDocRef = this.db.collection("projects").doc();
+                        firestoreBatch.set(newDocRef, newTaskData);
+                    }
+
+                    await firestoreBatch.commit();
+                    alert(`${numToAdd} extra area(s) added successfully to ${latestFixCategory}!`);
+                    
+                    // Refresh views
+                    await this.methods.initializeFirebaseAndLoadData.call(this);
+                    await this.methods.renderTLDashboard.call(this);
+
+                } catch (error) {
+                    console.error("Error adding extra area:", error);
+                    alert("Error adding extra area: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
             },
 
             async handleDeleteEntireProject(batchId, baseProjectName) {
