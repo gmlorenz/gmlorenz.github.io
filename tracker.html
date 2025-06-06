@@ -254,12 +254,12 @@
     <!-- Add the login-view-active class to the body by default -->
     <body class="login-view-active">
         
-        <!-- This wrapper holds the new login card and is only visible on page load -->
-        <div id="auth-wrapper" style="display: none;">
+        <!-- This wrapper holds the new login card. The inline style has been REMOVED. -->
+        <div id="auth-wrapper">
             <div class="login-card">
                 <h2>Project Tracker</h2>
                 <p>Sign in to continue to Team123</p>
-                <!-- This new button will be used for the sign-in action -->
+                <!-- This new button will be used for the sign-in action in your script.js -->
                 <button id="googleSignInBtn">
                     <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -277,8 +277,8 @@
         <div class="container">
             <div id="auth-container">
                 <h2>Project Tracker Login</h2>
-                <!-- This original button can be hidden or removed, as the new button triggers the sign-in -->
-                <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+                <!-- Your original sign-in button is still here but can be ignored or removed if not needed by your script -->
+                <button id="signInBtn" class="btn btn-primary btn-lg" style="display:none;">Sign in with Google</button>
                 <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
                 <div id="user-info-display" style="display: none;">
                     <img id="userPhoto" src="" alt="User Photo">
@@ -322,11 +322,9 @@
                     </div>
                 </div>
 
-                <!-- TL Dashboard Modal -->
+                <!-- Your Other Modals Here -->
                 <div id="tlDashboardModal" class="modal"><div class="modal-content"><span class="close-button" id="closeTlDashboardBtn">&times;</span><h2>👑 Project Settings</h2><div id="tlDashboardContent"></div></div></div>
-                <!-- Settings Modal -->
                 <div id="settingsModal" class="modal"><div class="modal-content"><span class="close-button" id="closeSettingsBtn">&times;</span><h2>⚙️ User Settings</h2><h3>Manage Allowed User Emails</h3><ul id="allowedEmailsList"></ul><div class="settings-input-group"><input type="email" id="addEmailInput" placeholder="Enter new allowed email"><button id="addEmailBtn" class="btn btn-success">Add Email</button></div></div></div>
-                <!-- TL Summary Modal -->
                 <div id="tlSummaryModal" class="modal"><div class="modal-content"><span class="close-button" id="closeTlSummaryBtn">&times;</span><h2>📝 TL Summary</h2><div id="tlSummaryContent"><p>Loading summary...</p></div></div></div>
 
                 <h3>Project Overview</h3>
@@ -352,19 +350,15 @@
                                 <th>GSD</th>
                                 <th>Assigned To</th>
                                 <th>Status</th>
-                                <!-- Day 1 Columns -->
                                 <th>Day 1 Start</th>
                                 <th>Day 1 Finish</th>
                                 <th>Day 1 Break</th>
-                                <!-- Day 2 Columns -->
                                 <th>Day 2 Start</th>
                                 <th>Day 2 Finish</th>
                                 <th>Day 2 Break</th>
-                                <!-- Day 3 Columns -->
                                 <th>Day 3 Start</th>
                                 <th>Day 3 Finish</th>
                                 <th>Day 3 Break</th>
-                                <!-- Summary & Action Columns -->
                                 <th>Total (min)</th>
                                 <th>Tech Notes</th>
                                 <th>Actions</th>
@@ -372,14 +366,16 @@
                         </thead>
                         <tbody id="projectTableBody"></tbody>
                     </table>
-            <div id="paginationControls" style="display: none; text-align: center; padding: 15px;">
-            <button id="prevPageBtn" class="btn">« Previous</button>
-            <span id="pageInfo" style="margin: 0 15px; font-weight: bold;"></span>
-            <button id="nextPageBtn" class="btn">Next »</button>
-            </div>
+                    <div id="paginationControls" style="display: none; text-align: center; padding: 15px;">
+                        <button id="prevPageBtn" class="btn">« Previous</button>
+                        <span id="pageInfo" style="margin: 0 15px; font-weight: bold;"></span>
+                        <button id="nextPageBtn" class="btn">Next »</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
       
         <div id="loadingOverlay">
             <div class="spinner"></div>
@@ -391,81 +387,7 @@
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
         
-        <!-- Your application script -->
-        <script>
-            // This script should be replaced by your script.js file.
-            // It demonstrates how to transition between the login UI and the main app.
-
-            document.addEventListener('DOMContentLoaded', () => {
-                const body = document.body;
-                const authWrapper = document.getElementById('auth-wrapper');
-                const mainContainer = document.querySelector('.container');
-                const loadingMessage = document.getElementById('loading-auth-message');
-                const googleSignInBtn = document.getElementById('googleSignInBtn'); // New button
-                const signOutBtn = document.getElementById('signOutBtn'); // Original sign out button
-                
-                // This function displays the new login UI
-                function showLoginView() {
-                    body.classList.add('login-view-active');
-                    authWrapper.style.display = 'block';
-                    mainContainer.style.display = 'none';
-                }
-
-                // This function displays the main application after a successful login
-                function showAppView(user) {
-                    body.classList.remove('login-view-active');
-                    authWrapper.style.display = 'none';
-                    mainContainer.style.display = 'block';
-                    loadingMessage.style.display = 'none';
-
-                    // Your existing logic to show user info and app content
-                    const authContainer = document.getElementById('auth-container');
-                    const originalSignInBtn = document.getElementById('signInBtn');
-                    const userInfoDisplay = document.getElementById('user-info-display');
-                    const appContent = document.getElementById('app-content');
-
-                    originalSignInBtn.style.display = 'none';
-                    authContainer.querySelector('h2').style.display = 'none';
-                    
-                    document.getElementById('userName').textContent = user.displayName || 'Anonymous';
-                    document.getElementById('userEmail').textContent = user.email || 'No email provided';
-                    document.getElementById('userPhoto').src = user.photoURL || `https://placehold.co/40x40/EFEFEF/333333?text=${user.displayName?.[0] || 'U'}`;
-                    userInfoDisplay.style.display = 'flex';
-                    
-                    // Show the main application content
-                    appContent.style.display = 'block';
-                }
-
-                // --- FAKE AUTHENTICATION FOR DEMO ---
-                // Replace this with your actual Firebase onAuthStateChanged observer
-                let currentUser = null; // a fake current user
-
-                if (!currentUser) {
-                    showLoginView();
-                }
-
-                googleSignInBtn.addEventListener('click', () => {
-                    console.log("Simulating Google Sign-In...");
-                    // In a real app, this is where you'd call firebase.auth().signInWithPopup(...)
-                    // On success, the onAuthStateChanged observer would fire and call showAppView.
-                    currentUser = {
-                        displayName: 'Demo User',
-                        email: 'demo@example.com',
-                        photoURL: `https://placehold.co/40x40/3498db/ffffff?text=D`
-                    };
-                    showAppView(currentUser);
-                });
-                
-                signOutBtn.addEventListener('click', () => {
-                     console.log("Simulating Sign-Out...");
-                     currentUser = null;
-                     // In your real app, this would hide user info and call showLoginView().
-                     // For this demo, we'll just reload to restart the flow.
-                     window.location.reload();
-                });
-                
-                // Your existing modal listeners can go here...
-            });
-        </script>
+        <!-- Link to your functional application script -->
+        <script src="script.js"></script>
     </body>
 </html>
