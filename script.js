@@ -353,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectsQuery = projectsQuery.orderBy("creationTimestamp", "desc");
 
                 this.firestoreListenerUnsubscribe = projectsQuery.onSnapshot(snapshot => {
+                    // This is the success callback
                     const newProjects = [];
                     snapshot.forEach(doc => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
@@ -363,13 +364,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...p
                     }));
                     this.methods.refreshAllViews.call(this);
+
+                    // --- ADD THIS LINE ---
+                    // Hide loading overlay on successful data load
+                    this.methods.hideLoading.call(this);
+
                 }, error => {
+                    // This is the error callback
                     console.error("Error fetching projects:", error);
                     this.state.projects = [];
                     this.methods.refreshAllViews.call(this);
                     alert("Error loading projects: " + error.message);
+                    
+                    // --- ADD THIS LINE ---
+                    // Crucially, hide loading overlay on error to reveal the popup
+                    this.methods.hideLoading.call(this); 
                 });
-                this.methods.hideLoading.call(this);
+
+                // --- REMOVE THIS LINE ---
+                // this.methods.hideLoading.call(this);
+              //  this.methods.hideLoading.call(this);
             },
 
             async populateMonthFilter() {
