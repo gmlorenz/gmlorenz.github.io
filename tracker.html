@@ -63,6 +63,7 @@
          /* Keep hover styles as they are */
          #signInBtn { background-color: #4285F4; color: white; } #signInBtn:hover { background-color: #357ae8; }
          #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
+                  
          /* Initially hide app content and show loading/auth message */
          #app-content { display: none; }
          #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;} /* Added margin-top to separate from auth-container */
@@ -231,6 +232,7 @@
          <div id="auth-container">
             <h2></h2>
             <button id="signInBtn" class="btn btn-primary btn-lg">Sign in with Google</button>
+            <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
             <div id="user-info-display" style="display: none;">
                <img id="userPhoto" src="" alt="User Photo">
                <div class="user-details">
@@ -272,6 +274,8 @@
                      <label for="gsd">GSD:</label>
                      <select id="gsd" required>
                         <option value="3in">3in</option>
+                        <option value="3in">4in</option>
+                        <option value="3in">6in</option>
                         <option value="9in">9in</option>
                      </select>
                      <button type="submit" class="btn btn-success">Add Project(s)</button>
