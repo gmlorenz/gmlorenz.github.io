@@ -1257,7 +1257,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (task.status === "Reassigned_TechAbsent") continue;
 
                         const newNextFixTask = { ...task,
-                            fixCategory: nextFixCategory, status: "Available",
+                            fixCategory: nextFixCategory,
+                            status: "Available",
                             techNotes: "", 
                             additionalMinutesManual: 0,
                             breakDurationMinutesDay1: 0,
@@ -1266,8 +1267,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             startTimeDay1: null, finishTimeDay1: null, durationDay1Ms: null,
                             startTimeDay2: null, finishTimeDay2: null, durationDay2Ms: null,
                             startTimeDay3: null, finishTimeDay3: null, durationDay3Ms: null,
-                            releasedToNextStage: false, lastModifiedTimestamp: serverTimestamp,
-                            isReassigned: false,
+                            releasedToNextStage: false,
+                            // This line ensures the highlight is removed for the next stage.
+                            isReassigned: false, 
+                            lastModifiedTimestamp: serverTimestamp,
                             originalProjectId: task.id,
                         };
                         delete newNextFixTask.id;
