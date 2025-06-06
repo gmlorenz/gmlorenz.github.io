@@ -251,15 +251,15 @@
         </style>
         <link rel="icon" type="image/png" href="icon.png">
     </head>
-    <!-- Add the login-view-active class to the body by default -->
+    <!-- Your script.js will control adding/removing this class -->
     <body class="login-view-active">
         
-        <!-- This wrapper holds the new login card. The inline style has been REMOVED. -->
+        <!-- This wrapper holds the new login card -->
         <div id="auth-wrapper">
             <div class="login-card">
                 <h2>Project Tracker</h2>
                 <p>Sign in to continue to Team123</p>
-                <!-- This new button will be used for the sign-in action in your script.js -->
+                <!-- This new button must be controlled by your script.js -->
                 <button id="googleSignInBtn">
                     <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -277,7 +277,7 @@
         <div class="container">
             <div id="auth-container">
                 <h2>Project Tracker Login</h2>
-                <!-- Your original sign-in button is still here but can be ignored or removed if not needed by your script -->
+                <!-- Your original sign-in button is still here but is hidden. Your script.js should now use googleSignInBtn instead -->
                 <button id="signInBtn" class="btn btn-primary btn-lg" style="display:none;">Sign in with Google</button>
                 <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
                 <div id="user-info-display" style="display: none;">
@@ -374,8 +374,6 @@
                 </div>
             </div>
         </div>
-
-        <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
       
         <div id="loadingOverlay">
             <div class="spinner"></div>
