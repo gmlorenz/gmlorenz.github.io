@@ -7,15 +7,12 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.7.1
+ * @version 2.7.2
  * @author Gemini AI Refactor
  * @changeLog
- * - Fixed bug in "Add Extra Area" where it would fail if the latest fix stage had no tasks.
- * - Disabled "Add Extra Area" button for projects with no tasks to prevent errors.
- * - Optimized data loading by removing a redundant client-side filter.
- * - Corrected timestamping logic for reassigned tasks to ensure data accuracy.
- * - Removed "Fix Category" selector from "Add New Tracker" modal; new projects now default to "Fix1".
- * - Disabled closing the "Add New Tracker" modal by clicking outside of it.
+ * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
+ * - Added DOM references for new UI elements (`auth-wrapper`, `body`, `mainContainer`).
+ * - Updated auth state handlers (`handleAuthorizedUser`, `handleSignedOutUser`) to toggle view visibility.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -158,6 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setupAuthRelatedDOMReferences() {
                 this.elements = {
                     ...this.elements,
+                    // --- MODIFICATION: Added elements for new UI ---
+                    body: document.body,
+                    authWrapper: document.getElementById('auth-wrapper'),
+                    mainContainer: document.querySelector('.container'),
+                    // --- End Modification ---
                     signInBtn: document.getElementById('signInBtn'),
                     signOutBtn: document.getElementById('signOutBtn'),
                     clearDataBtn: document.getElementById('clearDataBtn'),
@@ -308,12 +310,18 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
             handleAuthorizedUser(user) {
+                // --- MODIFICATION: Added logic to show the app and hide the login UI ---
+                this.elements.body.classList.remove('login-view-active');
+                this.elements.authWrapper.style.display = 'none';
+                this.elements.mainContainer.style.display = 'block';
+                // --- End Modification ---
+
                 this.elements.userNameP.textContent = user.displayName || "N/A";
                 this.elements.userEmailP.textContent = user.email || "N/A";
                 if (this.elements.userPhotoImg) this.elements.userPhotoImg.src = user.photoURL || 'default-user.png';
 
                 this.elements.userInfoDisplayDiv.style.display = 'flex';
-                this.elements.signInBtn.style.display = 'none';
+                // The main signInBtn is inside the auth-wrapper which is now hidden, so no need to hide it separately.
                 if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'none';
                 this.elements.appContentDiv.style.display = 'block';
                 this.elements.loadingAuthMessageDiv.style.display = 'none';
@@ -326,12 +334,18 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
             handleSignedOutUser() {
+                // --- MODIFICATION: Added logic to show the login UI and hide the app ---
+                this.elements.body.classList.add('login-view-active');
+                this.elements.authWrapper.style.display = 'block';
+                this.elements.mainContainer.style.display = 'none';
+                // --- End Modification ---
+
                 this.elements.userInfoDisplayDiv.style.display = 'none';
-                this.elements.signInBtn.style.display = 'block';
+                // The main signInBtn is now inside auth-wrapper, which is shown by the lines above.
                 if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'block';
                 this.elements.appContentDiv.style.display = 'none';
                 this.elements.loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>";
-                this.elements.loadingAuthMessageDiv.style.display = 'block';
+                this.elements.loadingAuthMessageDiv.style.display = 'block'; // This is hidden by body class, but good practice
                 if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'none';
 
                 if (this.firestoreListenerUnsubscribe) {
@@ -346,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 provider.addScope('email');
 
                 if (this.elements.signInBtn) {
+                    // This now correctly refers to the new button in the login card since it has the ID 'signInBtn'
                     this.elements.signInBtn.onclick = () => {
                         this.methods.showLoading.call(this, "Signing in...");
                         this.auth.signInWithPopup(provider).catch((error) => {
@@ -455,8 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (doc.exists) newProjects.push({ id: doc.id, ...doc.data() });
                     });
             
-                    // BUGFIX: This client-side filter was redundant and inefficient. The server-side query to build the paginated list already handles this logic.
-                    // The main query uses `where in`, so we must ensure the projects fetched match the paginated list, which was already scoped by month.
                     if (shouldPaginate) {
                          newProjects = newProjects.filter(p => this.state.pagination.paginatedProjectNameList.includes(p.baseProjectName));
                     }
@@ -750,8 +763,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.projectTableBody.innerHTML = "";
 
                 const sortedProjects = [...this.state.projects].sort((a, b) => {
-                    // This sort ensures that projects are grouped correctly for header display,
-                    // respecting the primary sort order from Firestore.
                     const nameA = a.baseProjectName || "";
                     const nameB = b.baseProjectName || "";
                     const fixA = this.config.FIX_CATEGORIES.ORDER.indexOf(a.fixCategory || "");
@@ -1026,7 +1037,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     addAreaBtn.textContent = 'Add Extra Area';
                     addAreaBtn.className = 'btn btn-success';
                     addAreaBtn.style.marginLeft = '10px';
-                    // BUGFIX: Disable button if there are no stages/tasks to prevent errors.
                     addAreaBtn.disabled = stagesPresent.length === 0;
                     addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
                     releaseActionsDiv.appendChild(addAreaBtn);
@@ -1129,7 +1139,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const tasksInLatestFix = allTasks.filter(task => task.fixCategory === latestFixCategory);
                     
-                    // BUGFIX: Handle case where the latest fix stage might be empty.
                     let lastTask, lastAreaNumber = 0;
                     if(tasksInLatestFix.length > 0){
                         lastTask = tasksInLatestFix.reduce((latest, task) => {
@@ -1139,7 +1148,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10) || 0;
                     } else {
-                        // If no tasks exist in the latest fix, we still need a template. Grab any task from the project.
                         lastTask = allTasks[0];
                     }
 
@@ -1161,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const newTaskData = {
                             ...lastTask,
-                            fixCategory: latestFixCategory, // Ensure it's the latest fix
+                            fixCategory: latestFixCategory, 
                             areaTask: newAreaTask,
                             assignedTo: "",
                             techNotes: "",
@@ -1389,7 +1397,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newProjectData = { ...projectToReassign,
                         assignedTo: newTechId.trim(), status: "Available",
                         techNotes: `Reassigned from ${projectToReassign.assignedTo || "N/A"}. Original ID: ${projectToReassign.id}`,
-                        // BUGFIX: New task should get a new creation timestamp
                         creationTimestamp: serverTimestamp, 
                         lastModifiedTimestamp: serverTimestamp,
                         isReassigned: true, originalProjectId: projectToReassign.id,
