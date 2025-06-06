@@ -1063,6 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.methods.hideLoading.call(this);
                 }
             },
+            
             async deleteSpecificFixTasksForBatch(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Deleting ${fixCategory} tasks...`);
                 try {
