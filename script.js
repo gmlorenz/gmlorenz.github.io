@@ -7,13 +7,13 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.6.0
+ * @version 2.7.0
  * @author Gemini AI Refactor
  * @changeLog
+ * - Removed "Fix Category" selector from "Add New Tracker" modal; new projects now default to "Fix1".
+ * - Disabled closing the "Add New Tracker" modal by clicking outside of it.
  * - Added "Add Extra Area" button in Project Settings to add new tasks to the latest fix stage of a project.
  * - Extended pagination to work when filtering by a specific month.
- * - The app now paginates through all projects within the selected month.
- * - Refined data loading logic to handle pagination with month filters efficiently.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -258,8 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
+                // MODIFIED: Removed closing the "Add New Project" modal on outside click
                 window.onclick = (event) => {
-                    if (event.target == self.elements.projectFormModal) self.elements.projectFormModal.style.display = 'none';
                     if (event.target == self.elements.tlDashboardModal) self.elements.tlDashboardModal.style.display = 'none';
                     if (event.target == self.elements.settingsModal) self.elements.settingsModal.style.display = 'none';
                     if (event.target == self.elements.tlSummaryModal) self.elements.tlSummaryModal.style.display = 'none';
@@ -559,7 +559,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.preventDefault();
                 this.methods.showLoading.call(this, "Adding project(s)...");
 
-                const fixCategory = document.getElementById('fixCategorySelect').value;
+                // MODIFIED: Hardcoded to 'Fix1' as per user request
+                const fixCategory = "Fix1";
                 const numRows = parseInt(document.getElementById('numRows').value, 10);
                 const baseProjectName = document.getElementById('baseProjectName').value.trim();
                 const gsd = document.getElementById('gsd').value;
@@ -1030,15 +1031,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     });
-                    batchItemDiv.appendChild(releaseActionsDiv);
-
-                    // --- NEW: Add Extra Area Button ---
+                    
                     const addAreaBtn = document.createElement('button');
                     addAreaBtn.textContent = 'Add Extra Area';
                     addAreaBtn.className = 'btn btn-success';
                     addAreaBtn.style.marginLeft = '10px';
                     addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
                     releaseActionsDiv.appendChild(addAreaBtn);
+
+                    batchItemDiv.appendChild(releaseActionsDiv);
 
 
                     const deleteActionsDiv = document.createElement('div');
