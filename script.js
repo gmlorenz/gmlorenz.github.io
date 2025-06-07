@@ -1297,12 +1297,44 @@ document.addEventListener('DOMContentLoaded', () => {
             async deleteSpecificFixTasksForBatch(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Deleting ${fixCategory} tasks...`);
                 try {
+                    const firestoreBatch = this.db.batch();
+                    const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+                    // --- START MODIFICATION: Rollback Logic ---
+                    
+                    // Find the previous fix category to roll it back
+                    const fixOrder = this.config.FIX_CATEGORIES.ORDER;
+                    const currentFixIndex = fixOrder.indexOf(fixCategory);
+                    
+                    if (currentFixIndex > 0) {
+                        const previousFixCategory = fixOrder[currentFixIndex - 1];
+                        
+                        // Get all tasks from the previous stage to mark them as "not released"
+                        const previousStageSnapshot = await this.db.collection("projects")
+                            .where("batchId", "==", batchId)
+                            .where("fixCategory", "==", previousFixCategory)
+                            .get();
+
+                        previousStageSnapshot.forEach(doc => {
+                            firestoreBatch.update(doc.ref, {
+                                releasedToNextStage: false,
+                                lastModifiedTimestamp: serverTimestamp
+                            });
+                        });
+                    }
+                    // --- END MODIFICATION ---
+
+                    // Original deletion logic
                     const snapshot = await this.db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", fixCategory).get();
-                    const batch = this.db.batch();
-                    snapshot.forEach(doc => batch.delete(doc.ref));
-                    await batch.commit();
+                    snapshot.forEach(doc => firestoreBatch.delete(doc.ref));
+                    
+                    // Commit both the rollback and the deletion as a single atomic operation
+                    await firestoreBatch.commit();
+                    
+                    // Refresh the UI
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     this.methods.renderTLDashboard.call(this);
+
                 } catch (error) {
                     console.error(`Error deleting tasks:`, error);
                     alert("Error deleting tasks: " + error.message);
