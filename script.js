@@ -23,6 +23,7 @@
  * - MODIFIED: CSV Export now exports ALL projects from the database.
  * - FIXED: Replaced Unicode lock icons with standard emojis (🔒, 🔓, 🔑).
  * - ADDED: Import CSV feature for adding new projects from a file.
+ * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -59,15 +60,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             NUM_TABLE_COLUMNS: 19, // UPDATED for Progress column
-            CSV_HEADERS_FOR_IMPORT: [ // Expected headers for CSV import
+            // UPDATED: Expected headers for CSV import, matching export order
+            CSV_HEADERS_FOR_IMPORT: [
                 "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
                 "Day 1 Start", "Day 1 Finish", "Day 1 Break",
                 "Day 2 Start", "Day 2 Finish", "Day 2 Break",
                 "Day 3 Start", "Day 3 Finish", "Day 3 Break",
-                "Total (min)", "Tech Notes"
-                // Note: Creation Date and Last Modified are not expected in import, as they are generated
+                "Total (min)", "Tech Notes", "Creation Date", "Last Modified"
             ],
-            // Map CSV headers to Firestore field names (if they differ)
+            // UPDATED: Map CSV headers to Firestore field names (if they differ)
             CSV_HEADER_TO_FIELD_MAP: {
                 "Fix Cat": "fixCategory",
                 "Project Name": "baseProjectName",
@@ -84,10 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start": "startTimeDay3",
                 "Day 3 Finish": "finishTimeDay3",
                 "Day 3 Break": "breakDurationMinutesDay3",
-                "Total (min)": "totalDurationMinutes", // This is calculated, not directly imported
+                "Total (min)": null, // This is calculated, not directly imported, set to null to ignore
                 "Tech Notes": "techNotes",
-                // "Creation Date": "creationTimestamp", // Not for import
-                // "Last Modified": "lastModifiedTimestamp" // Not for import
+                "Creation Date": null, // This is generated, not imported, set to null to ignore
+                "Last Modified": null // This is generated, not imported, set to null to ignore
             }
         },
 
@@ -172,20 +173,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     openSettingsBtn: document.getElementById('openSettingsBtn'),
                     openTlSummaryBtn: document.getElementById('openTlSummaryBtn'),
                     exportCsvBtn: document.getElementById('exportCsvBtn'),
-                    openImportCsvBtn: document.getElementById('openImportCsvBtn'), // ADDED for Import CSV
+                    openImportCsvBtn: document.getElementById('openImportCsvBtn'),
                     projectFormModal: document.getElementById('projectFormModal'),
                     tlDashboardModal: document.getElementById('tlDashboardModal'),
                     settingsModal: document.getElementById('settingsModal'),
                     tlSummaryModal: document.getElementById('tlSummaryModal'),
-                    importCsvModal: document.getElementById('importCsvModal'), // ADDED for Import CSV
+                    importCsvModal: document.getElementById('importCsvModal'),
                     closeProjectFormBtn: document.getElementById('closeProjectFormBtn'),
                     closeTlDashboardBtn: document.getElementById('closeTlDashboardBtn'),
                     closeSettingsBtn: document.getElementById('closeSettingsBtn'),
                     closeTlSummaryBtn: document.getElementById('closeTlSummaryBtn'),
-                    closeImportCsvBtn: document.getElementById('closeImportCsvBtn'), // ADDED for Import CSV
-                    csvFileInput: document.getElementById('csvFileInput'), // ADDED for Import CSV
-                    processCsvBtn: document.getElementById('processCsvBtn'), // ADDED for Import CSV
-                    csvImportStatus: document.getElementById('csvImportStatus'), // ADDED for Import CSV
+                    closeImportCsvBtn: document.getElementById('closeImportCsvBtn'),
+                    csvFileInput: document.getElementById('csvFileInput'),
+                    processCsvBtn: document.getElementById('processCsvBtn'),
+                    csvImportStatus: document.getElementById('csvImportStatus'),
                     newProjectForm: document.getElementById('newProjectForm'),
                     projectTableBody: document.getElementById('projectTableBody'),
                     loadingOverlay: document.getElementById('loadingOverlay'),
@@ -776,10 +777,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const baseDate = existingTimestamp || fallbackTimestamp;
 
-                            const yyyy = baseDate.getFullYear();
+                            const Gillespie = baseDate.getFullYear();
                             const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
                             const dd = String(baseDate.getDate()).padStart(2, '0');
-                            const defaultDateString = `${yyyy}-${mm}-${dd}`;
+                            const defaultDateString = `${Gillespie}-${mm}-${dd}`;
 
                             const dateInput = prompt(`Please confirm or enter the date for this time entry (YYYY-MM-DD):`, defaultDateString);
 
@@ -790,7 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use Gillespie-MM-DD. Aborting update.");
                                 return;
                             }
 
@@ -2007,7 +2008,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // ADDED for Import CSV
             async handleProcessCsvImport() {
                 const file = this.elements.csvFileInput.files[0];
                 if (!file) {
@@ -2026,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const parsedProjects = this.methods.parseCsvToProjects.call(this, csvText);
 
                         if (parsedProjects.length === 0) {
-                            alert("No valid project data found in the CSV file.");
+                            alert("No valid project data found in the CSV file. Please ensure it matches the export format and contains data.");
                             this.elements.csvImportStatus.textContent = 'No valid data found.';
                             return;
                         }
@@ -2054,18 +2054,18 @@ document.addEventListener('DOMContentLoaded', () => {
                                 releasedToNextStage: false,
                                 isReassigned: false,
                                 originalProjectId: null,
-                                breakDurationMinutesDay1: 0,
-                                breakDurationMinutesDay2: 0,
-                                breakDurationMinutesDay3: 0,
-                                additionalMinutesManual: 0,
+                                breakDurationMinutesDay1: projectData.breakDurationMinutesDay1 || 0, // Use imported or default
+                                breakDurationMinutesDay2: projectData.breakDurationMinutesDay2 || 0, // Use imported or default
+                                breakDurationMinutesDay3: projectData.breakDurationMinutesDay3 || 0, // Use imported or default
+                                additionalMinutesManual: projectData.additionalMinutesManual || 0, // Use imported or default
                                 // Copy parsed data, ensuring required fields are present or defaulted
                                 fixCategory: projectData.fixCategory || "Fix1", // Default to Fix1 if not provided
                                 baseProjectName: projectData.baseProjectName || "IMPORTED_PROJ",
-                                areaTask: projectData.areaTask || "Area01",
+                                areaTask: projectData.areaTask || `Area${String(importedCount + 1).padStart(2, '0')}`, // Generate dynamic Area/Task if not provided
                                 gsd: projectData.gsd || "3in", // Default GSD
                                 assignedTo: projectData.assignedTo || "",
-                                techNotes: projectData.techNotes || "",
                                 status: projectData.status || "Available", // Default status
+                                techNotes: projectData.techNotes || "", // Use imported or default
                                 startTimeDay1: projectData.startTimeDay1 || null,
                                 finishTimeDay1: projectData.finishTimeDay1 || null,
                                 durationDay1Ms: this.methods.calculateDurationMs(projectData.startTimeDay1, projectData.finishTimeDay1),
@@ -2107,7 +2107,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lines = csvText.split('\n').filter(line => line.trim() !== '');
                 if (lines.length === 0) return [];
 
-                const headers = lines[0].split(',').map(h => h.trim());
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '')); // Handle quotes around headers
+                
                 // Validate headers against expected ones for a basic check
                 const missingHeaders = this.config.CSV_HEADERS_FOR_IMPORT.filter(expected => !headers.includes(expected));
                 if (missingHeaders.length > 0) {
@@ -2116,45 +2117,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const projects = [];
                 for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, '')); // Basic split, remove quotes
+                    const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, '')); // Robust split for commas inside quotes
 
                     if (values.length !== headers.length) {
-                        console.warn(`Skipping row ${i + 1} due to column count mismatch.`);
+                        console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}. Row: "${lines[i]}"`);
                         continue;
                     }
 
                     let projectData = {};
                     for (let j = 0; j < headers.length; j++) {
                         const header = headers[j];
-                        const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header] || header; // Use mapped name or original
+                        const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header]; 
+                        
+                        // If fieldName is null in map, it means we skip importing this column
+                        if (fieldName === null) {
+                            continue; 
+                        }
+                        
                         let value = values[j];
 
-                        // Convert relevant fields
+                        // Convert relevant fields and handle defaults for import
                         if (fieldName.startsWith('breakDurationMinutes')) {
                             projectData[fieldName] = parseInt(value, 10) || 0;
                         } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
-                            // Attempt to parse date-time. Expecting ISO-like string or locale string from export.
-                            // If parsing fails, it will remain null.
+                            // Attempt to parse date-time. Expecting format from export (toLocaleString).
                             try {
                                 const date = new Date(value);
                                 projectData[fieldName] = isNaN(date.getTime()) ? null : firebase.firestore.Timestamp.fromDate(date);
                             } catch (e) {
                                 projectData[fieldName] = null;
                             }
-                        } else if (fieldName === 'totalDurationMinutes') {
-                            // This field is calculated, not directly imported
-                            continue;
-                        } else {
+                        } else if (fieldName === 'status') {
+                            // Clean up status string (e.g., "Day1 Ended Awaiting Next" -> "Day1Ended_AwaitingNext")
+                            projectData[fieldName] = (value || "").replace(/\s/g, '').replace(/([A-Z])/g, '_$1').replace(/^_/, '').toLowerCase();
+                            // Capitalize first letter of each word to match expected status format, e.g. "Available", "Completed"
+                            if (projectData[fieldName].length > 0) {
+                                projectData[fieldName] = projectData[fieldName].charAt(0).toUpperCase() + projectData[fieldName].slice(1);
+                                projectData[fieldName] = projectData[fieldName].replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+                            }
+                            if (!["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed", "Reassigned_TechAbsent"].includes(projectData[fieldName])) {
+                                projectData[fieldName] = "Available"; // Default invalid status
+                            }
+                        }
+                        else {
                             projectData[fieldName] = value;
                         }
                     }
 
-                    // Basic validation for essential fields from CSV_HEADERS_FOR_IMPORT
+                    // Basic validation for essential fields from CSV_HEADERS_FOR_IMPORT that map to required Firestore fields
                     const requiredFieldsCheck = ["baseProjectName", "areaTask", "fixCategory", "gsd"];
                     let isValidProject = true;
                     for (const field of requiredFieldsCheck) {
                         if (!projectData[field] || projectData[field].trim() === "") {
-                            console.warn(`Skipping row ${i + 1}: Missing required field '${field}'.`);
+                            console.warn(`Skipping row ${i + 1}: Missing required field '${field}'. Row: "${lines[i]}"`);
                             isValidProject = false;
                             break;
                         }
@@ -2166,7 +2181,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return projects;
             },
-            // END Import CSV
         }
     };
 
