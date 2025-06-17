@@ -13,7 +13,7 @@
  * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
  * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
  * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
- * - MODIFIED: Added status icons (白, 箔, 柏) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
+ * - MODIFIED: Added status icons (🔒, 🔑, 🔓) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
  * - MODIFIED: Ensured that when tasks are released to a new Fix stage, they are always created in an unlocked state, regardless of the original task's status.
  * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
  * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
@@ -25,6 +25,7 @@
  * - ADDED: Import CSV feature for adding new projects from a file.
  * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
  * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
+ * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -261,14 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
-                // ADDED for Import CSV
                 attachClick(self.elements.openImportCsvBtn, () => {
-                    const pin = prompt("Enter PIN to import CSV:"); // PIN protection for import
+                    const pin = prompt("Enter PIN to import CSV:");
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.importCsvModal.style.display = 'block';
-                        if (self.elements.csvFileInput) self.elements.csvFileInput.value = ''; // Clear previous selection
-                        if (self.elements.processCsvBtn) self.elements.processCsvBtn.disabled = true; // Disable until file selected
-                        if (self.elements.csvImportStatus) self.elements.csvImportStatus.textContent = ''; // Clear status
+                        if (self.elements.csvFileInput) self.elements.csvFileInput.value = '';
+                        if (self.elements.processCsvBtn) self.elements.processCsvBtn.disabled = true;
+                        if (self.elements.csvImportStatus) self.elements.csvImportStatus.textContent = '';
                     } else if (pin) alert("Incorrect PIN.");
                 });
                 attachClick(self.elements.closeImportCsvBtn, () => {
@@ -286,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
                 attachClick(self.elements.processCsvBtn, self.methods.handleProcessCsvImport.bind(self));
-                // END ADDED for Import CSV
 
                 attachClick(self.elements.closeProjectFormBtn, () => {
                     if (self.elements.newProjectForm) self.elements.newProjectForm.reset();
@@ -354,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (event.target == self.elements.tlDashboardModal) self.elements.tlDashboardModal.style.display = 'none';
                     if (event.target == self.elements.settingsModal) self.elements.settingsModal.style.display = 'none';
                     if (event.target == self.elements.tlSummaryModal) self.elements.tlSummaryModal.style.display = 'none';
-                    if (event.target == self.elements.importCsvModal) self.elements.importCsvModal.style.display = 'none'; // Added for Import CSV
+                    if (event.target == self.elements.importCsvModal) self.elements.importCsvModal.style.display = 'none';
                 };
             },
 
@@ -459,8 +458,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
-                if (this.elements.signOutBtn) {
-                    self.elements.signOutBtn.onclick = () => { // Changed from this to self.elements.signOutBtn
+                if (this.elements.signOutBtn) { // This is line 149 in the current provided script.
+                    this.elements.signOutBtn.onclick = () => { // MODIFIED: Changed from self.elements.signOutBtn to this.elements.signOutBtn
                         this.methods.showLoading.call(this, "Signing out...");
                         this.auth.signOut().catch((error) => {
                             console.error("Sign-out error:", error);
@@ -609,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (this.state.filters.month && Array.from(uniqueMonths).includes(this.state.filters.month)) {
                         this.elements.monthFilter.value = this.state.filters.month;
                     } else {
-                        this.state.filters.month = "";
                         this.elements.monthFilter.value = "";
+                        this.state.filters.month = "";
                         localStorage.setItem('currentSelectedMonth', "");
                     }
                 } catch (error) {
