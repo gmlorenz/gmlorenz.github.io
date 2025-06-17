@@ -13,7 +13,7 @@
  * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
  * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
  * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
- * - MODIFIED: Added status icons (🔒, 🔑, 🔓) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
+ * - MODIFIED: Added status icons (白, 箔, 柏) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
  * - MODIFIED: Ensured that when tasks are released to a new Fix stage, they are always created in an unlocked state, regardless of the original task's status.
  * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
  * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
@@ -24,8 +24,6 @@
  * - FIXED: Replaced Unicode lock icons with standard emojis (🔒, 🔓, 🔑).
  * - ADDED: Import CSV feature for adding new projects from a file.
  * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
- * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
- * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -33,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -262,13 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
+                // ADDED for Import CSV
                 attachClick(self.elements.openImportCsvBtn, () => {
-                    const pin = prompt("Enter PIN to import CSV:");
+                    const pin = prompt("Enter PIN to import CSV:"); // PIN protection for import
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.importCsvModal.style.display = 'block';
-                        if (self.elements.csvFileInput) self.elements.csvFileInput.value = '';
-                        if (self.elements.processCsvBtn) self.elements.processCsvBtn.disabled = true;
-                        if (self.elements.csvImportStatus) self.elements.csvImportStatus.textContent = '';
+                        if (self.elements.csvFileInput) self.elements.csvFileInput.value = ''; // Clear previous selection
+                        if (self.elements.processCsvBtn) self.elements.processCsvBtn.disabled = true; // Disable until file selected
+                        if (self.elements.csvImportStatus) self.elements.csvImportStatus.textContent = ''; // Clear status
                     } else if (pin) alert("Incorrect PIN.");
                 });
                 attachClick(self.elements.closeImportCsvBtn, () => {
@@ -286,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
                 attachClick(self.elements.processCsvBtn, self.methods.handleProcessCsvImport.bind(self));
+                // END ADDED for Import CSV
 
                 attachClick(self.elements.closeProjectFormBtn, () => {
                     if (self.elements.newProjectForm) self.elements.newProjectForm.reset();
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (event.target == self.elements.tlDashboardModal) self.elements.tlDashboardModal.style.display = 'none';
                     if (event.target == self.elements.settingsModal) self.elements.settingsModal.style.display = 'none';
                     if (event.target == self.elements.tlSummaryModal) self.elements.tlSummaryModal.style.display = 'none';
-                    if (event.target == self.elements.importCsvModal) self.elements.importCsvModal.style.display = 'none';
+                    if (event.target == self.elements.importCsvModal) self.elements.importCsvModal.style.display = 'none'; // Added for Import CSV
                 };
             },
 
@@ -458,8 +458,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
-                if (this.elements.signOutBtn) { // This is line 149 in the current provided script.
-                    this.elements.signOutBtn.onclick = () => { // MODIFIED: Changed from self.elements.signOutBtn to this.elements.signOutBtn
+                if (this.elements.signOutBtn) {
+                    this.elements.signOutBtn.onclick = () => {
                         this.methods.showLoading.call(this, "Signing out...");
                         this.auth.signOut().catch((error) => {
                             console.error("Sign-out error:", error);
@@ -608,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (this.state.filters.month && Array.from(uniqueMonths).includes(this.state.filters.month)) {
                         this.elements.monthFilter.value = this.state.filters.month;
                     } else {
-                        this.elements.monthFilter.value = "";
                         this.state.filters.month = "";
+                        this.elements.monthFilter.value = "";
                         localStorage.setItem('currentSelectedMonth', "");
                     }
                 } catch (error) {
@@ -1156,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionButtonsDiv.appendChild(createActionButton("Start D2", "btn-day-start", project.status !== "Day1Ended_AwaitingNext", "startDay2"));
                     actionButtonsDiv.appendChild(createActionButton("End D2", "btn-day-end", project.status !== "InProgressDay2", "endDay2"));
                     actionButtonsDiv.appendChild(createActionButton("Start D3", "btn-day-start", project.status !== "Day2Ended_AwaitingNext", "startDay3"));
-                    actionButtonsDiv.appendChild(createActionButton("End D3", "btn-day-end", project.status !== "InProgressDay3", "endD3"));
+                    actionButtonsDiv.appendChild(createActionButton("End D3", "btn-day-end", project.status !== "InProgressDay3", "endDay3"));
                     actionButtonsDiv.appendChild(createActionButton("Done", "btn-mark-done", project.status === "Completed" || project.status === "Reassigned_TechAbsent" || (project.status === "Available" && !(project.durationDay1Ms || project.durationDay2Ms || project.durationDay3Ms)), "markDone"));
 
                     const reassignBtn = createActionButton("Re-Assign", "btn-warning", project.status === "Completed" || project.status === "Reassigned_TechAbsent", "reassign");
@@ -1954,8 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rows = [headers.join(',')];
 
                     allProjectsData.forEach(project => {
-                        // MODIFIED: Changed to toISOString() for consistent date/time export
-                        const formatTimeCsv = (ts) => ts?.toDate ? `"${ts.toDate().toISOString()}"` : "";
+                        const formatTimeCsv = (ts) => ts?.toDate ? `"${ts.toDate().toLocaleString()}"` : "";
                         const formatNotesCsv = (notes) => notes ? `"${notes.replace(/"/g, '""')}"` : "";
 
                         const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
@@ -2108,7 +2107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lines = csvText.split('\n').filter(line => line.trim() !== '');
                 if (lines.length === 0) return [];
 
-                const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, '')); // Robust split for commas inside quotes, remove quotes from headers
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '')); // Handle quotes around headers
                 
                 // Validate headers against expected ones for a basic check
                 const missingHeaders = this.config.CSV_HEADERS_FOR_IMPORT.filter(expected => !headers.includes(expected));
@@ -2118,7 +2117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const projects = [];
                 for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, '')); // Robust split for commas inside quotes, remove quotes from values
+                    const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, '')); // Robust split for commas inside quotes
 
                     if (values.length !== headers.length) {
                         console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}. Row: "${lines[i]}"`);
@@ -2130,7 +2129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const header = headers[j];
                         const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header]; 
                         
-                        // If fieldName is null in map, it means we skip importing this column (e.g., Total (min), Creation Date, Last Modified)
+                        // If fieldName is null in map, it means we skip importing this column
                         if (fieldName === null) {
                             continue; 
                         }
@@ -2141,7 +2140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (fieldName.startsWith('breakDurationMinutes')) {
                             projectData[fieldName] = parseInt(value, 10) || 0;
                         } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
-                            // Now expecting ISO string from export, which Date constructor handles reliably
+                            // Attempt to parse date-time. Expecting format from export (toLocaleString).
                             try {
                                 const date = new Date(value);
                                 projectData[fieldName] = isNaN(date.getTime()) ? null : firebase.firestore.Timestamp.fromDate(date);
@@ -2150,20 +2149,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } else if (fieldName === 'status') {
                             // Clean up status string (e.g., "Day1 Ended Awaiting Next" -> "Day1Ended_AwaitingNext")
-                            // This logic is designed to convert display status to internal status format
-                            let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase(); // remove spaces, convert to lowercase
-                            if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
-                            else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
-                            else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
-                            else if (cleanedStatus.includes('day2ended_awaitingnext')) cleanedStatus = 'Day2Ended_AwaitingNext';
-                            else if (cleanedStatus.includes('inprogressday3')) cleanedStatus = 'InProgressDay3';
-                            else if (cleanedStatus.includes('day3ended_awaitingnext')) cleanedStatus = 'Day3Ended_AwaitingNext';
-                            else if (cleanedStatus.includes('completed')) cleanedStatus = 'Completed';
-                            else if (cleanedStatus.includes('reassigned_techabsent')) cleanedStatus = 'Reassigned_TechAbsent';
-                            else cleanedStatus = 'Available'; // Default for unrecognized
-
-                            projectData[fieldName] = cleanedStatus;
-
+                            projectData[fieldName] = (value || "").replace(/\s/g, '').replace(/([A-Z])/g, '_$1').replace(/^_/, '').toLowerCase();
+                            // Capitalize first letter of each word to match expected status format, e.g. "Available", "Completed"
+                            if (projectData[fieldName].length > 0) {
+                                projectData[fieldName] = projectData[fieldName].charAt(0).toUpperCase() + projectData[fieldName].slice(1);
+                                projectData[fieldName] = projectData[fieldName].replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+                            }
+                            if (!["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed", "Reassigned_TechAbsent"].includes(projectData[fieldName])) {
+                                projectData[fieldName] = "Available"; // Default invalid status
+                            }
                         }
                         else {
                             projectData[fieldName] = value;
