@@ -18,6 +18,8 @@
  * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
  * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
  * - ADDED: Real-time notification system for new project creation and Fix stage releases.
+ * - ADDED: Export project data to CSV feature.
+ * - ADDED: Visual progress bar for each project in the main table.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -25,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -38,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             firestorePaths: {
                 ALLOWED_EMAILS: "settings/allowedEmails",
-                NOTIFICATIONS: "notifications" // ADDED FOR NOTIFICATIONS
+                NOTIFICATIONS: "notifications" 
             },
             TECH_IDS: ["4232JD", "7248AA", "4426KV", "4472JS", "7236LE", "4475JT", "7039NO", "7231NR", "7240HH", "7247JA", "7249SS", "7244AA", "7314VP"].sort(),
             FIX_CATEGORIES: {
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            NUM_TABLE_COLUMNS: 18
+            NUM_TABLE_COLUMNS: 19 // UPDATED for Progress column
         },
 
         // --- 2. FIREBASE SERVICES ---
@@ -61,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         db: null,
         auth: null,
         firestoreListenerUnsubscribe: null,
-        notificationListenerUnsubscribe: null, // Added for notifications
+        notificationListenerUnsubscribe: null,
 
         // --- 3. APPLICATION STATE ---
         state: {
@@ -136,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     openTlDashboardBtn: document.getElementById('openTlDashboardBtn'),
                     openSettingsBtn: document.getElementById('openSettingsBtn'),
                     openTlSummaryBtn: document.getElementById('openTlSummaryBtn'),
+                    exportCsvBtn: document.getElementById('exportCsvBtn'), // ADDED for CSV Export
                     projectFormModal: document.getElementById('projectFormModal'),
                     tlDashboardModal: document.getElementById('tlDashboardModal'),
                     settingsModal: document.getElementById('settingsModal'),
@@ -214,6 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.tlSummaryModal.style.display = 'block';
                     self.methods.generateTlSummaryData.call(self);
                 });
+
+                attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self)); // ADDED for CSV Export
 
                 attachClick(self.elements.closeProjectFormBtn, () => {
                     if (self.elements.newProjectForm) self.elements.newProjectForm.reset();
@@ -342,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!this.state.isAppInitialized) {
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     this.state.isAppInitialized = true;
-                    this.methods.listenForNotifications.call(this); // ADDED FOR NOTIFICATIONS
+                    this.methods.listenForNotifications.call(this);
                 }
             },
 
@@ -637,13 +642,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await batch.commit();
 
-                    // ADDED FOR NOTIFICATIONS
                     await this.db.collection(this.config.firestorePaths.NOTIFICATIONS).add({
                         message: `A new project "${baseProjectName}" with ${numRows} areas has been added!`,
                         type: "new_project",
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    // END ADDITION
 
                     this.elements.newProjectForm.reset();
                     this.elements.projectFormModal.style.display = 'none';
@@ -676,10 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         const projectData = doc.data();
-
+                        
                         if (projectData.isLocked) {
                             alert("This task is locked. Please unlock it in Project Settings to make changes.");
-                            return;
+                            return; 
                         }
 
                         let firestoreTimestamp = null;
@@ -926,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentFixCategoryHeader = null;
                         const headerRow = this.elements.projectTableBody.insertRow();
                         headerRow.className = "batch-header-row";
-                        headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">Project: ${project.baseProjectName}</td>`;
+                        headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">Project: ${project.baseProjectName}</td>`; // colspan updated
                     }
 
                     if (project.fixCategory !== currentFixCategoryHeader) {
@@ -954,7 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const groupHeaderRow = this.elements.projectTableBody.insertRow();
                         groupHeaderRow.className = "fix-group-header";
-                        groupHeaderRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">${currentFixCategoryHeader}${lockIcon} <button class="btn btn-group-toggle">${isExpanded ? "Collapse" : "Expand"}</button></td>`;
+                        groupHeaderRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">${currentFixCategoryHeader}${lockIcon} <button class="btn btn-group-toggle">${isExpanded ? "Collapse" : "Expand"}</button></td>`; // colspan updated
                         groupHeaderRow.onclick = () => {
                             this.state.groupVisibilityState[groupKey].isExpanded = !isExpanded;
                             this.methods.saveGroupVisibilityState.call(this);
@@ -1029,6 +1032,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     createTimeInput(project.startTimeDay3, 'startTimeDay3');
                     createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
                     createBreakSelect(3, project);
+
+                    // ADDED FOR PROGRESS BAR
+                    const progressBarCell = row.insertCell();
+                    const statusOrder = ["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed"];
+                    const currentStatusIndex = statusOrder.indexOf(project.status);
+                    const progressPercentage = (currentStatusIndex / (statusOrder.length - 1)) * 100; // Calculate progress based on status
+                    const clampedProgress = Math.min(100, Math.max(0, progressPercentage)); // Ensure 0-100%
+                    const progressBarHtml = `
+                        <div style="background-color: #e0e0e0; border-radius: 5px; height: 15px; width: 100%; overflow: hidden;">
+                            <div style="background-color: #4CAF50; height: 100%; width: ${clampedProgress}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
+                                ${project.status === 'Completed' ? '100%' : ''}
+                            </div>
+                        </div>
+                    `;
+                    progressBarCell.innerHTML = progressBarHtml;
+                    // END PROGRESS BAR ADDITION
 
                     const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
                     const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
@@ -1309,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
             },
-
+            
             async recalculateFixStageTotals(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Recalculating totals for ${fixCategory}...`);
                 try {
@@ -1328,21 +1347,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     snapshot.forEach(doc => {
                         const task = doc.data();
-                        let needsUpdate = false;
 
-                        // Calculate what the duration SHOULD be for each day
                         const newDurationDay1 = this.methods.calculateDurationMs.call(this, task.startTimeDay1, task.finishTimeDay1);
                         const newDurationDay2 = this.methods.calculateDurationMs.call(this, task.startTimeDay2, task.finishTimeDay2);
                         const newDurationDay3 = this.methods.calculateDurationMs.call(this, task.startTimeDay3, task.finishTimeDay3);
 
-                        // Check if the stored duration is different from the calculated one
-                        if ((newDurationDay1 || null) !== (task.durationDay1Ms || null) ||
-                            (newDurationDay2 || null) !== (task.durationDay2Ms || null) ||
-                            (newDurationDay3 || null) !== (task.durationDay3Ms || null)) {
-
-                            needsUpdate = true;
-                        }
-
+                        let needsUpdate = false;
+                        if ((newDurationDay1 || null) !== (task.durationDay1Ms || null)) needsUpdate = true;
+                        if ((newDurationDay2 || null) !== (task.durationDay2Ms || null)) needsUpdate = true;
+                        if ((newDurationDay3 || null) !== (task.durationDay3Ms || null)) needsUpdate = true;
+                        
                         if (needsUpdate) {
                             tasksToUpdate++;
                             const updates = {
@@ -1544,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const firestoreBatch = this.db.batch();
                     const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
 
-                    let projectNameForNotification = ""; // To store the project name for the notification
+                    let projectNameForNotification = "";
 
                     for (const doc of snapshot.docs) {
                         const task = {
@@ -1553,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                         if (task.status === "Reassigned_TechAbsent") continue;
 
-                        projectNameForNotification = task.baseProjectName; // Capture project name from one of the tasks
+                        projectNameForNotification = task.baseProjectName;
 
                         const newNextFixTask = {
                             ...task,
@@ -1575,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             durationDay3Ms: null,
                             releasedToNextStage: false,
                             isReassigned: false,
-                            isLocked: false, // CRUCIAL: Ensure new tasks are always created unlocked
+                            isLocked: false,
                             lastModifiedTimestamp: serverTimestamp,
                             originalProjectId: task.id,
                         };
@@ -1590,7 +1604,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await firestoreBatch.commit();
 
-                    // ADDED FOR NOTIFICATIONS
                     if (projectNameForNotification) {
                         await this.db.collection(this.config.firestorePaths.NOTIFICATIONS).add({
                             message: `Tasks from ${currentFixCategory} for project "${projectNameForNotification}" have been released to ${nextFixCategory}!`,
@@ -1598,7 +1611,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
-                    // END ADDITION
 
                     alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
 
@@ -1823,23 +1835,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // ADDED FOR NOTIFICATIONS
             listenForNotifications() {
                 if (!this.db) {
                     console.error("Firestore not initialized for notifications.");
                     return;
                 }
                 if (this.notificationListenerUnsubscribe) {
-                    this.notificationListenerUnsubscribe(); // Unsubscribe from previous listener if exists
+                    this.notificationListenerUnsubscribe();
                 }
                 this.notificationListenerUnsubscribe = this.db.collection(this.config.firestorePaths.NOTIFICATIONS)
                     .orderBy("timestamp", "desc")
-                    .limit(1) // Only listen for the very latest notification
+                    .limit(1)
                     .onSnapshot(snapshot => {
                         snapshot.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const notification = change.doc.data();
-                                // Only show notification if it was created very recently (e.g., within the last 5 seconds)
                                 const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
                                 if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
                                     alert(`🔔 New Update: ${notification.message}`);
@@ -1850,7 +1860,79 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error("Error listening for notifications:", error);
                     });
             },
-            // END ADDITION
+
+            // ADDED for CSV Export
+            async handleExportCsv() {
+                this.methods.showLoading.call(this, "Generating CSV...");
+                try {
+                    if (this.state.projects.length === 0) {
+                        alert("No project data to export.");
+                        return;
+                    }
+
+                    const headers = [
+                        "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
+                        "Day 1 Start", "Day 1 Finish", "Day 1 Break",
+                        "Day 2 Start", "Day 2 Finish", "Day 2 Break",
+                        "Day 3 Start", "Day 3 Finish", "Day 3 Break",
+                        "Total (min)", "Tech Notes"
+                    ];
+
+                    const rows = [headers.join(',')];
+
+                    this.state.projects.forEach(project => {
+                        const formatTimeCsv = (ts) => ts?.toDate ? `"${ts.toDate().toLocaleString()}"` : "";
+                        const formatNotesCsv = (notes) => notes ? `"${notes.replace(/"/g, '""')}"` : "";
+
+                        const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                        const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
+                            (project.breakDurationMinutesDay2 || 0) +
+                            (project.breakDurationMinutesDay3 || 0)) * 60000;
+                        const additionalMs = (project.additionalMinutesManual || 0) * 60000;
+                        const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+                        const totalMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
+
+
+                        const rowData = [
+                            project.fixCategory || "",
+                            project.baseProjectName || "",
+                            project.areaTask || "",
+                            project.gsd || "",
+                            project.assignedTo || "",
+                            (project.status || "").replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
+                            formatTimeCsv(project.startTimeDay1),
+                            formatTimeCsv(project.finishTimeDay1),
+                            project.breakDurationMinutesDay1 || "0",
+                            formatTimeCsv(project.startTimeDay2),
+                            formatTimeCsv(project.finishTimeDay2),
+                            project.breakDurationMinutesDay2 || "0",
+                            formatTimeCsv(project.startTimeDay3),
+                            formatTimeCsv(project.finishTimeDay3),
+                            project.breakDurationMinutesDay3 || "0",
+                            totalMinutes,
+                            formatNotesCsv(project.techNotes)
+                        ];
+                        rows.push(rowData.join(','));
+                    });
+
+                    const csvContent = "data:text/csv;charset=utf-8," + rows.join('\n');
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `ProjectTracker_Data_${new Date().toISOString().slice(0, 10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    alert("Project data exported successfully!");
+
+                } catch (error) {
+                    console.error("Error exporting CSV:", error);
+                    alert("Failed to export data: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+            // END CSV Export
         }
     };
 
