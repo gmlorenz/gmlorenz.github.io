@@ -763,10 +763,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const dayNum = dayMatch[1];
                         const startFieldForDay = `startTimeDay${dayNum}`;
-                        const finishFieldForDay = `finishFieldForDay`; // Corrected from finishFieldForDay. Should be projectData[finishFieldForDay] instead of just field name.
-                                                                     // Reverting this back to `projectData[finishFieldForDay]` if it was changed
-                                                                     // No, it was originally `projectData[finishFieldForDay]` and it's correct.
+                        const finishFieldForDay = `finishTimeDay${dayNum}`;
 
+                        if (newValue) {
+                            const [hours, minutes] = newValue.split(':').map(Number);
+                            if (isNaN(hours) || isNaN(minutes)) {
+                                return;
+                            }
+                            const existingTimestamp = projectData[fieldName]?.toDate();
                             const fallbackTimestamp = projectData[startFieldForDay]?.toDate() ||
                                 projectData[finishFieldForDay]?.toDate() ||
                                 projectData.creationTimestamp?.toDate() ||
@@ -774,10 +778,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const baseDate = existingTimestamp || fallbackTimestamp;
 
-                            const Gillespie = baseDate.getFullYear();
+                            // Ensure 'Gillespie' is correctly used as a variable, not a typo.
+                            // The error suggests an issue here or nearby.
+                            const yearForDate = baseDate.getFullYear(); 
                             const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
                             const dd = String(baseDate.getDate()).padStart(2, '0');
-                            const defaultDateString = `${Gillespie}-${mm}-${dd}`;
+                            const defaultDateString = `${yearForDate}-${mm}-${dd}`;
 
                             const dateInput = prompt(`Please confirm or enter the date for this time entry (YYYY-MM-DD):`, defaultDateString);
 
@@ -788,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use Gillespie-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
                                 return;
                             }
 
