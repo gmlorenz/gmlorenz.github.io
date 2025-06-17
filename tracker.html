@@ -156,6 +156,12 @@
             h2 { font-size: 1.3em; }
             h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
             
+            .table-scroll-wrapper {
+                    width: 100%;
+                    max-height: 60vh;
+                    overflow-y: auto;
+                    overflow-x: scroll;
+              }
             .action-bar {
                 margin-bottom: 15px;
                 display: flex;
@@ -296,7 +302,7 @@
                     <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                     <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
                     <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
-                </div>
+                    <button id="exportCsvBtn" class="btn btn-info btn-lg" style="margin-left: 10px;">📊 Export to CSV</button> </div>
                 
                 <div id="projectFormModal" class="modal">
                     <div class="modal-content">
@@ -333,8 +339,9 @@
                         <option value="Fix3">Fix3</option> <option value="Fix4">Fix4</option> <option value="Fix5">Fix5</option> <option value="Fix6">Fix6</option>
                     </select>
                 </div>
+
+                <div class="table-scroll-wrapper">
                 
-                <div style="overflow-x:auto;">
                     <table id="projectTable">
                         <thead>
                             <tr>
@@ -353,7 +360,7 @@
                                 <th>Day 3 Start</th>
                                 <th>Day 3 Finish</th>
                                 <th>Day 3 Break</th>
-                                <th>Total (min)</th>
+                                <th>Progress</th> <th>Total (min)</th>
                                 <th>Tech Notes</th>
                                 <th>Actions</th>
                             </tr>
