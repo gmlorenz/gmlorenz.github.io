@@ -1218,7 +1218,7 @@
             allProjectsAggregatedResults = {};
 
             if (!raw) {
-                allResultsDiv.innerHTML = '<p>Load a project to extract FIX4 ID or RV3 Category data.</p>';
+                allResultsDiv.innerHTML = '<p>Load a project to extract FIX4 ID or RV3/QA3 Category data.</p>';
                 addResultButtonsToAllResults(true);
                 return;
             }
@@ -1240,6 +1240,7 @@
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
             const fix4IdIndex = headers.indexOf("FIX4_ID");
             const rv3CatIndex = headers.indexOf("RV3_CAT");
+            const qa3CatIndex = headers.indexOf("QA3_CAT"); // Get the index for QA3_CAT
 
             if (fix4IdIndex === -1) {
                 allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot extract data.</p>';
@@ -1248,42 +1249,81 @@
             }
 
             // Conditional logic based on whether inputID is provided
-            if (inputID) { // Mode 1: Search by specific FIX4_ID for RV3_CAT
-                if (rv3CatIndex === -1) {
-                    allResultsDiv.innerHTML = '<p>The loaded project data is missing the "RV3_CAT" column. Cannot extract Category data for specific FIX4_ID.</p>';
+            if (inputID) { // Mode 1: Search by specific FIX4_ID for RV3_CAT and QA3_CAT
+                if (rv3CatIndex === -1 && qa3CatIndex === -1) { // Check both
+                    allResultsDiv.innerHTML = '<p>The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract category data for specific FIX4_ID.</p>';
                     addResultButtonsToAllResults(true);
                     return;
                 }
 
-                let foundRv3Categories = new Set();
+                let foundCategories = new Set(); // Changed from Rv3Categories to Categories as it includes QA3 now
                 let matchedRowsCount = 0;
+                let specificIdCategoryCounts = Array(9).fill(0); // Counts for categories 1-9 for this specific ID
 
                 allRows.forEach(row => {
                     const fields = row.split(/[\t,]/).map(f => f.trim());
                     if (fields[fix4IdIndex]?.toUpperCase() === searchID) {
                         matchedRowsCount++;
-                        const rv3CatValue = fields[rv3CatIndex]?.trim();
-                        if (rv3CatValue) {
-                            foundRv3Categories.add(rv3CatValue);
+
+                        // Process RV3_CAT
+                        if (rv3CatIndex !== -1) {
+                            const rv3CatValue = fields[rv3CatIndex]?.trim();
+                            if (rv3CatValue) {
+                                foundCategories.add(rv3CatValue);
+                                const catNum = parseInt(rv3CatValue);
+                                if (!isNaN(catNum) && catNum >= 1 && catNum <= 9) {
+                                    specificIdCategoryCounts[catNum - 1]++;
+                                }
+                            }
+                        }
+
+                        // Process QA3_CAT
+                        if (qa3CatIndex !== -1) {
+                            const qa3CatValue = fields[qa3CatIndex]?.trim();
+                            if (qa3CatValue) {
+                                foundCategories.add(qa3CatValue);
+                                const catNum = parseInt(qa3CatValue);
+                                if (!isNaN(catNum) && catNum >= 1 && catNum <= 9) {
+                                    specificIdCategoryCounts[catNum - 1]++;
+                                }
+                            }
                         }
                     }
                 });
 
-                let html = `<h5>RV3 Category for FIX4_ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
+                let html = `<h5>Categories for FIX4_ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
 
                 if (matchedRowsCount > 0) {
                     html += `<p>Found ${matchedRowsCount} row(s) for FIX4_ID '${inputID}'.</p>`;
-                    if (foundRv3Categories.size > 0) {
-                        html += `<p>Extracted Unique RV3 Categories:</p>`;
+                    if (foundCategories.size > 0) {
+                        html += `<p>Extracted Unique Categories (RV3_CAT & QA3_CAT):</p>`;
                         html += `<ul>`;
-                        Array.from(foundRv3Categories).sort().forEach(cat => {
+                        Array.from(foundCategories).sort().forEach(cat => {
                             html += `<li><span class="tech-id-highlight">${cat}</span></li>`;
                         });
                         html += `</ul>`;
-                        showToast(`Found ${foundRv3Categories.size} unique RV3 Categories for ${inputID}.`, 'green');
+
+                        // Display per-ID category counts for 1-9
+                        html += `<h6>Category Counts (1-9) for this FIX4_ID:</h6>`;
+                        let hasSpecificIdCategoryCounts = false;
+                        let specificIdCategoryCountsHtml = `<ul>`;
+                        for (let i = 0; i < specificIdCategoryCounts.length; i++) {
+                            if (specificIdCategoryCounts[i] > 0) {
+                                specificIdCategoryCountsHtml += `<li><strong>Category ${i + 1}:</strong> ${specificIdCategoryCounts[i]}</li>`;
+                                hasSpecificIdCategoryCounts = true;
+                            }
+                        }
+                        specificIdCategoryCountsHtml += `</ul>`;
+                        if(hasSpecificIdCategoryCounts) {
+                            html += specificIdCategoryCountsHtml;
+                        } else {
+                            html += `<p>No categories from 1-9 found for this FIX4_ID in RV3_CAT or QA3_CAT.</p>`;
+                        }
+
+                        showToast(`Found ${foundCategories.size} unique categories for ${inputID}.`, 'green');
                     } else {
-                        html += `<p>No RV3 Category found for FIX4_ID '${inputID}'.</p>`;
-                        showToast(`No RV3 Category found for ${inputID}.`, 'orange');
+                        html += `<p>No categories found for FIX4_ID '${inputID}' in RV3_CAT or QA3_CAT.</p>`;
+                        showToast(`No categories found for ${inputID}.`, 'orange');
                     }
                 } else {
                     html += `<p>FIX4_ID '${inputID}' not found in the loaded project.</p>`;
@@ -1291,14 +1331,14 @@
                 }
                 allResultsDiv.innerHTML = html;
 
-            } else { // Mode 2: Search bar is empty, extract all unique FIX4_IDs, their RV3_CAT entries, and per-ID category counts
-                if (rv3CatIndex === -1) {
-                    allResultsDiv.innerHTML = '<p>The loaded project data is missing the "RV3_CAT" column. Cannot extract corresponding RV3 Categories for all FIX4_IDs.</p>';
+            } else { // Mode 2: Search bar is empty, extract all unique FIX4_IDs, their RV3_CAT/QA3_CAT entries, and per-ID/overall category counts
+                if (rv3CatIndex === -1 && qa3CatIndex === -1) { // Check both columns for this mode
+                    allResultsDiv.innerHTML = '<p>The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract corresponding categories for all FIX4_IDs.</p>';
                     addResultButtonsToAllResults(true);
                     return;
                 }
 
-                // Map to store FIX4_ID -> { categories: Set, counts: Array(9) }
+                // Map to store FIX4_ID -> { categories: Set, categoryCounts: Array(9) }
                 let fix4IdData = new Map();
                 let totalRowsProcessed = 0;
                 let overallCategoryCounts = Array(9).fill(0); // Overall counts for categories 1-9 across all data
@@ -1307,8 +1347,8 @@
                     totalRowsProcessed++;
                     const fields = row.split(/[\t,]/).map(f => f.trim());
                     const fix4Value = fields[fix4IdIndex]?.trim();
-                    const rv3CatValue = fields[rv3CatIndex]?.trim();
-
+                    
+                    // Initialize or get FIX4_ID entry
                     if (fix4Value) {
                         if (!fix4IdData.has(fix4Value)) {
                             fix4IdData.set(fix4Value, {
@@ -1316,24 +1356,41 @@
                                 categoryCounts: Array(9).fill(0) // Initialize per-FIX4_ID counts
                             });
                         }
-                        
-                        if (rv3CatValue) {
-                            fix4IdData.get(fix4Value).categories.add(rv3CatValue);
-                            
-                            const catNum = parseInt(rv3CatValue);
-                            if (!isNaN(catNum) && catNum >= 1 && catNum <= 9) {
-                                fix4IdData.get(fix4Value).categoryCounts[catNum - 1]++; // Increment per-FIX4_ID count
-                                overallCategoryCounts[catNum - 1]++; // Increment overall count
+                        const currentFix4Data = fix4IdData.get(fix4Value);
+
+                        // Process RV3_CAT
+                        if (rv3CatIndex !== -1) {
+                            const rv3CatValue = fields[rv3CatIndex]?.trim();
+                            if (rv3CatValue) {
+                                currentFix4Data.categories.add(rv3CatValue);
+                                const catNum = parseInt(rv3CatValue);
+                                if (!isNaN(catNum) && catNum >= 1 && catNum <= 9) {
+                                    currentFix4Data.categoryCounts[catNum - 1]++; // Increment per-FIX4_ID count
+                                    overallCategoryCounts[catNum - 1]++; // Increment overall count
+                                }
+                            }
+                        }
+
+                        // Process QA3_CAT
+                        if (qa3CatIndex !== -1) {
+                            const qa3CatValue = fields[qa3CatIndex]?.trim();
+                            if (qa3CatValue) {
+                                currentFix4Data.categories.add(qa3CatValue);
+                                const catNum = parseInt(qa3CatValue);
+                                if (!isNaN(catNum) && catNum >= 1 && catNum <= 9) {
+                                    currentFix4Data.categoryCounts[catNum - 1]++; // Increment per-FIX4_ID count
+                                    overallCategoryCounts[catNum - 1]++; // Increment overall count
+                                }
                             }
                         }
                     }
                 });
 
-                let html = `<h5>All Unique FIX4_IDs and their RV3 Categories for Project: ${projectSelector.value || 'N/A'}</h5>`;
+                let html = `<h5>All Unique FIX4_IDs and their Categories for Project: ${projectSelector.value || 'N/A'}</h5>`;
                 html += `<p>Processed ${totalRowsProcessed} row(s).</p>`;
 
-                // Add Overall RV3 Category Counts section
-                html += `<h6>Overall RV3 Category Counts (1-9):</h6>`;
+                // Add Overall RV3/QA3 Category Counts section
+                html += `<h6>Overall Category Counts (1-9 from RV3_CAT & QA3_CAT):</h6>`;
                 let hasOverallCategoryCounts = false;
                 let overallCategoryCountsHtml = `<ul>`;
                 for (let i = 0; i < overallCategoryCounts.length; i++) {
@@ -1346,12 +1403,13 @@
                 if(hasOverallCategoryCounts) {
                     html += overallCategoryCountsHtml;
                 } else {
-                    html += `<p>No categories from 1-9 found in RV3_CAT overall.</p>`;
+                    html += `<p>No categories from 1-9 found in RV3_CAT or QA3_CAT overall.</p>`;
                 }
 
+
                 if (fix4IdData.size > 0) {
-                    html += `<h6 style="margin-top: 20px;">FIX4_IDs with Corresponding RV3 Categories and Counts:</h6>`;
-                    html += `<table class="striped"><thead><tr><th>FIX4_ID</th><th>RV3 Categories</th><th>Category Counts (1-9)</th></tr></thead><tbody>`;
+                    html += `<h6 style="margin-top: 20px;">FIX4_IDs with Corresponding Categories and Counts:</h6>`;
+                    html += `<table class="striped"><thead><tr><th>FIX4_ID</th><th>Categories (RV3_CAT & QA3_CAT)</th><th>Category Counts (1-9)</th></tr></thead><tbody>`;
                     
                     const sortedFix4IDs = Array.from(fix4IdData.keys()).sort();
 
@@ -1376,10 +1434,10 @@
                                  </tr>`;
                     });
                     html += `</tbody></table>`;
-                    showToast(`Found ${fix4IdData.size} unique FIX4_IDs with RV3 Categories and counts.`, 'green');
+                    showToast(`Found ${fix4IdData.size} unique FIX4_IDs with categories and counts.`, 'green');
                 } else {
-                    html += `<p>No FIX4_IDs or RV3 Categories found in the loaded project data.</p>`;
-                    showToast(`No FIX4_IDs or RV3 Categories found.`, 'orange');
+                    html += `<p>No FIX4_IDs or categories found in the loaded project data.</p>`;
+                    showToast(`No FIX4_IDs or categories found.`, 'orange');
                 }
                 allResultsDiv.innerHTML = html;
             }
