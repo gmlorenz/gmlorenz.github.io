@@ -1,667 +1,607 @@
 <!DOCTYPE html>
 <html lang="en">
    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Team123 - Project Tracker</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-      <style>
-         /* ====================================================== */
-         /* START: NEW LOGIN UI STYLES                             */
-         /* ====================================================== */
-         body.login-view-active {
-         font-family: 'Inter', Arial, sans-serif;
-         background: linear-gradient(135deg, #f0f2f5, #e6e9ee);
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         min-height: 100vh;
-         padding: 20px;
-         box-sizing: border-box;
-         margin: 0;
-         }
-         /* Hide original containers when login is active */
-         body.login-view-active .container,
-         body.login-view-active #loading-auth-message {
-         display: none;
-         }
-         body.login-view-active #auth-wrapper {
-         display: block;
-         }
-         #auth-wrapper {
-         width: 100%;
-         max-width: 420px;
-         }
-         #auth-wrapper .login-card {
-         background-color: #ffffff;
-         padding: 40px 50px;
-         border-radius: 12px;
-         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-         text-align: center;
-         transition: all 0.3s ease-out;
-         }
-         #auth-wrapper .login-card h2 {
-         font-family: 'Inter', Arial, sans-serif;
-         font-size: 1.8em;
-         margin-bottom: 8px;
-         color: #2c3e50;
-         font-weight: 600;
-         }
-         #auth-wrapper .login-card p {
-         color: #6c757d;
-         margin-bottom: 30px;
-         font-size: 1.1em;
-         }
-         #auth-wrapper #signInBtn { /* CHANGED ID */
-         display: inline-flex;
-         align-items: center;
-         justify-content: center;
-         gap: 15px;
-         background-color: #ffffff;
-         color: #333;
-         border: 1px solid #ccc;
-         font-size: 1.05em;
-         font-family: 'Inter', Arial, sans-serif;
-         font-weight: 500;
-         padding: 12px 24px;
-         border-radius: 8px;
-         cursor: pointer;
-         transition: all 0.3s ease;
-         width: 100%;
-         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-         }
-         #auth-wrapper #signInBtn:hover { /* CHANGED ID */
-         border-color: #b3b3b3;
-         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-         transform: translateY(-2px);
-         }
-         #auth-wrapper .google-icon {
-         width: 22px;
-         height: 22px;
-         }
-       /* TL Summary Modal Specific Styles */
-/* TL Summary Modal Specific Styles */
-#tlSummaryModal .modal-content {
-    max-width: 70%; /* Reduced max-width for the modal itself */
-    width: 650px; /* Adjusted fixed width */
-    padding: 20px; /* Slightly reduced padding */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-}
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Team123 - Project Tracker</title>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+     <style>
+           /* ====================================================== */
+           /* START: NEW LOGIN UI STYLES                             */
+           /* ====================================================== */
+           body.login-view-active {
+           font-family: 'Inter', Arial, sans-serif;
+           background: linear-gradient(135deg, #f0f2f5, #e6e9ee);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           min-height: 100vh;
+           padding: 20px;
+           box-sizing: border-box;
+           margin: 0;
+           }
+           /* Hide original containers when login is active */
+           body.login-view-active .container,
+           body.login-view-active #loading-auth-message {
+           display: none;
+           }
+           body.login-view-active #auth-wrapper {
+           display: block;
+           }
+           #auth-wrapper {
+           width: 100%;
+           max-width: 420px;
+           }
+           #auth-wrapper .login-card {
+           background-color: #ffffff;
+           padding: 40px 50px;
+           border-radius: 12px;
+           box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+           text-align: center;
+           transition: all 0.3s ease-out;
+           }
+           #auth-wrapper .login-card h2 {
+           font-family: 'Inter', Arial, sans-serif;
+           font-size: 1.8em;
+           margin-bottom: 8px;
+           color: #2c3e50;
+           font-weight: 600;
+           }
+           #auth-wrapper .login-card p {
+           color: #6c757d;
+           margin-bottom: 30px;
+           font-size: 1.1em;
+           }
+           #auth-wrapper #signInBtn { /* CHANGED ID */
+           display: inline-flex;
+           align-items: center;
+           justify-content: center;
+           gap: 15px;
+           background-color: #ffffff;
+           color: #333;
+           border: 1px solid #ccc;
+           font-size: 1.05em;
+           font-family: 'Inter', Arial, sans-serif;
+           font-weight: 500;
+           padding: 12px 24px;
+           border-radius: 8px;
+           cursor: pointer;
+           transition: all 0.3s ease;
+           width: 100%;
+           box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+           }
+           #auth-wrapper #signInBtn:hover { /* CHANGED ID */
+           border-color: #b3b3b3;
+           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+           transform: translateY(-2px);
+           }
+           #auth-wrapper .google-icon {
+           width: 22px;
+           height: 22px;
+           }
+        /* ====================================================== */
+        /* START: TL SUMMARY MODAL & CARD UI STYLES (UPDATED)     */
+        /* ====================================================== */
+        #tlSummaryModal .modal-content {
+            max-width: 70%; /* Reduced max-width for the modal itself */
+            width: 650px; /* Adjusted fixed width */
+            padding: 20px; /* Slightly reduced padding */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
 
-.summary-title {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px; /* Reduced margin */
-    font-size: 1.6em; /* Slightly smaller font size */
-    font-weight: 600;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 8px; /* Reduced padding */
-}
+        .summary-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px; /* Reduced margin */
+            font-size: 1.6em; /* Slightly smaller font size */
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px; /* Reduced padding */
+        }
 
-.summary-container {
-    display: grid;
-    /* Adjusted minmax to make cards smaller, allowing more per row on larger screens */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px; /* Reduced space between project blocks */
-    padding: 5px; /* Reduced padding */
-}
+        .summary-container {
+            display: grid;
+            /* Adjusted minmax to make cards smaller, allowing more per row on larger screens */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px; /* Reduced space between project blocks */
+            padding: 5px; /* Reduced padding */
+        }
 
-.project-summary-block {
-    background-color: #f9f9f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 15px; /* Reduced padding */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Slightly lighter shadow */
-    display: flex;
-    flex-direction: column;
-}
+        .project-summary-block {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px; /* Reduced padding */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Slightly lighter shadow */
+            display: flex;
+            flex-direction: column;
+        }
 
-.project-name-header {
-    color: #0056b3;
-    font-size: 1.2em; /* Slightly smaller font size */
-    margin-top: 0;
-    margin-bottom: 10px; /* Reduced margin */
-    padding-bottom: 6px; /* Reduced padding */
-    border-bottom: 1px dashed #c0c0c0;
-    text-align: center;
+        .project-name-header {
+            color: #0056b3;
+            font-size: 1.2em; /* Slightly smaller font size */
+            margin-top: 0;
+            margin-bottom: 10px; /* Reduced margin */
+            padding-bottom: 6px; /* Reduced padding */
+            border-bottom: 1px dashed #c0c0c0;
+            text-align: center;
 
-    /* --- ADDED FOR TEXT OVERFLOW HANDLING --- */
-    white-space: nowrap; /* Prevent text from wrapping to the next line */
-    overflow: hidden; /* Hide any overflowing content */
-    text-overflow: ellipsis; /* Display an ellipsis (...) to indicate truncated text */
-    /* -------------------------------------- */
-}
+            /* --- ADDED FOR TEXT OVERFLOW HANDLING --- */
+            white-space: nowrap; /* Prevent text from wrapping to the next line */
+            overflow: hidden; /* Hide any overflowing content */
+            text-overflow: ellipsis; /* Display an ellipsis (...) to indicate truncated text */
+            /* -------------------------------------- */
 
-.fix-categories-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px; /* Reduced space between fix category items */
-    flex-grow: 1;
-}
+            /* Styles for the info icon and full name popup */
+            position: relative; /* Needed for positioning the popup */
+            display: flex; /* Use flexbox to align name and icon */
+            align-items: center;
+            justify-content: center; /* Center content horizontally */
+            gap: 5px; /* Space between truncated name and icon */
+        }
 
-.fix-category-item {
-    padding: 10px 12px; /* Reduced padding */
-    border-radius: 5px; /* Slightly smaller border-radius */
-    font-size: 0.9em; /* Slightly smaller font size */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 500;
-    color: #333;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-}
+        .truncated-project-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Optional: Set a max-width if you want the name to always take up certain space,
+               otherwise, it will shrink to allow the icon space */
+            max-width: calc(100% - 25px); /* Adjust based on icon width + gap */
+        }
 
-.fix-category-name {
-    font-weight: 600;
-    flex-basis: 40%; /* Adjusted basis to allow more space for values if needed */
-}
+        .info-icon {
+            font-size: 0.9em; /* Smaller icon */
+            color: #007bff; /* A distinct color for the icon */
+            cursor: pointer;
+            margin-left: 5px;
+            user-select: none; /* Prevent text selection on icon click */
+            /* Add tooltip-like behavior for hover */
+            position: relative;
+        }
 
-.fix-category-minutes {
-    font-weight: 500;
-    flex-basis: 30%;
-    text-align: right;
-}
+        /* Optional: Tooltip-like effect on hover for the icon */
+        .info-icon::before {
+            content: attr(data-full-name); /* Use the data-full-name attribute for content */
+            position: absolute;
+            bottom: 100%; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-size: 0.8em;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none; /* Allows clicks to pass through */
+            z-index: 10; /* Ensure it's above other elements */
+        }
 
-.fix-category-hours {
-    font-size: 0.8em; /* Smaller font size for hours */
-    color: #555;
-    flex-basis: 30%;
-    text-align: right;
-}
+        .info-icon:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
 
-/* Specific color adjustments for text on light backgrounds */
-.fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
-    color: #444; /* Darker text for better contrast */
-}
+        .full-name-popup {
+            position: absolute;
+            top: 100%; /* Position below the header */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            white-space: normal; /* Allow wrapping within the popup */
+            word-wrap: break-word;
+            z-index: 5; /* Ensure it's above other content but below other modals */
+            font-size: 0.9em;
+            color: #333;
+            max-width: 250px; /* Max width for the popup */
+            text-align: left;
+        }
 
-.no-data-message, .error-message {
-    text-align: center;
-    font-size: 1em; /* Slightly smaller font size */
-    color: #777;
-    padding: 15px; /* Reduced padding */
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    margin-top: 15px; /* Reduced margin */
-}
+        .fix-categories-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px; /* Reduced space between fix category items */
+            flex-grow: 1;
+        }
 
-.error-message {
-    color: #d9534f;
-    background-color: #fdf7f7;
-    border: 1px solid #f2dede;
-}
+        .fix-category-item {
+            padding: 10px 12px; /* Reduced padding */
+            border-radius: 5px; /* Slightly smaller border-radius */
+            font-size: 0.9em; /* Slightly smaller font size */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: #333;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
 
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-    #tlSummaryModal .modal-content {
-        width: 95%;
-        padding: 10px; /* Further reduced padding for very small screens */
-    }
+        .fix-category-name {
+            font-weight: 600;
+            flex-basis: 40%; /* Adjusted basis to allow more space for values if needed */
+        }
 
-    .summary-container {
-        grid-template-columns: 1fr;
-        gap: 15px; /* Reduced gap */
-    }
+        .fix-category-minutes {
+            font-weight: 500;
+            flex-basis: 30%;
+            text-align: right;
+        }
 
-    .project-summary-block {
-        padding: 10px; /* Reduced padding */
-    }
+        .fix-category-hours {
+            font-size: 0.8em; /* Smaller font size for hours */
+            color: #555;
+            flex-basis: 30%;
+            text-align: right;
+        }
 
-    .project-name-header {
-        /* On small screens, allow wrapping if needed, but still use ellipsis for very long single words */
-        white-space: normal; /* Allow wrapping */
-        word-wrap: break-word; /* Break long words */
-        text-overflow: ellipsis; /* Still apply ellipsis in case of single very long word */
-        overflow: hidden; /* Ensure overflow is still hidden */
-        display: -webkit-box; /* For multi-line ellipsis */
-        -webkit-line-clamp: 2; /* Limit to 2 lines */
-        -webkit-box-orient: vertical;
-    }
+        /* Specific color adjustments for text on light backgrounds */
+        .fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
+            color: #444; /* Darker text for better contrast */
+        }
 
+        .no-data-message, .error-message {
+            text-align: center;
+            font-size: 1em; /* Slightly smaller font size */
+            color: #777;
+            padding: 15px; /* Reduced padding */
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            margin-top: 15px; /* Reduced margin */
+        }
 
-    .fix-category-item {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 8px; /* Further reduced padding */
-        font-size: 0.85em; /* Even smaller font size */
-    }
+        .error-message {
+            color: #d9534f;
+            background-color: #fdf7f7;
+            border: 1px solid #f2dede;
+        }
 
-    .fix-category-minutes, .fix-category-hours {
-        text-align: left;
-        width: 100%;
-        margin-top: 2px; /* Reduced margin */
-    }
-}
-/* Specific color adjustments for text on light backgrounds */
-.fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
-    color: #444; /* Darker text for better contrast */
-}
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #tlSummaryModal .modal-content {
+                width: 95%;
+                padding: 10px; /* Further reduced padding for very small screens */
+            }
 
-.no-data-message, .error-message {
-    text-align: center;
-    font-size: 1em; /* Slightly smaller font size */
-    color: #777;
-    padding: 15px; /* Reduced padding */
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    margin-top: 15px; /* Reduced margin */
-}
+            .summary-container {
+                grid-template-columns: 1fr;
+                gap: 15px; /* Reduced gap */
+            }
 
-.error-message {
-    color: #d9534f;
-    background-color: #fdf7f7;
-    border: 1px solid #f2dede;
-}
+            .project-summary-block {
+                padding: 10px; /* Reduced padding */
+            }
 
+            .project-name-header {
+                flex-direction: column; /* Stack name and icon vertically on small screens */
+                align-items: flex-start; /* Align to the start */
+                gap: 2px;
 
-         /* Styles for the info icon and full name popup */
-.project-name-header {
-    position: relative; /* Needed for positioning the popup */
-    display: flex; /* Use flexbox to align name and icon */
-    align-items: center;
-    justify-content: center; /* Center content horizontally */
-    gap: 5px; /* Space between truncated name and icon */
-}
+                /* On small screens, allow wrapping if needed, but still use ellipsis for very long single words */
+                white-space: normal; /* Allow wrapping */
+                word-wrap: break-word; /* Break long words */
+                text-overflow: ellipsis; /* Still apply ellipsis in case of single very long word */
+                overflow: hidden; /* Ensure overflow is still hidden */
+                display: -webkit-box; /* For multi-line ellipsis */
+                -webkit-line-clamp: 2; /* Limit to 2 lines */
+                -webkit-box-orient: vertical;
+            }
 
-.truncated-project-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* Optional: Set a max-width if you want the name to always take up certain space,
-       otherwise, it will shrink to allow the icon space */
-    max-width: calc(100% - 25px); /* Adjust based on icon width + gap */
-}
+            .truncated-project-name {
+                max-width: 100%; /* Take full width */
+                text-align: left; /* Align to left on small screens */
+            }
 
-.info-icon {
-    font-size: 0.9em; /* Smaller icon */
-    color: #007bff; /* A distinct color for the icon */
-    cursor: pointer;
-    margin-left: 5px;
-    user-select: none; /* Prevent text selection on icon click */
-    /* Add tooltip-like behavior for hover */
-    position: relative;
-}
+            .info-icon {
+                margin-left: 0; /* Remove left margin when stacked */
+                align-self: flex-end; /* Push icon to the right if name wraps */
+                font-size: 0.8em; /* Even smaller icon on mobile */
+            }
 
-/* Optional: Tooltip-like effect on hover for the icon */
-.info-icon::before {
-    content: attr(data-full-name); /* Use the data-full-name attribute for content */
-    position: absolute;
-    bottom: 100%; /* Position above the icon */
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 5px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    font-size: 0.8em;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
-    pointer-events: none; /* Allows clicks to pass through */
-    z-index: 10; /* Ensure it's above other elements */
-}
+            .info-icon::before {
+                left: 0%; /* Adjust tooltip position for stacked layout */
+                transform: translateX(0%);
+            }
 
-.info-icon:hover::before {
-    opacity: 1;
-    visibility: visible;
-}
+            .full-name-popup {
+                left: 0%; /* Adjust popup position for stacked layout */
+                transform: translateX(0%);
+                max-width: 90%; /* Adjust max-width for mobile popup */
+            }
 
+            .fix-category-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 8px; /* Further reduced padding */
+                font-size: 0.85em; /* Even smaller font size */
+            }
 
-.full-name-popup {
-    position: absolute;
-    top: 100%; /* Position below the header */
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 10px 15px;
-    border-radius: 8px;
-    white-space: normal; /* Allow wrapping within the popup */
-    word-wrap: break-word;
-    z-index: 5; /* Ensure it's above other content but below other modals */
-    font-size: 0.9em;
-    color: #333;
-    max-width: 250px; /* Max width for the popup */
-    text-align: left;
-}
+            .fix-category-minutes, .fix-category-hours {
+                text-align: left;
+                width: 100%;
+                margin-top: 2px; /* Reduced margin */
+            }
+        }
+        /* ====================================================== */
+        /* END: TL SUMMARY MODAL & CARD UI STYLES                 */
+        /* ====================================================== */
 
-/* Ensure the overflow handling still works for the truncated part */
-@media (max-width: 768px) {
-    .project-name-header {
-        flex-direction: column; /* Stack name and icon vertically on small screens */
-        align-items: flex-start; /* Align to the start */
-        gap: 2px;
-    }
-
-    .truncated-project-name {
-        max-width: 100%; /* Take full width */
-        text-align: left; /* Align to left on small screens */
-    }
-
-    .info-icon {
-        margin-left: 0; /* Remove left margin when stacked */
-        align-self: flex-end; /* Push icon to the right if name wraps */
-        font-size: 0.8em; /* Even smaller icon on mobile */
-    }
-
-    .info-icon::before {
-        left: 0%; /* Adjust tooltip position for stacked layout */
-        transform: translateX(0%);
-    }
-
-    .full-name-popup {
-        left: 0%; /* Adjust popup position for stacked layout */
-        transform: translateX(0%);
-        max-width: 90%; /* Adjust max-width for mobile popup */
-    }
-}
-         
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-    #tlSummaryModal .modal-content {
-        width: 95%;
-        padding: 10px; /* Further reduced padding for very small screens */
-    }
-
-    .summary-container {
-        grid-template-columns: 1fr;
-        gap: 15px; /* Reduced gap */
-    }
-
-    .project-summary-block {
-        padding: 10px; /* Reduced padding */
-    }
-
-    .fix-category-item {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 8px; /* Further reduced padding */
-        font-size: 0.85em; /* Even smaller font size */
-    }
-
-    .fix-category-minutes, .fix-category-hours {
-        text-align: left;
-        width: 100%;
-        margin-top: 2px; /* Reduced margin */
-    }
-}
-         /* ====================================================== */
-         /* END: NEW LOGIN UI STYLES                               */
-         /* ====================================================== */
-         /* ====================================================== */
-         /* START: YOUR ORIGINAL CODE STYLES (UNCHANGED)           */
-         /* ====================================================== */
-         body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
-         .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
-         /* Styles for Auth Section */
-         #auth-container {
-         padding: 10px 15px;
-         min-height: 60px;
-         text-align: center;
-         border-bottom: 1px solid #eee;
-         margin-bottom: 15px;
-         background-color: #f8f9fa;
-         border-radius: 5px;
-         display: flex;
-         flex-direction: column;
-         align-items: center;
-         justify-content: center;
-         }
-         #auth-container h2 {
-         font-size: 1.1em;
-         margin-bottom: 8px;
-         color: #333;
-         }
-         #user-info-display {
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         gap: 10px;
-         flex-wrap: wrap;
-         margin-top: 5px;
-         }
-         #user-info-display img {
-         border-radius: 50%;
-         width: 40px;
-         height: 40px;
-         border: 2px solid #ddd;
-         object-fit: cover;
-         }
-         #user-info-display .user-details p {
-         margin: 0;
-         font-size: 0.9em;
-         }
-         #user-info-display .user-details p:first-child {
-         font-weight: bold;
-         }
-         /* Hiding original signInBtn to avoid duplication */
-         #auth-container #signInBtn, #signOutBtn, #clearDataBtn {
-         padding: 8px 18px;
-         font-size: 1em;
-         cursor: pointer;
-         border: none;
-         border-radius: 4px;
-         transition: background-color 0.3s ease;
-         margin-top: 8px;
-         }
-         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
-         #clearDataBtn { background-color: #6c757d; color: white; } #clearDataBtn:hover { background-color: #5a6268; }
-         /* Initially hide app content and show loading/auth message */
-         #app-content { display: none; }
-         #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
-         h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
-         h2 { font-size: 1.3em; }
-         h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
-         .table-scroll-wrapper {
-         width: 100%;
-         max-height: 60vh;
-         overflow-y: auto;
-         overflow-x: scroll;
-         }
-         .action-bar {
-         margin-bottom: 15px;
-         display: flex;
-         gap: 10px;
-         flex-wrap: wrap;
-         align-items: center;
-         justify-content: flex-start;
-         }
-         .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
-         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
-         .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
-         .btn-group-toggle:hover { background-color: #95a5a6;}
-         .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
-         .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
-         .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
-         .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
-         .btn-day-start { background-color: #007bff; color: white; }
-         .btn-day-start:hover { background-color: #0056b3; }
-         .btn-day-end { background-color: #fd7e14; color: white; }
-         .btn-day-end:hover { background-color: #c85e08; }
-         .btn-warning { background-color: #f39c12; color: white; }
-         .btn-warning:hover { background-color: #e67e22; }
-         .btn-info { background-color: #17a2b8; color: white; }
-         .btn-info:hover { background-color: #138496; }
-         .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
-         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
-         #projectFormModal .modal-content { max-width: 480px; }
-         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
-         #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
-         #tlSummaryModal .modal-content { max-width: 600px; max-height: 85vh; overflow-y: auto;}
-         #importCsvModal .modal-content { max-width: 500px; } /* Added for Import CSV Modal */
-         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
-         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
-         #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
-         #newProjectForm button[type="submit"] { margin-top: 12px; }
-         #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
-         #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
-         #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
-         #projectTable td.wrap-text { white-space: normal; }
-         #projectTable select.assigned-to-select,
-         #projectTable select.break-select,
-         #projectTable input[type="time"],
-         #projectTable textarea.tech-notes-input,
-         #projectTable input[type="number"].additional-minutes-input {
-         width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff;
-         }
-         .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
-         .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
-         .hidden-group-row { display: none; }
-         #projectTable td.total-duration-column { font-weight: bold; background-color: #c0392b; color: white; }
-         .reassigned-task-highlight { background-color: #FFF9C4 !important; }
-         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):hover { background-color: #d0e0f0 !important; }
-         .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
-         .status-available { background-color: #3498db; }
-         .status-inprogressday1, .status-day1ended_awaitingnext, .status-inprogressday2, .status-day2ended_awaitingnext { background-color: #f39c12; }
-         .status-inprogressday3 { background-color: #e9630e; }
-         .status-completed { background-color: #2ecc71; }
-         .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
-         #tlDashboardContent { margin-top:15px; }
-         .dashboard-batch-item { border: 1px solid #bdc3c7; padding: 10px; margin-bottom: 10px; background-color: #fff; border-radius: 4px; }
-         #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
-         #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
-         #allowedEmailsList li:last-child { border-bottom: none; }
-         #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
-         .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;}
-         .group-selector-controls { display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
-         .group-selector-controls label { font-size: 0.9em; font-weight: bold; color: #555; }
-         .group-selector-controls select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; min-width: 150px; }
-         #loadingOverlay {
-         display: none; position: fixed; z-index: 9999; width: 100%; height: 100%; top: 0; left: 0; background-color: rgba(0,0,0,0.5); cursor: wait;
-         justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 1.2em; font-weight: bold;
-         }
-         .spinner {
-         border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #fff;
-         width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
-         }
-         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-         /* ====================================================== */
-         /* END: YOUR ORIGINAL CODE STYLES (UNCHANGED)             */
-         /* ====================================================== */
-      </style>
-      <link rel="icon" type="image/png" href="icon.png">
+           /* ====================================================== */
+           /* START: YOUR ORIGINAL CODE STYLES (UNCHANGED)           */
+           /* ====================================================== */
+           body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.4; }
+           .container { width: 98%; max-width: 1900px; margin: 10px auto; padding: 10px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
+           /* Styles for Auth Section */
+           #auth-container {
+           padding: 10px 15px;
+           min-height: 60px;
+           text-align: center;
+           border-bottom: 1px solid #eee;
+           margin-bottom: 15px;
+           background-color: #f8f9fa;
+           border-radius: 5px;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           }
+           #auth-container h2 {
+           font-size: 1.1em;
+           margin-bottom: 8px;
+           color: #333;
+           }
+           #user-info-display {
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           gap: 10px;
+           flex-wrap: wrap;
+           margin-top: 5px;
+           }
+           #user-info-display img {
+           border-radius: 50%;
+           width: 40px;
+           height: 40px;
+           border: 2px solid #ddd;
+           object-fit: cover;
+           }
+           #user-info-display .user-details p {
+           margin: 0;
+           font-size: 0.9em;
+           }
+           #user-info-display .user-details p:first-child {
+           font-weight: bold;
+           }
+           /* Hiding original signInBtn to avoid duplication */
+           #auth-container #signInBtn, #signOutBtn, #clearDataBtn {
+           padding: 8px 18px;
+           font-size: 1em;
+           cursor: pointer;
+           border: none;
+           border-radius: 4px;
+           transition: background-color 0.3s ease;
+           margin-top: 8px;
+           }
+           #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
+           #clearDataBtn { background-color: #6c757d; color: white; } #clearDataBtn:hover { background-color: #5a6268; }
+           /* Initially hide app content and show loading/auth message */
+           #app-content { display: none; }
+           #loading-auth-message { text-align: center; padding: 20px; font-size: 1.1em; color: #555; margin-top: 50px;}
+           h1, h2, h3 { color: #2c3e50; text-align: center; margin-bottom: 12px; font-size: 1.5em; }
+           h2 { font-size: 1.3em; }
+           h3 { font-size: 1.1em; text-align: left; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+           .table-scroll-wrapper {
+           width: 100%;
+           max-height: 60vh;
+           overflow-y: auto;
+           overflow-x: scroll;
+           }
+           .action-bar {
+           margin-bottom: 15px;
+           display: flex;
+           gap: 10px;
+           flex-wrap: wrap;
+           align-items: center;
+           justify-content: flex-start;
+           }
+           .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+           .btn-lg { padding: 7px 12px; font-size: 0.9em; }
+           .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
+           .btn-group-toggle:hover { background-color: #95a5a6;}
+           .btn-danger { background-color: #e74c3c; color: white; } .btn-danger:hover { background-color: #c0392b; }
+           .btn-primary { background-color: #3498db; color: white; } .btn-primary:hover { background-color: #2980b9; }
+           .btn-success { background-color: #2ecc71; color: white; } .btn-success:hover { background-color: #27ae60; }
+           .btn-mark-done { background-color: #1abc9c; color: white; } .btn-mark-done:hover { background-color: #16a085; }
+           .btn-day-start { background-color: #007bff; color: white; }
+           .btn-day-start:hover { background-color: #0056b3; }
+           .btn-day-end { background-color: #fd7e14; color: white; }
+           .btn-day-end:hover { background-color: #c85e08; }
+           .btn-warning { background-color: #f39c12; color: white; }
+           .btn-warning:hover { background-color: #e67e22; }
+           .btn-info { background-color: #17a2b8; color: white; }
+           .btn-info:hover { background-color: #138496; }
+           .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
+           .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+           .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
+           #projectFormModal .modal-content { max-width: 480px; }
+           #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
+           #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
+           #importCsvModal .modal-content { max-width: 500px; } /* Added for Import CSV Modal */
+           .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+           #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
+           #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
+           #newProjectForm button[type="submit"] { margin-top: 12px; }
+           #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+           #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
+           #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+           #projectTable td.wrap-text { white-space: normal; }
+           #projectTable select.assigned-to-select,
+           #projectTable select.break-select,
+           #projectTable input[type="time"],
+           #projectTable textarea.tech-notes-input,
+           #projectTable input[type="number"].additional-minutes-input {
+           width: calc(100% - 6px); padding: 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 1em; background-color: #fff;
+           }
+           .batch-header-row td { background-color: #6c757d !important; color: white; font-size: 1.1em; font-weight: bold; text-align: left; padding: 6px 8px; }
+           .fix-group-header td { background-color: #adb5bd !important; color: #212529; font-size: 1.0em; font-weight: bold; text-align: left; padding: 4px 8px; cursor:pointer; padding-left: 30px; }
+           .hidden-group-row { display: none; }
+           #projectTable td.total-duration-column { font-weight: bold; background-color: #c0392b; color: white; }
+           .reassigned-task-highlight { background-color: #FFF9C4 !important; }
+           #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):hover { background-color: #d0e0f0 !important; }
+           .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
+           .status-available { background-color: #3498db; }
+           .status-inprogressday1, .status-day1ended_awaitingnext, .status-inprogressday2, .status-day2ended_awaitingnext { background-color: #f39c12; }
+           .status-inprogressday3 { background-color: #e9630e; }
+           .status-completed { background-color: #2ecc71; }
+           .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
+           #tlDashboardContent { margin-top:15px; }
+           .dashboard-batch-item { border: 1px solid #bdc3c7; padding: 10px; margin-bottom: 10px; background-color: #fff; border-radius: 4px; }
+           #allowedEmailsList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;}
+           #allowedEmailsList li { padding: 8px; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center;}
+           #allowedEmailsList li:last-child { border-bottom: none; }
+           #addEmailInput { flex-grow: 1; padding: 7px; margin-right: 5px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.9em;}
+           .settings-input-group { display: flex; margin-bottom: 10px; align-items: center;}
+           .group-selector-controls { display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
+           .group-selector-controls label { font-size: 0.9em; font-weight: bold; color: #555; }
+           .group-selector-controls select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; min-width: 150px; }
+           #loadingOverlay {
+           display: none; position: fixed; z-index: 9999; width: 100%; height: 100%; top: 0; left: 0; background-color: rgba(0,0,0,0.5); cursor: wait;
+           justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 1.2em; font-weight: bold;
+           }
+           .spinner {
+           border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #fff;
+           width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
+           }
+           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+           /* ====================================================== */
+           /* END: YOUR ORIGINAL CODE STYLES (UNCHANGED)             */
+           /* ====================================================== */
+     </style>
+     <link rel="icon" type="image/png" href="icon.png">
    </head>
    <body class="login-view-active">
-      <div id="auth-wrapper">
-         <div class="login-card">
-            <h2>Project Tracker</h2>
-            <p>Sign in to continue to Team123</p>
-            <button id="signInBtn">
-               <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+     <div id="auth-wrapper">
+           <div class="login-card">
+             <h2>Project Tracker</h2>
+             <p>Sign in to continue to Team123</p>
+             <button id="signInBtn">
+                <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   <path d="M1 1h22v22H1z" fill="none"/>
-               </svg>
-               <span>Sign in with Google</span>
-            </button>
-            <button id="clearDataBtn" style="display: block; width: 100%; padding: 12px 24px; margin-top: 15px; background-color: #6c757d; color: white; border: none; border-radius: 8px; font-family: 'Inter', Arial, sans-serif; font-size: 1.05em; font-weight: 500; cursor: pointer; transition: background-color 0.3s ease;" onmouseover="this.style.backgroundColor='#5a6268'" onmouseout="this.style.backgroundColor='#6c757d'">
-            Clear Login Session
-            </button>
-         </div>
-      </div>
-      <div class="container">
-         <div id="auth-container">
-            <h2>Project Tracker Login</h2>
-            <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
-            <div id="user-info-display" style="display: none;">
-               <img id="userPhoto" src="" alt="User Photo">
-               <div class="user-details">
+                </svg>
+                <span>Sign in with Google</span>
+             </button>
+             <button id="clearDataBtn" style="display: block; width: 100%; padding: 12px 24px; margin-top: 15px; background-color: #6c757d; color: white; border: none; border-radius: 8px; font-family: 'Inter', Arial, sans-serif; font-size: 1.05em; font-weight: 500; cursor: pointer; transition: background-color 0.3s ease;" onmouseover="this.style.backgroundColor='#5a6268'" onmouseout="this.style.backgroundColor='#6c757d'">
+             Clear Login Session
+             </button>
+           </div>
+     </div>
+     <div class="container">
+           <div id="auth-container">
+             <h2>Project Tracker Login</h2>
+             <button id="clearDataBtn" class="btn btn-secondary" style="display: none; margin-top: 10px;">Clear Login Data</button>
+             <div id="user-info-display" style="display: none;">
+                <img id="userPhoto" src="" alt="User Photo">
+                <div class="user-details">
                   <p id="userName"></p>
                   <p id="userEmail"></p>
-               </div>
-               <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
-            </div>
-            <button id="clearDataBtn" style="display: none;">Clear Local App Data</button>
-         </div>
-         <div id="loading-auth-message">
-            <p>Please sign in to access the Project Tracker.</p>
-         </div>
-         <div id="app-content">
-            <h1>Team123 - Project Tracker</h1>
-            <div class="action-bar">
-               <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
-               <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
-               <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
-               <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
-               <button id="exportCsvBtn" class="btn btn-info btn-lg" style="margin-left: 10px;">📊 Export to CSV</button>
-               <button id="openImportCsvBtn" class="btn btn-secondary btn-lg" style="margin-left: 10px;">📥 Import CSV</button> 
-            </div>
-            <div id="projectFormModal" class="modal">
-               <div class="modal-content">
+                </div>
+                <button id="signOutBtn" class="btn btn-danger">Sign Out</button>
+             </div>
+             <button id="clearDataBtn" style="display: none;">Clear Local App Data</button>
+           </div>
+           <div id="loading-auth-message">
+             <p>Please sign in to access the Project Tracker.</p>
+           </div>
+           <div id="app-content">
+             <h1>Team123 - Project Tracker</h1>
+             <div class="action-bar">
+                <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
+                <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
+                <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
+                <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
+                <button id="exportCsvBtn" class="btn btn-info btn-lg" style="margin-left: 10px;">📊 Export to CSV</button>
+                <button id="openImportCsvBtn" class="btn btn-secondary btn-lg" style="margin-left: 10px;">📥 Import CSV</button> 
+             </div>
+             <div id="projectFormModal" class="modal">
+                <div class="modal-content">
                   <span class="close-button" id="closeProjectFormBtn">&times;</span>
                   <h2>Add New Tracker</h2>
                   <form id="newProjectForm">
-                     <label for="numRows">Number of Area:</label>
-                     <input type="number" id="numRows" value="1" min="1" required>
-                     <label for="baseProjectName">Project Name:</label>
-                     <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
-                     <label for="gsd">GSD:</label>
-                     <select id="gsd" required>
-                        <option value="3in">3in</option>
-                        <option value="4in">4in</option>
-                        <option value="6in">6in</option>
-                        <option value="9in">9in</option>
-                     </select>
-                     <button type="submit" class="btn btn-success">Add Project(s)</button>
+                    <label for="numRows">Number of Area:</label>
+                    <input type="number" id="numRows" value="1" min="1" required>
+                    <label for="baseProjectName">Project Name:</label>
+                    <input type="text" id="baseProjectName" value="PROJ_ID_XYZ" required>
+                    <label for="gsd">GSD:</label>
+                    <select id="gsd" required>
+                      <option value="3in">3in</option>
+                      <option value="4in">4in</option>
+                      <option value="6in">6in</option>
+                      <option value="9in">9in</option>
+                    </select>
+                    <button type="submit" class="btn btn-success">Add Project(s)</button>
                   </form>
-               </div>
-            </div>
-            <div id="tlDashboardModal" class="modal">
-               <div class="modal-content">
+                </div>
+             </div>
+             <div id="tlDashboardModal" class="modal">
+                <div class="modal-content">
                   <span class="close-button" id="closeTlDashboardBtn">&times;</span>
                   <h2>👑 Project Settings</h2>
                   <div id="tlDashboardContent"></div>
-               </div>
-            </div>
-            <div id="settingsModal" class="modal">
-               <div class="modal-content">
+                </div>
+             </div>
+             <div id="settingsModal" class="modal">
+                <div class="modal-content">
                   <span class="close-button" id="closeSettingsBtn">&times;</span>
                   <h2>⚙️ User Settings</h2>
                   <h3>Manage Allowed User Emails</h3>
                   <ul id="allowedEmailsList"></ul>
                   <div class="settings-input-group"><input type="email" id="addEmailInput" placeholder="Enter new allowed email"><button id="addEmailBtn" class="btn btn-success">Add Email</button></div>
-               </div>
-            </div>
-            <div id="tlSummaryModal" class="modal">
-               <div class="modal-content">
+                </div>
+             </div>
+             <div id="tlSummaryModal" class="modal">
+                <div class="modal-content">
                   <span class="close-button" id="closeTlSummaryBtn">&times;</span>
                   <h2>📝 TL Summary</h2>
                   <div id="tlSummaryContent">
-                     <p>Loading summary...</p>
+                    <p>Loading summary...</p>
                   </div>
-               </div>
-            </div>
-            <div id="importCsvModal" class="modal">
-               <div class="modal-content">
+                </div>
+             </div>
+             <div id="importCsvModal" class="modal">
+                <div class="modal-content">
                   <span class="close-button" id="closeImportCsvBtn">&times;</span>
                   <h2>📥 Import Projects from CSV</h2>
                   <p>Upload a CSV file. The file should have headers matching the export format.</p>
                   <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 15px;">
                   <button id="processCsvBtn" class="btn btn-primary" disabled>Process CSV</button>
                   <div id="csvImportStatus" style="margin-top: 10px; font-size: 0.9em; color: #555;"></div>
-               </div>
-            </div>
-            <h3>Project Overview</h3>
-            <div class="group-selector-controls">
-               <label for="monthFilter">Month:</label>
-               <select id="monthFilter">
+                </div>
+             </div>
+             <h3>Project Overview</h3>
+             <div class="group-selector-controls">
+                <label for="monthFilter">Month:</label>
+                <select id="monthFilter">
                   <option value="">All Months</option>
-               </select>
-               <label for="batchIdSelect">Project:</label>
-               <select id="batchIdSelect">
+                </select>
+                <label for="batchIdSelect">Project:</label>
+                <select id="batchIdSelect">
                   <option value="">All Projects</option>
-               </select>
-               <label for="fixCategoryFilter">Fix Category:</label>
-               <select id="fixCategoryFilter">
+                </select>
+                <label for="fixCategoryFilter">Fix Category:</label>
+                <select id="fixCategoryFilter">
                   <option value="">All</option>
                   <option value="Fix1">Fix1</option>
                   <option value="Fix2">Fix2</option>
@@ -669,50 +609,50 @@
                   <option value="Fix4">Fix4</option>
                   <option value="Fix5">Fix5</option>
                   <option value="Fix6">Fix6</option>
-               </select>
-            </div>
-            <div class="table-scroll-wrapper">
-               <table id="projectTable">
+                </select>
+             </div>
+             <div class="table-scroll-wrapper">
+                <table id="projectTable">
                   <thead>
-                     <tr>
-                        <th>Fix Cat</th>
-                        <th>Project Name</th>
-                        <th>Area/Task</th>
-                        <th>GSD</th>
-                        <th>Assigned To</th>
-                        <th>Status</th>
-                        <th>Day 1 Start</th>
-                        <th>Day 1 Finish</th>
-                        <th>Day 1 Break</th>
-                        <th>Day 2 Start</th>
-                        <th>Day 2 Finish</th>
-                        <th>Day 2 Break</th>
-                        <th>Day 3 Start</th>
-                        <th>Day 3 Finish</th>
-                        <th>Day 3 Break</th>
-                        <th>Progress</th>
-                        <th>Total (min)</th>
-                        <th>Tech Notes</th>
-                        <th>Actions</th>
-                     </tr>
+                    <tr>
+                      <th>Fix Cat</th>
+                      <th>Project Name</th>
+                      <th>Area/Task</th>
+                      <th>GSD</th>
+                      <th>Assigned To</th>
+                      <th>Status</th>
+                      <th>Day 1 Start</th>
+                      <th>Day 1 Finish</th>
+                      <th>Day 1 Break</th>
+                      <th>Day 2 Start</th>
+                      <th>Day 2 Finish</th>
+                      <th>Day 2 Break</th>
+                      <th>Day 3 Start</th>
+                      <th>Day 3 Finish</th>
+                      <th>Day 3 Break</th>
+                      <th>Progress</th>
+                      <th>Total (min)</th>
+                      <th>Tech Notes</th>
+                      <th>Actions</th>
+                    </tr>
                   </thead>
                   <tbody id="projectTableBody"></tbody>
-               </table>
-               <div id="paginationControls" style="display: none; text-align: center; padding: 15px;">
+                </table>
+                <div id="paginationControls" style="display: none; text-align: center; padding: 15px;">
                   <button id="prevPageBtn" class="btn">« Previous</button>
                   <span id="pageInfo" style="margin: 0 15px; font-weight: bold;"></span>
                   <button id="nextPageBtn" class="btn">Next »</button>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div id="loadingOverlay">
-         <div class="spinner"></div>
-         <p>Loading...</p>
-      </div>
-      <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-      <script src="script.js"></script>
+                </div>
+             </div>
+           </div>
+     </div>
+     <div id="loadingOverlay">
+           <div class="spinner"></div>
+           <p>Loading...</p>
+     </div>
+     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+     <script src="script.js"></script>
    </body>
 </html>
