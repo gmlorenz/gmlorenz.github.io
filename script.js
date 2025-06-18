@@ -27,6 +27,7 @@
  * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
  * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
  * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
+ * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -1930,39 +1931,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     infoIcons.forEach((icon, index) => {
                         console.log(`Attaching listener to icon #${index + 1}. Full name: ${icon.dataset.fullName}`);
-                        icon.addEventListener('click', (event) => {
-                            event.stopPropagation(); // Prevent card click if there's one
-                            const popup = icon.nextElementSibling; // The .full-name-popup div
+                        const popup = icon.nextElementSibling; // The .full-name-popup div
+                        
+                        // Change to mouseenter and mouseleave for hover functionality
+                        icon.addEventListener('mouseenter', () => {
                             if (popup) {
-                                console.log(`Icon clicked! Toggling popup for: ${icon.dataset.fullName}. Current display: ${popup.style.display}`);
-                                popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-                            } else {
-                                console.warn(`Popup element not found for icon:`, icon);
+                                popup.style.display = 'block';
+                            }
+                        });
+                        icon.addEventListener('mouseleave', () => {
+                            if (popup) {
+                                popup.style.display = 'none';
                             }
                         });
                     });
 
-                    // Event listener to hide popups when clicking anywhere else on the document
-                    // Make sure this listener is only added ONCE, not every time generateTlSummaryData is called.
-                    // A flag can be used, or it can be added in init() or attachEventListeners()
-                    if (!this.state.isSummaryPopupListenerAttached) {
-                         document.addEventListener('click', (event) => {
-                            this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
-                                // Check if the click was outside this specific popup AND not on its associated icon
-                                // IMPORTANT: also check if event.target is a child of info-icon to prevent immediate re-closing
-                                const clickedElementIsInfoIconOrChild = event.target.classList.contains('info-icon') || event.target.closest('.info-icon');
-
-                                if (!popup.contains(event.target) && !clickedElementIsInfoIconOrChild) {
-                                    if (popup.style.display === 'block') {
-                                        console.log('Hiding popup due to outside click.');
-                                        popup.style.display = 'none';
-                                    }
-                                }
-                            });
-                        });
-                        this.state.isSummaryPopupListenerAttached = true; // Set flag
-                        console.log("Global summary popup listener attached.");
-                    }
+                    // Remove the global click listener that previously handled closing popups
+                    // as it's no longer needed for hover-based tooltips and can cause conflicts.
+                    // This block was previously inside an `if (!this.state.isSummaryPopupListenerAttached)` check.
+                    // Since we are moving to hover, this click-based hiding logic for this specific feature is removed.
 
 
                 } catch (error) {
