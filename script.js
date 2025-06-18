@@ -121,7 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalPages: 0,
                 sortOrderForPaging: 'newest',
                 monthForPaging: '' // Track which month the list was built for
-            }
+            },
+            isSummaryPopupListenerAttached: false // Initialize the flag
         },
 
         // --- 4. DOM ELEMENT REFERENCES ---
@@ -794,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use APAC-MM-DD. Aborting update.");
                                 return;
                             }
 
@@ -1891,10 +1892,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
+                            // MODIFIED: Changed the icon generation to directly apply Font Awesome classes
                             summaryHtml += `
                                 <h4 class="project-name-header">
                                     <span class="truncated-project-name">${projName}</span>
-                                    <i class="info-icon" data-full-name="${projName}"><i class="fas fa-info-circle"></i></i>
+                                    <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
                                     <div class="full-name-popup" style="display: none;">${projName}</div>
                                 </h4>
                             `;
@@ -1947,7 +1949,10 @@ document.addEventListener('DOMContentLoaded', () => {
                          document.addEventListener('click', (event) => {
                             this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
                                 // Check if the click was outside this specific popup AND not on its associated icon
-                                if (!popup.contains(event.target) && !event.target.classList.contains('info-icon')) {
+                                // IMPORTANT: also check if event.target is a child of info-icon to prevent immediate re-closing
+                                const clickedElementIsInfoIconOrChild = event.target.classList.contains('info-icon') || event.target.closest('.info-icon');
+
+                                if (!popup.contains(event.target) && !clickedElementIsInfoIconOrChild) {
                                     if (popup.style.display === 'block') {
                                         console.log('Hiding popup due to outside click.');
                                         popup.style.display = 'none';
