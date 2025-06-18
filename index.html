@@ -1208,6 +1208,7 @@
         // ... (inside your <script> tag, after calculateAllTechIDs function)
 
         function calculateAllFix4IDs() {
+            function extractFix4ID() {
             const raw = activeProjectData?.data;
             const inputID = techIdInput.value.trim();
             const searchID = inputID.toUpperCase();
@@ -1218,21 +1219,21 @@
             allProjectsAggregatedResults = {};
 
             if (!raw) {
-                allResultsDiv.innerHTML = '<p>Load a project to extract FIX4 ID or RV3/QA3 Category data.</p>';
+                allResultsDiv.innerHTML = '<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p><strong>Warning:</strong> No project data loaded. Please select a project from the dropdown.</p></div></div>';
                 addResultButtonsToAllResults(true);
                 return;
             }
 
             const allRows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
             if (allRows.length === 0) {
-                allResultsDiv.innerHTML = '<p>No data rows found in the loaded project.</p>';
+                allResultsDiv.innerHTML = '<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p><strong>Warning:</strong> No data rows found in the loaded project.</p></div></div>';
                 addResultButtonsToAllResults(true);
                 return;
             }
 
             const headerRow = allRows.shift();
             if (!headerRow) {
-                allResultsDiv.innerHTML = '<p>No header row found in the loaded project data.</p>';
+                allResultsDiv.innerHTML = '<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p><strong>Warning:</strong> No header row found in the loaded project data.</p></div></div>';
                 addResultButtonsToAllResults(true);
                 return;
             }
@@ -1240,23 +1241,23 @@
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
             const fix4IdIndex = headers.indexOf("FIX4_ID");
             const rv3CatIndex = headers.indexOf("RV3_CAT");
-            const qa3CatIndex = headers.indexOf("QA3_CAT"); // Get the index for QA3_CAT
+            const qa3CatIndex = headers.indexOf("QA3_CAT");
 
             if (fix4IdIndex === -1) {
-                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot extract data.</p>';
+                allResultsDiv.innerHTML = '<div class="card red lighten-4"><div class="card-content red-text text-darken-4"><p><strong>Error:</strong> The loaded project data is missing the required "FIX4_ID" column. Cannot extract data.</p></div></div>';
                 addResultButtonsToAllResults(true);
                 return;
             }
 
             // Conditional logic based on whether inputID is provided
             if (inputID) { // Mode 1: Search by specific FIX4_ID for RV3_CAT and QA3_CAT
-                if (rv3CatIndex === -1 && qa3CatIndex === -1) { // Check both
-                    allResultsDiv.innerHTML = '<p>The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract category data for specific FIX4_ID.</p>';
+                if (rv3CatIndex === -1 && qa3CatIndex === -1) {
+                    allResultsDiv.innerHTML = '<div class="card red lighten-4"><div class="card-content red-text text-darken-4"><p><strong>Error:</strong> The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract category data for specific FIX4_ID.</p></div></div>';
                     addResultButtonsToAllResults(true);
                     return;
                 }
 
-                let foundCategories = new Set(); // Changed from Rv3Categories to Categories as it includes QA3 now
+                let foundCategories = new Set();
                 let matchedRowsCount = 0;
                 let specificIdCategoryCounts = Array(9).fill(0); // Counts for categories 1-9 for this specific ID
 
@@ -1294,22 +1295,22 @@
                 let html = `<h5>Categories for FIX4_ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
 
                 if (matchedRowsCount > 0) {
-                    html += `<p>Found ${matchedRowsCount} row(s) for FIX4_ID '${inputID}'.</p>`;
+                    html += `<p>Found <strong>${matchedRowsCount}</strong> row(s) for FIX4_ID '${inputID}'.</p>`;
                     if (foundCategories.size > 0) {
-                        html += `<p>Extracted Unique Categories (RV3_CAT & QA3_CAT):</p>`;
-                        html += `<ul>`;
+                        html += `<p><strong>Unique Categories (RV3_CAT & QA3_CAT):</strong></p>`;
+                        html += `<ul class="collection">`; // Use Materialize collection for lists
                         Array.from(foundCategories).sort().forEach(cat => {
-                            html += `<li><span class="tech-id-highlight">${cat}</span></li>`;
+                            html += `<li class="collection-item"><span class="tech-id-highlight">${cat}</span></li>`;
                         });
                         html += `</ul>`;
 
                         // Display per-ID category counts for 1-9
-                        html += `<h6>Category Counts (1-9) for this FIX4_ID:</h6>`;
+                        html += `<h6 style="margin-top: 20px;">Category Counts (1-9) for this FIX4_ID:</h6>`;
                         let hasSpecificIdCategoryCounts = false;
-                        let specificIdCategoryCountsHtml = `<ul>`;
+                        let specificIdCategoryCountsHtml = `<ul class="collection">`;
                         for (let i = 0; i < specificIdCategoryCounts.length; i++) {
                             if (specificIdCategoryCounts[i] > 0) {
-                                specificIdCategoryCountsHtml += `<li><strong>Category ${i + 1}:</strong> ${specificIdCategoryCounts[i]}</li>`;
+                                specificIdCategoryCountsHtml += `<li class="collection-item"><strong>Category ${i + 1}:</strong> <span class="badge blue new" data-badge-caption="occurrences">${specificIdCategoryCounts[i]}</span></li>`;
                                 hasSpecificIdCategoryCounts = true;
                             }
                         }
@@ -1317,28 +1318,27 @@
                         if(hasSpecificIdCategoryCounts) {
                             html += specificIdCategoryCountsHtml;
                         } else {
-                            html += `<p>No categories from 1-9 found for this FIX4_ID in RV3_CAT or QA3_CAT.</p>`;
+                            html += `<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p>No categories from 1-9 found for this FIX4_ID in RV3_CAT or QA3_CAT.</p></div></div>`;
                         }
 
                         showToast(`Found ${foundCategories.size} unique categories for ${inputID}.`, 'green');
                     } else {
-                        html += `<p>No categories found for FIX4_ID '${inputID}' in RV3_CAT or QA3_CAT.</p>`;
+                        html += `<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p>No categories found for FIX4_ID '${inputID}' in RV3_CAT or QA3_CAT.</p></div></div>`;
                         showToast(`No categories found for ${inputID}.`, 'orange');
                     }
                 } else {
-                    html += `<p>FIX4_ID '${inputID}' not found in the loaded project.</p>`;
+                    html += `<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p>FIX4_ID '${inputID}' not found in the loaded project.</p></div></div>`;
                     showToast(`FIX4_ID '${inputID}' not found.`, 'orange');
                 }
                 allResultsDiv.innerHTML = html;
 
             } else { // Mode 2: Search bar is empty, extract all unique FIX4_IDs, their RV3_CAT/QA3_CAT entries, and per-ID/overall category counts
-                if (rv3CatIndex === -1 && qa3CatIndex === -1) { // Check both columns for this mode
-                    allResultsDiv.innerHTML = '<p>The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract corresponding categories for all FIX4_IDs.</p>';
+                if (rv3CatIndex === -1 && qa3CatIndex === -1) {
+                    allResultsDiv.innerHTML = '<div class="card red lighten-4"><div class="card-content red-text text-darken-4"><p><strong>Error:</strong> The loaded project data is missing both "RV3_CAT" and "QA3_CAT" columns. Cannot extract corresponding categories for all FIX4_IDs.</p></div></div>';
                     addResultButtonsToAllResults(true);
                     return;
                 }
 
-                // Map to store FIX4_ID -> { categories: Set, categoryCounts: Array(9) }
                 let fix4IdData = new Map();
                 let totalRowsProcessed = 0;
                 let overallCategoryCounts = Array(9).fill(0); // Overall counts for categories 1-9 across all data
@@ -1348,7 +1348,6 @@
                     const fields = row.split(/[\t,]/).map(f => f.trim());
                     const fix4Value = fields[fix4IdIndex]?.trim();
                     
-                    // Initialize or get FIX4_ID entry
                     if (fix4Value) {
                         if (!fix4IdData.has(fix4Value)) {
                             fix4IdData.set(fix4Value, {
@@ -1387,15 +1386,15 @@
                 });
 
                 let html = `<h5>All Unique FIX4_IDs and their Categories for Project: ${projectSelector.value || 'N/A'}</h5>`;
-                html += `<p>Processed ${totalRowsProcessed} row(s).</p>`;
+                html += `<p>Processed <strong>${totalRowsProcessed}</strong> row(s).</p>`;
 
                 // Add Overall RV3/QA3 Category Counts section
                 html += `<h6>Overall Category Counts (1-9 from RV3_CAT & QA3_CAT):</h6>`;
                 let hasOverallCategoryCounts = false;
-                let overallCategoryCountsHtml = `<ul>`;
+                let overallCategoryCountsHtml = `<ul class="collection">`;
                 for (let i = 0; i < overallCategoryCounts.length; i++) {
                     if (overallCategoryCounts[i] > 0) {
-                        overallCategoryCountsHtml += `<li><strong>Category ${i + 1}:</strong> ${overallCategoryCounts[i]}</li>`;
+                        overallCategoryCountsHtml += `<li class="collection-item"><strong>Category ${i + 1}:</strong> <span class="badge blue new" data-badge-caption="occurrences">${overallCategoryCounts[i]}</span></li>`;
                         hasOverallCategoryCounts = true;
                     }
                 }
@@ -1403,29 +1402,29 @@
                 if(hasOverallCategoryCounts) {
                     html += overallCategoryCountsHtml;
                 } else {
-                    html += `<p>No categories from 1-9 found in RV3_CAT or QA3_CAT overall.</p>`;
+                    html += `<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p>No categories from 1-9 found in RV3_CAT or QA3_CAT overall.</p></div></div>`;
                 }
 
 
                 if (fix4IdData.size > 0) {
-                    html += `<h6 style="margin-top: 20px;">FIX4_IDs with Corresponding Categories and Counts:</h6>`;
-                    html += `<table class="striped"><thead><tr><th>FIX4_ID</th><th>Categories (RV3_CAT & QA3_CAT)</th><th>Category Counts (1-9)</th></tr></thead><tbody>`;
+                    html += `<h6 style="margin-top: 20px;">Detailed FIX4_ID Breakdown:</h6>`;
+                    html += `<table class="striped responsive-table"><thead><tr><th style="width:15%;">FIX4_ID</th><th style="width:40%;">Categories (RV3_CAT & QA3_CAT)</th><th style="width:45%;">Category Counts (C1-C9)</th></tr></thead><tbody>`;
                     
                     const sortedFix4IDs = Array.from(fix4IdData.keys()).sort();
 
                     sortedFix4IDs.forEach(fix4ID => {
                         const data = fix4IdData.get(fix4ID);
-                        const categories = Array.from(data.categories).sort().join(', ') || 'N/A';
+                        const categories = Array.from(data.categories).sort().join(', ') || '<span class="grey-text">N/A</span>';
                         
                         let perIdCategoryCountsHtml = [];
                         let hasPerIdCategoryCounts = false;
                         for (let i = 0; i < data.categoryCounts.length; i++) {
                             if (data.categoryCounts[i] > 0) {
-                                perIdCategoryCountsHtml.push(`C${i + 1}: ${data.categoryCounts[i]}`);
+                                perIdCategoryCountsHtml.push(`<strong>C${i + 1}</strong>: ${data.categoryCounts[i]}`);
                                 hasPerIdCategoryCounts = true;
                             }
                         }
-                        const countsDisplay = hasPerIdCategoryCounts ? perIdCategoryCountsHtml.join('; ') : 'N/A';
+                        const countsDisplay = hasPerIdCategoryCounts ? perIdCategoryCountsHtml.join('; ') : '<span class="grey-text">N/A</span>';
 
                         html += `<tr>
                                     <td><span class="tech-id-highlight">${fix4ID}</span></td>
@@ -1436,7 +1435,7 @@
                     html += `</tbody></table>`;
                     showToast(`Found ${fix4IdData.size} unique FIX4_IDs with categories and counts.`, 'green');
                 } else {
-                    html += `<p>No FIX4_IDs or categories found in the loaded project data.</p>`;
+                    html += `<div class="card orange lighten-4"><div class="card-content orange-text text-darken-4"><p>No FIX4_IDs or categories found in the loaded project data.</p></div></div>`;
                     showToast(`No FIX4_IDs or categories found.`, 'orange');
                 }
                 allResultsDiv.innerHTML = html;
