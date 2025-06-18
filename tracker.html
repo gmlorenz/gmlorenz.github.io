@@ -82,6 +82,7 @@
          height: 22px;
          }
        /* TL Summary Modal Specific Styles */
+/* TL Summary Modal Specific Styles */
 #tlSummaryModal .modal-content {
     max-width: 70%; /* Reduced max-width for the modal itself */
     width: 650px; /* Adjusted fixed width */
@@ -126,6 +127,12 @@
     padding-bottom: 6px; /* Reduced padding */
     border-bottom: 1px dashed #c0c0c0;
     text-align: center;
+
+    /* --- ADDED FOR TEXT OVERFLOW HANDLING --- */
+    white-space: nowrap; /* Prevent text from wrapping to the next line */
+    overflow: hidden; /* Hide any overflowing content */
+    text-overflow: ellipsis; /* Display an ellipsis (...) to indicate truncated text */
+    /* -------------------------------------- */
 }
 
 .fix-categories-grid {
@@ -165,6 +172,68 @@
     text-align: right;
 }
 
+/* Specific color adjustments for text on light backgrounds */
+.fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
+    color: #444; /* Darker text for better contrast */
+}
+
+.no-data-message, .error-message {
+    text-align: center;
+    font-size: 1em; /* Slightly smaller font size */
+    color: #777;
+    padding: 15px; /* Reduced padding */
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    margin-top: 15px; /* Reduced margin */
+}
+
+.error-message {
+    color: #d9534f;
+    background-color: #fdf7f7;
+    border: 1px solid #f2dede;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    #tlSummaryModal .modal-content {
+        width: 95%;
+        padding: 10px; /* Further reduced padding for very small screens */
+    }
+
+    .summary-container {
+        grid-template-columns: 1fr;
+        gap: 15px; /* Reduced gap */
+    }
+
+    .project-summary-block {
+        padding: 10px; /* Reduced padding */
+    }
+
+    .project-name-header {
+        /* On small screens, allow wrapping if needed, but still use ellipsis for very long single words */
+        white-space: normal; /* Allow wrapping */
+        word-wrap: break-word; /* Break long words */
+        text-overflow: ellipsis; /* Still apply ellipsis in case of single very long word */
+        overflow: hidden; /* Ensure overflow is still hidden */
+        display: -webkit-box; /* For multi-line ellipsis */
+        -webkit-line-clamp: 2; /* Limit to 2 lines */
+        -webkit-box-orient: vertical;
+    }
+
+
+    .fix-category-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 8px; /* Further reduced padding */
+        font-size: 0.85em; /* Even smaller font size */
+    }
+
+    .fix-category-minutes, .fix-category-hours {
+        text-align: left;
+        width: 100%;
+        margin-top: 2px; /* Reduced margin */
+    }
+}
 /* Specific color adjustments for text on light backgrounds */
 .fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
     color: #444; /* Darker text for better contrast */
