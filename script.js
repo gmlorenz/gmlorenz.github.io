@@ -1888,7 +1888,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
-                            summaryHtml += `<h4 class="project-name-header">${projName}</h4>`;
+                            // MODIFIED: Added icon and full name popup structure
+                            summaryHtml += `
+                                <h4 class="project-name-header">
+                                    <span class="truncated-project-name">${projName}</span>
+                                    <i class="info-icon" data-full-name="${projName}">&#9432;</i> <div class="full-name-popup" style="display: none;">${projName}</div>
+                                </h4>
+                            `;
                             summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
@@ -1912,6 +1918,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += `</div>`; // Close summary-container
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
+
+                    // ADDED: Event listener for the info icons
+                    this.elements.tlSummaryContent.querySelectorAll('.info-icon').forEach(icon => {
+                        icon.addEventListener('click', (event) => {
+                            event.stopPropagation(); // Prevent card click if there's one
+                            const popup = icon.nextElementSibling; // The .full-name-popup div
+                            if (popup) {
+                                popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+                            }
+                        });
+                    });
+
+                    // Optionally, hide popup when clicking outside
+                    document.addEventListener('click', (event) => {
+                        this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
+                            if (!popup.contains(event.target) && !event.target.classList.contains('info-icon')) {
+                                popup.style.display = 'none';
+                            }
+                        });
+                    });
+
+
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
                     this.elements.tlSummaryContent.innerHTML = `<p class="error-message">Error generating summary: ${error.message}</p>`;
