@@ -1306,16 +1306,16 @@
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
             const idx = {
                 fix4Id: headers.indexOf("FIX4_ID"), // Key change: looking for FIX4_ID
-                afp1stat: headers.indexOf("AFP1_STAT"),
-                rv1lbl: headers.indexOf("RV1_LABEL"),
+                afp1stat: headers.indexOf("AFP4_STAT"),
+                rv1lbl: headers.indexOf("RV4_LABEL"),
                 i3qalbl: headers.indexOf("I3QA_LABEL"),
-                rv2lbl: headers.indexOf("RV2_LABEL"),
+                rv2lbl: headers.indexOf("RV4_LABEL"),
                 cat: headers.indexOf("CATEGORY"),
                 i3qa: headers.indexOf("I3QA_CAT"),
-                rv1cat: headers.indexOf("RV1_CAT"),
-                afp1cat: headers.indexOf("AFP1_CAT"),
-                afp2cat: headers.indexOf("AFP2_CAT"),
-                rv2cat: headers.indexOf("RV2_CAT")
+                rv1cat: headers.indexOf("RV4_CAT"),
+                afp1cat: headers.indexOf("AFP4_CAT"),
+                afp2cat: headers.indexOf("AFP4_CAT"),
+                rv2cat: headers.indexOf("RV4_CAT")
             };
             if (idx.fix4Id === -1) {
                 console.error("FIX4_ID missing in header for calculateDetailsForFix4IDInRaw");
