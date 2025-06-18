@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -2154,9 +2154,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             projectData[fieldName] = parseInt(value, 10) || 0;
                         } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
                             try {
-                                const date = new Date(value);
-                                projectData[fieldName] = isNaN(date.getTime()) ? null : firebase.firestore.Timestamp.fromDate(date);
+                                // Added more robust check for date parsing and logging for debugging
+                                if (typeof value === 'string' && value.trim() !== '') {
+                                    const date = new Date(value);
+                                    if (isNaN(date.getTime())) {
+                                        console.warn(`Row ${i + 1}: Could not parse date for field '${fieldName}'. Value: "${value}"`);
+                                        projectData[fieldName] = null;
+                                    } else {
+                                        projectData[fieldName] = firebase.firestore.Timestamp.fromDate(date);
+                                    }
+                                } else {
+                                    projectData[fieldName] = null;
+                                }
                             } catch (e) {
+                                console.error(`Row ${i + 1}: Error parsing date for field '${fieldName}' with value "${value}":`, e);
                                 projectData[fieldName] = null;
                             }
                         } else if (fieldName === 'status') {
