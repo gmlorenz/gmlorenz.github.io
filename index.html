@@ -721,6 +721,8 @@
             <button class="btn green" id="calculate-all-button">
                 <i class="material-icons left">calculate</i>Per Project Total
             </button>
+            <button class="btn blue" id="extract-fix4-button"> <i class="material-icons left">visibility</i>Extract Fix4
+            </button>
             <button class="btn purple darken-2 modal-trigger" href="#multiplier-modal" id="calculate-all-projects-button">
                 <i class="material-icons left">grid_on</i>All Projects Total
             </button>
@@ -875,6 +877,7 @@
         const projectNameInput = document.getElementById('project-name');
         const techIdInput = document.getElementById('tech-id');
         const allResultsDiv = document.getElementById('all-results');
+        const extractFix4Button = document.getElementById('extract-fix4-button'); // NEW
         const addProjectModal = document.querySelector('#add-project-modal');
         const modalTitle = document.getElementById('modal-title');
         const saveProjectModalButton = document.getElementById('save-project-modal-button');
@@ -1198,6 +1201,97 @@
             }});
             tbl+='</tbody></table>'; allResultsDiv.innerHTML=`<h5>Results for Loaded Project: ${projectSelector.value||'N/A'}</h5>${tbl}`; addResultButtonsToAllResults(false);
         }
+
+        // --- Main Functions ---
+        // ... (existing functions)
+
+        function extractFix4ID() {
+            const raw = activeProjectData?.data;
+            const inputID = techIdInput.value.trim();
+            const searchID = inputID.toUpperCase();
+
+            allResultsDiv.innerHTML = '';
+            lastResult = '';
+            allCalculatedResults = [];
+            allProjectsAggregatedResults = {};
+
+            if (!raw || !inputID) {
+                allResultsDiv.innerHTML = '<p>Load a project and enter a TECH ID to extract FIX4 data.</p>';
+                addResultButtonsToAllResults(true);
+                return;
+            }
+
+            const allRows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
+            if (allRows.length === 0) {
+                allResultsDiv.innerHTML = '<p>No data rows found in the loaded project.</p>';
+                addResultButtonsToAllResults(true);
+                return;
+            }
+
+            const headerRow = allRows.shift();
+            if (!headerRow) {
+                allResultsDiv.innerHTML = '<p>No header row found in the loaded project data.</p>';
+                addResultButtonsToAllResults(true);
+                return;
+            }
+
+            const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
+            const fix1IdIndex = headers.indexOf("FIX1_ID");
+            const fix4IdIndex = headers.indexOf("FIX4_ID");
+
+            if (fix1IdIndex === -1) {
+                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX1_ID" column.</p>';
+                addResultButtonsToAllResults(true);
+                return;
+            }
+            if (fix4IdIndex === -1) {
+                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot extract FIX4 data.</p>';
+                addResultButtonsToAllResults(true);
+                return;
+            }
+
+            let foundFix4IDs = new Set();
+            let foundRowsCount = 0;
+
+            allRows.forEach(row => {
+                const fields = row.split(/[\t,]/).map(f => f.trim());
+                if (fields[fix1IdIndex]?.toUpperCase() === searchID) {
+                    foundRowsCount++;
+                    const fix4Value = fields[fix4IdIndex]?.trim();
+                    if (fix4Value) {
+                        foundFix4IDs.add(fix4Value);
+                    }
+                }
+            });
+
+            let html = `<h5>FIX4_ID Extraction for TECH ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
+
+            if (foundFix4IDs.size > 0) {
+                html += `<p>Found ${foundRowsCount} row(s) for TECH ID '${inputID}'.</p>`;
+                html += `<p>Extracted Unique FIX4_IDs:</p>`;
+                html += `<ul>`;
+                Array.from(foundFix4IDs).sort().forEach(id => {
+                    html += `<li><span class="tech-id-highlight">${id}</span></li>`;
+                });
+                html += `</ul>`;
+                showToast(`Found ${foundFix4IDs.size} unique FIX4_IDs for ${inputID}.`, 'green');
+            } else {
+                html += `<p>No FIX4_ID found for TECH ID '${inputID}' in the loaded project, or TECH ID not found.</p>`;
+                showToast(`No FIX4_ID found for ${inputID}.`, 'orange');
+            }
+            allResultsDiv.innerHTML = html;
+            addResultButtonsToAllResults(true);
+        }
+
+        // ... (other functions)
+
+        // --- Event Listeners ---
+        document.getElementById('search-button').addEventListener('click', searchTechID);
+        document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
+        extractFix4Button.addEventListener('click', extractFix4ID); // NEW EVENT LISTENER
+        document.getElementById('calculate-all-projects-button').addEventListener('click',()=>M.Modal.getInstance(document.getElementById('multiplier-modal')).open());
+        applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
+        if(generateTlDashboardButton) generateTlDashboardButton.addEventListener('click', generateTlDashboard);
 
         function calculateTotalAcrossAllProjects() { // This function is now only for the "All Projects Total" table, not the dashboard
             const multiplier = parseFloat(multiplierInput.value) || 1;
