@@ -1895,12 +1895,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             summaryHtml += `<div class="project-summary-block">`;
                             // MODIFIED: Changed the icon generation to directly apply Font Awesome classes
                             summaryHtml += `
-                                <h4 class="project-name-header">
-                                    <span class="truncated-project-name">${projName}</span>
-                                    <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
-                                    <div class="full-name-popup" style="display: none;">${projName}</div>
-                                </h4>
-                            `;
+                                  <h4 class="project-name-header">
+                                          <span class="truncated-project-name">${projName}</span>
+                                          <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
+                                          <div class="full-name-popup">${projName}</div>
+                                     </h4>
+                               `;
                             summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
