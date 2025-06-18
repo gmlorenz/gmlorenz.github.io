@@ -1205,94 +1205,213 @@
         // --- Main Functions ---
         // ... (existing functions)
 
-        function extractFix4ID() {
-            const raw = activeProjectData?.data;
-            const inputID = techIdInput.value.trim();
-            const searchID = inputID.toUpperCase();
+        // ... (inside your <script> tag, after calculateAllTechIDs function)
+
+        function calculateAllFix4IDs() {
+            const raw = activeProjectData?.data,
+                  size = activeProjectData?.size,
+                  ir = activeProjectData?.ir;
 
             allResultsDiv.innerHTML = '';
-            lastResult = '';
             allCalculatedResults = [];
-            allProjectsAggregatedResults = {};
+            lastResult = '';
+            allProjectsAggregatedResults = {}; // Clear previous aggregated results
 
-            if (!raw || !inputID) {
-                allResultsDiv.innerHTML = '<p>Load a project and enter a TECH ID to extract FIX4 data.</p>';
-                addResultButtonsToAllResults(true);
+            if (!raw || !size) {
+                allResultsDiv.innerHTML = '<p>Load a project to calculate per project totals for FIX4 IDs.</p>';
+                addResultButtonsToAllResults(false);
                 return;
             }
 
-            const allRows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
-            if (allRows.length === 0) {
+            const rows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
+            if (rows.length === 0) {
                 allResultsDiv.innerHTML = '<p>No data rows found in the loaded project.</p>';
-                addResultButtonsToAllResults(true);
+                addResultButtonsToAllResults(false);
                 return;
             }
 
-            const headerRow = allRows.shift();
-            if (!headerRow) {
+            const hr = rows.shift();
+            if (!hr) {
                 allResultsDiv.innerHTML = '<p>No header row found in the loaded project data.</p>';
-                addResultButtonsToAllResults(true);
+                addResultButtonsToAllResults(false);
                 return;
             }
 
+            const h = hr.split(/[\t,]/).map(x => x.trim().toUpperCase());
+            const fix4Idx = h.indexOf("FIX4_ID"); // Use FIX4_ID here
+
+            if (fix4Idx === -1) {
+                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot calculate totals based on FIX4_ID.</p>';
+                addResultButtonsToAllResults(false);
+                return;
+            }
+
+            const ids = new Set();
+            rows.forEach(r => {
+                const f = r.split(/[\t,]/);
+                const id = f[fix4Idx]?.trim().toUpperCase(); // Extract ID from FIX4_ID column
+                if (id) ids.add(id);
+            });
+
+            if (ids.size === 0) {
+                allResultsDiv.innerHTML = '<p>No FIX4 IDs found in the loaded project for calculation.</p>';
+                addResultButtonsToAllResults(false);
+                return;
+            }
+
+            let tbl = '<table class="striped"><thead><tr>';
+            // Adjusted headers for clarity, still showing all relevant metrics
+            const th = ['ID', 'CAT1 Pts', 'CAT2 Pts', 'CAT3 Pts', 'CAT4 Pts', 'CAT5 Pts', 'CAT6 Pts', 'CAT7 Pts', 'CAT8 Pts', 'CAT9 Pts',
+                        'CAT1 Ct', 'CAT2 Ct', 'CAT3 Ct', 'CAT4 Ct', 'CAT5 Ct', 'CAT6 Ct', 'CAT7 Ct', 'CAT8 Ct', 'CAT9 Ct',
+                        'Add.FP', 'Exc.FP', 'Miss.FP', 'Inc.Ct', 'Inc.PtsVal', 'TotalPts', 'Qual%', 'Bonus%', 'QualBonus', 'Salary'];
+            th.forEach(x => tbl += `<th>${x}</th>`);
+            tbl += '</tr></thead><tbody>';
+
+            ids.forEach(id => {
+                // You need a helper function similar to calculateDetailsForTechIDInRaw
+                // but modified to filter by FIX4_ID and return the same structure.
+                // Let's create a new helper: calculateDetailsForFix4IDInRaw
+                const res = calculateDetailsForFix4IDInRaw(raw, id, size, ir);
+
+                if (res) {
+                    allCalculatedResults.push(res); // Store for potential CSV export later
+
+                    const qCls = res.qualityPercentage === 100 ? 'quality-green' : (res.qualityPercentage >= 77.5 ? 'quality-orange' : 'quality-red');
+                    // Original tech ID validation might not apply here if FIX4_ID has different length rules
+                    // For now, I'll keep a generic highlight class for the ID.
+                    const idCls = 'tech-id-highlight'; // Or you can apply specific FIX4_ID length rules if needed
+                    let bCls = res.bonusPercentage >= 100 ? 'quality-green' : (res.bonusPercentage > 0 ? 'quality-orange' : 'quality-red');
+
+                    tbl += `<tr><td class="${idCls}">${res.techID}</td>`; // res.techID will now be the FIX4_ID
+                    res.categoryPoints.forEach(t => tbl += `<td>${t.toFixed(2)}</td>`);
+                    res.categoryCounts.forEach(c => tbl += `<td>${c}</td>`);
+                    tbl += `<td>${res.additionalFixPoints}</td><td>${res.excessiveFixPoints}</td><td>${res.missFixPoints}</td><td>${res.incorrectCounting}</td>`;
+                    tbl += `<td>${res.incorrectPointsValue.toFixed(2)}</td><td>${res.totalPoints.toFixed(2)}</td>`;
+                    tbl += `<td class="${qCls}">${res.qualityPercentage.toFixed(2)}%</td><td class="${bCls}">${res.bonusPercentage.toFixed(2)}%</td>`;
+                    tbl += `<td class="${bCls}">${res.qualityBonus.toFixed(2)}</td><td class="salary-highlight">${res.estimatedSalary.toFixed(2)}</td></tr>`;
+                }
+            });
+            tbl += '</tbody></table>';
+            allResultsDiv.innerHTML = `<h5>Per Project Totals (by FIX4_ID) for: ${projectSelector.value || 'N/A'}</h5>${tbl}`;
+            addResultButtonsToAllResults(false);
+        }
+
+        // --- NEW HELPER FUNCTION: calculateDetailsForFix4IDInRaw ---
+        // This is a modified version of calculateDetailsForTechIDInRaw
+        function calculateDetailsForFix4IDInRaw(raw, fix4IDValue, size, ir) {
+            const allRows = String(raw).split(/\r?\n/).filter(r => r.trim() !== "");
+            if (allRows.length === 0) return null;
+            const headerRow = allRows.shift();
+            if (!headerRow) return null;
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
-            const fix1IdIndex = headers.indexOf("FIX1_ID");
-            const fix4IdIndex = headers.indexOf("FIX4_ID");
-
-            if (fix1IdIndex === -1) {
-                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX1_ID" column.</p>';
-                addResultButtonsToAllResults(true);
-                return;
+            const idx = {
+                fix4Id: headers.indexOf("FIX4_ID"), // Key change: looking for FIX4_ID
+                afp1stat: headers.indexOf("AFP1_STAT"),
+                rv1lbl: headers.indexOf("RV1_LABEL"),
+                i3qalbl: headers.indexOf("I3QA_LABEL"),
+                rv2lbl: headers.indexOf("RV2_LABEL"),
+                cat: headers.indexOf("CATEGORY"),
+                i3qa: headers.indexOf("I3QA_CAT"),
+                rv1cat: headers.indexOf("RV1_CAT"),
+                afp1cat: headers.indexOf("AFP1_CAT"),
+                afp2cat: headers.indexOf("AFP2_CAT"),
+                rv2cat: headers.indexOf("RV2_CAT")
+            };
+            if (idx.fix4Id === -1) {
+                console.error("FIX4_ID missing in header for calculateDetailsForFix4IDInRaw");
+                return null;
             }
-            if (fix4IdIndex === -1) {
-                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot extract FIX4 data.</p>';
-                addResultButtonsToAllResults(true);
-                return;
-            }
 
-            let foundFix4IDs = new Set();
-            let foundRowsCount = 0;
+            let tp = 0, afp = 0, efp = 0, mfp = 0, ic = 0, ipv = 0, cp = Array(9).fill(0), cc = Array(9).fill(0);
+            let hasIncorrectWithEmptyCat = false;
+            let matchedRowsCount = 0;
 
-            allRows.forEach(row => {
-                const fields = row.split(/[\t,]/).map(f => f.trim());
-                if (fields[fix1IdIndex]?.toUpperCase() === searchID) {
-                    foundRowsCount++;
-                    const fix4Value = fields[fix4IdIndex]?.trim();
-                    if (fix4Value) {
-                        foundFix4IDs.add(fix4Value);
+            // Filter by FIX4_ID
+            const matchedRows = allRows.filter(row => row.split(/[\t,]/)[idx.fix4Id]?.trim().toUpperCase() === fix4IDValue);
+
+            matchedRows.forEach(row => {
+                matchedRowsCount++;
+                const f = row.split(/[\t,]/).map(x => x.trim());
+
+                // Existing logic for hasIncorrectWithEmptyCat, afp, efp, mfp, ic, ipv
+                if (!hasIncorrectWithEmptyCat && idx.rv1lbl !== -1 && f[idx.rv1lbl]?.toUpperCase().includes("I")) {
+                    if (idx.rv1cat !== -1 && f[idx.rv1cat] !== undefined && f[idx.rv1cat] === "") hasIncorrectWithEmptyCat = true;
+                }
+                if (!hasIncorrectWithEmptyCat && idx.rv2lbl !== -1 && f[idx.rv2lbl]?.toUpperCase().includes("I")) {
+                    if (idx.rv2cat !== -1 && f[idx.rv2cat] !== undefined && f[idx.rv2cat] === "") hasIncorrectWithEmptyCat = true;
+                }
+
+                if (idx.rv1lbl !== -1 && f[idx.rv1lbl]) {
+                    const l = f[idx.rv1lbl].toUpperCase();
+                    if (l.includes("E")) efp++;
+                    if (l.includes("M")) mfp++;
+                    if (l.includes("I")) ic++;
+                }
+                if (idx.i3qalbl !== -1 && f[idx.i3qalbl]?.toUpperCase().includes("M")) mfp++;
+                if (idx.rv2lbl !== -1 && f[idx.rv2lbl]) {
+                    const l = f[idx.rv2lbl].toUpperCase();
+                    if (l.includes("E")) efp++;
+                    if (l.includes("M")) mfp++;
+                    if (l.includes("I")) ic++;
+                }
+                if (idx.afp1stat !== -1 && f[idx.afp1stat]?.toUpperCase() === "AA") afp++;
+
+                const rd = calculateRowDetails(f, headers, size, ir);
+                tp += rd.rowPoints;
+                rd.categoryCounts.forEach((c, i) => cc[i] += c);
+                rd.categoryPoints.forEach((p, i) => cp[i] += p);
+
+                if (idx.rv1lbl !== -1 && f[idx.rv1lbl]?.toUpperCase().includes("I")) {
+                    if (idx.rv1cat !== -1 && f[idx.rv1cat] !== undefined && f[idx.rv1cat] !== "") {
+                        const v = parseInt(f[idx.rv1cat]);
+                        if (!isNaN(v) && v >= 1 && v <= 9) {
+                            const p = PRICES[v - 1]?.[size];
+                            if (p !== undefined) {
+                                let pts = p;
+                                if (ir) pts += 1.5;
+                                ipv += pts;
+                            }
+                        }
+                    }
+                }
+                if (idx.rv2lbl !== -1 && f[idx.rv2lbl]?.toUpperCase().includes("I")) {
+                    if (idx.rv2cat !== -1 && f[idx.rv2cat] !== undefined && f[idx.rv2cat] !== "") {
+                        const v = parseInt(f[idx.rv2cat]);
+                        if (!isNaN(v) && v >= 1 && v <= 9) {
+                            const p = PRICES[v - 1]?.[size];
+                            if (p !== undefined) {
+                                let pts = p;
+                                if (ir) pts += 1.5;
+                                ipv += pts;
+                            }
+                        }
                     }
                 }
             });
-
-            let html = `<h5>FIX4_ID Extraction for TECH ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
-
-            if (foundFix4IDs.size > 0) {
-                html += `<p>Found ${foundRowsCount} row(s) for TECH ID '${inputID}'.</p>`;
-                html += `<p>Extracted Unique FIX4_IDs:</p>`;
-                html += `<ul>`;
-                Array.from(foundFix4IDs).sort().forEach(id => {
-                    html += `<li><span class="tech-id-highlight">${id}</span></li>`;
-                });
-                html += `</ul>`;
-                showToast(`Found ${foundFix4IDs.size} unique FIX4_IDs for ${inputID}.`, 'green');
-            } else {
-                html += `<p>No FIX4_ID found for TECH ID '${inputID}' in the loaded project, or TECH ID not found.</p>`;
-                showToast(`No FIX4_ID found for ${inputID}.`, 'orange');
-            }
-            allResultsDiv.innerHTML = html;
-            addResultButtonsToAllResults(true);
+            const correctPts = tp - ipv,
+                qp = (tp > 0) ? (correctPts / tp) * 100 : 0,
+                bp = getBonusPercentage(qp),
+                qb = tp * (bp / 100),
+                es = tp + qb;
+            return {
+                techID: fix4IDValue, // This will now represent the FIX4_ID
+                totalPoints: tp,
+                additionalFixPoints: afp,
+                excessiveFixPoints: efp,
+                missFixPoints: mfp,
+                incorrectCounting: ic,
+                incorrectPointsValue: ipv,
+                qualityPercentage: qp,
+                bonusPercentage: bp,
+                qualityBonus: qb,
+                estimatedSalary: es,
+                categoryPoints: cp,
+                categoryCounts: cc,
+                hasIncorrectWithEmptyCat,
+                _foundRowsCount: matchedRowsCount
+            };
         }
-
-        // ... (other functions)
-
-        // --- Event Listeners ---
-        document.getElementById('search-button').addEventListener('click', searchTechID);
-        document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
-        extractFix4Button.addEventListener('click', extractFix4ID); // NEW EVENT LISTENER
-        document.getElementById('calculate-all-projects-button').addEventListener('click',()=>M.Modal.getInstance(document.getElementById('multiplier-modal')).open());
-        applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
-        if(generateTlDashboardButton) generateTlDashboardButton.addEventListener('click', generateTlDashboard);
-
+       
         function calculateTotalAcrossAllProjects() { // This function is now only for the "All Projects Total" table, not the dashboard
             const multiplier = parseFloat(multiplierInput.value) || 1;
             allResultsDiv.innerHTML = '';
@@ -1629,6 +1748,7 @@
         // --- Event Listeners ---
         document.getElementById('search-button').addEventListener('click', searchTechID);
         document.getElementById('calculate-all-button').addEventListener('click', calculateAllTechIDs);
+        calculateAllFix4Button.addEventListener('click', calculateAllFix4IDs);
         document.getElementById('calculate-all-projects-button').addEventListener('click',()=>M.Modal.getInstance(document.getElementById('multiplier-modal')).open());
         applyMultiplierButton.addEventListener('click', calculateTotalAcrossAllProjects);
         if(generateTlDashboardButton) generateTlDashboardButton.addEventListener('click', generateTlDashboard);
