@@ -155,59 +155,52 @@
             max-width: calc(100% - 25px); /* Adjust based on icon width + gap */
         }
 
+        /* Ensure info icon is visible and positioned correctly relative to text */
         .info-icon {
             font-size: 0.9em; /* Smaller icon */
             color: #007bff; /* A distinct color for the icon */
             cursor: pointer;
             margin-left: 5px;
             user-select: none; /* Prevent text selection on icon click */
-            /* Add tooltip-like behavior for hover */
-            position: relative;
+            display: inline-block; /* Ensure the icon takes up space */
+            vertical-align: middle; /* Align with text */
+            position: relative; /* Keep this if the popup is positioned relative to the icon */
         }
 
-        /* Optional: Tooltip-like effect on hover for the icon */
-        .info-icon::before {
-            content: attr(data-full-name); /* Use the data-full-name attribute for content */
+        /* Style for the full name popup */
+        .full-name-popup {
+            display: none; /* Hidden by default via CSS */
             position: absolute;
-            bottom: 100%; /* Position above the icon */
+            top: 100%; /* Position below the header */
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85); /* Dark background for clear text */
             color: white;
-            padding: 5px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
-            white-space: nowrap;
-            font-size: 0.8em;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s, visibility 0.2s;
+            white-space: nowrap; /* Prevent text from wrapping */
+            word-wrap: break-word; /* Allow long words to break within max-width */
+            font-size: 0.85em;
+            text-align: center; /* Center text within the popup */
+            max-width: 280px; /* Max width for the popup bubble */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
             pointer-events: none; /* Allows clicks to pass through */
-            z-index: 10; /* Ensure it's above other elements */
+            opacity: 0; /* Start invisible for transition */
+            visibility: hidden; /* Start hidden for transition */
+            transition: opacity 0.2s ease, visibility 0.2s ease; /* Smooth transition */
         }
 
-        .info-icon:hover::before {
+        /* Hide the default ::before tooltip, we are using the .full-name-popup div */
+        .info-icon::before {
+            content: none !important; /* Disable the default Font Awesome tooltip behavior if any */
+        }
+
+        /* When the project-name-header is hovered, show the popup */
+        .project-name-header:hover .full-name-popup {
+            display: block; /* Make sure it becomes display block for transitions to work from hidden state */
             opacity: 1;
             visibility: visible;
-        }
-
-       .full-name-popup {
-           display: none; /* Add this line */
-           position: absolute;
-           top: 100%;
-           left: 50%;
-           transform: translateX(-50%);
-           background-color: #fff;
-           border: 1px solid #ccc;
-           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-           padding: 10px 15px;
-           border-radius: 8px;
-           white-space: normal;
-           word-wrap: break-word;
-           z-index: 5;
-           font-size: 0.9em;
-           color: #333;
-           max-width: 250px;
-           text-align: left;
         }
 
         .fix-categories-grid {
@@ -310,15 +303,16 @@
                 font-size: 0.8em; /* Even smaller icon on mobile */
             }
 
+            /* No ::before for mobile either */
             .info-icon::before {
-                left: 0%; /* Adjust tooltip position for stacked layout */
-                transform: translateX(0%);
+                content: none;
             }
 
             .full-name-popup {
-                left: 0%; /* Adjust popup position for stacked layout */
-                transform: translateX(0%);
-                max-width: 90%; /* Adjust max-width for mobile popup */
+                left: 50%; /* Center relative to icon on mobile */
+                transform: translateX(-50%);
+                max-width: 90%;
+                white-space: normal; /* Allow wrapping on mobile for better fit */
             }
 
             .fix-category-item {
