@@ -82,6 +82,19 @@
            width: 22px;
            height: 22px;
            }
+
+        /* Ensure Font Awesome icons render correctly */
+.fas, .far, .fal, .fad, .fab { /* Include all Font Awesome styles you might use */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900; /* For solid icons, use 900. For regular, use 400. */
+}
+
+/* If you find the info icon is still small or not appearing,
+   ensure these properties are applied and not overridden. */
+.info-icon {
+    font-family: "Font Awesome 5 Free"; /* Make sure info-icon explicitly uses FA font */
+    font-weight: 900; /* For solid icons */
+}
         /* ====================================================== */
         /* START: TL SUMMARY MODAL & CARD UI STYLES (UPDATED)     */
         /* ====================================================== */
