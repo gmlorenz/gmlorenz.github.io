@@ -1209,7 +1209,7 @@
 
         function calculateAllFix4IDs() {
             const raw = activeProjectData?.data;
-            const inputID = techIdInput.value.trim(); // Get value from the search bar
+            const inputID = techIdInput.value.trim();
             const searchID = inputID.toUpperCase();
 
             allResultsDiv.innerHTML = '';
@@ -1217,8 +1217,8 @@
             allCalculatedResults = [];
             allProjectsAggregatedResults = {};
 
-            if (!raw || !inputID) {
-                allResultsDiv.innerHTML = '<p>Load a project and enter a FIX4 ID in the search bar to extract its RV3 Category.</p>';
+            if (!raw) {
+                allResultsDiv.innerHTML = '<p>Load a project to extract FIX4 ID or RV3 Category data.</p>';
                 addResultButtonsToAllResults(true);
                 return;
             }
@@ -1239,54 +1239,105 @@
 
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
             const fix4IdIndex = headers.indexOf("FIX4_ID");
-            const rv3CatIndex = headers.indexOf("RV3_CAT"); // Get the index for RV3_CAT
+            const rv3CatIndex = headers.indexOf("RV3_CAT");
 
             if (fix4IdIndex === -1) {
                 allResultsDiv.innerHTML = '<p>The loaded project data is missing the "FIX4_ID" column. Cannot extract data.</p>';
                 addResultButtonsToAllResults(true);
                 return;
             }
-            if (rv3CatIndex === -1) {
-                allResultsDiv.innerHTML = '<p>The loaded project data is missing the "RV3_CAT" column. Cannot extract Category data.</p>';
-                addResultButtonsToAllResults(true);
-                return;
-            }
 
-            let foundRv3Categories = new Set();
-            let matchedRowsCount = 0;
+            // Conditional logic based on whether inputID is provided
+            if (inputID) { // Mode 1: Search by specific FIX4_ID for RV3_CAT
+                if (rv3CatIndex === -1) {
+                    allResultsDiv.innerHTML = '<p>The loaded project data is missing the "RV3_CAT" column. Cannot extract Category data for specific FIX4_ID.</p>';
+                    addResultButtonsToAllResults(true);
+                    return;
+                }
 
-            allRows.forEach(row => {
-                const fields = row.split(/[\t,]/).map(f => f.trim());
-                if (fields[fix4IdIndex]?.toUpperCase() === searchID) {
-                    matchedRowsCount++;
-                    const rv3CatValue = fields[rv3CatIndex]?.trim();
-                    if (rv3CatValue) {
-                        foundRv3Categories.add(rv3CatValue);
+                let foundRv3Categories = new Set();
+                let matchedRowsCount = 0;
+
+                allRows.forEach(row => {
+                    const fields = row.split(/[\t,]/).map(f => f.trim());
+                    if (fields[fix4IdIndex]?.toUpperCase() === searchID) {
+                        matchedRowsCount++;
+                        const rv3CatValue = fields[rv3CatIndex]?.trim();
+                        if (rv3CatValue) {
+                            foundRv3Categories.add(rv3CatValue);
+                        }
                     }
-                }
-            });
+                });
 
-            let html = `<h5>RV3 Category for FIX4_ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
+                let html = `<h5>RV3 Category for FIX4_ID: <span class="tech-id-highlight">${inputID}</span> (Project: ${projectSelector.value || 'N/A'})</h5>`;
 
-            if (matchedRowsCount > 0) {
-                html += `<p>Found ${matchedRowsCount} row(s) for FIX4_ID '${inputID}'.</p>`;
-                if (foundRv3Categories.size > 0) {
-                    html += `<p>Extracted Unique RV3 Categories:</p>`;
-                    html += `<ul>`;
-                    Array.from(foundRv3Categories).sort().forEach(cat => {
-                        html += `<li><span class="tech-id-highlight">${cat}</span></li>`;
-                    });
-                    html += `</ul>`;
-                    showToast(`Found ${foundRv3Categories.size} unique RV3 Categories for ${inputID}.`, 'green');
+                if (matchedRowsCount > 0) {
+                    html += `<p>Found ${matchedRowsCount} row(s) for FIX4_ID '${inputID}'.</p>`;
+                    if (foundRv3Categories.size > 0) {
+                        html += `<p>Extracted Unique RV3 Categories:</p>`;
+                        html += `<ul>`;
+                        Array.from(foundRv3Categories).sort().forEach(cat => {
+                            html += `<li><span class="tech-id-highlight">${cat}</span></li>`;
+                        });
+                        html += `</ul>`;
+                        showToast(`Found ${foundRv3Categories.size} unique RV3 Categories for ${inputID}.`, 'green');
+                    } else {
+                        html += `<p>No RV3 Category found for FIX4_ID '${inputID}'.</p>`;
+                        showToast(`No RV3 Category found for ${inputID}.`, 'orange');
+                    }
                 } else {
-                    html += `<p>No RV3 Category found for FIX4_ID '${inputID}'.</p>`;
-                    showToast(`No RV3 Category found for ${inputID}.`, 'orange');
+                    html += `<p>FIX4_ID '${inputID}' not found in the loaded project.</p>`;
+                    showToast(`FIX4_ID '${inputID}' not found.`, 'orange');
                 }
-            } else {
-                html += `<p>FIX4_ID '${inputID}' not found in the loaded project.</p>`;
-                showToast(`FIX4_ID '${inputID}' not found.`, 'orange');
+                allResultsDiv.innerHTML = html;
+
+            } else { // Mode 2: Search bar is empty, extract all unique FIX4_IDs and their RV3_CAT entries
+                if (rv3CatIndex === -1) {
+                    allResultsDiv.innerHTML = '<p>The loaded project data is missing the "RV3_CAT" column. Cannot extract corresponding RV3 Categories for all FIX4_IDs.</p>';
+                    addResultButtonsToAllResults(true);
+                    return;
+                }
+
+                let fix4IdToRv3Cats = new Map(); // Map to store FIX4_ID -> Set of RV3_CATs
+                let totalRowsProcessed = 0;
+
+                allRows.forEach(row => {
+                    totalRowsProcessed++;
+                    const fields = row.split(/[\t,]/).map(f => f.trim());
+                    const fix4Value = fields[fix4IdIndex]?.trim();
+                    const rv3CatValue = fields[rv3CatIndex]?.trim();
+
+                    if (fix4Value) {
+                        if (!fix4IdToRv3Cats.has(fix4Value)) {
+                            fix4IdToRv3Cats.set(fix4Value, new Set());
+                        }
+                        if (rv3CatValue) {
+                            fix4IdToRv3Cats.get(fix4Value).add(rv3CatValue);
+                        }
+                    }
+                });
+
+                let html = `<h5>All Unique FIX4_IDs and their RV3 Categories for Project: ${projectSelector.value || 'N/A'}</h5>`;
+                html += `<p>Processed ${totalRowsProcessed} row(s).</p>`;
+
+                if (fix4IdToRv3Cats.size > 0) {
+                    html += `<table class="striped"><thead><tr><th>FIX4_ID</th><th>RV3 Categories</th></tr></thead><tbody>`;
+                    // Sort the FIX4_IDs for consistent display
+                    const sortedFix4IDs = Array.from(fix4IdToRv3Cats.keys()).sort();
+
+                    sortedFix4IDs.forEach(fix4ID => {
+                        const categories = Array.from(fix4IdToRv3Cats.get(fix4ID)).sort().join(', ') || 'N/A';
+                        html += `<tr><td><span class="tech-id-highlight">${fix4ID}</span></td><td>${categories}</td></tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    showToast(`Found ${fix4IdToRv3Cats.size} unique FIX4_IDs with RV3 Categories.`, 'green');
+                } else {
+                    html += `<p>No FIX4_IDs or RV3 Categories found in the loaded project data.</p>`;
+                    showToast(`No FIX4_IDs or RV3 Categories found.`, 'orange');
+                }
+                allResultsDiv.innerHTML = html;
             }
-            allResultsDiv.innerHTML = html;
+
             addResultButtonsToAllResults(true);
         }
        
