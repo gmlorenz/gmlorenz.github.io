@@ -255,6 +255,112 @@
     border: 1px solid #f2dede;
 }
 
+
+         /* Styles for the info icon and full name popup */
+.project-name-header {
+    position: relative; /* Needed for positioning the popup */
+    display: flex; /* Use flexbox to align name and icon */
+    align-items: center;
+    justify-content: center; /* Center content horizontally */
+    gap: 5px; /* Space between truncated name and icon */
+}
+
+.truncated-project-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Optional: Set a max-width if you want the name to always take up certain space,
+       otherwise, it will shrink to allow the icon space */
+    max-width: calc(100% - 25px); /* Adjust based on icon width + gap */
+}
+
+.info-icon {
+    font-size: 0.9em; /* Smaller icon */
+    color: #007bff; /* A distinct color for the icon */
+    cursor: pointer;
+    margin-left: 5px;
+    user-select: none; /* Prevent text selection on icon click */
+    /* Add tooltip-like behavior for hover */
+    position: relative;
+}
+
+/* Optional: Tooltip-like effect on hover for the icon */
+.info-icon::before {
+    content: attr(data-full-name); /* Use the data-full-name attribute for content */
+    position: absolute;
+    bottom: 100%; /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 0.8em;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none; /* Allows clicks to pass through */
+    z-index: 10; /* Ensure it's above other elements */
+}
+
+.info-icon:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+.full-name-popup {
+    position: absolute;
+    top: 100%; /* Position below the header */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 10px 15px;
+    border-radius: 8px;
+    white-space: normal; /* Allow wrapping within the popup */
+    word-wrap: break-word;
+    z-index: 5; /* Ensure it's above other content but below other modals */
+    font-size: 0.9em;
+    color: #333;
+    max-width: 250px; /* Max width for the popup */
+    text-align: left;
+}
+
+/* Ensure the overflow handling still works for the truncated part */
+@media (max-width: 768px) {
+    .project-name-header {
+        flex-direction: column; /* Stack name and icon vertically on small screens */
+        align-items: flex-start; /* Align to the start */
+        gap: 2px;
+    }
+
+    .truncated-project-name {
+        max-width: 100%; /* Take full width */
+        text-align: left; /* Align to left on small screens */
+    }
+
+    .info-icon {
+        margin-left: 0; /* Remove left margin when stacked */
+        align-self: flex-end; /* Push icon to the right if name wraps */
+        font-size: 0.8em; /* Even smaller icon on mobile */
+    }
+
+    .info-icon::before {
+        left: 0%; /* Adjust tooltip position for stacked layout */
+        transform: translateX(0%);
+    }
+
+    .full-name-popup {
+        left: 0%; /* Adjust popup position for stacked layout */
+        transform: translateX(0%);
+        max-width: 90%; /* Adjust max-width for mobile popup */
+    }
+}
+         
+
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
     #tlSummaryModal .modal-content {
