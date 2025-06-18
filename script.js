@@ -28,6 +28,7 @@
  * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
  * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
  * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip, triggered by hovering over the entire project name area.
+ * - FIXED: `ReferenceError: year is not defined` in `populateMonthFilter` by explicitly parsing `year` as an integer.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -38,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
-                storageBucket: "time-tracker-41701.firebasestorage.app",
+                storageBucket: "time-tracker-41701.firebase-storage.app",
                 messagingSenderId: "401097667777",
                 appId: "1:401097667777:web:d6c0c6e7741a2046945040",
                 measurementId: "G-BY9CV5ZQ11"
@@ -598,9 +599,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     this.elements.monthFilter.innerHTML = '<option value="">All Months</option>';
                     Array.from(uniqueMonths).sort((a, b) => b.localeCompare(a)).forEach(monthYear => {
+                        const [year, month] = monthYear.split('-');
                         const option = document.createElement('option');
                         option.value = monthYear;
-                        option.textContent = new Date(year, parseInt(month) - 1, 1).toLocaleString('en-US', {
+                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', { // FIX: parseInt(year)
                             year: 'numeric',
                             month: 'long'
                         });
@@ -1922,7 +1924,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
 
-                    // --- NEW CODE: Attach hover listeners to the entire project-name-header ---
                     const projectNameHeaders = this.elements.tlSummaryContent.querySelectorAll('.project-name-header');
 
                     projectNameHeaders.forEach(header => {
@@ -1946,7 +1947,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }, 200);
                             });
 
-                            // To keep popup open if mouse moves from header to popup
                             popup.addEventListener('mouseenter', () => {
                                 popup.style.display = 'block';
                                 popup.style.opacity = '1';
@@ -1964,7 +1964,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     });
-                    // --- END NEW CODE ---
 
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
