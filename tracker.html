@@ -190,23 +190,24 @@
             visibility: visible;
         }
 
-        .full-name-popup {
-            position: absolute;
-            top: 100%; /* Position below the header */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #fff;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            padding: 10px 15px;
-            border-radius: 8px;
-            white-space: normal; /* Allow wrapping within the popup */
-            word-wrap: break-word;
-            z-index: 5; /* Ensure it's above other content but below other modals */
-            font-size: 0.9em;
-            color: #333;
-            max-width: 250px; /* Max width for the popup */
-            text-align: left;
+       .full-name-popup {
+           display: none; /* Add this line */
+           position: absolute;
+           top: 100%;
+           left: 50%;
+           transform: translateX(-50%);
+           background-color: #fff;
+           border: 1px solid #ccc;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+           padding: 10px 15px;
+           border-radius: 8px;
+           white-space: normal;
+           word-wrap: break-word;
+           z-index: 5;
+           font-size: 0.9em;
+           color: #333;
+           max-width: 250px;
+           text-align: left;
         }
 
         .fix-categories-grid {
