@@ -1854,7 +1854,7 @@ document.addEventListener('DOMContentLoaded', () => {
             async generateTlSummaryData() {
                 if (!this.elements.tlSummaryContent) return;
                 this.methods.showLoading.call(this, "Generating TL Summary...");
-                this.elements.tlSummaryContent.innerHTML = "<p>Loading summary...</p>";
+                this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
 
                 try {
                     const snapshot = await this.db.collection("projects").get();
@@ -1880,26 +1880,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         projectTotals[projName][fixCat] = (projectTotals[projName][fixCat] || 0) + minutes;
                     });
 
-                    let summaryHtml = '<h3>Totals by Project and Fix Category</h3><ul style="list-style: none; padding: 0;">';
+                    let summaryHtml = '<h3 class="summary-title">Project Time Summary</h3>';
                     const sortedProjectNames = Object.keys(projectTotals).sort();
                     if (sortedProjectNames.length === 0) {
-                        summaryHtml = "<p>No project time data found to generate a summary.</p>";
+                        summaryHtml += "<p class='no-data-message'>No project time data found to generate a summary.</p>";
                     } else {
+                        summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
+                            summaryHtml += `<div class="project-summary-block">`;
+                            summaryHtml += `<h4 class="project-name-header">${projName}</h4>`;
+                            summaryHtml += `<div class="fix-categories-grid">`;
+
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
+                            
                             sortedFixCategories.forEach(fixCat => {
                                 const totalMinutes = fixCategoryTotals[fixCat];
                                 const hoursDecimal = (totalMinutes / 60).toFixed(2);
                                 const bgColor = this.config.FIX_CATEGORIES.COLORS[fixCat] || this.config.FIX_CATEGORIES.COLORS.default;
-                                summaryHtml += `<li style="background-color: ${bgColor}; padding: 8px; margin-bottom: 5px; border-radius: 4px;"><strong>${projName} - ${fixCat}:</strong> ${totalMinutes} minutes (${hoursDecimal} hours)</li>`;
+                                
+                                summaryHtml += `
+                                    <div class="fix-category-item" style="background-color: ${bgColor};">
+                                        <span class="fix-category-name">${fixCat}:</span>
+                                        <span class="fix-category-minutes">${totalMinutes} mins</span>
+                                        <span class="fix-category-hours">(${hoursDecimal} hrs)</span>
+                                    </div>
+                                `;
                             });
+                            summaryHtml += `</div></div>`; // Close fix-categories-grid and project-summary-block
                         });
+                        summaryHtml += `</div>`; // Close summary-container
                     }
-                    this.elements.tlSummaryContent.innerHTML = summaryHtml + "</ul>";
+                    this.elements.tlSummaryContent.innerHTML = summaryHtml;
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
-                    this.elements.tlSummaryContent.innerHTML = `<p style="color:red;">Error generating summary: ${error.message}</p>`;
+                    this.elements.tlSummaryContent.innerHTML = `<p class="error-message">Error generating summary: ${error.message}</p>`;
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
