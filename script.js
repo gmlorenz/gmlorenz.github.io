@@ -27,7 +27,7 @@
  * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
  * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
  * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
- * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip.
+ * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip, triggered by hovering over the entire project name area.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -598,7 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     this.elements.monthFilter.innerHTML = '<option value="">All Months</option>';
                     Array.from(uniqueMonths).sort((a, b) => b.localeCompare(a)).forEach(monthYear => {
-                        const [year, month] = monthYear.split('-');
                         const option = document.createElement('option');
                         option.value = monthYear;
                         option.textContent = new Date(year, parseInt(month) - 1, 1).toLocaleString('en-US', {
@@ -780,8 +779,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const baseDate = existingTimestamp || fallbackTimestamp;
 
-                            // Ensure 'Gillespie' is correctly used as a variable, not a typo.
-                            // The error suggests an issue here or nearby.
                             const yearForDate = baseDate.getFullYear(); 
                             const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
                             const dd = String(baseDate.getDate()).padStart(2, '0');
@@ -865,9 +862,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                         case "endDay1":
                             updates.status = "Day1Ended_AwaitingNext";
-                            const finishTimeD1 = firebase.firestore.Timestamp.now(); // Create a client-side timestamp
-                            updates.finishTimeDay1 = finishTimeD1; // Use it for the database field
-                            updates.durationDay1Ms = this.methods.calculateDurationMs.call(this, project.startTimeDay1, finishTimeD1); // And for the calculation
+                            const finishTimeD1 = firebase.firestore.Timestamp.now();
+                            updates.finishTimeDay1 = finishTimeD1;
+                            updates.durationDay1Ms = this.methods.calculateDurationMs.call(this, project.startTimeDay1, finishTimeD1);
                             break;
                         case "startDay2":
                             updates.status = "InProgressDay2";
@@ -1020,11 +1017,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         let lockIcon = '';
                         if (status && status.total > 0) {
                             if (status.locked === status.total) {
-                                lockIcon = ' 🔒'; // All locked
+                                lockIcon = ' 🔒';
                             } else if (status.locked > 0) {
-                                lockIcon = ' 🔑'; // Partially locked (key emoji for partial)
+                                lockIcon = ' 🔑';
                             } else {
-                                lockIcon = ' 🔓'; // All unlocked
+                                lockIcon = ' 🔓';
                             }
                         }
 
@@ -1612,8 +1609,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     await batch.commit();
 
-                    await this.methods.initializeFirebaseAndLoadData.call(this);
-                    await this.methods.renderTLDashboard.call(this);
+                    this.methods.initializeFirebaseAndLoadData.call(this);
+                    this.methods.renderTLDashboard.call(this);
 
                 } catch (error) {
                     console.error(`Error deleting entire project (batchId: ${batchId}):`, error);
@@ -1666,6 +1663,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             originalProjectId: task.id,
                         };
                         delete newNextFixTask.id;
+
                         const newDocRef = this.db.collection("projects").doc();
                         firestoreBatch.set(newDocRef, newNextFixTask);
 
@@ -1758,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         creationTimestamp: serverTimestamp,
                         lastModifiedTimestamp: serverTimestamp,
                         isReassigned: true,
-                        originalProjectId: null, // New reassigned task does not have an originalProjectId value
+                        originalProjectId: null,
                         startTimeDay1: null,
                         finishTimeDay1: null,
                         durationDay1Ms: null,
@@ -1775,7 +1773,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         breakDurationMinutesDay3: 0,
                         additionalMinutesManual: 0,
                     };
-                    delete newProjectData.id; // Delete the ID from the copied data so Firestore generates a new one
+                    delete newProjectData.id;
 
                     batch.set(this.db.collection("projects").doc(), newProjectData);
                     batch.update(this.db.collection("projects").doc(projectToReassign.id), {
@@ -1893,14 +1891,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
-                            // MODIFIED: Changed the icon generation to directly apply Font Awesome classes
                             summaryHtml += `
-                                  <h4 class="project-name-header">
-                                          <span class="truncated-project-name">${projName}</span>
-                                          <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
-                                          <div class="full-name-popup">${projName}</div>
-                                     </h4>
-                               `;
+                                <h4 class="project-name-header">
+                                    <span class="truncated-project-name">${projName}</span>
+                                    <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
+                                    <div class="full-name-popup">${projName}</div>
+                                </h4>
+                            `;
                             summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
@@ -1919,38 +1916,55 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 `;
                             });
-                            summaryHtml += `</div></div>`; // Close fix-categories-grid and project-summary-block
+                            summaryHtml += `</div></div>`;
                         });
-                        summaryHtml += `</div>`; // Close summary-container
+                        summaryHtml += `</div>`;
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
 
-                    // --- DEBUGGING & MORE ROBUST LISTENER ATTACHMENT ---
-                    const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
-                    console.log(`Found ${infoIcons.length} info icons.`); // Log how many icons are found
+                    // --- NEW CODE: Attach hover listeners to the entire project-name-header ---
+                    const projectNameHeaders = this.elements.tlSummaryContent.querySelectorAll('.project-name-header');
 
-                    infoIcons.forEach((icon, index) => {
-                        console.log(`Attaching listener to icon #${index + 1}. Full name: ${icon.dataset.fullName}`);
-                        const popup = icon.nextElementSibling; // The .full-name-popup div
-                        
-                        // Change to mouseenter and mouseleave for hover functionality
-                        icon.addEventListener('mouseenter', () => {
-                            if (popup) {
+                    projectNameHeaders.forEach(header => {
+                        const popup = header.querySelector('.full-name-popup');
+                        if (popup) {
+                            header.addEventListener('mouseenter', () => {
                                 popup.style.display = 'block';
-                            }
-                        });
-                        icon.addEventListener('mouseleave', () => {
-                            if (popup) {
-                                popup.style.display = 'none';
-                            }
-                        });
+                                setTimeout(() => {
+                                    popup.style.opacity = '1';
+                                    popup.style.visibility = 'visible';
+                                }, 10);
+                            });
+
+                            header.addEventListener('mouseleave', () => {
+                                popup.style.opacity = '0';
+                                popup.style.visibility = 'hidden';
+                                setTimeout(() => {
+                                    if (popup.style.opacity === '0') {
+                                        popup.style.display = 'none';
+                                    }
+                                }, 200);
+                            });
+
+                            // To keep popup open if mouse moves from header to popup
+                            popup.addEventListener('mouseenter', () => {
+                                popup.style.display = 'block';
+                                popup.style.opacity = '1';
+                                popup.style.visibility = 'visible';
+                            });
+
+                            popup.addEventListener('mouseleave', () => {
+                                popup.style.opacity = '0';
+                                popup.style.visibility = 'hidden';
+                                setTimeout(() => {
+                                    if (popup.style.opacity === '0') {
+                                        popup.style.display = 'none';
+                                    }
+                                }, 200);
+                            });
+                        }
                     });
-
-                    // Remove the global click listener that previously handled closing popups
-                    // as it's no longer needed for hover-based tooltips and can cause conflicts.
-                    // This block was previously inside an `if (!this.state.isSummaryPopupListenerAttached)` check.
-                    // Since we are moving to hover, this click-based hiding logic for this specific feature is removed.
-
+                    // --- END NEW CODE ---
 
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
@@ -2012,7 +2026,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rows = [headers.join(',')];
 
                     allProjectsData.forEach(project => {
-                        // MODIFIED: Changed to toISOString() for consistent date/time export
                         const formatTimeCsv = (ts) => ts?.toDate ? `"${ts.toDate().toISOString()}"` : "";
                         const formatNotesCsv = (notes) => notes ? `"${notes.replace(/"/g, '""')}"` : "";
 
@@ -2102,11 +2115,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
                         let importedCount = 0;
 
-                        // NEW: Map to store batchId for each baseProjectName during import
                         const projectNameBatchIds = {};
 
                         parsedProjects.forEach(projectData => {
-                            // Determine batchId: reuse if baseProjectName already seen, else generate new
                             let currentBatchId;
                             if (projectNameBatchIds[projectData.baseProjectName]) {
                                 currentBatchId = projectNameBatchIds[projectData.baseProjectName];
@@ -2116,27 +2127,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
 
                             const newProjectRef = this.db.collection("projects").doc();
-                            // Ensure new projects have required fields and default values
                             batch.set(newProjectRef, {
-                                batchId: currentBatchId, // Use consistent batchId
+                                batchId: currentBatchId,
                                 creationTimestamp: serverTimestamp,
                                 lastModifiedTimestamp: serverTimestamp,
                                 isLocked: false,
                                 releasedToNextStage: false,
                                 isReassigned: false,
                                 originalProjectId: null,
-                                breakDurationMinutesDay1: projectData.breakDurationMinutesDay1 || 0, // Use imported or default
-                                breakDurationMinutesDay2: projectData.breakDurationMinutesDay2 || 0, // Use imported or default
-                                breakDurationMinutesDay3: projectData.breakDurationMinutesDay3 || 0, // Use imported or default
-                                additionalMinutesManual: projectData.additionalMinutesManual || 0, // Use imported or default
-                                // Copy parsed data, ensuring required fields are present or defaulted
-                                fixCategory: projectData.fixCategory || "Fix1", // Default to Fix1 if not provided
+                                breakDurationMinutesDay1: projectData.breakDurationMinutesDay1 || 0,
+                                breakDurationMinutesDay2: projectData.breakDurationMinutesDay2 || 0,
+                                breakDurationMinutesDay3: projectData.breakDurationMinutesDay3 || 0,
+                                additionalMinutesManual: projectData.additionalMinutesManual || 0,
+                                fixCategory: projectData.fixCategory || "Fix1",
                                 baseProjectName: projectData.baseProjectName || "IMPORTED_PROJ",
-                                areaTask: projectData.areaTask || `Area${String(importedCount + 1).padStart(2, '0')}`, // Generate dynamic Area/Task if not provided
-                                gsd: projectData.gsd || "3in", // Default GSD
+                                areaTask: projectData.areaTask || `Area${String(importedCount + 1).padStart(2, '0')}`,
+                                gsd: projectData.gsd || "3in",
                                 assignedTo: projectData.assignedTo || "",
-                                status: projectData.status || "Available", // Default status
-                                techNotes: projectData.techNotes || "", // Use imported or default
+                                status: projectData.status || "Available",
+                                techNotes: projectData.techNotes || "",
                                 startTimeDay1: projectData.startTimeDay1 || null,
                                 finishTimeDay1: projectData.finishTimeDay1 || null,
                                 durationDay1Ms: this.methods.calculateDurationMs(projectData.startTimeDay1, projectData.finishTimeDay1),
@@ -2154,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         this.elements.csvImportStatus.textContent = `Successfully imported ${importedCount} project(s)!`;
                         alert(`Successfully imported ${importedCount} project(s)!`);
                         this.elements.importCsvModal.style.display = 'none';
-                        this.methods.initializeFirebaseAndLoadData.call(this); // Reload data
+                        this.methods.initializeFirebaseAndLoadData.call(this);
 
                     } catch (error) {
                         console.error("Error processing CSV import:", error);
@@ -2209,7 +2218,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             projectData[fieldName] = parseInt(value, 10) || 0;
                         } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
                             try {
-                                // Added more robust check for date parsing and logging for debugging
                                 if (typeof value === 'string' && value.trim() !== '') {
                                     const date = new Date(value);
                                     if (isNaN(date.getTime())) {
