@@ -1852,7 +1852,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
             async generateTlSummaryData() {
-                if (!this.elements.tlSummaryContent) return;
+                if (!this.elements.tlSummaryContent) {
+                    console.error("TL Summary content element not found.");
+                    return;
+                }
                 this.methods.showLoading.call(this, "Generating TL Summary...");
                 this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
 
@@ -1888,11 +1891,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
-                            // MODIFIED: Added icon and full name popup structure
                             summaryHtml += `
                                 <h4 class="project-name-header">
                                     <span class="truncated-project-name">${projName}</span>
-                                    <i class="info-icon" data-full-name="${projName}"><i class="fas fa-info-circle"></i></i> <div class="full-name-popup" style="display: none;">${projName}</div>
+                                    <i class="info-icon" data-full-name="${projName}">&#9432;</i>
+                                    <div class="full-name-popup" style="display: none;">${projName}</div>
                                 </h4>
                             `;
                             summaryHtml += `<div class="fix-categories-grid">`;
@@ -1919,25 +1922,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
 
-                    // ADDED: Event listener for the info icons
-                    this.elements.tlSummaryContent.querySelectorAll('.info-icon').forEach(icon => {
+                    // --- DEBUGGING & MORE ROBUST LISTENER ATTACHMENT ---
+                    const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
+                    console.log(`Found ${infoIcons.length} info icons.`); // Log how many icons are found
+
+                    infoIcons.forEach((icon, index) => {
+                        console.log(`Attaching listener to icon #${index + 1}. Full name: ${icon.dataset.fullName}`);
                         icon.addEventListener('click', (event) => {
                             event.stopPropagation(); // Prevent card click if there's one
                             const popup = icon.nextElementSibling; // The .full-name-popup div
                             if (popup) {
+                                console.log(`Icon clicked! Toggling popup for: ${icon.dataset.fullName}. Current display: ${popup.style.display}`);
                                 popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+                            } else {
+                                console.warn(`Popup element not found for icon:`, icon);
                             }
                         });
                     });
 
-                    // Optionally, hide popup when clicking outside
-                    document.addEventListener('click', (event) => {
-                        this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
-                            if (!popup.contains(event.target) && !event.target.classList.contains('info-icon')) {
-                                popup.style.display = 'none';
-                            }
+                    // Event listener to hide popups when clicking anywhere else on the document
+                    // Make sure this listener is only added ONCE, not every time generateTlSummaryData is called.
+                    // A flag can be used, or it can be added in init() or attachEventListeners()
+                    if (!this.state.isSummaryPopupListenerAttached) {
+                         document.addEventListener('click', (event) => {
+                            this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
+                                // Check if the click was outside this specific popup AND not on its associated icon
+                                if (!popup.contains(event.target) && !event.target.classList.contains('info-icon')) {
+                                    if (popup.style.display === 'block') {
+                                        console.log('Hiding popup due to outside click.');
+                                        popup.style.display = 'none';
+                                    }
+                                }
+                            });
                         });
-                    });
+                        this.state.isSummaryPopupListenerAttached = true; // Set flag
+                        console.log("Global summary popup listener attached.");
+                    }
 
 
                 } catch (error) {
