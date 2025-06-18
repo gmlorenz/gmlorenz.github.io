@@ -1892,7 +1892,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
-                            // MODIFIED: Changed the icon generation to directly apply Font Awesome classes
+                            // CORRECTED: Direct application of Font Awesome classes to the info-icon <i>
+                            // Removed the nested <i> tag and the &#9432; Unicode character
                             summaryHtml += `
                                 <h4 class="project-name-header">
                                     <span class="truncated-project-name">${projName}</span>
@@ -1932,7 +1933,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log(`Attaching listener to icon #${index + 1}. Full name: ${icon.dataset.fullName}`);
                         icon.addEventListener('click', (event) => {
                             event.stopPropagation(); // Prevent card click if there's one
-                            const popup = icon.nextElementSibling; // The .full-name-popup div
+                            // Ensure 'popup' correctly targets the sibling div
+                            const popup = icon.nextElementSibling;
                             if (popup) {
                                 console.log(`Icon clicked! Toggling popup for: ${icon.dataset.fullName}. Current display: ${popup.style.display}`);
                                 popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
@@ -1941,6 +1943,37 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                     });
+
+                    // Event listener to hide popups when clicking anywhere else on the document
+                    // Make sure this listener is only added ONCE, not every time generateTlSummaryData is called.
+                    if (!this.state.isSummaryPopupListenerAttached) {
+                         document.addEventListener('click', (event) => {
+                            this.elements.tlSummaryContent.querySelectorAll('.full-name-popup').forEach(popup => {
+                                // Check if the click was outside this specific popup AND not on its associated icon
+                                const clickedElementIsInfoIconOrChild = event.target.classList.contains('info-icon') || event.target.closest('.info-icon');
+
+                                if (!popup.contains(event.target) && !clickedElementIsInfoIconOrChild) {
+                                    if (popup.style.display === 'block') {
+                                        console.log('Hiding popup due to outside click.');
+                                        popup.style.display = 'none';
+                                    }
+                                }
+                            });
+                        });
+                        this.state.isSummaryPopupListenerAttached = true; // Set flag
+                        console.log("Global summary popup listener attached.");
+                    }
+
+
+                } catch (error) {
+                    console.error("Error generating TL summary:", error);
+                    this.elements.tlSummaryContent.innerHTML = `<p class="error-message">Error generating summary: ${error.message}</p>`;
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+
+            // ... (rest of your script.js remains unchanged)
 
                     // Event listener to hide popups when clicking anywhere else on the document
                     // Make sure this listener is only added ONCE, not every time generateTlSummaryData is called.
