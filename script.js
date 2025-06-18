@@ -1894,7 +1894,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             summaryHtml += `
                                 <h4 class="project-name-header">
                                     <span class="truncated-project-name">${projName}</span>
-                                    <i class="info-icon" data-full-name="${projName}">&#9432;</i>
+                                    <i class="info-icon" data-full-name="${projName}"><i class="fas fa-info-circle"></i></i>
                                     <div class="full-name-popup" style="display: none;">${projName}</div>
                                 </h4>
                             `;
