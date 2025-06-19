@@ -1232,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-           async getManageableBatches() {
+            async getManageableBatches() {
                 this.methods.showLoading.call(this, "Loading batches for dashboard...");
                 try {
                     const snapshot = await this.db.collection("projects").get();
@@ -1252,9 +1252,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ...task
                                 });
                             }
-                        } // Corrected: Removed the extra ')' here
-                    });
-                    return Object.values(batches);
+                        });
+                        return Object.values(batches);
                 }
                 catch (error) {
                     console.error("Error fetching batches for dashboard:", error);
@@ -1860,7 +1859,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-           async generateTlSummaryData() {
+            async generateTlSummaryData() {
                 if (!this.elements.tlSummaryContent) {
                     console.error("TL Summary content element not found.");
                     return;
@@ -1897,17 +1896,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (sortedProjectNames.length === 0) {
                         summaryHtml += "<p class='no-data-message'>No project time data found to generate a summary.</p>";
                     } else {
-                        // Change: Remove summary-container grid/flex properties if they are causing multiple columns
-                        // Instead, we will directly append project blocks
-                        summaryHtml += '<div class="summary-list">'; // New wrapper div for stacking projects vertically
+                        summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
-                            summaryHtml += `<div class="project-summary-block-single-column">`; // New class for single column styling
+                            summaryHtml += `<div class="project-summary-block">`;
+                            // Modified this line to include data-full-name on the info-icon for easy access
                             summaryHtml += `
-                                <h4 class="project-name-header-full-width">
-                                    <span class="full-project-name-display">${projName}</span> <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
+                                <h4 class="project-name-header">
+                                    <span class="truncated-project-name">${projName}</span>
+                                    <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
+                                    <div class="full-name-popup">${projName}</div>
                                 </h4>
                             `;
-                            summaryHtml += `<div class="fix-categories-flex">`; // Changed to flex for internal items if needed
+                            summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
@@ -1927,11 +1927,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             summaryHtml += `</div></div>`;
                         });
-                        summaryHtml += `</div>`; // Close summary-list
+                        summaryHtml += `</div>`;
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
 
-                    // Re-attach click listener for info icons (still useful for very long names or additional info)
+                    // Attach click listener to the info icon instead of hover on the header
                     const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
                     infoIcons.forEach(icon => {
                         icon.addEventListener('click', (event) => {
@@ -1943,6 +1943,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                     });
+
+                    // Removed all previous hover/popup related listeners as they are no longer needed
+                    // This prevents potential syntax issues or redundant listeners.
 
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
