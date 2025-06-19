@@ -1295,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
 
-                    batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
+                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
                     //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
@@ -1375,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // NEW: Delete Entire Project Group - Moved here
                     const deleteEntireProjectGroup = document.createElement('div');
                     deleteEntireProjectGroup.className = 'dashboard-actions-group';
-                    deleteEntireProjectGroup.innerHTML = '<h6>Delete Entire Project:</h6>';
+                    deleteEntireProjectGroup.innerHTML = '<h6>Delete Current Project:</h6>';
 
                     const deleteEntireProjectButtonsDiv = document.createElement('div');
                     deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
