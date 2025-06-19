@@ -1297,9 +1297,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
                     batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
-                    const releaseActionsDiv = document.createElement('div');
-                    releaseActionsDiv.className = 'dashboard-batch-actions-release';
+                    // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
+                    const actionsContainer = document.createElement('div');
+                    actionsContainer.className = 'dashboard-actions-grid'; // New class for overall actions grid
 
+                    // Release Actions Group
+                    const releaseGroup = document.createElement('div');
+                    releaseGroup.className = 'dashboard-actions-group';
+                    releaseGroup.innerHTML = '<h6>Release Tasks:</h6>';
+                    const releaseActionsDiv = document.createElement('div');
+                    releaseActionsDiv.className = 'dashboard-action-buttons'; // New class for button alignment
+                    // Original release buttons logic goes here
                     allFixStages.forEach((currentFix, index) => {
                         const nextFix = allFixStages[index + 1];
                         if (!nextFix) return;
@@ -1323,7 +1331,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     });
-
                     const addAreaBtn = document.createElement('button');
                     addAreaBtn.textContent = 'Add Extra Area';
                     addAreaBtn.className = 'btn btn-success';
@@ -1331,46 +1338,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     addAreaBtn.disabled = stagesPresent.length === 0;
                     addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
                     releaseActionsDiv.appendChild(addAreaBtn);
+                    releaseGroup.appendChild(releaseActionsDiv);
+                    actionsContainer.appendChild(releaseGroup);
 
-                    batchItemDiv.appendChild(releaseActionsDiv);
-
-
-                    const deleteActionsDiv = document.createElement('div');
-                    deleteActionsDiv.className = 'dashboard-batch-actions-delete';
-                    if (batch.tasksByFix && stagesPresent.length > 0) {
-                        const highestStagePresent = stagesPresent[stagesPresent.length - 1];
-
-                        stagesPresent.forEach(fixCat => {
-                            const btn = document.createElement('button');
-                            btn.textContent = `Delete ${fixCat} Tasks`;
-                            btn.className = 'btn btn-danger';
-
-                            if (fixCat !== highestStagePresent) {
-                                btn.disabled = true;
-                                btn.title = `You must first delete the '${highestStagePresent}' tasks to enable this.`;
-                            }
-
-                            btn.onclick = () => {
-                                if (confirm(`Are you sure you want to delete all ${fixCat} tasks for project '${batch.baseProjectName}'? This is IRREVERSIBLE.`)) {
-                                    this.methods.deleteSpecificFixTasksForBatch.call(this, batch.batchId, fixCat);
-                                }
-                            };
-                            deleteActionsDiv.appendChild(btn);
-                        });
-                    }
-                    batchItemDiv.appendChild(deleteActionsDiv);
-
+                    // Lock Actions Group
+                    const lockGroup = document.createElement('div');
+                    lockGroup.className = 'dashboard-actions-group';
+                    lockGroup.innerHTML = '<h6>Manage Locking:</h6>';
                     const lockActionsDiv = document.createElement('div');
-                    lockActionsDiv.className = 'dashboard-batch-actions-lock';
-                    lockActionsDiv.innerHTML = '<strong>Locking & Utility:</strong>';
-
+                    lockActionsDiv.className = 'dashboard-action-buttons';
                     if (batch.tasksByFix) {
                         stagesPresent.forEach(fixCat => {
                             const tasksInFix = batch.tasksByFix[fixCat];
                             const areAllLocked = tasksInFix.every(t => t.isLocked);
                             const shouldLock = !areAllLocked;
 
-                            // Lock/Unlock Button
                             const lockBtn = document.createElement('button');
                             lockBtn.textContent = `${shouldLock ? 'Lock All' : 'Unlock All'} ${fixCat}`;
                             lockBtn.className = `btn ${shouldLock ? 'btn-warning' : 'btn-secondary'} btn-small`;
@@ -1381,38 +1363,52 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             };
                             lockActionsDiv.appendChild(lockBtn);
-
-                            // --- NEW RECALC BUTTON ---
-                            const recalcBtn = document.createElement('button');
-                            recalcBtn.textContent = `Recalc ${fixCat} Totals`;
-                            recalcBtn.className = 'btn btn-info btn-small';
-                            recalcBtn.style.marginLeft = '5px';
-                            recalcBtn.title = `Fixes tasks in ${fixCat} that have a start and finish time but a missing total duration.`;
-                            recalcBtn.onclick = () => {
-                                if (confirm(`This will recalculate totals for all tasks in ${fixCat} that have a start and finish time but a missing duration. Continue?`)) {
-                                    this.methods.recalculateFixStageTotals.call(this, batch.batchId, fixCat);
-                                }
-                            };
-                            lockActionsDiv.appendChild(recalcBtn);
-                            // --- END OF NEW CODE ---
+                            // RECALC BUTTON WAS REMOVED FROM HERE
                         });
                     }
-                    batchItemDiv.appendChild(lockActionsDiv);
+                    lockGroup.appendChild(lockActionsDiv);
+                    actionsContainer.appendChild(lockGroup);
 
+                    // Delete Actions Group
+                    const deleteGroup = document.createElement('div');
+                    deleteGroup.className = 'dashboard-actions-group';
+                    deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
+                    const deleteActionsDiv = document.createElement('div');
+                    deleteActionsDiv.className = 'dashboard-action-buttons';
+                    if (batch.tasksByFix && stagesPresent.length > 0) {
+                        const highestStagePresent = stagesPresent[stagesPresent.length - 1];
+                        stagesPresent.forEach(fixCat => {
+                            const btn = document.createElement('button');
+                            btn.textContent = `Delete ${fixCat} Tasks`;
+                            btn.className = 'btn btn-danger';
+                            if (fixCat !== highestStagePresent) {
+                                btn.disabled = true;
+                                btn.title = `You must first delete the '${highestStagePresent}' tasks to enable this.`;
+                            }
+                            btn.onclick = () => {
+                                if (confirm(`Are you sure you want to delete all ${fixCat} tasks for project '${batch.baseProjectName}'? This is IRREVERSIBLE.`)) {
+                                    this.methods.deleteSpecificFixTasksForBatch.call(this, batch.batchId, fixCat);
+                                }
+                            };
+                            deleteActionsDiv.appendChild(btn);
+                        });
+                    }
+                    deleteGroup.appendChild(deleteActionsDiv);
+                    actionsContainer.appendChild(deleteGroup);
 
+                    batchItemDiv.appendChild(actionsContainer); // Append the new actions container
+
+                    // Retain Delete All Project button (slightly styled for separation)
                     const deleteAllContainer = document.createElement('div');
-                    deleteAllContainer.style.marginTop = '15px';
-                    deleteAllContainer.style.borderTop = '1px solid #cc0000';
-                    deleteAllContainer.style.paddingTop = '10px';
-
+                    deleteAllContainer.className = 'dashboard-full-delete-container'; // New class for full deletion
                     const deleteAllBtn = document.createElement('button');
                     deleteAllBtn.textContent = 'Delete Entire Project (All Fix Stages)';
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
                     deleteAllBtn.style.width = '100%';
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
-
                     deleteAllContainer.appendChild(deleteAllBtn);
                     batchItemDiv.appendChild(deleteAllContainer);
+                    // --- End of UI Refactor for Project Settings ---
 
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
