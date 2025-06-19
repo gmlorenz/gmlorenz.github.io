@@ -1354,7 +1354,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const shouldLock = !areAllLocked;
 
                             const lockBtn = document.createElement('button');
-                            lockBtn.textContent = `${shouldLock ? 'Lock All' : 'Unlock All'} ${fixCat}`;
+                            lockBtn.textContent = `${shouldLock ? 'Lock ' : 'Unlock '} ${fixCat}`;
                             lockBtn.className = `btn ${shouldLock ? 'btn-warning' : 'btn-secondary'} btn-small`;
                             lockBtn.onclick = () => {
                                 const action = shouldLock ? 'lock' : 'unlock';
@@ -1402,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const deleteAllContainer = document.createElement('div');
                     deleteAllContainer.className = 'dashboard-full-delete-container'; // New class for full deletion
                     const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'Delete Entire Project (All Fix Stages)';
+                    deleteAllBtn.textContent = 'Delete Project';
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
                     deleteAllBtn.style.width = '100%';
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
