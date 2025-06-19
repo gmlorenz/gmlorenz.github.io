@@ -338,70 +338,71 @@
         /* END: TL SUMMARY MODAL & CARD UI STYLES                 */
         /* ====================================================== */
 /* START: TL DASHBOARD UI ENHANCEMENTS */
+     /* START: TL DASHBOARD UI ENHANCEMENTS (Smaller Containers) */
     .dashboard-batch-item {
         background-color: #f9f9f9;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        padding: 20px; /* Slightly increased padding */
-        margin-bottom: 20px; /* Increased margin between batch items */
+        padding: 15px; /* Reduced padding */
+        margin-bottom: 15px; /* Reduced margin between batch items */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
-        gap: 15px; /* Space between main sections in a batch item */
+        gap: 12px; /* Reduced space between main sections in a batch item */
     }
 
     .dashboard-batch-item h4 {
         color: #0056b3;
         margin-top: 0;
-        margin-bottom: 10px;
-        font-size: 1.4em;
+        margin-bottom: 8px; /* Slightly reduced margin */
+        font-size: 1.3em; /* Slightly smaller font size */
         border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
+        padding-bottom: 6px; /* Slightly reduced padding */
     }
 
     .dashboard-actions-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid for action groups */
-        gap: 20px; /* Gap between action groups */
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjusted min-width for columns */
+        gap: 15px; /* Reduced gap between action groups */
         width: 100%;
     }
 
     .dashboard-actions-group {
         border: 1px solid #dcdcdc;
         border-radius: 6px;
-        padding: 15px;
+        padding: 12px; /* Reduced padding */
         background-color: #ffffff;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
-        gap: 10px; /* Space between header and buttons */
+        gap: 8px; /* Reduced space between header and buttons */
     }
 
     .dashboard-actions-group h6 {
-        font-size: 1.1em;
+        font-size: 1em; /* Slightly smaller font size */
         color: #333;
         margin-top: 0;
-        margin-bottom: 5px; /* Reduced margin below heading */
+        margin-bottom: 4px; /* Reduced margin below heading */
         border-bottom: 1px dashed #e9ecef;
-        padding-bottom: 5px;
+        padding-bottom: 4px;
     }
 
     .dashboard-action-buttons {
         display: flex;
         flex-wrap: wrap; /* Allow buttons to wrap */
-        gap: 8px; /* Space between buttons */
-        margin-top: 5px; /* Small margin after title */
+        gap: 6px; /* Reduced space between buttons */
+        margin-top: 4px; /* Small margin after title */
     }
 
     .dashboard-action-buttons .btn {
-        padding: 8px 15px; /* Larger buttons for better clickability */
-        font-size: 0.9em;
-        min-width: 120px; /* Ensure buttons have a minimum width */
+        padding: 6px 12px; /* Reduced padding for buttons */
+        font-size: 0.85em; /* Slightly smaller font size */
+        min-width: 100px; /* Reduced minimum width for buttons */
     }
 
     .dashboard-full-delete-container {
-        margin-top: 20px; /* Clear separation from other actions */
-        padding-top: 15px;
+        margin-top: 15px; /* Reduced separation from other actions */
+        padding-top: 12px;
         border-top: 2px solid #ffcccc; /* Prominent red border for deletion */
         text-align: center;
     }
@@ -409,8 +410,8 @@
     .dashboard-full-delete-container .btn {
         background-color: #e74c3c; /* Red danger button */
         color: white;
-        padding: 12px 25px;
-        font-size: 1.0em;
+        padding: 10px 20px; /* Reduced padding for this button */
+        font-size: 0.95em; /* Slightly smaller font size */
         font-weight: 600;
     }
 
