@@ -1296,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     //batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"} (Batch ID: ${batch.batchId.split('_')[1] || "N/A"})</h4>`;
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
-                    batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
+                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
                     // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
                     const actionsContainer = document.createElement('div');
