@@ -1277,6 +1277,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
+            // --- Start of script.js modifications ---
+
+// REPLACE the existing 'renderTLDashboard' function with the following:
             async renderTLDashboard() {
                 if (!this.elements.tlDashboardContentElement) return;
                 this.elements.tlDashboardContentElement.innerHTML = "";
@@ -1292,11 +1295,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
 
-                    batchItemDiv.innerHTML = `<h4>${batch.baseProjectName || "Unknown"}</h4>`;
-                    //batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"} (Batch ID: ${batch.batchId.split('_')[1] || "N/A"})</h4>`;
+                    batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
-                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
+                    batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
                     // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
                     const actionsContainer = document.createElement('div');
@@ -1355,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const shouldLock = !areAllLocked;
 
                             const lockBtn = document.createElement('button');
-                            lockBtn.textContent = `${shouldLock ? 'Lock ' : 'Unlock '} ${fixCat}`;
+                            lockBtn.textContent = `${shouldLock ? 'Lock All' : 'Unlock All'} ${fixCat}`;
                             lockBtn.className = `btn ${shouldLock ? 'btn-warning' : 'btn-secondary'} btn-small`;
                             lockBtn.onclick = () => {
                                 const action = shouldLock ? 'lock' : 'unlock';
@@ -1370,7 +1372,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     lockGroup.appendChild(lockActionsDiv);
                     actionsContainer.appendChild(lockGroup);
 
-                    // Delete Actions Group
+                    // NEW: Delete Entire Project Group - Moved here
+                    const deleteEntireProjectGroup = document.createElement('div');
+                    deleteEntireProjectGroup.className = 'dashboard-actions-group';
+                    deleteEntireProjectGroup.innerHTML = '<h6>Delete Entire Project:</h6>';
+
+                    const deleteEntireProjectButtonsDiv = document.createElement('div');
+                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
+
+                    const deleteAllBtn = document.createElement('button');
+                    deleteAllBtn.textContent = 'Delete All Fix Stages'; // Changed text for conciseness
+                    deleteAllBtn.className = 'btn btn-danger btn-delete-project';
+                    deleteAllBtn.style.width = '100%'; // Keep full width within its group
+                    deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
+                    deleteEntireProjectButtonsDiv.appendChild(deleteAllBtn);
+                    deleteEntireProjectGroup.appendChild(deleteEntireProjectButtonsDiv);
+                    actionsContainer.appendChild(deleteEntireProjectGroup); // Append to the grid
+
+                    // Delete Specific Fix Stages Group (formerly deleteActionsDiv)
                     const deleteGroup = document.createElement('div');
                     deleteGroup.className = 'dashboard-actions-group';
                     deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
@@ -1397,23 +1416,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteGroup.appendChild(deleteActionsDiv);
                     actionsContainer.appendChild(deleteGroup);
 
-                    batchItemDiv.appendChild(actionsContainer); // Append the new actions container
-
-                    // Retain Delete All Project button (slightly styled for separation)
-                    const deleteAllContainer = document.createElement('div');
-                    deleteAllContainer.className = 'dashboard-full-delete-container'; // New class for full deletion
-                    const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'Delete Project';
-                    deleteAllBtn.className = 'btn btn-danger btn-delete-project';
-                    deleteAllBtn.style.width = '100%';
-                    deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
-                    deleteAllContainer.appendChild(deleteAllBtn);
-                    batchItemDiv.appendChild(deleteAllContainer);
+                    batchItemDiv.appendChild(actionsContainer); // Append the main actions grid to the batch item
                     // --- End of UI Refactor for Project Settings ---
 
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
             },
+// --- End of script.js modifications ---
             
             async recalculateFixStageTotals(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Recalculating totals for ${fixCategory}...`);
