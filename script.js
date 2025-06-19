@@ -1298,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
-                    batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
+                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
                     // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
                     const actionsContainer = document.createElement('div');
@@ -1357,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const shouldLock = !areAllLocked;
 
                             const lockBtn = document.createElement('button');
-                            lockBtn.textContent = `${shouldLock ? 'Lock All' : 'Unlock All'} ${fixCat}`;
+                            lockBtn.textContent = `${shouldLock ? 'Lock ' : 'Unlock '} ${fixCat}`;
                             lockBtn.className = `btn ${shouldLock ? 'btn-warning' : 'btn-secondary'} btn-small`;
                             lockBtn.onclick = () => {
                                 const action = shouldLock ? 'lock' : 'unlock';
