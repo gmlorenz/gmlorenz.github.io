@@ -1252,9 +1252,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ...task
                                 });
                             }
-                        }
-                    });
-                    return Object.values(batches);
+                        });
+                        return Object.values(batches);
                 }
                 catch (error) {
                     console.error("Error fetching batches for dashboard:", error);
@@ -1945,8 +1944,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     });
 
-                    // Remove all previous hover/popup related listeners as they are no longer needed
-                    // The loops for projectNameHeaders and popup are removed entirely from the generation of event listeners.
+                    // Removed all previous hover/popup related listeners as they are no longer needed
                     // This prevents potential syntax issues or redundant listeners.
 
                 } catch (error) {
@@ -1968,19 +1966,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.notificationListenerUnsubscribe = this.db.collection(this.config.firestorePaths.NOTIFICATIONS)
                     .orderBy("timestamp", "desc")
                     .limit(1)
-                    .onSnapshot(snapshot => {
-                        snapshot.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                const notification = change.doc.data();
-                                const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
-                                if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
-                                    alert(`🔔 New Update: ${notification.message}`);
+                    .onSnapshot(
+                        snapshot => {
+                            snapshot.docChanges().forEach(change => {
+                                if (change.type === "added") {
+                                    const notification = change.doc.data();
+                                    const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
+                                    if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
+                                        alert(`🔔 New Update: ${notification.message}`);
+                                    }
                                 }
                             });
-                        });
-                    }, error => {
-                        console.error("Error listening for notifications:", error);
-                    });
+                        },
+                        error => {
+                            console.error("Error listening for notifications:", error);
+                        }
+                    );
             },
 
             async handleExportCsv() {
