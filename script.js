@@ -1930,11 +1930,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const popup = header.querySelector('.full-name-popup');
                         if (popup) {
                             header.addEventListener('mouseenter', () => {
+                                console.log('Mouse entered project name header:', header.querySelector('.truncated-project-name').textContent);
                                 popup.style.display = 'block';
                                 setTimeout(() => {
-                                    popup.style.opacity = '1';
-                                    popup.style.visibility = 'visible';
-                                }, 10);
+                                popup.style.opacity = '1';
+                                popup.style.visibility = 'visible';
+                             }, 10);
                             });
 
                             header.addEventListener('mouseleave', () => {
