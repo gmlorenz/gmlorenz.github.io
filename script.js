@@ -1064,7 +1064,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     assignedToCell.appendChild(assignedToSelect);
 
                     const statusCell = row.insertCell();
-                    statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${(project.status || "Unknown").replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}</span>`;
+                    // --- MODIFICATION START ---
+                    let displayStatus = project.status || "Unknown";
+                    if (displayStatus === "Day1Ended_AwaitingNext" ||
+                        displayStatus === "Day2Ended_AwaitingNext" ||
+                        displayStatus === "Day3Ended_AwaitingNext") {
+                        displayStatus = "Started Available";
+                    } else {
+                        // Original formatting for other statuses
+                        displayStatus = displayStatus.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+                    }
+                    statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${displayStatus}</span>`;
+                    // --- MODIFICATION END ---
 
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
 
@@ -2216,7 +2227,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } else if (fieldName === 'status') {
                             let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
-                            if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
+
+                            // --- MODIFICATION START ---
+                            if (cleanedStatus.includes('startedavailable')) { // If CSV has "Started Available"
+                                // Map it to Day1Ended_AwaitingNext or similar, depending on what state you want it to represent internally
+                                // For simplicity, let's map it to "Available" for new imports unless specific logic is needed.
+                                // If you want it to represent 'Day1Ended_AwaitingNext' you can set that.
+                                cleanedStatus = 'Available'; // Or 'Day1Ended_AwaitingNext' if that's the intended internal state after "Started Available"
+                            }
+                            else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
                             else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
                             else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
                             else if (cleanedStatus.includes('day2ended_awaitingnext')) cleanedStatus = 'Day2Ended_AwaitingNext';
@@ -2227,7 +2246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             else cleanedStatus = 'Available';
 
                             projectData[fieldName] = cleanedStatus;
-
+                            // --- MODIFICATION END ---
                         }
                         else {
                             projectData[fieldName] = value;
