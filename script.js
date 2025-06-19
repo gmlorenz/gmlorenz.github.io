@@ -1292,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
 
-                    batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"}</h4>`;
+                    batchItemDiv.innerHTML = `<h4>${batch.baseProjectName || "Unknown"}</h4>`;
                     //batchItemDiv.innerHTML = `<h4>Project: ${batch.baseProjectName || "Unknown"} (Batch ID: ${batch.batchId.split('_')[1] || "N/A"})</h4>`;
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
