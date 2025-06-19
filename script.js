@@ -1542,6 +1542,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10) || 0;
                     } else {
+                        // If no tasks in the latest fix category, fall back to the first task found for project
+                        // This assumes at least one task exists for the project, which is checked earlier.
                         lastTask = allTasks[0];
                     }
 
@@ -1588,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             creationTimestamp: serverTimestamp,
                             lastModifiedTimestamp: serverTimestamp
                         };
-                        delete newNextFixTask.id;
+                        delete newTaskData.id; // FIX: Changed from newNextFixTask.id to newTaskData.id
 
                         const newDocRef = this.db.collection("projects").doc();
                         firestoreBatch.set(newDocRef, newTaskData);
