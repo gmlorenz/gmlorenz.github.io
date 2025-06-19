@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentFixCategoryHeader = null;
                         const headerRow = this.elements.projectTableBody.insertRow();
                         headerRow.className = "batch-header-row";
-                        headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">Project: ${project.baseProjectName}</td>`;
+                        headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}"># ${project.baseProjectName}</td>`;
                     }
 
                     if (project.fixCategory !== currentFixCategoryHeader) {
