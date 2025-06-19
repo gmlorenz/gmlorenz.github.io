@@ -1381,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
 
                     const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'Delete All Fix Stages'; // Changed text for conciseness
+                    deleteAllBtn.textContent = 'DELETE PROJECT'; // Changed text for conciseness
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
                     deleteAllBtn.style.width = '100%'; // Keep full width within its group
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
