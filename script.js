@@ -1252,8 +1252,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ...task
                                 });
                             }
-                        });
-                        return Object.values(batches);
+                        } // Corrected: Removed the extra ')' here
+                    });
+                    return Object.values(batches);
                 }
                 catch (error) {
                     console.error("Error fetching batches for dashboard:", error);
