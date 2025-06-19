@@ -184,7 +184,7 @@
             text-align: center; /* Center text within the popup */
             max-width: 280px; /* Max width for the popup bubble */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            z-index: 10;
+            z-index: 9999; /* Increased z-index to ensure it appears on top */
             pointer-events: none; /* Allows clicks to pass through */
             opacity: 0; /* Start invisible for transition */
             visibility: hidden; /* Start hidden for transition */
@@ -194,6 +194,13 @@
         /* Hide the default ::before tooltip, we are using the .full-name-popup div */
         .info-icon::before {
             content: none !important; /* Disable the default Font Awesome tooltip behavior if any */
+        }
+
+        /* When the project-name-header is hovered, show the popup */
+        .project-name-header:hover .full-name-popup {
+            display: block; /* Make sure it becomes display block for transitions to work from hidden state */
+            opacity: 1;
+            visibility: visible;
         }
 
         .fix-categories-grid {
