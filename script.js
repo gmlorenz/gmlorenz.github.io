@@ -1251,11 +1251,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     snapshot.forEach(doc => {
                         const task = doc.data();
                         if (task?.batchId) {
-                            if (!batches[task.batchId]) batches[task.batchId] = {
-                                batchId: task.batchId,
-                                baseProjectName: task.baseProjectName || "N/A",
-                                tasksByFix: {}
-                            };
+                            if (!batches[task.batchId]) {
+                                batches[task.batchId] = {
+                                    batchId: task.batchId,
+                                    baseProjectName: task.baseProjectName || "N/A",
+                                    tasksByFix: {},
+                                    // Add creationTimestamp to the batch object (assuming first task represents batch creation)
+                                    creationTimestamp: task.creationTimestamp || null
+                                };
+                            }
                             if (task.fixCategory) {
                                 if (!batches[task.batchId].tasksByFix[task.fixCategory]) batches[task.batchId].tasksByFix[task.fixCategory] = [];
                                 batches[task.batchId].tasksByFix[task.fixCategory].push({
@@ -1263,9 +1267,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ...task
                                 });
                             }
-                        } // Corrected: Removed the extra ')' here
+                        }
                     });
-                    return Object.values(batches);
+
+                    // Sort batches by creationTimestamp (newest first)
+                    let sortedBatches = Object.values(batches).sort((a, b) => {
+                        const tsA = a.creationTimestamp?.toMillis ? a.creationTimestamp.toMillis() : 0;
+                        const tsB = b.creationTimestamp?.toMillis ? b.creationTimestamp.toMillis() : 0;
+                        return tsB - tsA; // Descending order
+                    });
+
+                    return sortedBatches;
                 }
                 catch (error) {
                     console.error("Error fetching batches for dashboard:", error);
@@ -1890,6 +1902,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
+                    const projectCreationTimestamps = {}; // Store creation timestamps for sorting
+
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
@@ -1907,35 +1921,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const projName = p.baseProjectName || "Unknown Project";
                         const fixCat = p.fixCategory || "Unknown Fix";
-                        if (!projectTotals[projName]) projectTotals[projName] = {};
+
+                        if (!projectTotals[projName]) {
+                            projectTotals[projName] = {};
+                            // Store the creation timestamp for this project name.
+                            // Assuming creationTimestamp from any task within the project batch represents its creation.
+                            if (p.creationTimestamp) {
+                                projectCreationTimestamps[projName] = p.creationTimestamp;
+                            }
+                        }
                         projectTotals[projName][fixCat] = (projectTotals[projName][fixCat] || 0) + minutes;
                     });
 
                     let summaryHtml = '<h3 class="summary-title">Project Time Summary</h3>';
-                    const sortedProjectNames = Object.keys(projectTotals).sort();
+                    // Sort project names by their creation timestamp (newest first)
+                    const sortedProjectNames = Object.keys(projectTotals).sort((a, b) => {
+                        const tsA = projectCreationTimestamps[a]?.toMillis ? projectCreationTimestamps[a].toMillis() : 0;
+                        const tsB = projectCreationTimestamps[b]?.toMillis ? projectCreationTimestamps[b].toMillis() : 0;
+                        return tsB - tsA; // Descending order (newest first)
+                    });
+
                     if (sortedProjectNames.length === 0) {
                         summaryHtml += "<p class='no-data-message'>No project time data found to generate a summary.</p>";
                     } else {
-                        // Change: Remove summary-container grid/flex properties if they are causing multiple columns
-                        // Instead, we will directly append project blocks
-                        summaryHtml += '<div class="summary-list">'; // New wrapper div for stacking projects vertically
+                        summaryHtml += '<div class="summary-list">';
                         sortedProjectNames.forEach(projName => {
-                            summaryHtml += `<div class="project-summary-block-single-column">`; // New class for single column styling
+                            summaryHtml += `<div class="project-summary-block-single-column">`;
                             summaryHtml += `
                                 <h4 class="project-name-header-full-width">
                                     <span class="full-project-name-display">${projName}</span> <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
                                 </h4>
                             `;
-                            summaryHtml += `<div class="fix-categories-flex">`; // Changed to flex for internal items if needed
+                            summaryHtml += `<div class="fix-categories-flex">`;
 
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
-                            
+
                             sortedFixCategories.forEach(fixCat => {
                                 const totalMinutes = fixCategoryTotals[fixCat];
                                 const hoursDecimal = (totalMinutes / 60).toFixed(2);
                                 const bgColor = this.config.FIX_CATEGORIES.COLORS[fixCat] || this.config.FIX_CATEGORIES.COLORS.default;
-                                
+
                                 summaryHtml += `
                                     <div class="fix-category-item" style="background-color: ${bgColor};">
                                         <span class="fix-category-name">${fixCat}:</span>
@@ -1946,11 +1972,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             summaryHtml += `</div></div>`;
                         });
-                        summaryHtml += `</div>`; // Close summary-list
+                        summaryHtml += `</div>`;
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
 
-                    // Re-attach click listener for info icons (still useful for very long names or additional info)
                     const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
                     infoIcons.forEach(icon => {
                         icon.addEventListener('click', (event) => {
