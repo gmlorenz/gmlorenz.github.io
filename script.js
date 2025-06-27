@@ -6,9 +6,10 @@
  * `ProjectTrackerApp` object. It includes user authentication,
  * project management, and advanced analytics dashboards.
  *
- * @version 3.1.2
+ * @version 3.1.3
  * @author Gemini AI
  * @changeLog
+ * - MODIFIED: Reduced project title size in the TL Summary view from h4 to h5 for better fit with long project names.
  * - FIXED: Corrected an invalid Firestore query in the Performance Dashboard. The query was attempting to use inequality filters on two different fields ('assignedTo' and 'lastModifiedTimestamp'), which is not allowed. The logic is now adjusted to fetch by date range first and then filter for assigned tasks on the client side.
  * - DEBUG: Added explicit comments and instructions for replacing the placeholder Firebase configuration to resolve common connection errors.
  * - ADDED: Technician Performance Dashboard with date filtering and drill-down capability to view individual task details.
@@ -19,21 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ProjectTrackerApp = {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
-            // ========================================================================
-            // CRITICAL: FIREBASE CONFIGURATION
-            // ========================================================================
-            // You MUST replace the placeholder values below with the configuration
-            // from YOUR OWN Firebase project. To get this:
-            // 1. Go to your Firebase project console.
-            // 2. Click the gear icon > Project settings.
-            // 3. In the "Your apps" card, select your web app.
-            // 4. In the "Firebase SDK snippet" section, choose "Config".
-            // 5. Copy the `firebaseConfig` object and paste it here.
-            //
-            // The application WILL NOT WORK with these placeholder values.
-            // ========================================================================
             firebase: {
-                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+              apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -1932,7 +1920,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
                             summaryHtml += `<div class="project-summary-block">`;
-                            summaryHtml += `<h4 class="project-name-header"><span class="truncated-project-name">${projName}</span><i class="fas fa-info-circle info-icon" data-full-name="${projName}"></i></h4>`;
+                            // MODIFIED: Changed h4 to h5 for a smaller title
+                            summaryHtml += `<h5 class="project-name-header"><span class="truncated-project-name">${projName}</span><i class="fas fa-info-circle info-icon" data-full-name="${projName}"></i></h5>`;
                             summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
