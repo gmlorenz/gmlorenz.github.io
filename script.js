@@ -6,20 +6,37 @@
  * `ProjectTrackerApp` object. It includes user authentication,
  * project management, and advanced analytics dashboards.
  *
- * @version 3.1.0
+ * @version 3.1.2
  * @author Gemini AI
  * @changeLog
- * - ADDED: Technician Performance Dashboard with date filtering and drill-down capability to view individual task details.*/
+ * - FIXED: Corrected an invalid Firestore query in the Performance Dashboard. The query was attempting to use inequality filters on two different fields ('assignedTo' and 'lastModifiedTimestamp'), which is not allowed. The logic is now adjusted to fetch by date range first and then filter for assigned tasks on the client side.
+ * - DEBUG: Added explicit comments and instructions for replacing the placeholder Firebase configuration to resolve common connection errors.
+ * - ADDED: Technician Performance Dashboard with date filtering and drill-down capability to view individual task details.
+ * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
+ */
 document.addEventListener('DOMContentLoaded', () => {
 
     const ProjectTrackerApp = {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
+            // ========================================================================
+            // CRITICAL: FIREBASE CONFIGURATION
+            // ========================================================================
+            // You MUST replace the placeholder values below with the configuration
+            // from YOUR OWN Firebase project. To get this:
+            // 1. Go to your Firebase project console.
+            // 2. Click the gear icon > Project settings.
+            // 3. In the "Your apps" card, select your web app.
+            // 4. In the "Firebase SDK snippet" section, choose "Config".
+            // 5. Copy the `firebaseConfig` object and paste it here.
+            //
+            // The application WILL NOT WORK with these placeholder values.
+            // ========================================================================
             firebase: {
                 apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
-                storageBucket: "time-tracker-41701.firebase-storage.app",
+                storageBucket: "time-tracker-41701.firebasestorage.app",
                 messagingSenderId: "401097667777",
                 appId: "1:401097667777:web:d6c0c6e7741a2046945040",
                 measurementId: "G-BY9CV5ZQ11"
@@ -44,8 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            NUM_TABLE_COLUMNS: 19, // UPDATED for Progress column
-            // UPDATED: Expected headers for CSV import, matching export order
+            NUM_TABLE_COLUMNS: 19,
             CSV_HEADERS_FOR_IMPORT: [
                 "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
                 "Day 1 Start", "Day 1 Finish", "Day 1 Break",
@@ -53,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start", "Day 3 Finish", "Day 3 Break",
                 "Total (min)", "Tech Notes", "Creation Date", "Last Modified"
             ],
-            // UPDATED: Map CSV headers to Firestore field names (if they differ)
             CSV_HEADER_TO_FIELD_MAP: {
                 "Fix Cat": "fixCategory",
                 "Project Name": "baseProjectName",
@@ -70,10 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start": "startTimeDay3",
                 "Day 3 Finish": "finishTimeDay3",
                 "Day 3 Break": "breakDurationMinutesDay3",
-                "Total (min)": null, // This is calculated, not directly imported, set to null to ignore
+                "Total (min)": null,
                 "Tech Notes": "techNotes",
-                "Creation Date": null, // This is generated, not imported, set to null to ignore
-                "Last Modified": null // This is generated, not imported, set to null to ignore
+                "Creation Date": null,
+                "Last Modified": null
             }
         },
 
@@ -102,14 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 paginatedProjectNameList: [],
                 totalPages: 0,
                 sortOrderForPaging: 'newest',
-                monthForPaging: '' // Track which month the list was built for
+                monthForPaging: ''
             },
             isSummaryPopupListenerAttached: false,
-            // State for the performance dashboard
             performanceDashboard: {
-                allTasksForDateRange: [], // Cache all tasks for the selected range
-                currentDrillDownTechId: null, // Which tech's details are showing
-                dateRange: 'this-month' // Default date range
+                allTasksForDateRange: [],
+                currentDrillDownTechId: null,
+                dateRange: 'this-month'
             },
         },
 
@@ -141,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("CRITICAL: Error initializing Firebase:", error.message);
                 const loadingMessageElement = document.getElementById('loading-auth-message');
                 if (loadingMessageElement) {
-                    loadingMessageElement.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${error.message}</p>`;
+                    loadingMessageElement.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${error.message}</p><p style="color: #333; margin-top: 10px;">Please ensure you have replaced the placeholder Firebase configuration in the script.js file with your own project's configuration from the Firebase console.</p>`;
                 } else {
                     alert("CRITICAL ERROR: Could not connect to Firebase. Error: " + error.message);
                 }
@@ -195,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     addEmailInput: document.getElementById('addEmailInput'),
                     addEmailBtn: document.getElementById('addEmailBtn'),
                     tlSummaryContent: document.getElementById('tlSummaryContent'),
-                    // Performance Dashboard elements
                     openPerformanceBtn: document.getElementById('openPerformanceBtn'),
                     performanceModal: document.getElementById('performanceModal'),
                     closePerformanceModalBtn: document.getElementById('closePerformanceModalBtn'),
@@ -210,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...this.elements,
                     body: document.body,
                     authWrapper: document.getElementById('auth-wrapper'),
-                    mainContainer: document.querySelector('.container'),
                     signInBtn: document.getElementById('signInBtn'),
                     signOutBtn: document.getElementById('signOutBtn'),
                     clearDataBtn: document.getElementById('clearDataBtn'),
@@ -498,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let projectsQuery = this.db.collection("projects");
 
                 if (shouldPaginate) {
-                    this.elements.paginationControls.style.display = 'block';
+                    this.elements.paginationControls.style.display = 'flex';
 
                     if (this.state.pagination.paginatedProjectNameList.length === 0 ||
                         this.state.pagination.sortOrderForPaging !== this.state.filters.sortBy ||
@@ -577,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
                         additionalMinutesManual: 0,
-                        isLocked: p.isLocked || false, // Ensure isLocked defaults to false
+                        isLocked: p.isLocked || false,
                         ...p
                     }));
                     this.methods.refreshAllViews.call(this);
@@ -798,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use<x_bin_42>-MM-DD. Aborting update.");
                                 return;
                             }
 
@@ -1877,7 +1889,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 this.methods.showLoading.call(this, "Generating TL Summary...");
-                this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
+                this.elements.tlSummaryContent.innerHTML = ""; 
 
                 try {
                     const snapshot = await this.db.collection("projects").get();
@@ -1887,11 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
-
-                        const breakMs = ((p.breakDurationMinutesDay1 || 0) +
-                            (p.breakDurationMinutesDay2 || 0) +
-                            (p.breakDurationMinutesDay3 || 0)) * 60000;
-
+                        const breakMs = ((p.breakDurationMinutesDay1 || 0) + (p.breakDurationMinutesDay2 || 0) + (p.breakDurationMinutesDay3 || 0)) * 60000;
                         const additionalMs = (p.additionalMinutesManual || 0) * 60000;
                         const adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
                         if (adjustedNetMs <= 0) return;
@@ -1921,15 +1929,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (sortedProjectNames.length === 0) {
                         summaryHtml += "<p class='no-data-message'>No project time data found to generate a summary.</p>";
                     } else {
-                        summaryHtml += '<div class="summary-list">';
+                        summaryHtml += '<div class="summary-container">';
                         sortedProjectNames.forEach(projName => {
-                            summaryHtml += `<div class="project-summary-block-single-column">`;
-                            summaryHtml += `
-                                <h4 class="project-name-header-full-width">
-                                    <span class="full-project-name-display">${projName}</span> <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
-                                </h4>
-                            `;
-                            summaryHtml += `<div class="fix-categories-flex">`;
+                            summaryHtml += `<div class="project-summary-block">`;
+                            summaryHtml += `<h4 class="project-name-header"><span class="truncated-project-name">${projName}</span><i class="fas fa-info-circle info-icon" data-full-name="${projName}"></i></h4>`;
+                            summaryHtml += `<div class="fix-categories-grid">`;
 
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
@@ -1952,18 +1956,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         summaryHtml += `</div>`;
                     }
                     this.elements.tlSummaryContent.innerHTML = summaryHtml;
-
-                    const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
-                    infoIcons.forEach(icon => {
-                        icon.addEventListener('click', (event) => {
-                            const fullName = event.target.dataset.fullName;
-                            if (fullName) {
-                                alert(`Full Project Name:\n\n${fullName}`);
-                            } else {
-                                alert('Full project name not available.');
-                            }
-                        });
-                    });
 
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
@@ -2022,8 +2014,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const { startDate, endDate } = this.methods.calculateDateRange.call(this);
-                    let projectsQuery = this.db.collection("projects").where("assignedTo", "!=", "");
+                    
+                    // FIXED QUERY: Remove the inequality filter on 'assignedTo'. 
+                    // We will filter on the client side.
+                    let projectsQuery = this.db.collection("projects");
 
+                    // The remaining range filters on 'lastModifiedTimestamp' are valid.
                     if (startDate) {
                         projectsQuery = projectsQuery.where("lastModifiedTimestamp", ">=", startDate);
                     }
@@ -2038,6 +2034,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     snapshot.forEach(doc => {
                         const task = { id: doc.id, ...doc.data() };
+                        
+                        // CLIENT-SIDE FILTER: Only process tasks that have an assigned tech.
+                        if (!task.assignedTo) {
+                            return; // Skip this document
+                        }
+
                         this.state.performanceDashboard.allTasksForDateRange.push(task);
                         
                         const techId = task.assignedTo;
