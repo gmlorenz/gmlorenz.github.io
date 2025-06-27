@@ -1,36 +1,15 @@
 /**
  * =================================================================
- * Project Tracker Application - Refactored and Bug-Fixed
+ * Project Tracker Application - Refactored and Feature-Complete
  * =================================================================
- * This script has been fully refactored to encapsulate all logic
- * within the `ProjectTrackerApp` object. This approach eliminates
- * global variables, improves performance, and ensures correct
- * timezone handling.
+ * This script encapsulates all application logic within the 
+ * `ProjectTrackerApp` object. It includes user authentication,
+ * project management, and advanced analytics dashboards.
  *
- * @version 2.9.2
- * @author Gemini AI Refactor & Bug-Fix
+ * @version 3.1.0
+ * @author Gemini AI
  * @changeLog
- * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
- * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
- * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
- * - MODIFIED: Added status icons (🔒, 🔑, 🔓) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
- * - MODIFIED: Ensured that when tasks are released to a new Fix stage, they are always created in an unlocked state, regardless of the original task's status.
- * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
- * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
- * - ADDED: Real-time notification system for new project creation and Fix stage releases.
- * - ADDED: Export project data to CSV feature.
- * - ADDED: Visual progress bar for each project in the main table.
- * - MODIFIED: CSV Export now exports ALL projects from the database.
- * - FIXED: Replaced Unicode lock icons with standard emojis (🔒, 🔓, 🔑).
- * - ADDED: Import CSV feature for adding new projects from a file.
- * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
- * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
- * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
- * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
- * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip, triggered by hovering over the entire project name area.
- * - FIXED: `ReferenceError: year is not defined` in `populateMonthFilter` by explicitly parsing `year` as an integer.
- * - MODIFIED: Changed TL Summary full project name display from hover tooltip to click-on-info-icon alert.
- */
+ * - ADDED: Technician Performance Dashboard with date filtering and drill-down capability to view individual task details.*/
 document.addEventListener('DOMContentLoaded', () => {
 
     const ProjectTrackerApp = {
@@ -125,7 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 sortOrderForPaging: 'newest',
                 monthForPaging: '' // Track which month the list was built for
             },
-            isSummaryPopupListenerAttached: false // Initialize the flag
+            isSummaryPopupListenerAttached: false,
+            // State for the performance dashboard
+            performanceDashboard: {
+                allTasksForDateRange: [], // Cache all tasks for the selected range
+                currentDrillDownTechId: null, // Which tech's details are showing
+                dateRange: 'this-month' // Default date range
+            },
         },
 
         // --- 4. DOM ELEMENT REFERENCES ---
@@ -210,6 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     addEmailInput: document.getElementById('addEmailInput'),
                     addEmailBtn: document.getElementById('addEmailBtn'),
                     tlSummaryContent: document.getElementById('tlSummaryContent'),
+                    // Performance Dashboard elements
+                    openPerformanceBtn: document.getElementById('openPerformanceBtn'),
+                    performanceModal: document.getElementById('performanceModal'),
+                    closePerformanceModalBtn: document.getElementById('closePerformanceModalBtn'),
+                    performanceDateFilter: document.getElementById('performanceDateFilter'),
+                    performanceContent: document.getElementById('performanceContent'),
+                    performanceDrillDown: document.getElementById('performanceDrillDown'),
                 };
             },
 
@@ -264,6 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.tlSummaryModal.style.display = 'block';
                     self.methods.generateTlSummaryData.call(self);
                 });
+                
+                attachClick(self.elements.openPerformanceBtn, self.methods.handleOpenPerformanceDashboard.bind(self));
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
@@ -304,6 +298,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 attachClick(self.elements.closeTlSummaryBtn, () => {
                     self.elements.tlSummaryModal.style.display = 'none';
+                });
+                
+                attachClick(self.elements.closePerformanceModalBtn, () => {
+                    self.elements.performanceModal.style.display = 'none';
                 });
 
                 attachClick(self.elements.addEmailBtn, self.methods.handleAddEmail.bind(self));
@@ -354,11 +352,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
+                
+                if (self.elements.performanceDateFilter) {
+                    self.elements.performanceDateFilter.onchange = (e) => {
+                        self.state.performanceDashboard.dateRange = e.target.value;
+                        self.methods.generateAndRenderPerformanceData.call(self);
+                    };
+                }
+
                 window.onclick = (event) => {
+                    if (event.target == self.elements.projectFormModal) self.elements.projectFormModal.style.display = 'none';
                     if (event.target == self.elements.tlDashboardModal) self.elements.tlDashboardModal.style.display = 'none';
                     if (event.target == self.elements.settingsModal) self.elements.settingsModal.style.display = 'none';
                     if (event.target == self.elements.tlSummaryModal) self.elements.tlSummaryModal.style.display = 'none';
                     if (event.target == self.elements.importCsvModal) self.elements.importCsvModal.style.display = 'none';
+                    if (event.target == self.elements.performanceModal) self.elements.performanceModal.style.display = 'none';
                 };
             },
 
@@ -405,17 +413,15 @@ document.addEventListener('DOMContentLoaded', () => {
             handleAuthorizedUser(user) {
                 this.elements.body.classList.remove('login-view-active');
                 this.elements.authWrapper.style.display = 'none';
-                this.elements.mainContainer.style.display = 'block';
+                this.elements.appContentDiv.style.display = 'block';
 
                 this.elements.userNameP.textContent = user.displayName || "N/A";
                 this.elements.userEmailP.textContent = user.email || "N/A";
                 if (this.elements.userPhotoImg) this.elements.userPhotoImg.src = user.photoURL || 'default-user.png';
 
                 this.elements.userInfoDisplayDiv.style.display = 'flex';
-                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'none';
                 this.elements.appContentDiv.style.display = 'block';
                 this.elements.loadingAuthMessageDiv.style.display = 'none';
-                if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'block';
 
                 if (!this.state.isAppInitialized) {
                     this.methods.initializeFirebaseAndLoadData.call(this);
@@ -427,20 +433,17 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSignedOutUser() {
                 this.elements.body.classList.add('login-view-active');
                 this.elements.authWrapper.style.display = 'block';
-                this.elements.mainContainer.style.display = 'none';
+                this.elements.appContentDiv.style.display = 'none';
 
                 this.elements.userInfoDisplayDiv.style.display = 'none';
-                if (this.elements.clearDataBtn) this.elements.clearDataBtn.style.display = 'block';
-                this.elements.appContentDiv.style.display = 'none';
                 this.elements.loadingAuthMessageDiv.innerHTML = "<p>Please sign in to access the Project Tracker.</p>";
                 this.elements.loadingAuthMessageDiv.style.display = 'block';
-                if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'none';
 
                 if (this.firestoreListenerUnsubscribe) {
                     this.firestoreListenerUnsubscribe();
                     this.firestoreListenerUnsubscribe = null;
                 }
-                // Stop listening to notifications on sign out
+                
                 if (this.notificationListenerUnsubscribe) {
                     this.notificationListenerUnsubscribe();
                     this.notificationListenerUnsubscribe = null;
@@ -464,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (this.elements.signOutBtn) {
-                    this.elements.signOutBtn.onclick = () => { // FIXED: Changed from self.elements.signOutBtn to this.elements.signOutBtn
+                    this.elements.signOutBtn.onclick = () => { 
                         this.methods.showLoading.call(this, "Signing out...");
                         this.auth.signOut().catch((error) => {
                             console.error("Sign-out error:", error);
@@ -603,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const [year, month] = monthYear.split('-');
                         const option = document.createElement('option');
                         option.value = monthYear;
-                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', { // FIX: parseInt(year)
+                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'long'
                         });
@@ -613,7 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (this.state.filters.month && Array.from(uniqueMonths).includes(this.state.filters.month)) {
                         this.elements.monthFilter.value = this.state.filters.month;
                     } else {
-                        this.elements.monthFilter.value = "";
                         this.elements.monthFilter.value = "";
                         localStorage.setItem('currentSelectedMonth', "");
                     }
@@ -796,7 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use APAC-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
                                 return;
                             }
 
@@ -970,7 +972,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return 0;
                 });
 
-                // NEW: Pre-calculate lock status for each group
                 const groupLockStatus = {};
                 sortedProjects.forEach(p => {
                     const groupKey = `${p.baseProjectName}_${p.fixCategory}`;
@@ -1016,7 +1017,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         const isExpanded = this.state.groupVisibilityState[groupKey]?.isExpanded !== false;
 
-                        // UPDATED: Determine lock icon based on pre-calculated status, using emojis
                         const status = groupLockStatus[groupKey];
                         let lockIcon = '';
                         if (status && status.total > 0) {
@@ -1064,18 +1064,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     assignedToCell.appendChild(assignedToSelect);
 
                     const statusCell = row.insertCell();
-                    // --- MODIFICATION START ---
                     let displayStatus = project.status || "Unknown";
                     if (displayStatus === "Day1Ended_AwaitingNext" ||
                         displayStatus === "Day2Ended_AwaitingNext" ||
                         displayStatus === "Day3Ended_AwaitingNext") {
                         displayStatus = "Started Available";
                     } else {
-                        // Original formatting for other statuses
                         displayStatus = displayStatus.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
                     }
                     statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${displayStatus}</span>`;
-                    // --- MODIFICATION END ---
 
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
 
@@ -1118,7 +1115,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
                     createBreakSelect(3, project);
 
-                    // PROGRESS BAR
                     const progressBarCell = row.insertCell();
                     const statusOrder = ["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed"];
                     const currentStatusIndex = statusOrder.indexOf(project.status);
@@ -1256,7 +1252,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     batchId: task.batchId,
                                     baseProjectName: task.baseProjectName || "N/A",
                                     tasksByFix: {},
-                                    // Add creationTimestamp to the batch object (assuming first task represents batch creation)
                                     creationTimestamp: task.creationTimestamp || null
                                 };
                             }
@@ -1270,11 +1265,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    // Sort batches by creationTimestamp (newest first)
                     let sortedBatches = Object.values(batches).sort((a, b) => {
                         const tsA = a.creationTimestamp?.toMillis ? a.creationTimestamp.toMillis() : 0;
                         const tsB = b.creationTimestamp?.toMillis ? b.creationTimestamp.toMillis() : 0;
-                        return tsB - tsA; // Descending order
+                        return tsB - tsA;
                     });
 
                     return sortedBatches;
@@ -1289,9 +1283,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // --- Start of script.js modifications ---
-
-// REPLACE the existing 'renderTLDashboard' function with the following:
             async renderTLDashboard() {
                 if (!this.elements.tlDashboardContentElement) return;
                 this.elements.tlDashboardContentElement.innerHTML = "";
@@ -1307,22 +1298,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
 
-                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
+                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`;
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
-                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
-
-                    // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
+                    
                     const actionsContainer = document.createElement('div');
-                    actionsContainer.className = 'dashboard-actions-grid'; // New class for overall actions grid
+                    actionsContainer.className = 'dashboard-actions-grid';
 
-                    // Release Actions Group
                     const releaseGroup = document.createElement('div');
                     releaseGroup.className = 'dashboard-actions-group';
                     releaseGroup.innerHTML = '<h6>Release Tasks:</h6>';
                     const releaseActionsDiv = document.createElement('div');
-                    releaseActionsDiv.className = 'dashboard-action-buttons'; // New class for button alignment
-                    // Original release buttons logic goes here
+                    releaseActionsDiv.className = 'dashboard-action-buttons';
+                    
                     allFixStages.forEach((currentFix, index) => {
                         const nextFix = allFixStages[index + 1];
                         if (!nextFix) return;
@@ -1356,7 +1344,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     releaseGroup.appendChild(releaseActionsDiv);
                     actionsContainer.appendChild(releaseGroup);
 
-                    // Lock Actions Group
                     const lockGroup = document.createElement('div');
                     lockGroup.className = 'dashboard-actions-group';
                     lockGroup.innerHTML = '<h6>Manage Locking:</h6>';
@@ -1378,30 +1365,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             };
                             lockActionsDiv.appendChild(lockBtn);
-                            // RECALC BUTTON WAS REMOVED FROM HERE
                         });
                     }
                     lockGroup.appendChild(lockActionsDiv);
                     actionsContainer.appendChild(lockGroup);
 
-                    // NEW: Delete Entire Project Group - Moved here
                     const deleteEntireProjectGroup = document.createElement('div');
                     deleteEntireProjectGroup.className = 'dashboard-actions-group';
                     deleteEntireProjectGroup.innerHTML = '<h6>Delete Current Project:</h6>';
 
                     const deleteEntireProjectButtonsDiv = document.createElement('div');
-                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
+                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons';
 
                     const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'DELETE PROJECT'; // Changed text for conciseness
+                    deleteAllBtn.textContent = 'DELETE PROJECT';
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
-                    deleteAllBtn.style.width = '100%'; // Keep full width within its group
+                    deleteAllBtn.style.width = '100%';
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
                     deleteEntireProjectButtonsDiv.appendChild(deleteAllBtn);
                     deleteEntireProjectGroup.appendChild(deleteEntireProjectButtonsDiv);
-                    actionsContainer.appendChild(deleteEntireProjectGroup); // Append to the grid
+                    actionsContainer.appendChild(deleteEntireProjectGroup);
 
-                    // Delete Specific Fix Stages Group (formerly deleteActionsDiv)
                     const deleteGroup = document.createElement('div');
                     deleteGroup.className = 'dashboard-actions-group';
                     deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
@@ -1428,13 +1412,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteGroup.appendChild(deleteActionsDiv);
                     actionsContainer.appendChild(deleteGroup);
 
-                    batchItemDiv.appendChild(actionsContainer); // Append the main actions grid to the batch item
-                    // --- End of UI Refactor for Project Settings ---
+                    batchItemDiv.appendChild(actionsContainer);
 
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
             },
-// --- End of script.js modifications ---
             
             async recalculateFixStageTotals(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Recalculating totals for ${fixCategory}...`);
@@ -1512,7 +1494,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     await batch.commit();
 
-                    // Refresh the dashboard to show the new button state
                     await this.methods.renderTLDashboard.call(this);
                 } catch (error) {
                     console.error("Error toggling lock state:", error);
@@ -1554,8 +1535,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10) || 0;
                     } else {
-                        // If no tasks in the latest fix category, fall back to the first task found for project
-                        // This assumes at least one task exists for the project, which is checked earlier.
                         lastTask = allTasks[0];
                     }
 
@@ -1602,7 +1581,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             creationTimestamp: serverTimestamp,
                             lastModifiedTimestamp: serverTimestamp
                         };
-                        delete newTaskData.id; // FIX: Changed from newNextFixTask.id to newTaskData.id
+                        delete newTaskData.id;
 
                         const newDocRef = this.db.collection("projects").doc();
                         firestoreBatch.set(newDocRef, newTaskData);
@@ -1884,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.removeItem('projectTrackerGroupVisibility');
                         localStorage.removeItem('currentSortBy');
                         alert("Local application data has been cleared. The page will now reload.");
+                        window.location.reload();
                     } catch (e) {
                         console.error("Error clearing local storage:", e);
                         alert("Could not clear application data. See the console for more details.");
@@ -1902,7 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
-                    const projectCreationTimestamps = {}; // Store creation timestamps for sorting
+                    const projectCreationTimestamps = {};
 
                     snapshot.forEach(doc => {
                         const p = doc.data();
@@ -1924,8 +1904,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (!projectTotals[projName]) {
                             projectTotals[projName] = {};
-                            // Store the creation timestamp for this project name.
-                            // Assuming creationTimestamp from any task within the project batch represents its creation.
                             if (p.creationTimestamp) {
                                 projectCreationTimestamps[projName] = p.creationTimestamp;
                             }
@@ -1934,11 +1912,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     let summaryHtml = '<h3 class="summary-title">Project Time Summary</h3>';
-                    // Sort project names by their creation timestamp (newest first)
                     const sortedProjectNames = Object.keys(projectTotals).sort((a, b) => {
                         const tsA = projectCreationTimestamps[a]?.toMillis ? projectCreationTimestamps[a].toMillis() : 0;
                         const tsB = projectCreationTimestamps[b]?.toMillis ? projectCreationTimestamps[b].toMillis() : 0;
-                        return tsB - tsA; // Descending order (newest first)
+                        return tsB - tsA;
                     });
 
                     if (sortedProjectNames.length === 0) {
@@ -1994,6 +1971,227 @@ document.addEventListener('DOMContentLoaded', () => {
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
+            },
+
+            // --- PERFORMANCE DASHBOARD METHODS ---
+
+            handleOpenPerformanceDashboard() {
+                if (this.elements.performanceModal) {
+                    this.elements.performanceModal.style.display = 'block';
+                    this.state.performanceDashboard.currentDrillDownTechId = null;
+                    this.methods.generateAndRenderPerformanceData.call(this);
+                } else {
+                    console.error("Performance dashboard modal element not found.");
+                }
+            },
+
+            calculateDateRange() {
+                const now = new Date();
+                let startDate, endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                
+                switch (this.state.performanceDashboard.dateRange) {
+                    case 'today':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'this-week':
+                        const dayOfWeek = now.getDay();
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+                        break;
+                    case 'this-month':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                    case 'last-month':
+                        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+                        break;
+                    case 'all-time':
+                    default:
+                        startDate = null;
+                        endDate = null;
+                        break;
+                }
+                return { startDate, endDate };
+            },
+
+            async generateAndRenderPerformanceData() {
+                if (!this.elements.performanceContent) return;
+                this.methods.showLoading.call(this, `Generating performance data...`);
+
+                this.elements.performanceContent.innerHTML = '';
+                this.elements.performanceDrillDown.innerHTML = '';
+
+                try {
+                    const { startDate, endDate } = this.methods.calculateDateRange.call(this);
+                    let projectsQuery = this.db.collection("projects").where("assignedTo", "!=", "");
+
+                    if (startDate) {
+                        projectsQuery = projectsQuery.where("lastModifiedTimestamp", ">=", startDate);
+                    }
+                    if (endDate) {
+                        projectsQuery = projectsQuery.where("lastModifiedTimestamp", "<=", endDate);
+                    }
+
+                    const snapshot = await projectsQuery.get();
+                    
+                    this.state.performanceDashboard.allTasksForDateRange = [];
+                    const techPerformance = {};
+
+                    snapshot.forEach(doc => {
+                        const task = { id: doc.id, ...doc.data() };
+                        this.state.performanceDashboard.allTasksForDateRange.push(task);
+                        
+                        const techId = task.assignedTo;
+                        if (!techPerformance[techId]) {
+                            techPerformance[techId] = {
+                                totalMinutes: 0,
+                                tasksCompleted: 0,
+                                activeProjects: new Set(),
+                                totalTasks: 0
+                            };
+                        }
+
+                        const totalDurationMs = (task.durationDay1Ms || 0) + (task.durationDay2Ms || 0) + (task.durationDay3Ms || 0);
+                        const totalBreakMs = ((task.breakDurationMinutesDay1 || 0) + (task.breakDurationMinutesDay2 || 0) + (task.breakDurationMinutesDay3 || 0)) * 60000;
+                        const additionalMs = (task.additionalMinutesManual || 0) * 60000;
+                        const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+
+                        techPerformance[techId].totalMinutes += (finalAdjustedDurationMs / 60000);
+                        techPerformance[techId].totalTasks++;
+                        techPerformance[techId].activeProjects.add(task.baseProjectName);
+                        if (task.status === "Completed") {
+                            techPerformance[techId].tasksCompleted++;
+                        }
+                    });
+
+                    let tableHtml = `
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Technician ID</th>
+                                    <th>Tasks Completed</th>
+                                    <th>Total Tasks Worked On</th>
+                                    <th>Total Hours Logged</th>
+                                    <th>Avg. Time / Task (hrs)</th>
+                                    <th>Active Projects</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    if (Object.keys(techPerformance).length === 0) {
+                        tableHtml += `<tr><td colspan="6">No technician data found for the selected period.</td></tr>`;
+                    } else {
+                        const sortedTechIds = Object.keys(techPerformance).sort();
+                        sortedTechIds.forEach(techId => {
+                            const stats = techPerformance[techId];
+                            const totalHours = (stats.totalMinutes / 60).toFixed(2);
+                            const avgHoursPerTask = stats.totalTasks > 0 ? (totalHours / stats.totalTasks).toFixed(2) : "0.00";
+                            
+                            tableHtml += `
+                                <tr class="tech-summary-row" data-tech-id="${techId}" title="Click to see task details">
+                                    <td><a href="#" class="tech-drilldown-link">${techId}</a></td>
+                                    <td>${stats.tasksCompleted}</td>
+                                    <td>${stats.totalTasks}</td>
+                                    <td>${totalHours}</td>
+                                    <td>${avgHoursPerTask}</td>
+                                    <td>${Array.from(stats.activeProjects).join(', ')}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    tableHtml += `</tbody></table>`;
+                    this.elements.performanceContent.innerHTML = tableHtml;
+
+                    this.elements.performanceContent.querySelectorAll('.tech-summary-row').forEach(row => {
+                        row.onclick = (e) => {
+                            e.preventDefault();
+                            const techId = row.dataset.techId;
+                            this.methods.handleTechnicianDrillDown.call(this, techId);
+                        };
+                    });
+                     
+                    if(this.state.performanceDashboard.currentDrillDownTechId) {
+                        this.methods.renderTechnicianTaskDetails.call(this);
+                    }
+
+                } catch (error) {
+                    console.error("Error generating performance data:", error);
+                    this.elements.performanceContent.innerHTML = `<p class="error-message">Error generating data: ${error.message}</p>`;
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+
+            handleTechnicianDrillDown(techId) {
+                if (this.state.performanceDashboard.currentDrillDownTechId === techId) {
+                    this.state.performanceDashboard.currentDrillDownTechId = null;
+                    this.elements.performanceDrillDown.innerHTML = "";
+                    this.elements.performanceContent.querySelectorAll('.tech-summary-row.active').forEach(r => r.classList.remove('active'));
+                } else {
+                    this.state.performanceDashboard.currentDrillDownTechId = techId;
+                    this.methods.renderTechnicianTaskDetails.call(this);
+
+                    this.elements.performanceContent.querySelectorAll('.tech-summary-row.active').forEach(r => r.classList.remove('active'));
+                    const activeRow = this.elements.performanceContent.querySelector(`[data-tech-id="${techId}"]`);
+                    if (activeRow) {
+                        activeRow.classList.add('active');
+                    }
+                }
+            },
+
+            renderTechnicianTaskDetails() {
+                const techId = this.state.performanceDashboard.currentDrillDownTechId;
+                if (!techId || !this.elements.performanceDrillDown) return;
+
+                const techTasks = this.state.performanceDashboard.allTasksForDateRange.filter(task => task.assignedTo === techId);
+                
+                let detailHtml = `
+                    <h3 class="drilldown-title">Task Details for ${techId}</h3>
+                    <table class="summary-table drilldown-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Area/Task</th>
+                                <th>Status</th>
+                                <th>Time Logged (min)</th>
+                                <th>Last Modified</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                if (techTasks.length === 0) {
+                    detailHtml += `<tr><td colspan="5">No specific tasks found for this technician in the selected period.</td></tr>`;
+                } else {
+                    techTasks.sort((a, b) => (b.lastModifiedTimestamp?.toMillis() || 0) - (a.lastModifiedTimestamp?.toMillis() || 0));
+
+                    techTasks.forEach(task => {
+                        const totalDurationMs = (task.durationDay1Ms || 0) + (task.durationDay2Ms || 0) + (task.durationDay3Ms || 0);
+                        const totalBreakMs = ((task.breakDurationMinutesDay1 || 0) + (task.breakDurationMinutesDay2 || 0) + (task.breakDurationMinutesDay3 || 0)) * 60000;
+                        const additionalMs = (task.additionalMinutesManual || 0) * 60000;
+                        const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+                        const loggedMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
+                        
+                        let displayStatus = (task.status || "Unknown").replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+                         if (displayStatus === "Day1Ended Awaiting Next" || displayStatus === "Day2Ended Awaiting Next" || displayStatus === "Day3Ended Awaiting Next") {
+                            displayStatus = "Started Available";
+                         }
+
+                        detailHtml += `
+                            <tr>
+                                <td>${task.baseProjectName || 'N/A'}</td>
+                                <td>${task.areaTask || 'N/A'}</td>
+                                <td><span class="status status-${(task.status || "unknown").toLowerCase()}">${displayStatus}</span></td>
+                                <td>${loggedMinutes}</td>
+                                <td>${task.lastModifiedTimestamp ? task.lastModifiedTimestamp.toDate().toLocaleString() : 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                detailHtml += `</tbody></table>`;
+                this.elements.performanceDrillDown.innerHTML = detailHtml;
             },
 
             listenForNotifications() {
@@ -2062,10 +2260,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
                         const totalMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
 
-
                         const rowData = [
                             project.fixCategory || "",
-                            project.baseProjectName || "",
+                            `"${project.baseProjectName || ""}"`,
                             project.areaTask || "",
                             project.gsd || "",
                             project.assignedTo || "",
@@ -2210,7 +2407,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             parseCsvToProjects(csvText) {
                 const lines = csvText.split('\n').filter(line => line.trim() !== '');
-                if (lines.length === 0) return [];
+                if (lines.length < 2) return [];
 
                 const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, ''));
                 
@@ -2224,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
 
                     if (values.length !== headers.length) {
-                        console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}. Row: "${lines[i]}"`);
+                        console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}.`);
                         continue;
                     }
 
@@ -2233,9 +2430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const header = headers[j];
                         const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header]; 
                         
-                        if (fieldName === null) {
-                            continue; 
-                        }
+                        if (fieldName === null) continue; 
                         
                         let value = values[j];
 
@@ -2246,7 +2441,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (typeof value === 'string' && value.trim() !== '') {
                                     const date = new Date(value);
                                     if (isNaN(date.getTime())) {
-                                        console.warn(`Row ${i + 1}: Could not parse date for field '${fieldName}'. Value: "${value}"`);
                                         projectData[fieldName] = null;
                                     } else {
                                         projectData[fieldName] = firebase.firestore.Timestamp.fromDate(date);
@@ -2255,19 +2449,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     projectData[fieldName] = null;
                                 }
                             } catch (e) {
-                                console.error(`Row ${i + 1}: Error parsing date for field '${fieldName}' with value "${value}":`, e);
                                 projectData[fieldName] = null;
                             }
                         } else if (fieldName === 'status') {
                             let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
-
-                            // --- MODIFICATION START ---
-                            if (cleanedStatus.includes('startedavailable')) { // If CSV has "Started Available"
-                                // Map it to Day1Ended_AwaitingNext or similar, depending on what state you want it to represent internally
-                                // For simplicity, let's map it to "Available" for new imports unless specific logic is needed.
-                                // If you want it to represent 'Day1Ended_AwaitingNext' you can set that.
-                                cleanedStatus = 'Available'; // Or 'Day1Ended_AwaitingNext' if that's the intended internal state after "Started Available"
-                            }
+                            
+                            if (cleanedStatus.includes('startedavailable')) cleanedStatus = 'Available';
                             else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
                             else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
                             else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
@@ -2279,7 +2466,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             else cleanedStatus = 'Available';
 
                             projectData[fieldName] = cleanedStatus;
-                            // --- MODIFICATION END ---
                         }
                         else {
                             projectData[fieldName] = value;
@@ -2290,7 +2476,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     let isValidProject = true;
                     for (const field of requiredFieldsCheck) {
                         if (!projectData[field] || projectData[field].trim() === "") {
-                            console.warn(`Skipping row ${i + 1}: Missing required field '${field}'. Row: "${lines[i]}"`);
                             isValidProject = false;
                             break;
                         }
