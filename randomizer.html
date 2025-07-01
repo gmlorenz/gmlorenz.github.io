@@ -190,9 +190,9 @@
             </tbody>
         </table>
 
-        <button id="randomizeButton" class="button button-primary">Randomize</button>
-        <button id="copyButton" class="button button-secondary">Copy Data</button>
-        <button id="settingsButton" class="button button-secondary">Set Time</button>
+        <button id="randomizeButton" class="button button-primary">Randomize Seconds & Calculate</button>
+        <button id="copyButton" class="button button-secondary">Copy Table Data</button>
+        <button id="settingsButton" class="button button-secondary">Settings</button>
         <button id="addExtraTaskButton" class="button button-secondary">Add Extra Task</button>
         <button id="exportDataButton" class="button button-secondary">Export Data</button>
         <button id="importDataButton" class="button button-secondary">Import Data</button>
@@ -281,7 +281,7 @@
 
         // Elements for Export/Import
         const exportDataButton = document.getElementById('exportDataButton');
-        const importDataButton = document = document.getElementById('importDataButton');
+        const importDataButton = document.getElementById('importDataButton');
         const importFileInput = document.getElementById('importFileInput');
 
 
@@ -312,7 +312,9 @@
          * @returns {string} The formatted component.
          */
         function formatTimeComponent(component) {
-            return component < 10 ? '0' + component : String(component);
+            // Ensure the component is treated as a number for the comparison
+            const numComponent = parseInt(component, 10);
+            return numComponent < 10 ? '0' + numComponent : String(numComponent);
         }
 
         /**
@@ -583,8 +585,9 @@
                     const start12hr = convert24hrTo12hr(newStartTimeParts[0], newStartTimeParts[1]);
                     const end12hr = convert24hrTo12hr(newEndTimeParts[0], newEndTimeParts[1]);
 
-                    const displayStartTime = `${formatTimeComponent(start12hr.hour)}:${formatTimeComponent(start12hr.minute)}:${formatTimeComponent(newStartTimeParts[2])} ${start12hr.period}`;
-                    const displayEndTime = `${formatTimeComponent(end12hr.hour)}:${formatTimeComponent(end12hr.minute)}:${formatTimeComponent(newEndTimeParts[2])} ${end12hr.period}`;
+                    // FIX: Ensure seconds are parsed as numbers before formatting
+                    const displayStartTime = `${formatTimeComponent(start12hr.hour)}:${formatTimeComponent(start12hr.minute)}:${formatTimeComponent(parseInt(newStartTimeParts[2], 10))} ${start12hr.period}`;
+                    const displayEndTime = `${formatTimeComponent(end12hr.hour)}:${formatTimeComponent(end12hr.minute)}:${formatTimeComponent(parseInt(newEndTimeParts[2], 10))} ${end12hr.period}`;
 
                     return {
                         start: displayStartTime,
@@ -939,6 +942,7 @@
             const start12hrDisplay = convert24hrTo12hr(startHour24, startMinute);
             const end12hrDisplay = convert24hrTo12hr(endHour24, endMinute);
 
+            // FIX: Ensure seconds are treated as numbers here too for consistency, although formatTimeComponent now handles strings
             const displayStartTime = `${formatTimeComponent(start12hrDisplay.hour)}:${formatTimeComponent(start12hrDisplay.minute)}:${formatTimeComponent(startSecond)} ${start12hrDisplay.period}`;
             const displayEndTime = `${formatTimeComponent(end12hrDisplay.hour)}:${formatTimeComponent(end12hrDisplay.minute)}:${formatTimeComponent(endSecond)} ${end12hrDisplay.period}`;
 
