@@ -197,6 +197,7 @@
         <button id="exportDataButton" class="button button-secondary">Export Data</button>
         <button id="importDataButton" class="button button-secondary">Import Data</button>
         <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        <button id="clearDataButton" class="button button-secondary">Clear Data</button>
 
 
         <div id="messageBox" class="message-box"></div>
@@ -283,6 +284,9 @@
         const exportDataButton = document.getElementById('exportDataButton');
         const importDataButton = document.getElementById('importDataButton');
         const importFileInput = document.getElementById('importFileInput');
+        
+        // Element for Clear Data Button
+        const clearDataButton = document.getElementById('clearDataButton');
 
 
         // Keys for localStorage
@@ -1077,6 +1081,24 @@
             reader.readAsText(file);
         });
 
+        /**
+         * Clears all locally stored data and resets the application to its initial state.
+         */
+        function clearAllDataAndReset() {
+            if (confirm("Are you sure you want to clear all saved settings and extra tasks? This cannot be undone.")) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY_TIME_POINTS);
+                localStorage.removeItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
+                
+                // Reset in-memory variables
+                userDefinedChronologicalTimePoints = [];
+                extraTaskSegments = [];
+
+                // Re-initialize and display based on originalData
+                composeAndDisplayTable(); 
+                showMessageBox('All saved data cleared and application reset!');
+            }
+        }
+
 
         // Add event listeners
         randomizeButton.addEventListener('click', composeAndDisplayTable); 
@@ -1093,6 +1115,7 @@
 
         exportDataButton.addEventListener('click', exportData);
         importDataButton.addEventListener('click', importData);
+        clearDataButton.addEventListener('click', clearAllDataAndReset);
 
 
         // Initial display when the page loads
