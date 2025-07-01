@@ -156,13 +156,13 @@
             text-decoration: none;
         }
 
-        #timePointsEditor {
+        #timePointsEditor, #extraTaskEditor {
             max-height: 60vh; /* Limit height and allow scroll */
             overflow-y: auto;
             margin-bottom: 1rem; /* Space before buttons */
         }
         /* Style for invalid inputs in the modal */
-        #timePointsEditor .input-error {
+        .input-error {
             border-color: red !important; /* Make sure it overrides tailwind */
         }
     </style>
@@ -188,19 +188,61 @@
         <button id="randomizeButton" class="button button-primary">Randomize Seconds & Calculate</button>
         <button id="copyButton" class="button button-secondary">Copy Table Data</button>
         <button id="settingsButton" class="button button-secondary">Settings</button>
+        <button id="addExtraTaskButton" class="button button-secondary">Add Extra Task</button>
 
         <div id="messageBox" class="message-box"></div>
     </div>
 
+    <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span id="closeSettingsModalButton" class="close-button">&times;</span>
             <h3 class="text-xl font-semibold mb-4">Edit Time Points (HH:MM AM/PM)</h3>
             <div id="timePointsEditor" class="mb-4">
-                </div>
+            </div>
             <div class="text-right">
                 <button id="saveSettingsButton" class="button button-primary mr-2">Save & Apply</button>
                 <button id="cancelSettingsButton" class="button button-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra Task Modal -->
+    <div id="extraTaskModal" class="modal">
+        <div class="modal-content">
+            <span id="closeExtraTaskModalButton" class="close-button">&times;</span>
+            <h3 class="text-xl font-semibold mb-4">Add Extra Task</h3>
+            <div id="extraTaskEditor" class="mb-4">
+                <div class="mb-4 p-3 border border-gray-200 rounded-md shadow-sm">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Point 1 (Start Time):</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" min="1" max="12" value="12" id="extraTaskStartHour" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
+                        <span>H:</span>
+                        <input type="number" min="0" max="59" value="00" id="extraTaskStartMinute" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
+                        <span>M:</span>
+                        <select id="extraTaskStartPeriod" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4 p-3 border border-gray-200 rounded-md shadow-sm">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Point 2 (End Time):</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" min="1" max="12" value="12" id="extraTaskEndHour" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
+                        <span>H:</span>
+                        <input type="number" min="0" max="59" value="00" id="extraTaskEndMinute" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
+                        <span>M:</span>
+                        <select id="extraTaskEndPeriod" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <button id="saveExtraTaskButton" class="button button-primary mr-2">Add Task</button>
+                <button id="cancelExtraTaskButton" class="button button-secondary">Cancel</button>
             </div>
         </div>
     </div>
@@ -211,7 +253,8 @@
         const randomizeButton = document.getElementById('randomizeButton');
         const copyButton = document.getElementById('copyButton');
         const messageBox = document.getElementById('messageBox');
-        // New elements for settings
+        
+        // Elements for Settings Modal
         const settingsButton = document.getElementById('settingsButton');
         const settingsModal = document.getElementById('settingsModal');
         const timePointsEditor = document.getElementById('timePointsEditor');
@@ -219,8 +262,23 @@
         const cancelSettingsButton = document.getElementById('cancelSettingsButton');
         const closeSettingsModalButton = document.getElementById('closeSettingsModalButton');
 
-        // Key for localStorage
-        const LOCAL_STORAGE_KEY = 'timeRandomizerSettings_userDefinedChronologicalTimePoints_v2_withAMPM'; // Updated version for AMPM
+        // Elements for Extra Task Modal
+        const addExtraTaskButton = document.getElementById('addExtraTaskButton');
+        const extraTaskModal = document.getElementById('extraTaskModal');
+        const extraTaskStartHour = document.getElementById('extraTaskStartHour');
+        const extraTaskStartMinute = document.getElementById('extraTaskStartMinute');
+        const extraTaskStartPeriod = document.getElementById('extraTaskStartPeriod');
+        const extraTaskEndHour = document.getElementById('extraTaskEndHour');
+        const extraTaskEndMinute = document.getElementById('extraTaskEndMinute');
+        const extraTaskEndPeriod = document.getElementById('extraTaskEndPeriod');
+        const saveExtraTaskButton = document.getElementById('saveExtraTaskButton');
+        const cancelExtraTaskButton = document.getElementById('cancelExtraTaskButton');
+        const closeExtraTaskModalButton = document.getElementById('closeExtraTaskModalButton');
+
+
+        // Keys for localStorage
+        const LOCAL_STORAGE_KEY_TIME_POINTS = 'timeRandomizerSettings_userDefinedChronologicalTimePoints_v2_withAMPM';
+        const LOCAL_STORAGE_KEY_EXTRA_TASKS = 'timeRandomizerExtraTasks_v1';
 
         // Store the provided time data (original format is 24-hour)
         const originalData = [
@@ -233,19 +291,34 @@
             { start: "21:00:15", end: "23:00:02", duration: "1:59:47" }
         ];
 
-        let currentDisplayedData = []; // Array to hold the currently displayed data
+        let currentDisplayedData = []; // Array to hold the currently displayed data (mixed original randomized + extra tasks)
         // Stores { originalReferenceTime: string, currentHour: number, currentMinute: number, currentPeriod: 'AM' | 'PM', uniqueId: string }
-        let userDefinedChronologicalTimePoints = [];
+        let userDefinedChronologicalTimePoints = []; 
+        // Stores extra tasks { start: '12hr time', end: '12hr time', duration: 'HH:MM:SS', start24hr: '24hr time', end24hr: '24hr time' }
+        let extraTaskSegments = []; 
 
+        /**
+         * Helper function to format time components (e.g., 5 -> "05").
+         * @param {number} component - The hour, minute, or second.
+         * @returns {string} The formatted component.
+         */
         function formatTimeComponent(component) {
             return component < 10 ? '0' + component : String(component);
         }
 
+        /**
+         * Generates a random second between 0 and 59.
+         * @returns {number} A random second.
+         */
         function generateRandomSecond() {
             return Math.floor(Math.random() * 60); // 0-59
         }
 
-        // Converts 24-hour time string to total seconds
+        /**
+         * Converts a 24-hour time string (HH:MM:SS) to total seconds from midnight.
+         * @param {string} timeString - The time string (e.g., "04:00:33").
+         * @returns {number} Total seconds.
+         */
         function timeToSeconds24Hr(timeString) {
             const parts = timeString.split(':');
             if (parts.length === 3) {
@@ -257,7 +330,11 @@
             return 0;
         }
 
-        // Converts total seconds to 24-hour time string (HH:MM:SS)
+        /**
+         * Converts total seconds from midnight to a 24-hour time string (HH:MM:SS).
+         * @param {number} totalSeconds - Total seconds.
+         * @returns {string} The formatted time string (e.g., "04:00:33").
+         */
         function secondsToTime24Hr(totalSeconds) {
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -265,7 +342,12 @@
             return `${formatTimeComponent(hours)}:${formatTimeComponent(minutes)}:${formatTimeComponent(seconds)}`;
         }
 
-        // Converts 12-hour (HH:MM AM/PM) to 24-hour HH:MM
+        /**
+         * Converts a 12-hour time (hour and AM/PM) to a 24-hour hour.
+         * @param {number} hour12 - Hour in 12-hour format (1-12).
+         * @param {'AM'|'PM'} period - 'AM' or 'PM'.
+         * @returns {number} Hour in 24-hour format (0-23).
+         */
         function convert12hrTo24hr(hour12, period) {
             let hour24 = parseInt(hour12, 10);
             if (period === 'PM' && hour24 !== 12) {
@@ -276,7 +358,12 @@
             return hour24;
         }
 
-        // Converts 24-hour HH:MM to 12-hour HH:MM AM/PM
+        /**
+         * Converts a 24-hour time (hour and minute) to 12-hour format with AM/PM.
+         * @param {number} hour24 - Hour in 24-hour format (0-23).
+         * @param {number} minute - Minute.
+         * @returns {{hour: number, minute: number, period: 'AM'|'PM'}} The 12-hour time object.
+         */
         function convert24hrTo12hr(hour24, minute) {
             let hour12 = parseInt(hour24, 10);
             const period = hour12 >= 12 ? 'PM' : 'AM';
@@ -289,7 +376,12 @@
             return { hour: hour12, minute: minute, period: period };
         }
 
-        // Calculates duration between two 24-hour time strings
+        /**
+         * Calculates the duration between two 24-hour time strings, handling overnight times.
+         * @param {string} startTime24Hr - Start time in HH:MM:SS (24hr).
+         * @param {string} endTime24Hr - End time in HH:MM:SS (24hr).
+         * @returns {string} Duration in HH:MM:SS.
+         */
         function calculateDuration(startTime24Hr, endTime24Hr) {
             const startSeconds = timeToSeconds24Hr(startTime24Hr);
             const endSeconds = timeToSeconds24Hr(endTime24Hr);
@@ -302,12 +394,14 @@
             }
         }
 
-        // Initializes from localStorage or originalData, now handling AM/PM
+        /**
+         * Initializes user-defined time points from localStorage or originalData.
+         */
         function initializeBaseTimePointsIfNeeded() {
             const N_segments = originalData.length;
             const expectedPointsCount = N_segments === 0 ? 0 : N_segments + 1;
 
-            const storedSettingsString = localStorage.getItem(LOCAL_STORAGE_KEY);
+            const storedSettingsString = localStorage.getItem(LOCAL_STORAGE_KEY_TIME_POINTS);
             if (storedSettingsString) {
                 try {
                     const loadedPoints = JSON.parse(storedSettingsString);
@@ -323,18 +417,18 @@
                         if (isValidStructure) {
                             userDefinedChronologicalTimePoints = loadedPoints;
                             console.log("Loaded time points from localStorage.");
-                            return; // Successfully loaded and validated
+                            return; 
                         } else {
                             console.warn("Stored settings have invalid structure. Re-initializing from originalData.");
-                            localStorage.removeItem(LOCAL_STORAGE_KEY);
+                            localStorage.removeItem(LOCAL_STORAGE_KEY_TIME_POINTS);
                         }
                     } else {
                         console.warn("Stored settings count mismatch (likely due to originalData change). Re-initializing from originalData.");
-                        localStorage.removeItem(LOCAL_STORAGE_KEY);
+                        localStorage.removeItem(LOCAL_STORAGE_KEY_TIME_POINTS);
                     }
                 } catch (error) {
                     console.error("Error parsing stored settings. Re-initializing from originalData.", error);
-                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY_TIME_POINTS);
                 }
             }
 
@@ -351,13 +445,13 @@
 
             userDefinedChronologicalTimePoints = tempChronologicalTimeStrings.map((timeStr, index) => {
                 const parts = timeStr.split(':');
-                let hour24 = parseInt(parts[0], 10) || 0;
+                const hour24 = parseInt(parts[0], 10) || 0;
                 const minute = parseInt(parts[1], 10) || 0;
 
                 const converted = convert24hrTo12hr(hour24, minute);
                 
                 return {
-                    originalReferenceTime: timeStr, // This is the 'original' based on current originalData (24hr)
+                    originalReferenceTime: timeStr, 
                     currentHour: converted.hour,
                     currentMinute: converted.minute,
                     currentPeriod: converted.period,
@@ -366,71 +460,137 @@
             });
         }
 
+        /**
+         * Loads extra task segments from local storage.
+         */
+        function loadExtraTaskSegments() {
+            const storedTasksString = localStorage.getItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
+            if (storedTasksString) {
+                try {
+                    const loadedTasks = JSON.parse(storedTasksString);
+                    if (Array.isArray(loadedTasks)) {
+                        extraTaskSegments = loadedTasks;
+                        console.log("Loaded extra tasks from localStorage.");
+                    } else {
+                        console.warn("Stored extra tasks have invalid structure. Resetting extra tasks.");
+                        localStorage.removeItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
+                        extraTaskSegments = [];
+                    }
+                } catch (error) {
+                    console.error("Error parsing stored extra tasks. Resetting extra tasks.", error);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
+                    extraTaskSegments = [];
+                }
+            } else {
+                extraTaskSegments = []; // Initialize if nothing in storage
+            }
+        }
 
-        function randomizeAllSecondsAndCalculateDuration() {
+        /**
+         * Saves extra task segments to local storage.
+         */
+        function saveExtraTaskSegments() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY_EXTRA_TASKS, JSON.stringify(extraTaskSegments));
+                console.log("Extra tasks saved to localStorage.");
+            } catch (error) {
+                console.error("Error saving extra tasks to localStorage:", error);
+                showMessageBox('Failed to save extra tasks locally. Changes are not persisted.', true);
+            }
+        }
+
+
+        /**
+         * Generates randomized segments from user-defined time points,
+         * combines them with extra tasks, sorts all segments, and updates the display.
+         */
+        function composeAndDisplayTable() {
             initializeBaseTimePointsIfNeeded();
+            loadExtraTaskSegments(); // Load extra tasks
 
             const N_segments = originalData.length;
+            let generatedSegments = [];
+
             if (N_segments === 0) {
-                currentDisplayedData = [];
-                updateDisplay();
-                hideMessageBox();
-                return;
-            }
-            
-            if (userDefinedChronologicalTimePoints.length !== N_segments + 1) {
-                console.error("Mismatch in time points count after initialization. This should not happen.");
-                showMessageBox("Error: Critical mismatch in time points. Please refresh.", true);
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
-                userDefinedChronologicalTimePoints = [];
-                initializeBaseTimePointsIfNeeded(); 
+                // If no original data, only display extra tasks
+                generatedSegments = []; 
+            } else {
                 if (userDefinedChronologicalTimePoints.length !== N_segments + 1) {
-                     showMessageBox("Error: Could not initialize time points correctly. Please check originalData.", true);
-                     return;
+                    console.error("Mismatch in time points count after initialization. This should not happen.");
+                    showMessageBox("Error: Critical mismatch in time points. Please refresh.", true);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY_TIME_POINTS);
+                    userDefinedChronologicalTimePoints = [];
+                    initializeBaseTimePointsIfNeeded(); 
+                    if (userDefinedChronologicalTimePoints.length !== N_segments + 1) {
+                        showMessageBox("Error: Could not initialize time points correctly. Please check originalData.", true);
+                        currentDisplayedData = extraTaskSegments; // Fallback to only extra tasks
+                        updateDisplay();
+                        hideMessageBox();
+                        return;
+                    }
                 }
+                
+                const randomizedChronologicalPoints24Hr = userDefinedChronologicalTimePoints.map(tp => {
+                    const randomSecond = generateRandomSecond();
+                    const hour24 = convert12hrTo24hr(tp.currentHour, tp.currentPeriod);
+                    return `${formatTimeComponent(hour24)}:${formatTimeComponent(tp.currentMinute)}:${formatTimeComponent(randomSecond)}`;
+                });
+
+                generatedSegments = originalData.map((originalEntry, k_original) => {
+                    const startIndexInRandomizedPoints = (N_segments - 1) - k_original;
+                    const endIndexInRandomizedPoints = N_segments - k_original;
+
+                    const newStartTime24Hr = randomizedChronologicalPoints24Hr[startIndexInRandomizedPoints];
+                    const newEndTime24Hr = randomizedChronologicalPoints24Hr[endIndexInRandomizedPoints];
+                    const newDuration = calculateDuration(newStartTime24Hr, newEndTime24Hr);
+
+                    // Convert 24hr times back to 12hr for display
+                    const newStartTimeParts = newStartTime24Hr.split(':');
+                    const newEndTimeParts = newEndTime24Hr.split(':');
+
+                    const start12hr = convert24hrTo12hr(newStartTimeParts[0], newStartTimeParts[1]);
+                    const end12hr = convert24hrTo12hr(newEndTimeParts[0], newEndTimeParts[1]);
+
+                    const displayStartTime = `${formatTimeComponent(start12hr.hour)}:${formatTimeComponent(start12hr.minute)}:${formatTimeComponent(newStartTimeParts[2])} ${start12hr.period}`;
+                    const displayEndTime = `${formatTimeComponent(end12hr.hour)}:${formatTimeComponent(end12hr.minute)}:${formatTimeComponent(newEndTimeParts[2])} ${end12hr.period}`;
+
+                    return {
+                        start: displayStartTime,
+                        end: displayEndTime,
+                        duration: newDuration, 
+                        start24hr: newStartTime24Hr,
+                        end24hr: newEndTime24Hr
+                    };
+                });
             }
-            
-            const randomizedChronologicalPoints24Hr = userDefinedChronologicalTimePoints.map(tp => {
-                const randomSecond = generateRandomSecond();
-                const hour24 = convert12hrTo24hr(tp.currentHour, tp.currentPeriod);
-                return `${formatTimeComponent(hour24)}:${formatTimeComponent(tp.currentMinute)}:${formatTimeComponent(randomSecond)}`;
-            });
 
-            currentDisplayedData = originalData.map((originalEntry, k_original) => {
-                const startIndexInRandomizedPoints = (N_segments - 1) - k_original;
-                const endIndexInRandomizedPoints = N_segments - k_original;
+            // Combine generated segments with extra tasks
+            currentDisplayedData = [...generatedSegments, ...extraTaskSegments];
 
-                const newStartTime24Hr = randomizedChronologicalPoints24Hr[startIndexInRandomizedPoints];
-                const newEndTime24Hr = randomizedChronologicalPoints24Hr[endIndexInRandomizedPoints];
-                const newDuration = calculateDuration(newStartTime24Hr, newEndTime24Hr);
-
-                // Convert 24hr times back to 12hr for display
-                const newStartTimeParts = newStartTime24Hr.split(':');
-                const newEndTimeParts = newEndTime24Hr.split(':');
-
-                const start12hr = convert24hrTo12hr(newStartTimeParts[0], newStartTimeParts[1]);
-                const end12hr = convert24hrTo12hr(newEndTimeParts[0], newEndTimeParts[1]);
-
-                const displayStartTime = `${formatTimeComponent(start12hr.hour)}:${formatTimeComponent(start12hr.minute)}:${formatTimeComponent(newStartTimeParts[2])} ${start12hr.period}`;
-                const displayEndTime = `${formatTimeComponent(end12hr.hour)}:${formatTimeComponent(end12hr.minute)}:${formatTimeComponent(newEndTimeParts[2])} ${end12hr.period}`;
-
-
-                return {
-                    start: displayStartTime,
-                    end: displayEndTime,
-                    duration: newDuration, // Duration remains in HH:MM:SS (24hr style)
-                    // Store 24-hour formats for easy copying
-                    start24hr: newStartTime24Hr,
-                    end24hr: newEndTime24Hr
-                };
+            // Sort all segments by their 24hr start time
+            currentDisplayedData.sort((a, b) => {
+                return timeToSeconds24Hr(a.start24hr) - timeToSeconds24Hr(b.start24hr);
             });
 
             updateDisplay();
             hideMessageBox();
         }
 
+        /**
+         * Updates the HTML table with the currentDisplayedData.
+         */
         function updateDisplay() {
             timeTableBody.innerHTML = '';
+            if (currentDisplayedData.length === 0) {
+                 const row = document.createElement('tr');
+                 const cell = document.createElement('td');
+                 cell.colSpan = 3;
+                 cell.textContent = "No tasks to display. Use 'Randomize' or 'Add Extra Task'.";
+                 cell.className = 'text-center text-gray-500 py-4';
+                 row.appendChild(cell);
+                 timeTableBody.appendChild(row);
+                 return;
+            }
             currentDisplayedData.forEach(entry => {
                 const row = document.createElement('tr');
                 const startCell = document.createElement('td');
@@ -446,6 +606,9 @@
             });
         }
 
+        /**
+         * Copies the current table data to the clipboard in 24-hour format.
+         */
         function copyTableDataToClipboard() {
             if (currentDisplayedData.length === 0) {
                 showMessageBox('No data to copy.', true);
@@ -468,6 +631,10 @@
             }
         }
 
+        /**
+         * Fallback function for copying text to clipboard if navigator.clipboard is not available.
+         * @param {string} text - The text to copy.
+         */
         function fallbackCopyTextToClipboard(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
@@ -491,6 +658,11 @@
             document.body.removeChild(textArea);
         }
 
+        /**
+         * Displays a message in the message box.
+         * @param {string} message - The message to display.
+         * @param {boolean} [isError=false] - Whether the message is an error.
+         */
         function showMessageBox(message, isError = false) {
             messageBox.textContent = message;
             messageBox.className = 'message-box visible';
@@ -502,11 +674,17 @@
             setTimeout(hideMessageBox, 3000);
         }
 
+        /**
+         * Hides the message box.
+         */
         function hideMessageBox() {
             messageBox.className = 'message-box';
             messageBox.classList.remove('error');
         }
 
+        /**
+         * Opens the settings modal and populates it with current time points.
+         */
         function openSettingsModal() {
             initializeBaseTimePointsIfNeeded(); 
             timePointsEditor.innerHTML = '';
@@ -515,7 +693,6 @@
                  showMessageBox('Could not initialize time points for settings. Please refresh.', true);
                  return;
             }
-
 
             userDefinedChronologicalTimePoints.forEach((tp, index) => {
                 const pointDiv = document.createElement('div');
@@ -533,8 +710,8 @@
 
                 const hourInput = document.createElement('input');
                 hourInput.type = 'number';
-                hourInput.min = '1'; // 12-hour format, so min hour is 1
-                hourInput.max = '12'; // Max hour is 12
+                hourInput.min = '1'; 
+                hourInput.max = '12'; 
                 hourInput.value = tp.currentHour;
                 hourInput.dataset.index = index;
                 hourInput.dataset.type = 'hour';
@@ -578,13 +755,15 @@
             settingsModal.style.display = 'flex';
         }
 
-        // Saves settings to localStorage, now handling AM/PM
+        /**
+         * Saves settings from the modal to localStorage.
+         */
         function saveSettings() {
             let allValid = true;
             const tempNewTimePointsSettings = JSON.parse(JSON.stringify(userDefinedChronologicalTimePoints));
 
             document.querySelectorAll('#timePointsEditor input').forEach(input => input.classList.remove('input-error'));
-            document.querySelectorAll('#timePointsEditor select').forEach(select => select.classList.remove('input-error')); // For select elements
+            document.querySelectorAll('#timePointsEditor select').forEach(select => select.classList.remove('input-error')); 
 
             tempNewTimePointsSettings.forEach((tp_settings, index) => {
                 const hourInput = document.querySelector(`#timePointsEditor .hour-input[data-index="${index}"]`);
@@ -595,7 +774,7 @@
                 const newMinute = parseInt(minuteInput.value, 10);
                 const newPeriod = periodSelect.value;
 
-                if (isNaN(newHour) || newHour < 1 || newHour > 12) { // 12-hour format: 1-12
+                if (isNaN(newHour) || newHour < 1 || newHour > 12) { 
                     allValid = false;
                     hourInput.classList.add('input-error');
                 } else {
@@ -621,7 +800,7 @@
                 userDefinedChronologicalTimePoints = tempNewTimePointsSettings; 
 
                 try {
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userDefinedChronologicalTimePoints));
+                    localStorage.setItem(LOCAL_STORAGE_KEY_TIME_POINTS, JSON.stringify(userDefinedChronologicalTimePoints));
                     console.log("Settings saved to localStorage.");
                 } catch (error) {
                     console.error("Error saving settings to localStorage:", error);
@@ -629,29 +808,152 @@
                 }
 
                 settingsModal.style.display = 'none';
-                randomizeAllSecondsAndCalculateDuration(); 
+                composeAndDisplayTable(); 
                 showMessageBox('Settings saved and times updated!');
             } else {
                 showMessageBox('Invalid input. Hours must be 1-12, Minutes 0-59, and AM/PM selected.', true);
             }
         }
 
+        /**
+         * Cancels settings changes and closes the modal.
+         */
         function cancelSettings() {
             document.querySelectorAll('#timePointsEditor input').forEach(input => input.classList.remove('input-error'));
             document.querySelectorAll('#timePointsEditor select').forEach(select => select.classList.remove('input-error'));
             settingsModal.style.display = 'none';
         }
 
+        /**
+         * Opens the extra task modal and resets its input fields.
+         */
+        function openExtraTaskModal() {
+            extraTaskStartHour.value = '12';
+            extraTaskStartMinute.value = '00';
+            extraTaskStartPeriod.value = 'AM';
+            extraTaskEndHour.value = '12';
+            extraTaskEndMinute.value = '00';
+            extraTaskEndPeriod.value = 'PM';
+
+            // Clear any previous error highlighting
+            extraTaskStartHour.classList.remove('input-error');
+            extraTaskStartMinute.classList.remove('input-error');
+            extraTaskStartPeriod.classList.remove('input-error');
+            extraTaskEndHour.classList.remove('input-error');
+            extraTaskEndMinute.classList.remove('input-error');
+            extraTaskEndPeriod.classList.remove('input-error');
+
+            extraTaskModal.style.display = 'flex';
+        }
+
+        /**
+         * Saves a new extra task from the modal.
+         */
+        function saveExtraTask() {
+            let allValid = true;
+
+            const inputsToValidate = [
+                { el: extraTaskStartHour, min: 1, max: 12, name: 'Start Hour' },
+                { el: extraTaskStartMinute, min: 0, max: 59, name: 'Start Minute' },
+                { el: extraTaskEndHour, min: 1, max: 12, name: 'End Hour' },
+                { el: extraTaskEndMinute, min: 0, max: 59, name: 'End Minute' }
+            ];
+
+            // Clear previous errors
+            inputsToValidate.forEach(item => item.el.classList.remove('input-error'));
+            extraTaskStartPeriod.classList.remove('input-error');
+            extraTaskEndPeriod.classList.remove('input-error');
+
+            // Validate numeric inputs
+            inputsToValidate.forEach(item => {
+                const value = parseInt(item.el.value, 10);
+                if (isNaN(value) || value < item.min || value > item.max) {
+                    allValid = false;
+                    item.el.classList.add('input-error');
+                }
+            });
+
+            // Validate period selections
+            if (extraTaskStartPeriod.value !== 'AM' && extraTaskStartPeriod.value !== 'PM') {
+                allValid = false;
+                extraTaskStartPeriod.classList.add('input-error');
+            }
+            if (extraTaskEndPeriod.value !== 'AM' && extraTaskEndPeriod.value !== 'PM') {
+                allValid = false;
+                extraTaskEndPeriod.classList.add('input-error');
+            }
+
+            if (!allValid) {
+                showMessageBox('Invalid input for Extra Task. Please check all fields.', true);
+                return;
+            }
+
+            // Convert to 24-hour format with random seconds for calculations
+            const startHour24 = convert12hrTo24hr(extraTaskStartHour.value, extraTaskStartPeriod.value);
+            const startMinute = parseInt(extraTaskStartMinute.value, 10);
+            const startSecond = generateRandomSecond();
+            const newStartTime24Hr = `${formatTimeComponent(startHour24)}:${formatTimeComponent(startMinute)}:${formatTimeComponent(startSecond)}`;
+
+            const endHour24 = convert12hrTo24hr(extraTaskEndHour.value, extraTaskEndPeriod.value);
+            const endMinute = parseInt(extraTaskEndMinute.value, 10);
+            const endSecond = generateRandomSecond();
+            const newEndTime24Hr = `${formatTimeComponent(endHour24)}:${formatTimeComponent(endMinute)}:${formatTimeComponent(endSecond)}`;
+
+            // Calculate duration
+            const newDuration = calculateDuration(newStartTime24Hr, newEndTime24Hr);
+
+            // Convert 24hr times back to 12hr for display
+            const start12hrDisplay = convert24hrTo12hr(startHour24, startMinute);
+            const end12hrDisplay = convert24hrTo12hr(endHour24, endMinute);
+
+            const displayStartTime = `${formatTimeComponent(start12hrDisplay.hour)}:${formatTimeComponent(start12hrDisplay.minute)}:${formatTimeComponent(startSecond)} ${start12hrDisplay.period}`;
+            const displayEndTime = `${formatTimeComponent(end12hrDisplay.hour)}:${formatTimeComponent(end12hrDisplay.minute)}:${formatTimeComponent(endSecond)} ${end12hrDisplay.period}`;
+
+            // Create new segment object
+            const newExtraSegment = {
+                start: displayStartTime,
+                end: displayEndTime,
+                duration: newDuration,
+                start24hr: newStartTime24Hr,
+                end24hr: newEndTime24Hr,
+                isExtra: true // Flag to identify extra tasks if needed later
+            };
+
+            extraTaskSegments.push(newExtraSegment);
+            saveExtraTaskSegments(); 
+            extraTaskModal.style.display = 'none';
+            composeAndDisplayTable(); 
+            showMessageBox('Extra task added and table updated!');
+        }
+
+        /**
+         * Cancels extra task addition and closes the modal.
+         */
+        function cancelExtraTask() {
+            extraTaskStartHour.classList.remove('input-error');
+            extraTaskStartMinute.classList.remove('input-error');
+            extraTaskStartPeriod.classList.remove('input-error');
+            extraTaskEndHour.classList.remove('input-error');
+            extraTaskEndMinute.classList.remove('input-error');
+            extraTaskEndPeriod.classList.remove('input-error');
+            extraTaskModal.style.display = 'none';
+        }
+
         // Add event listeners
-        randomizeButton.addEventListener('click', randomizeAllSecondsAndCalculateDuration);
+        randomizeButton.addEventListener('click', composeAndDisplayTable); // Changed to composeAndDisplayTable
         copyButton.addEventListener('click', copyTableDataToClipboard);
         settingsButton.addEventListener('click', openSettingsModal);
         saveSettingsButton.addEventListener('click', saveSettings);
         cancelSettingsButton.addEventListener('click', cancelSettings);
         closeSettingsModalButton.addEventListener('click', cancelSettings);
 
-        // Initial display
-        randomizeAllSecondsAndCalculateDuration();
+        addExtraTaskButton.addEventListener('click', openExtraTaskModal);
+        saveExtraTaskButton.addEventListener('click', saveExtraTask);
+        cancelExtraTaskButton.addEventListener('click', cancelExtraTask);
+        closeExtraTaskModalButton.addEventListener('click', cancelExtraTask);
+
+        // Initial display when the page loads
+        composeAndDisplayTable();
     </script>
 
 </body>
