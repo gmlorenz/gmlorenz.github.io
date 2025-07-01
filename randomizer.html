@@ -289,15 +289,15 @@
         const LOCAL_STORAGE_KEY_TIME_POINTS = 'timeRandomizerSettings_userDefinedChronologicalTimePoints_v2_withAMPM';
         const LOCAL_STORAGE_KEY_EXTRA_TASKS = 'timeRandomizerExtraTasks_v1';
 
-        // Store the provided time data (original format is 24-hour)
+        // Updated originalData based on user's input
         const originalData = [
-            { start: "04:00:33", end: "06:00:45", duration: "2:00:12" },
-            { start: "03:45:51", end: "04:00:33", duration: "0:14:42" },
-            { start: "02:00:13", end: "03:45:51", duration: "1:45:38" },
-            { start: "01:00:09", end: "02:00:13", duration: "1:00:04" },
-            { start: "23:15:01", end: "01:00:09", duration: "1:45:08" },
-            { start: "23:00:02", end: "23:15:01", duration: "0:14:59" },
-            { start: "21:00:15", end: "23:00:02", duration: "1:59:47" }
+            { start: "13:45:02", end: "15:30:20", duration: "1:45:18" },
+            { start: "13:30:01", end: "13:45:02", duration: "0:15:01" },
+            { start: "12:00:15", end: "13:30:01", duration: "1:29:46" },
+            { start: "11:00:26", end: "12:00:15", duration: "0:59:49" },
+            { start: "08:45:55", end: "11:00:26", duration: "2:14:31" },
+            { start: "08:30:11", end: "08:45:55", duration: "0:15:44" },
+            { start: "06:30:36", end: "08:30:11", duration: "1:59:35" }
         ];
 
         let currentDisplayedData = []; // Array to hold the currently displayed data (mixed original randomized + extra tasks)
