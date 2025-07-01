@@ -165,6 +165,11 @@
         .input-error {
             border-color: red !important; /* Make sure it overrides tailwind */
         }
+        /* Ensure extra task points take equal width within flex container */
+        .extra-task-point {
+            flex: 1 1 48%; /* Allows points to grow/shrink, taking roughly half width with a gap */
+            min-width: 250px; /* Ensure they don't get too small before wrapping */
+        }
     </style>
 </head>
 <body>
@@ -185,9 +190,9 @@
             </tbody>
         </table>
 
-        <button id="randomizeButton" class="button button-primary">Randomize</button>
-        <button id="copyButton" class="button button-secondary">Copy</button>
-        <button id="settingsButton" class="button button-secondary">Set Time</button>
+        <button id="randomizeButton" class="button button-primary">Randomize Seconds & Calculate</button>
+        <button id="copyButton" class="button button-secondary">Copy Table Data</button>
+        <button id="settingsButton" class="button button-secondary">Settings</button>
         <button id="addExtraTaskButton" class="button button-secondary">Add Extra Task</button>
         <button id="exportDataButton" class="button button-secondary">Export Data</button>
         <button id="importDataButton" class="button button-secondary">Import Data</button>
@@ -214,9 +219,7 @@
         <div class="modal-content">
             <span id="closeExtraTaskModalButton" class="close-button">&times;</span>
             <h3 class="text-xl font-semibold mb-4">Add Extra Task</h3>
-            <div id="extraTaskEditor" class="mb-4">
-                <div class="mb-4 p-3 border border-gray-200 rounded-md shadow-sm">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Point 1 (Start Time):</label>
+            <div id="extraTaskEditor" class="mb-4 flex flex-wrap justify-center gap-4"> <div class="p-3 border border-gray-200 rounded-md shadow-sm extra-task-point"> <label class="block text-sm font-medium text-gray-700 mb-1">Point 1 (Start Time):</label>
                     <div class="flex items-center space-x-2">
                         <input type="number" min="1" max="12" value="12" id="extraTaskStartHour" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
                         <span>H:</span>
@@ -228,8 +231,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="mb-4 p-3 border border-gray-200 rounded-md shadow-sm">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Point 2 (End Time):</label>
+                <div class="p-3 border border-gray-200 rounded-md shadow-sm extra-task-point"> <label class="block text-sm font-medium text-gray-700 mb-1">Point 2 (End Time):</label>
                     <div class="flex items-center space-x-2">
                         <input type="number" min="1" max="12" value="12" id="extraTaskEndHour" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-20 text-center">
                         <span>H:</span>
@@ -279,7 +281,7 @@
 
         // Elements for Export/Import
         const exportDataButton = document.getElementById('exportDataButton');
-        const importDataButton = document.getElementById('importDataButton');
+        const importDataButton = document = document.getElementById('importDataButton');
         const importFileInput = document.getElementById('importFileInput');
 
 
