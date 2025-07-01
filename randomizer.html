@@ -189,11 +189,14 @@
         <button id="copyButton" class="button button-secondary">Copy Table Data</button>
         <button id="settingsButton" class="button button-secondary">Settings</button>
         <button id="addExtraTaskButton" class="button button-secondary">Add Extra Task</button>
+        <button id="exportDataButton" class="button button-secondary">Export Data</button>
+        <button id="importDataButton" class="button button-secondary">Import Data</button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+
 
         <div id="messageBox" class="message-box"></div>
     </div>
 
-    <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span id="closeSettingsModalButton" class="close-button">&times;</span>
@@ -207,7 +210,6 @@
         </div>
     </div>
 
-    <!-- Extra Task Modal -->
     <div id="extraTaskModal" class="modal">
         <div class="modal-content">
             <span id="closeExtraTaskModalButton" class="close-button">&times;</span>
@@ -274,6 +276,11 @@
         const saveExtraTaskButton = document.getElementById('saveExtraTaskButton');
         const cancelExtraTaskButton = document.getElementById('cancelExtraTaskButton');
         const closeExtraTaskModalButton = document.getElementById('closeExtraTaskModalButton');
+
+        // Elements for Export/Import
+        const exportDataButton = document.getElementById('exportDataButton');
+        const importDataButton = document.getElementById('importDataButton');
+        const importFileInput = document.getElementById('importFileInput');
 
 
         // Keys for localStorage
@@ -438,9 +445,18 @@
             if (N_segments === 0) return;
 
             const tempChronologicalTimeStrings = [];
-            tempChronologicalTimeStrings.push(originalData[N_segments - 1].start);
+            // Assuming originalData is sorted chronologically *backwards* by end time
+            // We need to extract all unique chronological time points.
+            // A safer approach for initial points is to sort originalData by start time first,
+            // then extract all unique start and end points and sort them.
+            // For now, let's stick to the current logic which extracts from the given order.
+
+            // This extraction assumes originalData is structured such that
+            // originalData[N_segments - 1].start is the earliest point,
+            // and then each subsequent originalData[i].end is chronologically later.
+            tempChronologicalTimeStrings.push(originalData[N_segments - 1].start); // Earliest point
             for (let i = N_segments - 1; i >= 0; i--) {
-                tempChronologicalTimeStrings.push(originalData[i].end);
+                tempChronologicalTimeStrings.push(originalData[i].end); // Subsequent points
             }
 
             userDefinedChronologicalTimePoints = tempChronologicalTimeStrings.map((timeStr, index) => {
@@ -469,10 +485,24 @@
                 try {
                     const loadedTasks = JSON.parse(storedTasksString);
                     if (Array.isArray(loadedTasks)) {
-                        extraTaskSegments = loadedTasks;
-                        console.log("Loaded extra tasks from localStorage.");
+                        // Basic validation for extra task segments
+                        const isValid = loadedTasks.every(task => 
+                            typeof task.start === 'string' && 
+                            typeof task.end === 'string' && 
+                            typeof task.duration === 'string' && 
+                            typeof task.start24hr === 'string' && 
+                            typeof task.end24hr === 'string'
+                        );
+                        if (isValid) {
+                            extraTaskSegments = loadedTasks;
+                            console.log("Loaded extra tasks from localStorage.");
+                        } else {
+                            console.warn("Stored extra tasks have invalid structure. Resetting extra tasks.");
+                            localStorage.removeItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
+                            extraTaskSegments = [];
+                        }
                     } else {
-                        console.warn("Stored extra tasks have invalid structure. Resetting extra tasks.");
+                        console.warn("Stored extra tasks is not an array. Resetting extra tasks.");
                         localStorage.removeItem(LOCAL_STORAGE_KEY_EXTRA_TASKS);
                         extraTaskSegments = [];
                     }
@@ -578,6 +608,7 @@
 
         /**
          * Updates the HTML table with the currentDisplayedData.
+         * @param {Array<Object>} segmentsToDisplay - The array of segments to display.
          */
         function updateDisplay() {
             timeTableBody.innerHTML = '';
@@ -939,8 +970,110 @@
             extraTaskModal.style.display = 'none';
         }
 
+        /**
+         * Exports the current time points and extra tasks as a JSON file.
+         */
+        function exportData() {
+            const dataToExport = {
+                randomizerPoints: userDefinedChronologicalTimePoints,
+                extraTasks: extraTaskSegments
+            };
+            const jsonString = JSON.stringify(dataToExport, null, 2); // Pretty print JSON
+
+            const filename = prompt("Enter filename for export:", "randomizer_data.json");
+            if (!filename) {
+                showMessageBox('Export cancelled.', true);
+                return;
+            }
+
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessageBox('Data exported successfully!');
+        }
+
+        /**
+         * Imports data from a selected JSON file.
+         */
+        function importData() {
+            importFileInput.click(); // Trigger the hidden file input click
+        }
+
+        /**
+         * Handles the file selection for import.
+         * @param {Event} event - The change event from the file input.
+         */
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                showMessageBox('No file selected.', true);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Basic validation for imported data structure
+                    if (importedData && typeof importedData === 'object' &&
+                        Array.isArray(importedData.randomizerPoints) &&
+                        Array.isArray(importedData.extraTasks)) {
+                        
+                        // Validate randomizerPoints structure (simplified)
+                        const areRandomizerPointsValid = importedData.randomizerPoints.every(p => 
+                            typeof p.currentHour === 'number' && typeof p.currentMinute === 'number' &&
+                            (p.currentPeriod === 'AM' || p.currentPeriod === 'PM')
+                        );
+
+                        // Validate extraTasks structure (simplified)
+                        const areExtraTasksValid = importedData.extraTasks.every(t => 
+                            typeof t.start === 'string' && typeof t.end === 'string' &&
+                            typeof t.start24hr === 'string' && typeof t.end24hr === 'string'
+                        );
+
+                        if (areRandomizerPointsValid && areExtraTasksValid) {
+                            userDefinedChronologicalTimePoints = importedData.randomizerPoints;
+                            extraTaskSegments = importedData.extraTasks;
+                            
+                            // Save imported data to local storage
+                            localStorage.setItem(LOCAL_STORAGE_KEY_TIME_POINTS, JSON.stringify(userDefinedChronologicalTimePoints));
+                            localStorage.setItem(LOCAL_STORAGE_KEY_EXTRA_TASKS, JSON.stringify(extraTaskSegments));
+
+                            composeAndDisplayTable();
+                            showMessageBox('Data imported successfully!');
+                        } else {
+                            showMessageBox('Invalid data structure in the imported file. Please ensure it matches the expected format.', true);
+                        }
+                    } else {
+                        showMessageBox('Invalid file format. Please import a JSON file generated by this tool.', true);
+                    }
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    showMessageBox('Failed to import data. Please ensure it\'s a valid JSON file.', true);
+                } finally {
+                    // Reset the file input to allow selecting the same file again if needed
+                    event.target.value = '';
+                }
+            };
+
+            reader.onerror = () => {
+                showMessageBox('Error reading file.', true);
+                event.target.value = ''; // Reset file input
+            };
+
+            reader.readAsText(file);
+        });
+
+
         // Add event listeners
-        randomizeButton.addEventListener('click', composeAndDisplayTable); // Changed to composeAndDisplayTable
+        randomizeButton.addEventListener('click', composeAndDisplayTable); 
         copyButton.addEventListener('click', copyTableDataToClipboard);
         settingsButton.addEventListener('click', openSettingsModal);
         saveSettingsButton.addEventListener('click', saveSettings);
@@ -951,6 +1084,10 @@
         saveExtraTaskButton.addEventListener('click', saveExtraTask);
         cancelExtraTaskButton.addEventListener('click', cancelExtraTask);
         closeExtraTaskModalButton.addEventListener('click', cancelExtraTask);
+
+        exportDataButton.addEventListener('click', exportData);
+        importDataButton.addEventListener('click', importData);
+
 
         // Initial display when the page loads
         composeAndDisplayTable();
