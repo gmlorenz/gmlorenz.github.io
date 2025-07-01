@@ -188,10 +188,6 @@
         <button id="randomizeButton" class="button button-primary">Randomize Seconds & Calculate</button>
         <button id="copyButton" class="button button-secondary">Copy Table Data</button>
         <button id="settingsButton" class="button button-secondary">Settings</button>
-        <button id="exportButton" class="button button-secondary">Export Data</button>
-        <input type="file" id="importFile" accept=".json" style="display: none;">
-        <button id="importButton" class="button button-secondary">Import Data</button>
-        <button id="clearButton" class="button button-secondary">Clear Data</button>
 
         <div id="messageBox" class="message-box"></div>
     </div>
@@ -222,11 +218,6 @@
         const saveSettingsButton = document.getElementById('saveSettingsButton');
         const cancelSettingsButton = document.getElementById('cancelSettingsButton');
         const closeSettingsModalButton = document.getElementById('closeSettingsModalButton');
-        // New elements for export/import/clear
-        const exportButton = document.getElementById('exportButton');
-        const importFile = document.getElementById('importFile');
-        const importButton = document.getElementById('importButton');
-        const clearButton = document.getElementById('clearButton');
 
         // Key for localStorage
         const LOCAL_STORAGE_KEY = 'timeRandomizerSettings_userDefinedChronologicalTimePoints_v2_withAMPM'; // Updated version for AMPM
@@ -651,92 +642,13 @@
             settingsModal.style.display = 'none';
         }
 
-        // --- New Functions for Export, Import, Clear ---
-
-        function exportData() {
-            if (userDefinedChronologicalTimePoints.length === 0) {
-                showMessageBox('No settings to export.', true);
-                return;
-            }
-            const dataStr = JSON.stringify(userDefinedChronologicalTimePoints, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'time_randomizer_settings.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showMessageBox('Settings exported as JSON!');
-        }
-
-        function importData() {
-            importFile.click(); // Programmatically click the hidden file input
-        }
-
-        importFile.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                showMessageBox('No file selected for import.', true);
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedPoints = JSON.parse(e.target.result);
-
-                    // Basic validation for imported data structure
-                    if (!Array.isArray(importedPoints) || importedPoints.some(p => 
-                        !p.hasOwnProperty('currentHour') || !p.hasOwnProperty('currentMinute') || !p.hasOwnProperty('currentPeriod') || 
-                        !p.hasOwnProperty('originalReferenceTime') || !p.hasOwnProperty('uniqueId')
-                    )) {
-                        showMessageBox('Invalid file format. Please import a valid JSON settings file.', true);
-                        return;
-                    }
-
-                    // Check if the number of imported points matches the expected number based on originalData
-                    const N_segments = originalData.length;
-                    const expectedPointsCount = N_segments === 0 ? 0 : N_segments + 1;
-
-                    if (importedPoints.length !== expectedPointsCount) {
-                        showMessageBox(`Imported data mismatch. Expected ${expectedPointsCount} time points, but got ${importedPoints.length}.`, true);
-                        return;
-                    }
-
-                    userDefinedChronologicalTimePoints = importedPoints;
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userDefinedChronologicalTimePoints));
-                    showMessageBox('Settings imported successfully! Applying changes...');
-                    randomizeAllSecondsAndCalculateDuration(); // Re-run with new settings
-                } catch (error) {
-                    console.error('Error parsing imported file:', error);
-                    showMessageBox('Error reading or parsing the imported file. Make sure it is a valid JSON.', true);
-                }
-            };
-            reader.onerror = () => {
-                showMessageBox('Failed to read the file.', true);
-            };
-            reader.readAsText(file);
-
-            // Reset the file input value to allow importing the same file again if needed
-            event.target.value = ''; 
-        });
-
-        function clearData() {
-            if (confirm('Are you sure you want to clear all custom settings? This will revert to original default times.')) {
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
-                userDefinedChronologicalTimePoints = []; // Clear current in-memory settings
-                initializeBaseTimePointsIfNeeded(); // Re-initialize from original data
-                randomizeAllSecondsAndCalculateDuration(); // Update display
-                showMessageBox('All custom settings cleared. Reverted to defaults.');
-            }
-        }
-
-        // Add event listeners for new buttons
-        exportButton.addEventListener('click', exportData);
-        importButton.addEventListener('click', importData);
-        clearButton.addEventListener('click', clearData);
+        // Add event listeners
+        randomizeButton.addEventListener('click', randomizeAllSecondsAndCalculateDuration);
+        copyButton.addEventListener('click', copyTableDataToClipboard);
+        settingsButton.addEventListener('click', openSettingsModal);
+        saveSettingsButton.addEventListener('click', saveSettings);
+        cancelSettingsButton.addEventListener('click', cancelSettings);
+        closeSettingsModalButton.addEventListener('click', cancelSettings);
 
         // Initial display
         randomizeAllSecondsAndCalculateDuration();
