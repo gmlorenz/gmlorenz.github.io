@@ -7,15 +7,29 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.0.0
- * @author Gemini AI Refactor & Feature Add
+ * @version 2.9.2
+ * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
- * - ADDED: Dynamic column visibility. Users can show/hide table columns from Project Settings. State is saved to localStorage.
- * - MODIFIED: `renderTLDashboard` now includes a "Manage Table Columns" section with checkboxes.
- * - MODIFIED: `renderProjects` now adds a unique class to each column's cells and dynamically calculates the `colspan` for group headers based on visible columns.
- * - ADDED: New methods `loadColumnVisibilityState`, `saveColumnVisibilityState`, and `applyColumnVisibility` to manage the new feature.
- * - ADDED: `TABLE_COLUMNS` array in config to act as a single source of truth for all table columns.
- * - (Previous changes from v2.9.2 retained)
+ * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
+ * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
+ * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
+ * - MODIFIED: Added status icons (🔒, 🔑, 🔓) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
+ * - MODIFIED: Ensured that when tasks are released to a new Fix stage, they are always created in an unlocked state, regardless of the original task's status.
+ * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
+ * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
+ * - ADDED: Real-time notification system for new project creation and Fix stage releases.
+ * - ADDED: Export project data to CSV feature.
+ * - ADDED: Visual progress bar for each project in the main table.
+ * - MODIFIED: CSV Export now exports ALL projects from the database.
+ * - FIXED: Replaced Unicode lock icons with standard emojis (🔒, 🔓, 🔑).
+ * - ADDED: Import CSV feature for adding new projects from a file.
+ * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
+ * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
+ * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
+ * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
+ * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip, triggered by hovering over the entire project name area.
+ * - FIXED: `ReferenceError: year is not defined` in `populateMonthFilter` by explicitly parsing `year` as an integer.
+ * - MODIFIED: Changed TL Summary full project name display from hover tooltip to click-on-info-icon alert.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -51,29 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            // NEW: Configuration for all table columns for dynamic visibility
-            TABLE_COLUMNS: [
-                { id: 'fixCategory', name: 'Fix Cat', default: true },
-                { id: 'projectName', name: 'Project Name', default: false }, // Defaulted to hidden as per prior request
-                { id: 'areaTask', name: 'Area/Task', default: true },
-                { id: 'gsd', name: 'GSD', default: true },
-                { id: 'assignedTo', name: 'Assigned To', default: true },
-                { id: 'status', name: 'Status', default: true },
-                { id: 'day1Start', name: 'Day 1 Start', default: true },
-                { id: 'day1Finish', name: 'Day 1 Finish', default: true },
-                { id: 'day1Break', name: 'Day 1 Break', default: true },
-                { id: 'day2Start', name: 'Day 2 Start', default: false },
-                { id: 'day2Finish', name: 'Day 2 Finish', default: false },
-                { id: 'day2Break', name: 'Day 2 Break', default: false },
-                { id: 'day3Start', name: 'Day 3 Start', default: false },
-                { id: 'day3Finish', name: 'Day 3 Finish', default: false },
-                { id: 'day3Break', name: 'Day 3 Break', default: false },
-                { id: 'progress', name: 'Progress', default: true },
-                { id: 'totalMin', name: 'Total (min)', default: true },
-                { id: 'techNotes', name: 'Tech Notes', default: true },
-                { id: 'actions', name: 'Actions', default: true }
-            ],
-            NUM_TABLE_COLUMNS: 19, // This now represents the MAX number of columns
+            NUM_TABLE_COLUMNS: 19, // UPDATED for Progress column
+            // UPDATED: Expected headers for CSV import, matching export order
             CSV_HEADERS_FOR_IMPORT: [
                 "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
                 "Day 1 Start", "Day 1 Finish", "Day 1 Break",
@@ -81,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start", "Day 3 Finish", "Day 3 Break",
                 "Total (min)", "Tech Notes", "Creation Date", "Last Modified"
             ],
+            // UPDATED: Map CSV headers to Firestore field names (if they differ)
             CSV_HEADER_TO_FIELD_MAP: {
                 "Fix Cat": "fixCategory",
                 "Project Name": "baseProjectName",
@@ -97,10 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start": "startTimeDay3",
                 "Day 3 Finish": "finishTimeDay3",
                 "Day 3 Break": "breakDurationMinutesDay3",
-                "Total (min)": null,
+                "Total (min)": null, // This is calculated, not directly imported, set to null to ignore
                 "Tech Notes": "techNotes",
-                "Creation Date": null,
-                "Last Modified": null
+                "Creation Date": null, // This is generated, not imported, set to null to ignore
+                "Last Modified": null // This is generated, not imported, set to null to ignore
             }
         },
 
@@ -115,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         state: {
             projects: [],
             groupVisibilityState: {},
-            columnVisibility: {}, // NEW: State for column visibility
             allowedEmails: [],
             isAppInitialized: false,
             filters: {
@@ -130,9 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 paginatedProjectNameList: [],
                 totalPages: 0,
                 sortOrderForPaging: 'newest',
-                monthForPaging: ''
+                monthForPaging: '' // Track which month the list was built for
             },
-            isSummaryPopupListenerAttached: false
+            isSummaryPopupListenerAttached: false // Initialize the flag
         },
 
         // --- 4. DOM ELEMENT REFERENCES ---
@@ -152,10 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.db = firebase.firestore();
                 this.auth = firebase.auth();
                 console.log("Firebase initialized successfully!");
-
-                // NEW: Load column visibility preferences
-                this.methods.loadColumnVisibilityState.call(this);
-                this.methods.applyColumnVisibility.call(this);
 
                 this.methods.setupDOMReferences.call(this);
                 this.methods.setupAuthRelatedDOMReferences.call(this);
@@ -451,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.firestoreListenerUnsubscribe();
                     this.firestoreListenerUnsubscribe = null;
                 }
+                // Stop listening to notifications on sign out
                 if (this.notificationListenerUnsubscribe) {
                     this.notificationListenerUnsubscribe();
                     this.notificationListenerUnsubscribe = null;
@@ -474,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (this.elements.signOutBtn) {
-                    this.elements.signOutBtn.onclick = () => {
+                    this.elements.signOutBtn.onclick = () => { // FIXED: Changed from self.elements.signOutBtn to this.elements.signOutBtn
                         this.methods.showLoading.call(this, "Signing out...");
                         this.auth.signOut().catch((error) => {
                             console.error("Sign-out error:", error);
@@ -584,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
                         additionalMinutesManual: 0,
-                        isLocked: p.isLocked || false,
+                        isLocked: p.isLocked || false, // Ensure isLocked defaults to false
                         ...p
                     }));
                     this.methods.refreshAllViews.call(this);
@@ -613,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const [year, month] = monthYear.split('-');
                         const option = document.createElement('option');
                         option.value = monthYear;
-                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', {
+                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', { // FIX: parseInt(year)
                             year: 'numeric',
                             month: 'long'
                         });
@@ -623,6 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (this.state.filters.month && Array.from(uniqueMonths).includes(this.state.filters.month)) {
                         this.elements.monthFilter.value = this.state.filters.month;
                     } else {
+                        this.elements.monthFilter.value = "";
                         this.elements.monthFilter.value = "";
                         localStorage.setItem('currentSelectedMonth', "");
                     }
@@ -805,7 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                             if (!dateRegex.test(dateInput)) {
-                                alert("Invalid date format. Please use YYYY-MM-DD. Aborting update.");
+                                alert("Invalid date format. Please use APAC-MM-DD. Aborting update.");
                                 return;
                             }
 
@@ -961,9 +952,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!this.elements.projectTableBody) return;
                 this.elements.projectTableBody.innerHTML = "";
 
-                // MODIFIED: Calculate visible columns for colspan
-                const visibleColumnCount = Object.values(this.state.columnVisibility).filter(v => v === true).length;
-
                 const sortedProjects = [...this.state.projects].sort((a, b) => {
                     const nameA = a.baseProjectName || "";
                     const nameB = b.baseProjectName || "";
@@ -981,6 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return 0;
                 });
 
+                // NEW: Pre-calculate lock status for each group
                 const groupLockStatus = {};
                 sortedProjects.forEach(p => {
                     const groupKey = `${p.baseProjectName}_${p.fixCategory}`;
@@ -1001,8 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (sortedProjects.length === 0) {
                     const row = this.elements.projectTableBody.insertRow();
-                    // MODIFIED: Use dynamic colspan
-                    row.innerHTML = `<td colspan="${visibleColumnCount}" style="text-align:center; padding: 20px;">No projects to display for the current filter or page.</td>`;
+                    row.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}" style="text-align:center; padding: 20px;">No projects to display for the current filter or page.</td>`;
                     return;
                 }
 
@@ -1014,8 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentFixCategoryHeader = null;
                         const headerRow = this.elements.projectTableBody.insertRow();
                         headerRow.className = "batch-header-row";
-                        // MODIFIED: Use dynamic colspan
-                        headerRow.innerHTML = `<td colspan="${visibleColumnCount}"># ${project.baseProjectName}</td>`;
+                        headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}"># ${project.baseProjectName}</td>`;
                     }
 
                     if (project.fixCategory !== currentFixCategoryHeader) {
@@ -1028,6 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         const isExpanded = this.state.groupVisibilityState[groupKey]?.isExpanded !== false;
 
+                        // UPDATED: Determine lock icon based on pre-calculated status, using emojis
                         const status = groupLockStatus[groupKey];
                         let lockIcon = '';
                         if (status && status.total > 0) {
@@ -1042,8 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const groupHeaderRow = this.elements.projectTableBody.insertRow();
                         groupHeaderRow.className = "fix-group-header";
-                        // MODIFIED: Use dynamic colspan
-                        groupHeaderRow.innerHTML = `<td colspan="${visibleColumnCount}">${currentFixCategoryHeader}${lockIcon} <button class="btn btn-group-toggle">${isExpanded ? "Collapse" : "Expand"}</button></td>`;
+                        groupHeaderRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">${currentFixCategoryHeader}${lockIcon} <button class="btn btn-group-toggle">${isExpanded ? "Collapse" : "Expand"}</button></td>`;
                         groupHeaderRow.onclick = () => {
                             this.state.groupVisibilityState[groupKey].isExpanded = !isExpanded;
                             this.methods.saveGroupVisibilityState.call(this);
@@ -1058,14 +1045,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (project.isReassigned) row.classList.add("reassigned-task-highlight");
                     if (project.isLocked) row.classList.add("locked-task-highlight");
 
-                    // MODIFICATION START: Add classes to all cells for visibility control
-                    row.insertCell().outerHTML = `<td class="col-fixCategory">${project.fixCategory}</td>`;
-                    row.insertCell().outerHTML = `<td class="col-projectName">${project.baseProjectName}</td>`;
-                    row.insertCell().outerHTML = `<td class="col-areaTask">${project.areaTask}</td>`;
-                    row.insertCell().outerHTML = `<td class="col-gsd">${project.gsd}</td>`;
+                    row.insertCell().textContent = project.fixCategory;
+                    const projectNameCell = row.insertCell();
+                    projectNameCell.textContent = project.baseProjectName;
+                    projectNameCell.className = 'column-project-name'; // Add a specific class
+                    row.insertCell().textContent = project.areaTask;
+                    row.insertCell().textContent = project.gsd;
 
                     const assignedToCell = row.insertCell();
-                    assignedToCell.className = 'col-assignedTo';
                     const assignedToSelect = document.createElement('select');
                     assignedToSelect.className = 'assigned-to-select';
                     assignedToSelect.disabled = project.status === "Reassigned_TechAbsent" || project.isLocked;
@@ -1078,20 +1065,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     assignedToCell.appendChild(assignedToSelect);
 
                     const statusCell = row.insertCell();
-                    statusCell.className = 'col-status';
+                    // --- MODIFICATION START ---
                     let displayStatus = project.status || "Unknown";
-                    if (displayStatus.includes("Ended_AwaitingNext")) {
+                    if (displayStatus === "Day1Ended_AwaitingNext" ||
+                        displayStatus === "Day2Ended_AwaitingNext" ||
+                        displayStatus === "Day3Ended_AwaitingNext") {
                         displayStatus = "Started Available";
                     } else {
+                        // Original formatting for other statuses
                         displayStatus = displayStatus.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
                     }
                     statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${displayStatus}</span>`;
+                    // --- MODIFICATION END ---
 
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
 
-                    const createTimeInput = (timeValue, fieldName, columnClass) => {
+                    const createTimeInput = (timeValue, fieldName) => {
                         const cell = row.insertCell();
-                        cell.className = columnClass;
                         const input = document.createElement('input');
                         input.type = 'time';
                         input.value = formatTime(timeValue);
@@ -1100,14 +1090,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.appendChild(input);
                     };
 
-                    const createBreakSelect = (day, currentProject, columnClass) => {
+                    const createBreakSelect = (day, currentProject) => {
                         const cell = row.insertCell();
-                        cell.className = `${columnClass} break-cell`;
+                        cell.className = "break-cell";
                         const select = document.createElement('select');
                         select.className = 'break-select';
                         select.disabled = currentProject.status === "Reassigned_TechAbsent" || currentProject.isLocked;
                         select.innerHTML = `<option value="0">No Break</option><option value="15">15m</option><option value="60">1h</option><option value="75">1h15m</option><option value="90">1h30m</option>`;
+
                         select.value = currentProject[`breakDurationMinutesDay${day}`] || 0;
+
                         select.onchange = (e) => this.db.collection("projects").doc(currentProject.id).update({
                             [`breakDurationMinutesDay${day}`]: parseInt(e.target.value, 10),
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1115,40 +1107,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.appendChild(select);
                     };
 
-                    createTimeInput(project.startTimeDay1, 'startTimeDay1', 'col-day1Start');
-                    createTimeInput(project.finishTimeDay1, 'finishTimeDay1', 'col-day1Finish');
-                    createBreakSelect(1, project, 'col-day1Break');
-                    createTimeInput(project.startTimeDay2, 'startTimeDay2', 'col-day2Start');
-                    createTimeInput(project.finishTimeDay2, 'finishTimeDay2', 'col-day2Finish');
-                    createBreakSelect(2, project, 'col-day2Break');
-                    createTimeInput(project.startTimeDay3, 'startTimeDay3', 'col-day3Start');
-                    createTimeInput(project.finishTimeDay3, 'finishTimeDay3', 'col-day3Finish');
-                    createBreakSelect(3, project, 'col-day3Break');
+                    createTimeInput(project.startTimeDay1, 'startTimeDay1');
+                    createTimeInput(project.finishTimeDay1, 'finishTimeDay1');
+                    createBreakSelect(1, project);
 
+                    createTimeInput(project.startTimeDay2, 'startTimeDay2');
+                    createTimeInput(project.finishTimeDay2, 'finishTimeDay2');
+                    createBreakSelect(2, project);
+
+                    createTimeInput(project.startTimeDay3, 'startTimeDay3');
+                    createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
+                    createBreakSelect(3, project);
+
+                    // PROGRESS BAR
                     const progressBarCell = row.insertCell();
-                    progressBarCell.className = 'col-progress';
                     const statusOrder = ["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed"];
                     const currentStatusIndex = statusOrder.indexOf(project.status);
                     const progressPercentage = (currentStatusIndex / (statusOrder.length - 1)) * 100;
                     const clampedProgress = Math.min(100, Math.max(0, progressPercentage));
-                    progressBarCell.innerHTML = `
+                    const progressBarHtml = `
                         <div style="background-color: #e0e0e0; border-radius: 5px; height: 15px; width: 100%; overflow: hidden;">
                             <div style="background-color: #4CAF50; height: 100%; width: ${clampedProgress}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
                                 ${project.status === 'Completed' ? '100%' : ''}
                             </div>
-                        </div>`;
+                        </div>
+                    `;
+                    progressBarCell.innerHTML = progressBarHtml;
 
                     const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                    const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) + (project.breakDurationMinutesDay2 || 0) + (project.breakDurationMinutesDay3 || 0)) * 60000;
+                    const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
+                        (project.breakDurationMinutesDay2 || 0) +
+                        (project.breakDurationMinutesDay3 || 0)) * 60000;
                     const additionalMs = (project.additionalMinutesManual || 0) * 60000;
                     const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
 
                     const totalDurationCell = row.insertCell();
                     totalDurationCell.textContent = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
-                    totalDurationCell.className = 'col-totalMin total-duration-column';
+                    totalDurationCell.className = 'total-duration-column';
 
                     const techNotesCell = row.insertCell();
-                    techNotesCell.className = 'col-techNotes';
                     const techNotesInput = document.createElement('textarea');
                     techNotesInput.value = project.techNotes || "";
                     techNotesInput.className = 'tech-notes-input';
@@ -1160,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     techNotesCell.appendChild(techNotesInput);
 
                     const actionsCell = row.insertCell();
-                    actionsCell.className = 'col-actions';
                     const actionButtonsDiv = document.createElement('div');
                     actionButtonsDiv.className = 'action-buttons-container';
 
@@ -1186,7 +1182,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionButtonsDiv.appendChild(reassignBtn);
 
                     actionsCell.appendChild(actionButtonsDiv);
-                    // MODIFICATION END
                 });
             },
 
@@ -1218,43 +1213,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveGroupVisibilityState() {
                 localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(this.state.groupVisibilityState));
             },
-
-            // --- START: NEW COLUMN VISIBILITY METHODS ---
-            loadColumnVisibilityState() {
-                const savedState = localStorage.getItem('projectTrackerColumnVisibility');
-                if (savedState) {
-                    this.state.columnVisibility = JSON.parse(savedState);
-                } else {
-                    // Initialize from config if no saved state exists
-                    this.state.columnVisibility = this.config.TABLE_COLUMNS.reduce((acc, col) => {
-                        acc[col.id] = col.default;
-                        return acc;
-                    }, {});
-                }
-            },
-
-            saveColumnVisibilityState() {
-                localStorage.setItem('projectTrackerColumnVisibility', JSON.stringify(this.state.columnVisibility));
-            },
-
-            applyColumnVisibility() {
-                const styleId = 'column-visibility-styles';
-                let styleElement = document.getElementById(styleId);
-                if (!styleElement) {
-                    styleElement = document.createElement('style');
-                    styleElement.id = styleId;
-                    document.head.appendChild(styleElement);
-                }
-
-                let cssRules = '';
-                for (const colId in this.state.columnVisibility) {
-                    if (!this.state.columnVisibility[colId]) {
-                        cssRules += `.col-${colId} { display: none; }\n`;
-                    }
-                }
-                styleElement.textContent = cssRules;
-            },
-            // --- END: NEW COLUMN VISIBILITY METHODS ---
 
             async fetchAllowedEmails() {
                 try {
@@ -1296,6 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     batchId: task.batchId,
                                     baseProjectName: task.baseProjectName || "N/A",
                                     tasksByFix: {},
+                                    // Add creationTimestamp to the batch object (assuming first task represents batch creation)
                                     creationTimestamp: task.creationTimestamp || null
                                 };
                             }
@@ -1309,10 +1268,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
+                    // Sort batches by creationTimestamp (newest first)
                     let sortedBatches = Object.values(batches).sort((a, b) => {
                         const tsA = a.creationTimestamp?.toMillis ? a.creationTimestamp.toMillis() : 0;
                         const tsB = b.creationTimestamp?.toMillis ? b.creationTimestamp.toMillis() : 0;
-                        return tsB - tsA;
+                        return tsB - tsA; // Descending order
                     });
 
                     return sortedBatches;
@@ -1325,57 +1285,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
+            // --- Start of script.js modifications ---
+
+            // REPLACE the existing 'renderTLDashboard' function with the following:
             async renderTLDashboard() {
                 if (!this.elements.tlDashboardContentElement) return;
                 this.elements.tlDashboardContentElement.innerHTML = "";
-
-                // --- START: NEW COLUMN VISIBILITY UI ---
-                const visibilityContainer = document.createElement('div');
-                visibilityContainer.className = 'dashboard-batch-item'; // Reuse existing style
-                visibilityContainer.innerHTML = '<h4>Display Options</h4>';
-
-                const visibilityGroup = document.createElement('div');
-                visibilityGroup.className = 'dashboard-actions-group';
-                visibilityGroup.innerHTML = '<h6>Manage Table Columns</h6>';
-
-                const checkboxesContainer = document.createElement('div');
-                checkboxesContainer.className = 'dashboard-action-buttons'; // Reuse for layout
-                checkboxesContainer.style.flexDirection = 'column';
-                checkboxesContainer.style.alignItems = 'flex-start';
-
-
-                this.config.TABLE_COLUMNS.forEach(col => {
-                    const label = document.createElement('label');
-                    label.style.display = 'inline-flex';
-                    label.style.alignItems = 'center';
-                    label.style.gap = '8px';
-                    label.style.cursor = 'pointer';
-                    label.style.fontSize = '0.9em';
-
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = this.state.columnVisibility[col.id] !== false; // Default to true if undefined
-                    checkbox.onchange = () => {
-                        this.state.columnVisibility[col.id] = checkbox.checked;
-                        this.methods.saveColumnVisibilityState.call(this);
-                        this.methods.applyColumnVisibility.call(this);
-                        this.methods.refreshAllViews.call(this); // Re-render to update colspan
-                    };
-
-                    label.appendChild(checkbox);
-                    label.appendChild(document.createTextNode(col.name));
-                    checkboxesContainer.appendChild(label);
-                });
-
-                visibilityGroup.appendChild(checkboxesContainer);
-                visibilityContainer.appendChild(visibilityGroup);
-                this.elements.tlDashboardContentElement.appendChild(visibilityContainer);
-                // --- END: NEW COLUMN VISIBILITY UI ---
-
-
                 const batches = await this.methods.getManageableBatches.call(this);
+
                 if (batches.length === 0) {
-                    this.elements.tlDashboardContentElement.innerHTML += "<p>No project batches found.</p>";
+                    this.elements.tlDashboardContentElement.innerHTML = "<p>No project batches found.</p>";
                     return;
                 }
 
@@ -1383,18 +1302,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!batch?.batchId) return;
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
-                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`;
+
+                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
+                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
+                    // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
                     const actionsContainer = document.createElement('div');
-                    actionsContainer.className = 'dashboard-actions-grid';
+                    actionsContainer.className = 'dashboard-actions-grid'; // New class for overall actions grid
 
+                    // Release Actions Group
                     const releaseGroup = document.createElement('div');
                     releaseGroup.className = 'dashboard-actions-group';
                     releaseGroup.innerHTML = '<h6>Release Tasks:</h6>';
                     const releaseActionsDiv = document.createElement('div');
-                    releaseActionsDiv.className = 'dashboard-action-buttons';
+                    releaseActionsDiv.className = 'dashboard-action-buttons'; // New class for button alignment
+                    // Original release buttons logic goes here
                     allFixStages.forEach((currentFix, index) => {
                         const nextFix = allFixStages[index + 1];
                         if (!nextFix) return;
@@ -1404,6 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (hasCurrentFix && !hasNextFix) {
                             const unreleasedTasks = batch.tasksByFix[currentFix].filter(task => !task.releasedToNextStage && task.status !== "Reassigned_TechAbsent");
+
                             if (unreleasedTasks.length > 0) {
                                 const releaseBtn = document.createElement('button');
                                 releaseBtn.textContent = `Release ${currentFix} to ${nextFix}`;
@@ -1427,6 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     releaseGroup.appendChild(releaseActionsDiv);
                     actionsContainer.appendChild(releaseGroup);
 
+                    // Lock Actions Group
                     const lockGroup = document.createElement('div');
                     lockGroup.className = 'dashboard-actions-group';
                     lockGroup.innerHTML = '<h6>Manage Locking:</h6>';
@@ -1448,25 +1374,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             };
                             lockActionsDiv.appendChild(lockBtn);
+                            // RECALC BUTTON WAS REMOVED FROM HERE
                         });
                     }
                     lockGroup.appendChild(lockActionsDiv);
                     actionsContainer.appendChild(lockGroup);
 
+                    // NEW: Delete Entire Project Group - Moved here
                     const deleteEntireProjectGroup = document.createElement('div');
                     deleteEntireProjectGroup.className = 'dashboard-actions-group';
                     deleteEntireProjectGroup.innerHTML = '<h6>Delete Current Project:</h6>';
+
                     const deleteEntireProjectButtonsDiv = document.createElement('div');
-                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons';
+                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
+
                     const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'DELETE PROJECT';
+                    deleteAllBtn.textContent = 'DELETE PROJECT'; // Changed text for conciseness
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
-                    deleteAllBtn.style.width = '100%';
+                    deleteAllBtn.style.width = '100%'; // Keep full width within its group
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
                     deleteEntireProjectButtonsDiv.appendChild(deleteAllBtn);
                     deleteEntireProjectGroup.appendChild(deleteEntireProjectButtonsDiv);
-                    actionsContainer.appendChild(deleteEntireProjectGroup);
+                    actionsContainer.appendChild(deleteEntireProjectGroup); // Append to the grid
 
+                    // Delete Specific Fix Stages Group (formerly deleteActionsDiv)
                     const deleteGroup = document.createElement('div');
                     deleteGroup.className = 'dashboard-actions-group';
                     deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
@@ -1493,10 +1424,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteGroup.appendChild(deleteActionsDiv);
                     actionsContainer.appendChild(deleteGroup);
 
-                    batchItemDiv.appendChild(actionsContainer);
+                    batchItemDiv.appendChild(actionsContainer); // Append the main actions grid to the batch item
+                    // --- End of UI Refactor for Project Settings ---
+
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
             },
+            // --- End of script.js modifications ---
 
             async recalculateFixStageTotals(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Recalculating totals for ${fixCategory}...`);
@@ -1574,6 +1508,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     await batch.commit();
 
+                    // Refresh the dashboard to show the new button state
                     await this.methods.renderTLDashboard.call(this);
                 } catch (error) {
                     console.error("Error toggling lock state:", error);
@@ -1615,6 +1550,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10) || 0;
                     } else {
+                        // If no tasks in the latest fix category, fall back to the first task found for project
+                        // This assumes at least one task exists for the project, which is checked earlier.
                         lastTask = allTasks[0];
                     }
 
@@ -1661,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             creationTimestamp: serverTimestamp,
                             lastModifiedTimestamp: serverTimestamp
                         };
-                        delete newTaskData.id;
+                        delete newTaskData.id; // FIX: Changed from newNextFixTask.id to newTaskData.id
 
                         const newDocRef = this.db.collection("projects").doc();
                         firestoreBatch.set(newDocRef, newTaskData);
@@ -1936,15 +1873,13 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
             handleClearData() {
-                if (confirm("Are you sure you want to clear all locally stored application data? This will reset your filters, view preferences, and column visibility settings but will not affect any data on the server.")) {
+                if (confirm("Are you sure you want to clear all locally stored application data? This will reset your filters and view preferences but will not affect any data on the server.")) {
                     try {
                         localStorage.removeItem('currentSelectedBatchId');
                         localStorage.removeItem('currentSelectedMonth');
                         localStorage.removeItem('projectTrackerGroupVisibility');
-                        localStorage.removeItem('projectTrackerColumnVisibility'); // Also clear column settings
                         localStorage.removeItem('currentSortBy');
                         alert("Local application data has been cleared. The page will now reload.");
-                        window.location.reload();
                     } catch (e) {
                         console.error("Error clearing local storage:", e);
                         alert("Could not clear application data. See the console for more details.");
@@ -1958,17 +1893,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 this.methods.showLoading.call(this, "Generating TL Summary...");
-                this.elements.tlSummaryContent.innerHTML = "";
+                this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
 
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
-                    const projectCreationTimestamps = {};
+                    const projectCreationTimestamps = {}; // Store creation timestamps for sorting
 
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
-                        const breakMs = ((p.breakDurationMinutesDay1 || 0) + (p.breakDurationMinutesDay2 || 0) + (p.breakDurationMinutesDay3 || 0)) * 60000;
+
+                        const breakMs = ((p.breakDurationMinutesDay1 || 0) +
+                            (p.breakDurationMinutesDay2 || 0) +
+                            (p.breakDurationMinutesDay3 || 0)) * 60000;
+
                         const additionalMs = (p.additionalMinutesManual || 0) * 60000;
                         const adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
                         if (adjustedNetMs <= 0) return;
@@ -1981,6 +1920,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (!projectTotals[projName]) {
                             projectTotals[projName] = {};
+                            // Store the creation timestamp for this project name.
+                            // Assuming creationTimestamp from any task within the project batch represents its creation.
                             if (p.creationTimestamp) {
                                 projectCreationTimestamps[projName] = p.creationTimestamp;
                             }
@@ -1989,10 +1930,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     let summaryHtml = '<h3 class="summary-title">Project Time Summary</h3>';
+                    // Sort project names by their creation timestamp (newest first)
                     const sortedProjectNames = Object.keys(projectTotals).sort((a, b) => {
                         const tsA = projectCreationTimestamps[a]?.toMillis ? projectCreationTimestamps[a].toMillis() : 0;
                         const tsB = projectCreationTimestamps[b]?.toMillis ? projectCreationTimestamps[b].toMillis() : 0;
-                        return tsB - tsA;
+                        return tsB - tsA; // Descending order (newest first)
                     });
 
                     if (sortedProjectNames.length === 0) {
@@ -2004,7 +1946,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             summaryHtml += `
                                 <h4 class="project-name-header-full-width">
                                     <span class="full-project-name-display">${projName}</span> <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
-                                </h4>`;
+                                </h4>
+                            `;
                             summaryHtml += `<div class="fix-categories-flex">`;
 
                             const fixCategoryTotals = projectTotals[projName];
@@ -2020,7 +1963,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <span class="fix-category-name">${fixCat}:</span>
                                         <span class="fix-category-minutes">${totalMinutes} mins</span>
                                         <span class="fix-category-hours">(${hoursDecimal} hrs)</span>
-                                    </div>`;
+                                    </div>
+                                `;
                             });
                             summaryHtml += `</div></div>`;
                         });
@@ -2107,7 +2051,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const formatNotesCsv = (notes) => notes ? `"${notes.replace(/"/g, '""')}"` : "";
 
                         const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                        const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) + (project.breakDurationMinutesDay2 || 0) + (project.breakDurationMinutesDay3 || 0)) * 60000;
+                        const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
+                            (project.breakDurationMinutesDay2 || 0) +
+                            (project.breakDurationMinutesDay3 || 0)) * 60000;
                         const additionalMs = (project.additionalMinutesManual || 0) * 60000;
                         const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
                         const totalMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
@@ -2311,8 +2257,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else if (fieldName === 'status') {
                             let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
 
-                            if (cleanedStatus.includes('startedavailable')) {
-                                cleanedStatus = 'Day1Ended_AwaitingNext';
+                            // --- MODIFICATION START ---
+                            if (cleanedStatus.includes('startedavailable')) { // If CSV has "Started Available"
+                                // Map it to Day1Ended_AwaitingNext or similar, depending on what state you want it to represent internally
+                                // For simplicity, let's map it to "Available" for new imports unless specific logic is needed.
+                                // If you want it to represent 'Day1Ended_AwaitingNext' you can set that.
+                                cleanedStatus = 'Available'; // Or 'Day1Ended_AwaitingNext' if that's the intended internal state after "Started Available"
                             } else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
                             else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
                             else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
@@ -2324,6 +2274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             else cleanedStatus = 'Available';
 
                             projectData[fieldName] = cleanedStatus;
+                            // --- MODIFICATION END ---
                         } else {
                             projectData[fieldName] = value;
                         }
