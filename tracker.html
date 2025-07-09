@@ -558,9 +558,7 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* */
-        /* This new rule will hide the project name column */
-        .column-project-name {
+        .column-hidden {
             display: none;
         }
 
@@ -692,6 +690,18 @@
                     <option value="Fix5">Fix5</option>
                     <option value="Fix6">Fix6</option>
                 </select>
+                <div style="margin-left: 20px;">
+                    <input type="checkbox" id="toggleTitleCheckbox" checked>
+                    <label for="toggleTitleCheckbox">Show Title</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="toggleDay2Checkbox" checked>
+                    <label for="toggleDay2Checkbox">Show Day 2</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="toggleDay3Checkbox" checked>
+                    <label for="toggleDay3Checkbox">Show Day 3</label>
+                </div>
             </div>
             <div class="table-scroll-wrapper">
                 <table id="projectTable">
@@ -706,12 +716,12 @@
                             <th>Day 1 Start</th>
                             <th>Day 1 Finish</th>
                             <th>Day 1 Break</th>
-                            <th>Day 2 Start</th>
-                            <th>Day 2 Finish</th>
-                            <th>Day 2 Break</th>
-                            <th>Day 3 Start</th>
-                            <th>Day 3 Finish</th>
-                            <th>Day 3 Break</th>
+                            <th class="column-day2">Day 2 Start</th>
+                            <th class="column-day2">Day 2 Finish</th>
+                            <th class="column-day2">Day 2 Break</th>
+                            <th class="column-day3">Day 3 Start</th>
+                            <th class="column-day3">Day 3 Finish</th>
+                            <th class="column-day3">Day 3 Break</th>
                             <th>Progress</th>
                             <th>Total (min)</th>
                             <th>Tech Notes</th>
