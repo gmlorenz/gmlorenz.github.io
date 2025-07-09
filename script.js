@@ -7,9 +7,12 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.3
+ * @version 2.9.4
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - ADDED: "Refresh" button to the TL Summary modal.
+ * - ADDED: "Copy" button for decimal hours in the TL Summary.
+ * - MODIFIED: Redesigned TL Summary UI with a modern card-based layout.
  * - ADDED: Checkboxes for showing/hiding "Project Title", "Day 2", and "Day 3" columns.
  * - FIXED: Checkbox states are now saved to localStorage and restored on page refresh.
  * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
@@ -39,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -216,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleTitleCheckbox: document.getElementById('toggleTitleCheckbox'),
                     toggleDay2Checkbox: document.getElementById('toggleDay2Checkbox'),
                     toggleDay3Checkbox: document.getElementById('toggleDay3Checkbox'),
+                    tlSummaryRefreshBtn: document.getElementById('tlSummaryRefreshBtn'),
                 };
             },
 
@@ -270,6 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.tlSummaryModal.style.display = 'block';
                     self.methods.generateTlSummaryData.call(self);
                 });
+
+                attachClick(self.elements.tlSummaryRefreshBtn, self.methods.generateTlSummaryData.bind(self));
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
@@ -1960,96 +1966,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 this.methods.showLoading.call(this, "Generating TL Summary...");
                 this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
-
+            
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
                     const projectCreationTimestamps = {}; // Store creation timestamps for sorting
-
+            
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
-
+            
                         const breakMs = ((p.breakDurationMinutesDay1 || 0) +
                             (p.breakDurationMinutesDay2 || 0) +
                             (p.breakDurationMinutesDay3 || 0)) * 60000;
-
+            
                         const additionalMs = (p.additionalMinutesManual || 0) * 60000;
                         const adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
                         if (adjustedNetMs <= 0) return;
-
+            
                         const minutes = Math.floor(adjustedNetMs / 60000);
                         if (minutes <= 0) return;
-
+            
                         const projName = p.baseProjectName || "Unknown Project";
                         const fixCat = p.fixCategory || "Unknown Fix";
-
+            
                         if (!projectTotals[projName]) {
                             projectTotals[projName] = {};
-                            // Store the creation timestamp for this project name.
-                            // Assuming creationTimestamp from any task within the project batch represents its creation.
                             if (p.creationTimestamp) {
                                 projectCreationTimestamps[projName] = p.creationTimestamp;
                             }
                         }
                         projectTotals[projName][fixCat] = (projectTotals[projName][fixCat] || 0) + minutes;
                     });
-
-                    let summaryHtml = '<h3 class="summary-title">Project Time Summary</h3>';
-                    // Sort project names by their creation timestamp (newest first)
+            
                     const sortedProjectNames = Object.keys(projectTotals).sort((a, b) => {
                         const tsA = projectCreationTimestamps[a]?.toMillis ? projectCreationTimestamps[a].toMillis() : 0;
                         const tsB = projectCreationTimestamps[b]?.toMillis ? projectCreationTimestamps[b].toMillis() : 0;
-                        return tsB - tsA; // Descending order (newest first)
+                        return tsB - tsA;
                     });
-
+            
                     if (sortedProjectNames.length === 0) {
-                        summaryHtml += "<p class='no-data-message'>No project time data found to generate a summary.</p>";
+                        this.elements.tlSummaryContent.innerHTML = "<p class='no-data-message'>No project time data found to generate a summary.</p>";
                     } else {
-                        summaryHtml += '<div class="summary-list">';
+                        const summaryContainer = document.createElement('div');
+                        summaryContainer.className = 'summary-container';
+            
                         sortedProjectNames.forEach(projName => {
-                            summaryHtml += `<div class="project-summary-block-single-column">`;
-                            summaryHtml += `
-                                <h4 class="project-name-header-full-width">
-                                    <span class="full-project-name-display">${projName}</span> <i class="info-icon fas fa-info-circle" data-full-name="${projName}"></i>
-                                </h4>
-                            `;
-                            summaryHtml += `<div class="fix-categories-flex">`;
-
+                            const projectBlock = document.createElement('div');
+                            projectBlock.className = 'project-summary-block';
+            
+                            let blockHtml = `<h4 class="project-name-header">${projName}</h4><div class="fix-categories-grid">`;
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
-
+            
                             sortedFixCategories.forEach(fixCat => {
                                 const totalMinutes = fixCategoryTotals[fixCat];
                                 const hoursDecimal = (totalMinutes / 60).toFixed(2);
                                 const bgColor = this.config.FIX_CATEGORIES.COLORS[fixCat] || this.config.FIX_CATEGORIES.COLORS.default;
-
-                                summaryHtml += `
+            
+                                blockHtml += `
                                     <div class="fix-category-item" style="background-color: ${bgColor};">
-                                        <span class="fix-category-name">${fixCat}:</span>
+                                        <span class="fix-category-name">${fixCat}</span>
                                         <span class="fix-category-minutes">${totalMinutes} mins</span>
-                                        <span class="fix-category-hours">(${hoursDecimal} hrs)</span>
+                                        <span class="fix-category-hours" id="hours-to-copy-${projName}-${fixCat}">${hoursDecimal} hrs</span>
+                                        <button class="btn btn-sm btn-copy-hours" data-target-id="hours-to-copy-${projName}-${fixCat}"><i class="fas fa-copy"></i></button>
                                     </div>
                                 `;
                             });
-                            summaryHtml += `</div></div>`;
+            
+                            blockHtml += '</div>';
+                            projectBlock.innerHTML = blockHtml;
+                            summaryContainer.appendChild(projectBlock);
                         });
-                        summaryHtml += `</div>`;
+            
+                        this.elements.tlSummaryContent.appendChild(summaryContainer);
+            
+                        this.elements.tlSummaryContent.querySelectorAll('.btn-copy-hours').forEach(button => {
+                            button.addEventListener('click', (event) => {
+                                const targetId = event.currentTarget.dataset.targetId;
+                                const hoursElement = document.getElementById(targetId);
+                                if (hoursElement) {
+                                    const hoursText = hoursElement.textContent.replace(' hrs', '').trim();
+                                    navigator.clipboard.writeText(hoursText).then(() => {
+                                        alert('Copied to clipboard: ' + hoursText);
+                                    }).catch(err => {
+                                        console.error('Failed to copy: ', err);
+                                        alert('Failed to copy hours.');
+                                    });
+                                }
+                            });
+                        });
                     }
-                    this.elements.tlSummaryContent.innerHTML = summaryHtml;
-
-                    const infoIcons = this.elements.tlSummaryContent.querySelectorAll('.info-icon');
-                    infoIcons.forEach(icon => {
-                        icon.addEventListener('click', (event) => {
-                            const fullName = event.target.dataset.fullName;
-                            if (fullName) {
-                                alert(`Full Project Name:\n\n${fullName}`);
-                            } else {
-                                alert('Full project name not available.');
-                            }
-                        });
-                    });
-
+            
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
                     this.elements.tlSummaryContent.innerHTML = `<p class="error-message">Error generating summary: ${error.message}</p>`;
