@@ -7,9 +7,11 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.2
+ * @version 2.9.3
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - ADDED: Checkboxes for showing/hiding "Project Title", "Day 2", and "Day 3" columns.
+ * - FIXED: Checkbox states are now saved to localStorage and restored on page refresh.
  * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
  * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
  * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
@@ -147,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Firebase initialized successfully!");
 
                 this.methods.setupDOMReferences.call(this);
+                this.methods.loadColumnVisibilityState.call(this);
                 this.methods.setupAuthRelatedDOMReferences.call(this);
                 this.methods.attachEventListeners.call(this);
                 this.methods.setupAuthActions.call(this);
@@ -358,13 +361,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (self.elements.toggleTitleCheckbox) {
-                    self.elements.toggleTitleCheckbox.onchange = () => self.methods.applyColumnVisibility.call(self);
+                    self.elements.toggleTitleCheckbox.onchange = () => {
+                        self.methods.saveColumnVisibilityState.call(self);
+                        self.methods.applyColumnVisibility.call(self);
+                    };
                 }
                 if (self.elements.toggleDay2Checkbox) {
-                    self.elements.toggleDay2Checkbox.onchange = () => self.methods.applyColumnVisibility.call(self);
+                    self.elements.toggleDay2Checkbox.onchange = () => {
+                        self.methods.saveColumnVisibilityState.call(self);
+                        self.methods.applyColumnVisibility.call(self);
+                    };
                 }
                 if (self.elements.toggleDay3Checkbox) {
-                    self.elements.toggleDay3Checkbox.onchange = () => self.methods.applyColumnVisibility.call(self);
+                    self.elements.toggleDay3Checkbox.onchange = () => {
+                        self.methods.saveColumnVisibilityState.call(self);
+                        self.methods.applyColumnVisibility.call(self);
+                    };
                 }
 
                 window.onclick = (event) => {
@@ -1094,8 +1106,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
 
-                    const createTimeInput = (timeValue, fieldName) => {
+                    const createTimeInput = (timeValue, fieldName, dayClass) => {
                         const cell = row.insertCell();
+                        cell.className = dayClass || '';
                         const input = document.createElement('input');
                         input.type = 'time';
                         input.value = formatTime(timeValue);
@@ -1104,9 +1117,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.appendChild(input);
                     };
 
-                    const createBreakSelect = (day, currentProject) => {
+                    const createBreakSelect = (day, currentProject, dayClass) => {
                         const cell = row.insertCell();
-                        cell.className = "break-cell";
+                        cell.className = `break-cell ${dayClass || ''}`;
                         const select = document.createElement('select');
                         select.className = 'break-select';
                         select.disabled = currentProject.status === "Reassigned_TechAbsent" || currentProject.isLocked;
@@ -1125,13 +1138,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     createTimeInput(project.finishTimeDay1, 'finishTimeDay1');
                     createBreakSelect(1, project);
 
-                    createTimeInput(project.startTimeDay2, 'startTimeDay2');
-                    createTimeInput(project.finishTimeDay2, 'finishTimeDay2');
-                    createBreakSelect(2, project);
+                    createTimeInput(project.startTimeDay2, 'startTimeDay2', 'column-day2');
+                    createTimeInput(project.finishTimeDay2, 'finishTimeDay2', 'column-day2');
+                    createBreakSelect(2, project, 'column-day2');
 
-                    createTimeInput(project.startTimeDay3, 'startTimeDay3');
-                    createTimeInput(project.finishTimeDay3, 'finishTimeDay3');
-                    createBreakSelect(3, project);
+                    createTimeInput(project.startTimeDay3, 'startTimeDay3', 'column-day3');
+                    createTimeInput(project.finishTimeDay3, 'finishTimeDay3', 'column-day3');
+                    createBreakSelect(3, project, 'column-day3');
 
                     // PROGRESS BAR
                     const progressBarCell = row.insertCell();
@@ -1226,6 +1239,41 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             saveGroupVisibilityState() {
                 localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(this.state.groupVisibilityState));
+            },
+            loadColumnVisibilityState() {
+                const showTitle = localStorage.getItem('showTitleColumn') !== 'false'; // Default to true
+                const showDay2 = localStorage.getItem('showDay2Column') !== 'false';   // Default to true
+                const showDay3 = localStorage.getItem('showDay3Column') !== 'false';   // Default to true
+            
+                if (this.elements.toggleTitleCheckbox) {
+                    this.elements.toggleTitleCheckbox.checked = showTitle;
+                }
+                if (this.elements.toggleDay2Checkbox) {
+                    this.elements.toggleDay2Checkbox.checked = showDay2;
+                }
+                if (this.elements.toggleDay3Checkbox) {
+                    this.elements.toggleDay3Checkbox.checked = showDay3;
+                }
+            },
+            saveColumnVisibilityState() {
+                if (this.elements.toggleTitleCheckbox) {
+                    localStorage.setItem('showTitleColumn', this.elements.toggleTitleCheckbox.checked);
+                }
+                if (this.elements.toggleDay2Checkbox) {
+                    localStorage.setItem('showDay2Column', this.elements.toggleDay2Checkbox.checked);
+                }
+                if (this.elements.toggleDay3Checkbox) {
+                    localStorage.setItem('showDay3Column', this.elements.toggleDay3Checkbox.checked);
+                }
+            },
+            applyColumnVisibility() {
+                const showTitle = this.elements.toggleTitleCheckbox.checked;
+                const showDay2 = this.elements.toggleDay2Checkbox.checked;
+                const showDay3 = this.elements.toggleDay3Checkbox.checked;
+            
+                document.querySelectorAll('#projectTable .column-project-name').forEach(el => el.classList.toggle('column-hidden', !showTitle));
+                document.querySelectorAll('#projectTable .column-day2').forEach(el => el.classList.toggle('column-hidden', !showDay2));
+                document.querySelectorAll('#projectTable .column-day3').forEach(el => el.classList.toggle('column-hidden', !showDay3));
             },
 
             async fetchAllowedEmails() {
@@ -1893,7 +1941,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.removeItem('currentSelectedMonth');
                         localStorage.removeItem('projectTrackerGroupVisibility');
                         localStorage.removeItem('currentSortBy');
+                        localStorage.removeItem('showTitleColumn');
+                        localStorage.removeItem('showDay2Column');
+                        localStorage.removeItem('showDay3Column');
                         alert("Local application data has been cleared. The page will now reload.");
+                        window.location.reload();
                     } catch (e) {
                         console.error("Error clearing local storage:", e);
                         alert("Could not clear application data. See the console for more details.");
@@ -2309,32 +2361,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 return projects;
-            },
-            applyColumnVisibility() {
-                const showTitle = this.elements.toggleTitleCheckbox.checked;
-                const showDay2 = this.elements.toggleDay2Checkbox.checked;
-                const showDay3 = this.elements.toggleDay3Checkbox.checked;
-            
-                document.querySelectorAll('#projectTable .column-project-name').forEach(el => el.classList.toggle('column-hidden', !showTitle));
-                document.querySelectorAll('#projectTable .column-day2').forEach(el => el.classList.toggle('column-hidden', !showDay2));
-                document.querySelectorAll('#projectTable .column-day3').forEach(el => el.classList.toggle('column-hidden', !showDay3));
-            
-                const bodyRows = document.getElementById('projectTable')?.tBodies[0]?.rows;
-                if (!bodyRows) return;
-            
-                for (let i = 0; i < bodyRows.length; i++) {
-                    const row = bodyRows[i];
-                    if (row.cells.length > 1) { // Ensure it's a data row
-                        // Column indices: Project Name (1), Day 2 (9-11), Day 3 (12-14)
-                        if (row.cells[1]) row.cells[1].classList.toggle('column-hidden', !showTitle);
-                        for (let j = 9; j <= 11; j++) {
-                            if (row.cells[j]) row.cells[j].classList.toggle('column-hidden', !showDay2);
-                        }
-                        for (let j = 12; j <= 14; j++) {
-                            if (row.cells[j]) row.cells[j].classList.toggle('column-hidden', !showDay3);
-                        }
-                    }
-                }
             },
         }
     };
