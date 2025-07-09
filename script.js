@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'techNotes', name: 'Tech Notes', default: true },
                 { id: 'actions', name: 'Actions', default: true }
             ],
-            NUM_TABLE_COLUMNS: 19, // This now represents the MAX number of columns
+            NUM_TABLE_COLUMNS: 18, // This now represents the MAX number of columns
             CSV_HEADERS_FOR_IMPORT: [
                 "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
                 "Day 1 Start", "Day 1 Finish", "Day 1 Break",
