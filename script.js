@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -210,6 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     addEmailInput: document.getElementById('addEmailInput'),
                     addEmailBtn: document.getElementById('addEmailBtn'),
                     tlSummaryContent: document.getElementById('tlSummaryContent'),
+                    toggleTitleCheckbox: document.getElementById('toggleTitleCheckbox'),
+                    toggleDay2Checkbox: document.getElementById('toggleDay2Checkbox'),
+                    toggleDay3Checkbox: document.getElementById('toggleDay3Checkbox'),
                 };
             },
 
@@ -352,6 +355,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('currentSortBy', e.target.value);
                         resetPaginationAndReload();
                     };
+                }
+
+                if (self.elements.toggleTitleCheckbox) {
+                    self.elements.toggleTitleCheckbox.onchange = () => self.methods.applyColumnVisibility.call(self);
+                }
+                if (self.elements.toggleDay2Checkbox) {
+                    self.elements.toggleDay2Checkbox.onchange = () => self.methods.applyColumnVisibility.call(self);
+                }
+                if (self.elements.toggleDay3Checkbox) {
+                    self.elements.toggleDay3Checkbox.onchange = () => self.methods.applyColumnVisibility.call(self);
                 }
 
                 window.onclick = (event) => {
@@ -924,6 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     this.methods.renderProjects.call(this);
                     this.methods.updatePaginationUI.call(this);
+                    this.methods.applyColumnVisibility.call(this);
                 } catch (error) {
                     console.error("Error during refreshAllViews:", error);
                     if (this.elements.projectTableBody) this.elements.projectTableBody.innerHTML = `<tr><td colspan="${this.config.NUM_TABLE_COLUMNS}" style="color:red;text-align:center;">Error loading projects.</td></tr>`;
@@ -2295,6 +2309,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 return projects;
+            },
+            applyColumnVisibility() {
+                const showTitle = this.elements.toggleTitleCheckbox.checked;
+                const showDay2 = this.elements.toggleDay2Checkbox.checked;
+                const showDay3 = this.elements.toggleDay3Checkbox.checked;
+            
+                document.querySelectorAll('#projectTable .column-project-name').forEach(el => el.classList.toggle('column-hidden', !showTitle));
+                document.querySelectorAll('#projectTable .column-day2').forEach(el => el.classList.toggle('column-hidden', !showDay2));
+                document.querySelectorAll('#projectTable .column-day3').forEach(el => el.classList.toggle('column-hidden', !showDay3));
+            
+                const bodyRows = document.getElementById('projectTable')?.tBodies[0]?.rows;
+                if (!bodyRows) return;
+            
+                for (let i = 0; i < bodyRows.length; i++) {
+                    const row = bodyRows[i];
+                    if (row.cells.length > 1) { // Ensure it's a data row
+                        // Column indices: Project Name (1), Day 2 (9-11), Day 3 (12-14)
+                        if (row.cells[1]) row.cells[1].classList.toggle('column-hidden', !showTitle);
+                        for (let j = 9; j <= 11; j++) {
+                            if (row.cells[j]) row.cells[j].classList.toggle('column-hidden', !showDay2);
+                        }
+                        for (let j = 12; j <= 14; j++) {
+                            if (row.cells[j]) row.cells[j].classList.toggle('column-hidden', !showDay3);
+                        }
+                    }
+                }
             },
         }
     };
