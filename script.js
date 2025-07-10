@@ -7,17 +7,13 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.2.0
+ * @version 3.2.1
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
- * - ADDED: (User Request) Notifications now appear in a custom modal with a "View Project" button that filters the dashboard.
- * - ADDED: (User Request) The number of notifications in Firestore is now automatically limited to 5. When a new one is added, the oldest is deleted.
- * - MODIFIED: The `alert()` for notifications has been replaced with the new custom modal system.
- * - REFACTORED: (User Request) Implemented a centralized user management system.
- * - Admins now add users by providing Name, Email, and Tech ID in User Settings.
- * - The `users` collection in Firestore is now the single source of truth for authorization and Tech ID lists.
- * - The "Assigned To" dropdown is now populated from the central user list.
- * - Hovering over a Tech ID in the dropdown now shows the user's full name.
+ * - FIXED: (User Request) Corrected a "TypeError: Cannot read properties of undefined (reading 'call')" error in the notification listener by explicitly binding the 'this' context.
+ * - ADDED: Notifications now appear in a custom modal with a "View Project" button that filters the dashboard.
+ * - ADDED: The number of notifications in Firestore is now automatically limited to 5. When a new one is added, the oldest is deleted.
+ * - REFACTORED: Implemented a centralized user management system with add/edit/remove functionality.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -133,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Firebase initialized successfully!");
 
                 this.methods.setupDOMReferences.call(this);
-                this.methods.injectNotificationStyles.call(this); // ADDED: Inject styles for custom notifications
+                this.methods.injectNotificationStyles.call(this);
                 this.methods.loadColumnVisibilityState.call(this);
                 this.methods.setupAuthRelatedDOMReferences.call(this);
                 this.methods.attachEventListeners.call(this);
@@ -695,7 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 try {
-                    // MODIFIED: Use the new centralized notification creator
                     const message = `A new project "${baseProjectName}" with ${numRows} areas has been added!`;
                     await this.methods.createNotification.call(this, message, "new_project", baseProjectName);
 
@@ -849,7 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     console.error(`Error updating ${fieldName}:`, error);
                     alert(`Error updating time: ${error.message}`);
-                    this.methods.AllViews.call(this);
+                    this.methods.refreshAllViews.call(this);
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
@@ -937,13 +932,13 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
 
-            AllViews() {
+            refreshAllViews() {
                 try {
                     this.methods.renderProjects.call(this);
                     this.methods.updatePaginationUI.call(this);
                     this.methods.applyColumnVisibility.call(this);
                 } catch (error) {
-                    console.error("Error during AllViews:", error);
+                    console.error("Error during refreshAllViews:", error);
                     if (this.elements.projectTableBody) this.elements.projectTableBody.innerHTML = `<tr><td colspan="${this.config.NUM_TABLE_COLUMNS}" style="color:red;text-align:center;">Error loading projects.</td></tr>`;
                 }
                 this.methods.hideLoading.call(this);
@@ -1691,6 +1686,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         projectNameForNotification = snapshot.docs[0].data().baseProjectName;
                     } else {
                         alert("No tasks to release.");
+                        this.methods.hideLoading.call(this);
                         return;
                     }
 
@@ -1743,7 +1739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await firestoreBatch.commit();
 
-                    alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now .`);
+                    alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
 
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     await this.methods.renderTLDashboard.call(this);
@@ -1942,7 +1938,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
             
-                // Check for duplicates, excluding the user being edited
                 if (this.state.users.some(u => u.email === email && u.id !== this.state.editingUser.id)) {
                     alert(`Error: The email "${email}" is already registered to another user.`);
                     return;
@@ -1976,7 +1971,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.newUserEmail.value = user.email;
                 this.elements.newUserTechId.value = user.techId;
             
-                this.elements.userFormButtons.innerHTML = ''; // Clear existing buttons
+                this.elements.userFormButtons.innerHTML = '';
             
                 const saveBtn = document.createElement('button');
                 saveBtn.type = 'submit';
@@ -2011,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         await this.db.collection(this.config.firestorePaths.USERS).doc(userToRemove.id).delete();
                         alert(`User "${userToRemove.name}" has been removed.`);
-                        this.methods.exitEditMode.call(this); // Exit edit mode if the deleted user was being edited
+                        this.methods.exitEditMode.call(this);
                         await this.methods.renderUserManagement.call(this);
                         this.methods.renderProjects.call(this);
                     } catch (error) {
@@ -2057,11 +2052,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryHeader.style.marginBottom = '20px';
                 summaryHeader.style.paddingBottom = '10px';
                 summaryHeader.style.borderBottom = '1px solid #ddd';
-
+            
                 const summaryTitle = document.createElement('h3');
                 summaryTitle.textContent = 'Team Lead Summary';
                 summaryTitle.style.margin = '0';
-
             
                 const refreshButton = document.createElement('button');
                 refreshButton.className = 'btn btn-primary';
@@ -2202,8 +2196,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // --- NOTIFICATION METHODS (MODIFIED) ---
-
             injectNotificationStyles() {
                 const style = document.createElement('style');
                 style.innerHTML = `
@@ -2275,19 +2267,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const notificationsRef = this.db.collection(this.config.firestorePaths.NOTIFICATIONS);
                 
                 try {
-                    // Check and enforce the 5-notification limit
                     const query = notificationsRef.orderBy("timestamp", "asc");
                     const snapshot = await query.get();
 
                     if (snapshot.size >= 5) {
                         const batch = this.db.batch();
-                        const toDelete = snapshot.docs.slice(0, snapshot.size - 4); // Keep 4, delete the rest
+                        const toDeleteCount = snapshot.size - 4;
+                        const toDelete = snapshot.docs.slice(0, toDeleteCount);
                         toDelete.forEach(doc => batch.delete(doc.ref));
                         await batch.commit();
                         console.log(`Cleared ${toDelete.length} oldest notification(s).`);
                     }
 
-                    // Add the new notification
                     await notificationsRef.add({
                         message,
                         type,
@@ -2308,22 +2299,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this.notificationListenerUnsubscribe) {
                     this.notificationListenerUnsubscribe();
                 }
+                
+                // === START: ERROR FIX ===
+                // Explicitly bind `this` to ensure the correct context inside the callback.
+                const self = this;
+                // === END: ERROR FIX ===
+
                 this.notificationListenerUnsubscribe = this.db.collection(this.config.firestorePaths.NOTIFICATIONS)
                     .orderBy("timestamp", "desc")
                     .limit(1)
                     .onSnapshot(
-                        snapshot => {
+                        (snapshot) => { // Using arrow function is fine, but the explicit `self` is safer.
                             snapshot.docChanges().forEach(change => {
                                 if (change.type === "added") {
                                     const notification = change.doc.data();
                                     const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
                                     if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
-                                        this.methods.showNotificationModal.call(this, notification);
+                                        // === START: ERROR FIX ===
+                                        // Use `self` instead of `this` to call the method.
+                                        self.methods.showNotificationModal.call(self, notification);
+                                        // === END: ERROR FIX ===
                                     }
                                 }
                             });
                         },
-                        error => {
+                        (error) => {
                             console.error("Error listening for notifications:", error);
                         }
                     );
