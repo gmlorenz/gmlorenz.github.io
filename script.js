@@ -7,9 +7,11 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.4
+ * @version 2.9.6
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - FIXED: Expand/Collapse functionality now correctly reapplies column visibility settings.
+ * - ADDED: Professional TL Summary with project and tech info.
  * - ADDED: "Refresh" button to the TL Summary modal.
  * - ADDED: "Copy" button for decimal hours in the TL Summary.
  * - MODIFIED: Redesigned TL Summary UI with a modern card-based layout.
@@ -1067,6 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             this.state.groupVisibilityState[groupKey].isExpanded = !isExpanded;
                             this.methods.saveGroupVisibilityState.call(this);
                             this.methods.renderProjects.call(this);
+                            this.methods.applyColumnVisibility.call(this);
                         };
                     }
 
@@ -1965,38 +1968,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 this.methods.showLoading.call(this, "Generating TL Summary...");
-                this.elements.tlSummaryContent.innerHTML = ""; // Clear existing content
+                this.elements.tlSummaryContent.innerHTML = "";
             
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
-                    const projectCreationTimestamps = {}; // Store creation timestamps for sorting
+                    const projectCreationTimestamps = {};
+                    const techData = {
+                        assigned: new Set(),
+                        withTime: new Set()
+                    };
             
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const totalWorkMs = (p.durationDay1Ms || 0) + (p.durationDay2Ms || 0) + (p.durationDay3Ms || 0);
-            
-                        const breakMs = ((p.breakDurationMinutesDay1 || 0) +
-                            (p.breakDurationMinutesDay2 || 0) +
-                            (p.breakDurationMinutesDay3 || 0)) * 60000;
-            
+                        const breakMs = ((p.breakDurationMinutesDay1 || 0) + (p.breakDurationMinutesDay2 || 0) + (p.breakDurationMinutesDay3 || 0)) * 60000;
                         const additionalMs = (p.additionalMinutesManual || 0) * 60000;
                         const adjustedNetMs = Math.max(0, totalWorkMs - breakMs) + additionalMs;
-                        if (adjustedNetMs <= 0) return;
             
-                        const minutes = Math.floor(adjustedNetMs / 60000);
-                        if (minutes <= 0) return;
+                        if (p.assignedTo) {
+                            techData.assigned.add(p.assignedTo);
+                        }
             
-                        const projName = p.baseProjectName || "Unknown Project";
-                        const fixCat = p.fixCategory || "Unknown Fix";
+                        if (adjustedNetMs > 0) {
+                            const minutes = Math.floor(adjustedNetMs / 60000);
+                            const projName = p.baseProjectName || "Unknown Project";
+                            const fixCat = p.fixCategory || "Unknown Fix";
             
-                        if (!projectTotals[projName]) {
-                            projectTotals[projName] = {};
-                            if (p.creationTimestamp) {
-                                projectCreationTimestamps[projName] = p.creationTimestamp;
+                            if (!projectTotals[projName]) {
+                                projectTotals[projName] = {};
+                                if (p.creationTimestamp) {
+                                    projectCreationTimestamps[projName] = p.creationTimestamp;
+                                }
+                            }
+                            projectTotals[projName][fixCat] = (projectTotals[projName][fixCat] || 0) + minutes;
+            
+                            if (p.assignedTo) {
+                                techData.withTime.add(p.assignedTo);
                             }
                         }
-                        projectTotals[projName][fixCat] = (projectTotals[projName][fixCat] || 0) + minutes;
                     });
             
                     const sortedProjectNames = Object.keys(projectTotals).sort((a, b) => {
@@ -2005,17 +2015,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         return tsB - tsA;
                     });
             
-                    if (sortedProjectNames.length === 0) {
-                        this.elements.tlSummaryContent.innerHTML = "<p class='no-data-message'>No project time data found to generate a summary.</p>";
-                    } else {
+                    if (sortedProjectNames.length > 0) {
                         const summaryContainer = document.createElement('div');
                         summaryContainer.className = 'summary-container';
             
                         sortedProjectNames.forEach(projName => {
-                            const projectBlock = document.createElement('div');
-                            projectBlock.className = 'project-summary-block';
+                            const projectCard = document.createElement('div');
+                            projectCard.className = 'project-summary-card';
             
-                            let blockHtml = `<h4 class="project-name-header">${projName}</h4><div class="fix-categories-grid">`;
+                            let cardHtml = `<h4 class="project-name-header">${projName}</h4><div class="fix-categories-grid">`;
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
             
@@ -2024,19 +2032,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const hoursDecimal = (totalMinutes / 60).toFixed(2);
                                 const bgColor = this.config.FIX_CATEGORIES.COLORS[fixCat] || this.config.FIX_CATEGORIES.COLORS.default;
             
-                                blockHtml += `
+                                cardHtml += `
                                     <div class="fix-category-item" style="background-color: ${bgColor};">
                                         <span class="fix-category-name">${fixCat}</span>
-                                        <span class="fix-category-minutes">${totalMinutes} mins</span>
-                                        <span class="fix-category-hours" id="hours-to-copy-${projName}-${fixCat}">${hoursDecimal} hrs</span>
-                                        <button class="btn btn-sm btn-copy-hours" data-target-id="hours-to-copy-${projName}-${fixCat}"><i class="fas fa-copy"></i></button>
+                                        <div class="fix-category-data">
+                                            <span class="fix-category-minutes">${totalMinutes} mins</span>
+                                            <span class="fix-category-hours" id="hours-to-copy-${projName}-${fixCat}">${hoursDecimal} hrs</span>
+                                            <button class="btn btn-sm btn-info btn-copy-hours" data-target-id="hours-to-copy-${projName}-${fixCat}"><i class="fas fa-copy"></i></button>
+                                        </div>
                                     </div>
                                 `;
                             });
             
-                            blockHtml += '</div>';
-                            projectBlock.innerHTML = blockHtml;
-                            summaryContainer.appendChild(projectBlock);
+                            cardHtml += '</div>';
+                            projectCard.innerHTML = cardHtml;
+                            summaryContainer.appendChild(projectCard);
                         });
             
                         this.elements.tlSummaryContent.appendChild(summaryContainer);
@@ -2056,6 +2066,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             });
                         });
+                    }
+            
+                    const techsWithNoTime = [...techData.assigned].filter(tech => !techData.withTime.has(tech));
+            
+                    if (techsWithNoTime.length > 0) {
+                        const techInfoSection = document.createElement('div');
+                        techInfoSection.className = 'tech-info-section';
+                        let techInfoHtml = '<h3 class="tech-info-header">Techs with No Time Logged</h3><ul class="tech-info-list">';
+                        techsWithNoTime.forEach(tech => {
+                            techInfoHtml += `<li>${tech}</li>`;
+                        });
+                        techInfoHtml += '</ul>';
+                        techInfoSection.innerHTML = techInfoHtml;
+                        this.elements.tlSummaryContent.appendChild(techInfoSection);
+                    }
+            
+                    if (sortedProjectNames.length === 0 && techsWithNoTime.length === 0) {
+                        this.elements.tlSummaryContent.innerHTML = "<p class='no-data-message'>No project time data or unlogged tech information found.</p>";
                     }
             
                 } catch (error) {
