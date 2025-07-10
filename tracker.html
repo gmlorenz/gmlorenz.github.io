@@ -433,6 +433,12 @@
         }
 
         /* === START: NEW STYLES FOR USER MANAGEMENT === */
+        .user-management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
         #userManagementForm {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr auto;
@@ -555,8 +561,15 @@
             <div id="settingsModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeSettingsBtn">&times;</span>
-                    <h2>⚙️ User Management</h2>
-                    <p style="font-size: 0.9em; color: #666; margin-top: -8px; margin-bottom: 20px;">Add authorized Tech to access Project Tracker</p>
+                    <div class="user-management-header">
+                        <h2>⚙️ User Management</h2>
+                        <div>
+                            <button id="importUsersBtn" class="btn btn-info">Import Users</button>
+                            <button id="exportUsersBtn" class="btn btn-primary">Export Users</button>
+                            <input type="file" id="userCsvInput" accept=".csv" style="display: none;">
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9em; color: #666; margin-top: -8px; margin-bottom: 20px;">Add, edit, and remove authorized users. The Tech ID will appear in dropdowns, and the Full Name will show on hover.</p>
                     
                     <form id="userManagementForm">
                         <div class="form-group">
