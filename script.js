@@ -2454,10 +2454,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return newUsers;
             },
 
-            // BUG FIX: New targeted function to update dropdowns without a full table render
             updateAssignedToDropdowns() {
                 const selects = document.querySelectorAll('select.assigned-to-select');
-                if (selects.length === 0) return; // No table rendered, nothing to do
+                if (selects.length === 0) return; 
             
                 let optionsHtml = '<option value="">Select Tech ID</option>';
                 this.state.users.sort((a, b) => a.techId.localeCompare(b.techId)).forEach(user => {
@@ -2467,12 +2466,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 selects.forEach(select => {
                     const currentValue = select.value;
                     select.innerHTML = optionsHtml;
-                    select.value = currentValue; // Try to preserve selection
+                    select.value = currentValue;
                 });
                 console.log("Assigned To dropdowns updated.");
             },
             
-            // ERROR FIX: Restored missing function for project import
             async handleProcessCsvImport() {
                 const file = this.elements.csvFileInput.files[0];
                 if (!file) {
@@ -2574,6 +2572,94 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.elements.processCsvBtn.disabled = false;
                 };
                 reader.readAsText(file);
+            },
+            
+            parseCsvToProjects(csvText) {
+                const lines = csvText.split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length === 0) return [];
+            
+                const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, ''));
+            
+                const missingHeaders = this.config.CSV_HEADERS_FOR_IMPORT.filter(expected => !headers.includes(expected));
+                if (missingHeaders.length > 0) {
+                    throw new Error(`CSV is missing required headers: ${missingHeaders.join(', ')}. Please use the exact headers from the export format.`);
+                }
+            
+                const projects = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+            
+                    if (values.length !== headers.length) {
+                        console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}. Row: "${lines[i]}"`);
+                        continue;
+                    }
+            
+                    let projectData = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        const header = headers[j];
+                        const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header];
+            
+                        if (fieldName === null) {
+                            continue;
+                        }
+            
+                        let value = values[j];
+            
+                        if (fieldName.startsWith('breakDurationMinutes')) {
+                            projectData[fieldName] = parseInt(value, 10) || 0;
+                        } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
+                            try {
+                                if (typeof value === 'string' && value.trim() !== '') {
+                                    const date = new Date(value);
+                                    if (isNaN(date.getTime())) {
+                                        console.warn(`Row ${i + 1}: Could not parse date for field '${fieldName}'. Value: "${value}"`);
+                                        projectData[fieldName] = null;
+                                    } else {
+                                        projectData[fieldName] = firebase.firestore.Timestamp.fromDate(date);
+                                    }
+                                } else {
+                                    projectData[fieldName] = null;
+                                }
+                            } catch (e) {
+                                console.error(`Row ${i + 1}: Error parsing date for field '${fieldName}' with value "${value}":`, e);
+                                projectData[fieldName] = null;
+                            }
+                        } else if (fieldName === 'status') {
+                            let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
+            
+                            if (cleanedStatus.includes('startedavailable')) {
+                                cleanedStatus = 'Available'; 
+                            } else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
+                            else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
+                            else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
+                            else if (cleanedStatus.includes('day2ended_awaitingnext')) cleanedStatus = 'Day2Ended_AwaitingNext';
+                            else if (cleanedStatus.includes('inprogressday3')) cleanedStatus = 'InProgressDay3';
+                            else if (cleanedStatus.includes('day3ended_awaitingnext')) cleanedStatus = 'Day3Ended_AwaitingNext';
+                            else if (cleanedStatus.includes('completed')) cleanedStatus = 'Completed';
+                            else if (cleanedStatus.includes('reassigned_techabsent')) cleanedStatus = 'Reassigned_TechAbsent';
+                            else cleanedStatus = 'Available';
+            
+                            projectData[fieldName] = cleanedStatus;
+                        } else {
+                            projectData[fieldName] = value;
+                        }
+                    }
+            
+                    const requiredFieldsCheck = ["baseProjectName", "areaTask", "fixCategory", "gsd"];
+                    let isValidProject = true;
+                    for (const field of requiredFieldsCheck) {
+                        if (!projectData[field] || projectData[field].trim() === "") {
+                            console.warn(`Skipping row ${i + 1}: Missing required field '${field}'. Row: "${lines[i]}"`);
+                            isValidProject = false;
+                            break;
+                        }
+                    }
+            
+                    if (isValidProject) {
+                        projects.push(projectData);
+                    }
+                }
+                return projects;
             },
         }
     };
