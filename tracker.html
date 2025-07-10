@@ -88,139 +88,69 @@
     /* START: TL SUMMARY MODAL & CARD UI STYLES (UPDATED)     */
     /* ====================================================== */
     #tlSummaryModal .modal-content {
-        max-width: 70%; /* Reduced max-width for the modal itself */
-        width: 650px; /* Adjusted fixed width */
-        padding: 20px; /* Slightly reduced padding */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
+        max-width: 80%; /* Increased max-width for a wider layout */
+        width: 900px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+        border-radius: 12px;
+    }
+
+    .summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
     }
 
     .summary-title {
-        text-align: center;
-        color: #333;
-        margin-bottom: 20px; /* Reduced margin */
-        font-size: 1.6em; /* Slightly smaller font size */
+        text-align: left;
+        color: #2c3e50;
+        font-size: 1.8em;
         font-weight: 600;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 8px; /* Reduced padding */
+        margin: 0;
     }
 
     .summary-container {
         display: grid;
-        /* Adjusted minmax to make cards smaller, allowing more per row on larger screens */
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px; /* Reduced space between project blocks */
-        padding: 5px; /* Reduced padding */
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
     }
 
-    .project-summary-block {
-        background-color: #f9f9f9;
+    .project-summary-card {
+        background-color: #ffffff;
         border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 15px; /* Reduced padding */
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Slightly lighter shadow */
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
     }
 
     .project-name-header {
         color: #0056b3;
-        font-size: 1.2em; /* Slightly smaller font size */
-        margin-top: 0;
-        margin-bottom: 10px; /* Reduced margin */
-        padding-bottom: 6px; /* Reduced padding */
-        border-bottom: 1px dashed #c0c0c0;
+        font-size: 1.3em;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
         text-align: center;
-
-        /* --- ADDED FOR TEXT OVERFLOW HANDLING --- */
-        white-space: nowrap; /* Prevent text from wrapping to the next line */
-        overflow: hidden; /* Hide any overflowing content */
-        text-overflow: ellipsis; /* Display an ellipsis (...) to indicate truncated text */
-        /* -------------------------------------- */
-
-        /* Styles for the info icon and full name popup */
-        position: relative; /* Needed for positioning the popup */
-        display: flex; /* Use flexbox to align name and icon */
-        align-items: center;
-        justify-content: center; /* Center content horizontally */
-        gap: 5px; /* Space between truncated name and icon */
-    }
-
-    .truncated-project-name {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        /* Optional: Set a max-width if you want the name to always take up certain space,
-            otherwise, it will shrink to allow the icon space */
-        max-width: calc(100% - 25px); /* Adjust based on icon width + gap */
-    }
-
-    .info-icon {
-        font-size: 0.9em; /* Smaller icon */
-        color: #007bff; /* A distinct color for the icon */
-        cursor: pointer;
-        margin-left: 5px;
-        user-select: none; /* Prevent text selection on icon click */
-        /* Add tooltip-like behavior for hover */
-        position: relative;
-    }
-
-    /* Optional: Tooltip-like effect on hover for the icon */
-    .info-icon::before {
-        content: attr(data-full-name); /* Use the data-full-name attribute for content */
-        position: absolute;
-        bottom: 100%; /* Position above the icon */
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 5px 8px;
-        border-radius: 4px;
-        white-space: nowrap;
-        font-size: 0.8em;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.2s, visibility 0.2s;
-        pointer-events: none; /* Allows clicks to pass through */
-        z-index: 10; /* Ensure it's above other elements */
-    }
-
-    .info-icon:hover::before {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .full-name-popup {
-        display: none; /* Add this line */
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #fff;
-        border: 1px solid #ccc;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        padding: 10px 15px;
-        border-radius: 8px;
-        white-space: normal;
-        word-wrap: break-word;
-        z-index: 5;
-        font-size: 0.9em;
-        color: #333;
-        max-width: 250px;
-        text-align: left;
     }
 
     .fix-categories-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 8px; /* Reduced space between fix category items */
+        gap: 10px;
         flex-grow: 1;
     }
 
     .fix-category-item {
-        padding: 10px 12px; /* Reduced padding */
-        border-radius: 5px; /* Slightly smaller border-radius */
-        font-size: 0.9em; /* Slightly smaller font size */
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 1em;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -231,109 +161,48 @@
 
     .fix-category-name {
         font-weight: 600;
-        flex-basis: 40%; /* Adjusted basis to allow more space for values if needed */
+    }
+
+    .fix-category-data {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .fix-category-minutes {
         font-weight: 500;
-        flex-basis: 30%;
-        text-align: right;
     }
 
     .fix-category-hours {
-        font-size: 0.8em; /* Smaller font size for hours */
+        font-size: 0.9em;
         color: #555;
-        flex-basis: 30%;
-        text-align: right;
+    }
+    
+    .tech-info-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #e9ecef;
     }
 
-    /* Specific color adjustments for text on light backgrounds */
-    .fix-category-item[style*="background-color: rgb(255, 255, 224)"] { /* Fix1: #FFFFE0 */
-        color: #444; /* Darker text for better contrast */
+    .tech-info-header {
+        font-size: 1.4em;
+        color: #2c3e50;
+        margin-bottom: 15px;
     }
 
-    .no-data-message, .error-message {
-        text-align: center;
-        font-size: 1em; /* Slightly smaller font size */
-        color: #777;
-        padding: 15px; /* Reduced padding */
-        background-color: #f0f0f0;
-        border-radius: 8px;
-        margin-top: 15px; /* Reduced margin */
+    .tech-info-list {
+        list-style: none;
+        padding: 0;
     }
 
-    .error-message {
-        color: #d9534f;
-        background-color: #fdf7f7;
-        border: 1px solid #f2dede;
+    .tech-info-list li {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 1em;
     }
 
-    /* Responsive adjustments for smaller screens */
-    @media (max-width: 768px) {
-        #tlSummaryModal .modal-content {
-            width: 95%;
-            padding: 10px; /* Further reduced padding for very small screens */
-        }
-
-        .summary-container {
-            grid-template-columns: 1fr;
-            gap: 15px; /* Reduced gap */
-        }
-
-        .project-summary-block {
-            padding: 10px; /* Reduced padding */
-        }
-
-        .project-name-header {
-            flex-direction: column; /* Stack name and icon vertically on small screens */
-            align-items: flex-start; /* Align to the start */
-            gap: 2px;
-
-            /* On small screens, allow wrapping if needed, but still use ellipsis for very long single words */
-            white-space: normal; /* Allow wrapping */
-            word-wrap: break-word; /* Break long words */
-            text-overflow: ellipsis; /* Still apply ellipsis in case of single very long word */
-            overflow: hidden; /* Ensure overflow is still hidden */
-            display: -webkit-box; /* For multi-line ellipsis */
-            -webkit-line-clamp: 2; /* Limit to 2 lines */
-            -webkit-box-orient: vertical;
-        }
-
-        .truncated-project-name {
-            max-width: 100%; /* Take full width */
-            text-align: left; /* Align to left on small screens */
-        }
-
-        .info-icon {
-            margin-left: 0; /* Remove left margin when stacked */
-            align-self: flex-end; /* Push icon to the right if name wraps */
-            font-size: 0.8em; /* Even smaller icon on mobile */
-        }
-
-        .info-icon::before {
-            left: 0%; /* Adjust tooltip position for stacked layout */
-            transform: translateX(0%);
-        }
-
-        .full-name-popup {
-            left: 0%; /* Adjust popup position for stacked layout */
-            transform: translateX(0%);
-            max-width: 90%; /* Adjust max-width for mobile popup */
-        }
-
-        .fix-category-item {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 8px; /* Further reduced padding */
-            font-size: 0.85em; /* Even smaller font size */
-        }
-
-        .fix-category-minutes, .fix-category-hours {
-            text-align: left;
-            width: 100%;
-            margin-top: 2px; /* Reduced margin */
-        }
-    }
     /* ====================================================== */
     /* END: TL SUMMARY MODAL & CARD UI STYLES                 */
     /* ====================================================== */
@@ -654,8 +523,10 @@
             <div id="tlSummaryModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeTlSummaryBtn">&times;</span>
-                    <h2>📝 TL Summary</h2>
-                    <button id="tlSummaryRefreshBtn" class="btn btn-primary" style="position: absolute; top: 15px; right: 50px;">Refresh</button>
+                    <div class="summary-header">
+                        <h2 class="summary-title">TL Summary</h2>
+                        <button id="tlSummaryRefreshBtn" class="btn btn-primary">Refresh</button>
+                    </div>
                     <div id="tlSummaryContent">
                         <p>Loading summary...</p>
                     </div>
