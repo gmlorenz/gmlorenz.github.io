@@ -7,9 +7,13 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.8
+ * @version 3.0.0
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - MODIFIED: (User Request) The "Add Extra Area" button in Project Settings is now only available for projects with an active Fix1 stage.
+ * - ADDED: (User Request) In User Settings, users can now save their Full Name and Tech ID. New Tech IDs are dynamically added to the "Assigned To" dropdown.
+ * - MODIFIED: (User Request) The Refresh button in the TL Summary has been redesigned for a better UI and spacing.
+ * - MODIFIED: (User Request) The font size for project names in the TL Summary is now smaller to fit longer names.
  * - MODIFIED: Progress bar now changes color from green to red based on time consumed (out of 8 hours).
  * - FIXED: Expand/Collapse functionality now correctly reapplies column visibility settings.
  * - ADDED: Professional TL Summary with project and tech info.
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+               apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -59,8 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             firestorePaths: {
                 ALLOWED_EMAILS: "settings/allowedEmails",
+                TECH_IDS: "settings/techIds", // NEW: Firestore path for dynamic Tech IDs
+                USERS: "users", // NEW: Firestore path for user-specific data
                 NOTIFICATIONS: "notifications"
             },
+            // MODIFIED: This is now a fallback list. The app will prioritize fetching from Firestore.
             TECH_IDS: ["4232JD", "7248AA", "4426KV", "4472JS", "7236LE", "4475JT", "7039NO", "7231NR", "7240HH", "7247JA", "7249SS", "7244AA", "7314VP"].sort(),
             FIX_CATEGORIES: {
                 ORDER: ["Fix1", "Fix2", "Fix3", "Fix4", "Fix5", "Fix6"],
@@ -223,7 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleTitleCheckbox: document.getElementById('toggleTitleCheckbox'),
                     toggleDay2Checkbox: document.getElementById('toggleDay2Checkbox'),
                     toggleDay3Checkbox: document.getElementById('toggleDay3Checkbox'),
-                    tlSummaryRefreshBtn: document.getElementById('tlSummaryRefreshBtn'),
+                    // REMOVED: tlSummaryRefreshBtn is now generated dynamically
+                    // tlSummaryRefreshBtn: document.getElementById('tlSummaryRefreshBtn'),
+
+                    // ADDED: (User Request) New DOM elements for User Settings.
+                    // IMPORTANT: You must add these elements to your HTML file inside the 'settingsModal'.
+                    userFullNameInput: document.getElementById('userFullNameInput'), // e.g., <input type="text" id="userFullNameInput">
+                    userTechIdInput: document.getElementById('userTechIdInput'), // e.g., <input type="text" id="userTechIdInput">
+                    saveUserInfoBtn: document.getElementById('saveUserInfoBtn'), // e.g., <button id="saveUserInfoBtn">Save My Info</button>
                 };
             },
 
@@ -270,7 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const pin = prompt("Enter PIN to access User Settings:");
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.settingsModal.style.display = 'block';
-                        self.methods.renderAllowedEmailsList.call(self);
+                        // MODIFIED: (User Request) Call new function to render all user settings
+                        self.methods.renderUserSettings.call(self);
                     } else if (pin) alert("Incorrect PIN.");
                 });
 
@@ -279,7 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.methods.generateTlSummaryData.call(self);
                 });
 
-                attachClick(self.elements.tlSummaryRefreshBtn, self.methods.generateTlSummaryData.bind(self));
+                // REMOVED: Refresh button is now created dynamically in generateTlSummaryData
+                // attachClick(self.elements.tlSummaryRefreshBtn, self.methods.generateTlSummaryData.bind(self));
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
@@ -323,6 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 attachClick(self.elements.addEmailBtn, self.methods.handleAddEmail.bind(self));
+                // ADDED: (User Request) Attach listener for the new "Save User Info" button
+                attachClick(self.elements.saveUserInfoBtn, self.methods.handleSaveUserInfo.bind(self));
                 attachClick(self.elements.clearDataBtn, self.methods.handleClearData.bind(self));
                 attachClick(self.elements.nextPageBtn, self.methods.handleNextPage.bind(self));
                 attachClick(self.elements.prevPageBtn, self.methods.handlePrevPage.bind(self));
@@ -437,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             },
 
-            handleAuthorizedUser(user) {
+            async handleAuthorizedUser(user) { // MODIFIED: Added async
                 this.elements.body.classList.remove('login-view-active');
                 this.elements.authWrapper.style.display = 'none';
                 this.elements.mainContainer.style.display = 'block';
@@ -453,6 +471,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'block';
 
                 if (!this.state.isAppInitialized) {
+                    // ADDED: (User Request) Fetch dynamic tech IDs before loading data
+                    await this.methods.fetchTechIds.call(this);
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     this.state.isAppInitialized = true;
                     this.methods.listenForNotifications.call(this);
@@ -1293,6 +1313,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.state.allowedEmails = ["ev.lorens.ebrado@gmail.com"];
                 }
             },
+            
+            /**
+             * ADDED: (User Request) Fetches the dynamic list of Tech IDs from Firestore.
+             * Falls back to the hardcoded list if the Firestore document doesn't exist.
+             */
+            async fetchTechIds() {
+                try {
+                    const docSnap = await this.db.doc(this.config.firestorePaths.TECH_IDS).get();
+                    if (docSnap.exists) {
+                        const ids = docSnap.data().ids || [];
+                        if (ids.length > 0) {
+                            this.config.TECH_IDS = ids.sort();
+                            console.log("Successfully fetched dynamic Tech IDs from Firestore.");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching dynamic Tech IDs. Falling back to local list.", error);
+                }
+            },
 
             async updateAllowedEmailsInFirestore(emailsArray) {
                 this.methods.showLoading.call(this, "Updating allowed emails...");
@@ -1357,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- Start of script.js modifications ---
 
-            // REPLACE the existing 'renderTLDashboard' function with the following:
+            // MODIFIED: 'renderTLDashboard' function updated with new logic for "Add Extra Area" button.
             async renderTLDashboard() {
                 if (!this.elements.tlDashboardContentElement) return;
                 this.elements.tlDashboardContentElement.innerHTML = "";
@@ -1373,22 +1412,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const batchItemDiv = document.createElement('div');
                     batchItemDiv.className = 'dashboard-batch-item';
 
-                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`; // Modified: Removed Batch ID
+                    batchItemDiv.innerHTML = `<h4># ${batch.baseProjectName || "Unknown"}</h4>`;
                     const allFixStages = this.config.FIX_CATEGORIES.ORDER;
                     const stagesPresent = batch.tasksByFix ? Object.keys(batch.tasksByFix).sort((a, b) => allFixStages.indexOf(a) - allFixStages.indexOf(b)) : [];
-                    //batchItemDiv.innerHTML += `<p><strong>Stages Present:</strong> ${stagesPresent.join(', ') || "None"}</p>`;
 
-                    // --- Start of UI Refactor for Project Settings (within renderTLDashboard) ---
                     const actionsContainer = document.createElement('div');
-                    actionsContainer.className = 'dashboard-actions-grid'; // New class for overall actions grid
+                    actionsContainer.className = 'dashboard-actions-grid';
 
-                    // Release Actions Group
                     const releaseGroup = document.createElement('div');
                     releaseGroup.className = 'dashboard-actions-group';
                     releaseGroup.innerHTML = '<h6>Release Tasks:</h6>';
                     const releaseActionsDiv = document.createElement('div');
-                    releaseActionsDiv.className = 'dashboard-action-buttons'; // New class for button alignment
-                    // Original release buttons logic goes here
+                    releaseActionsDiv.className = 'dashboard-action-buttons';
                     allFixStages.forEach((currentFix, index) => {
                         const nextFix = allFixStages[index + 1];
                         if (!nextFix) return;
@@ -1416,7 +1451,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     addAreaBtn.textContent = 'Add Extra Area';
                     addAreaBtn.className = 'btn btn-success';
                     addAreaBtn.style.marginLeft = '10px';
-                    addAreaBtn.disabled = stagesPresent.length === 0;
+                    // --- MODIFIED: (User Request) "Add Extra Area" button logic ---
+                    // The button is now disabled if 'Fix1' is not one of the present stages.
+                    addAreaBtn.disabled = !stagesPresent.includes('Fix1');
+                    addAreaBtn.title = addAreaBtn.disabled ? 'Adding areas is only enabled for projects with a Fix1 stage.' : 'Add a new task area to the latest Fix stage.';
+                    // --- End of modification ---
                     addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
                     releaseActionsDiv.appendChild(addAreaBtn);
                     releaseGroup.appendChild(releaseActionsDiv);
@@ -1444,7 +1483,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             };
                             lockActionsDiv.appendChild(lockBtn);
-                            // RECALC BUTTON WAS REMOVED FROM HERE
                         });
                     }
                     lockGroup.appendChild(lockActionsDiv);
@@ -1456,18 +1494,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteEntireProjectGroup.innerHTML = '<h6>Delete Current Project:</h6>';
 
                     const deleteEntireProjectButtonsDiv = document.createElement('div');
-                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons'; // For button spacing
+                    deleteEntireProjectButtonsDiv.className = 'dashboard-action-buttons';
 
                     const deleteAllBtn = document.createElement('button');
-                    deleteAllBtn.textContent = 'DELETE PROJECT'; // Changed text for conciseness
+                    deleteAllBtn.textContent = 'DELETE PROJECT';
                     deleteAllBtn.className = 'btn btn-danger btn-delete-project';
-                    deleteAllBtn.style.width = '100%'; // Keep full width within its group
+                    deleteAllBtn.style.width = '100%';
                     deleteAllBtn.onclick = () => this.methods.handleDeleteEntireProject.call(this, batch.batchId, batch.baseProjectName);
                     deleteEntireProjectButtonsDiv.appendChild(deleteAllBtn);
                     deleteEntireProjectGroup.appendChild(deleteEntireProjectButtonsDiv);
-                    actionsContainer.appendChild(deleteEntireProjectGroup); // Append to the grid
+                    actionsContainer.appendChild(deleteEntireProjectGroup);
 
-                    // Delete Specific Fix Stages Group (formerly deleteActionsDiv)
+                    // Delete Specific Fix Stages Group
                     const deleteGroup = document.createElement('div');
                     deleteGroup.className = 'dashboard-actions-group';
                     deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
@@ -1494,8 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteGroup.appendChild(deleteActionsDiv);
                     actionsContainer.appendChild(deleteGroup);
 
-                    batchItemDiv.appendChild(actionsContainer); // Append the main actions grid to the batch item
-                    // --- End of UI Refactor for Project Settings ---
+                    batchItemDiv.appendChild(actionsContainer);
 
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
@@ -1899,6 +1936,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
+            /**
+             * ADDED: (User Request) New function to render all components within the User Settings modal.
+             * It populates the user's name/Tech ID and the allowed emails list.
+             */
+            async renderUserSettings() {
+                // First, render the allowed emails list as usual
+                this.methods.renderAllowedEmailsList.call(this);
+
+                // Second, fetch and display the current user's info
+                if (!this.auth.currentUser) return;
+                const uid = this.auth.currentUser.uid;
+                const userDocRef = this.db.collection(this.config.firestorePaths.USERS).doc(uid);
+
+                try {
+                    const docSnap = await userDocRef.get();
+                    if (docSnap.exists) {
+                        const userData = docSnap.data();
+                        if (this.elements.userFullNameInput) this.elements.userFullNameInput.value = userData.fullName || '';
+                        if (this.elements.userTechIdInput) this.elements.userTechIdInput.value = userData.techId || '';
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            },
+
+            /**
+             * ADDED: (User Request) New handler to save user's custom info (Full Name, Tech ID).
+             * Also updates the global Tech ID list in Firestore.
+             */
+            async handleSaveUserInfo() {
+                if (!this.auth.currentUser) {
+                    alert("You must be logged in to save user info.");
+                    return;
+                }
+                const uid = this.auth.currentUser.uid;
+                const fullName = this.elements.userFullNameInput ? this.elements.userFullNameInput.value.trim() : '';
+                const techId = this.elements.userTechIdInput ? this.elements.userTechIdInput.value.trim().toUpperCase() : '';
+
+                if (!fullName || !techId) {
+                    alert("Please fill in both your Full Name and Tech ID.");
+                    return;
+                }
+
+                this.methods.showLoading.call(this, "Saving your info...");
+
+                try {
+                    // Save the user-specific info
+                    const userDocRef = this.db.collection(this.config.firestorePaths.USERS).doc(uid);
+                    await userDocRef.set({
+                        fullName,
+                        techId,
+                        email: this.auth.currentUser.email
+                    }, {
+                        merge: true
+                    });
+
+                    // Update the global list of Tech IDs if the new one is unique
+                    if (!this.config.TECH_IDS.includes(techId)) {
+                        const updatedTechIds = [...this.config.TECH_IDS, techId].sort();
+                        await this.db.doc(this.config.firestorePaths.TECH_IDS).set({
+                            ids: updatedTechIds
+                        });
+                        // Update the local config immediately for instant refresh
+                        this.config.TECH_IDS = updatedTechIds;
+                        // Refresh the main project view to repopulate dropdowns with the new ID
+                        this.methods.renderProjects.call(this);
+                    }
+
+                    alert("Your information has been saved successfully!");
+
+                } catch (error) {
+                    console.error("Error saving user info:", error);
+                    alert("An error occurred while saving your info: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+
             async renderAllowedEmailsList() {
                 if (!this.elements.allowedEmailsList) return;
                 this.methods.showLoading.call(this, "Rendering allowed emails...");
@@ -1969,6 +2084,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.showLoading.call(this, "Generating TL Summary...");
                 this.elements.tlSummaryContent.innerHTML = "";
             
+                // --- MODIFIED: (User Request) UI Refresh for TL Summary Header ---
+                const summaryHeader = document.createElement('div');
+                summaryHeader.style.display = 'flex';
+                summaryHeader.style.justifyContent = 'space-between';
+                summaryHeader.style.alignItems = 'center';
+                summaryHeader.style.marginBottom = '20px';
+                summaryHeader.style.paddingBottom = '10px';
+                summaryHeader.style.borderBottom = '1px solid #ddd';
+            
+                const summaryTitle = document.createElement('h3');
+                summaryTitle.textContent = 'Team Lead Summary';
+                summaryTitle.style.margin = '0';
+            
+                const refreshButton = document.createElement('button');
+                refreshButton.className = 'btn btn-primary';
+                // Using a refresh icon (assuming Font Awesome is available, otherwise text)
+                refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                refreshButton.onclick = () => this.methods.generateTlSummaryData.call(this);
+            
+                summaryHeader.appendChild(summaryTitle);
+                summaryHeader.appendChild(refreshButton);
+                this.elements.tlSummaryContent.appendChild(summaryHeader);
+                // --- End of UI Refresh modification ---
+            
                 try {
                     const snapshot = await this.db.collection("projects").get();
                     const projectTotals = {};
@@ -2022,7 +2161,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const projectCard = document.createElement('div');
                             projectCard.className = 'project-summary-card';
             
-                            let cardHtml = `<h4 class="project-name-header">${projName}</h4><div class="fix-categories-grid">`;
+                            // --- MODIFIED: (User Request) Smaller font size for project name ---
+                            let cardHtml = `<h4 class="project-name-header" style="font-size: 1.1rem; margin-bottom: 12px;">${projName}</h4><div class="fix-categories-grid">`;
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
             
@@ -2082,12 +2222,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
             
                     if (sortedProjectNames.length === 0 && techsWithNoTime.length === 0) {
-                        this.elements.tlSummaryContent.innerHTML = "<p class='no-data-message'>No project time data or unlogged tech information found.</p>";
+                        const noDataMessage = document.createElement('p');
+                        noDataMessage.className = 'no-data-message';
+                        noDataMessage.textContent = 'No project time data or unlogged tech information found.';
+                        this.elements.tlSummaryContent.appendChild(noDataMessage);
                     }
             
                 } catch (error) {
                     console.error("Error generating TL summary:", error);
-                    this.elements.tlSummaryContent.innerHTML = `<p class="error-message">Error generating summary: ${error.message}</p>`;
+                    const errorMessage = document.createElement('p');
+                    errorMessage.className = 'error-message';
+                    errorMessage.textContent = `Error generating summary: ${error.message}`;
+                    this.elements.tlSummaryContent.appendChild(errorMessage);
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
