@@ -7,10 +7,11 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.3.1
+ * @version 3.3.2
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
- * - FIXED: (User Request) A visual bug where the project table would appear after adding a new user. Replaced the full `renderProjects()` call with a more targeted `updateAssignedToDropdowns()` function to prevent the issue.
+ * - FIXED: (User Request) Restored the missing `handleProcessCsvImport` function for projects, which was causing a critical startup error.
+ * - FIXED: A visual bug where the project table would appear after adding a new user.
  * - ADDED: "Import Users" and "Export Users" buttons and functionality to the User Management modal.
  * - FIXED: A "TypeError" in the notification listener by explicitly binding the 'this' context.
  * - ADDED: Notifications now appear in a custom modal with a "View Project" button.
@@ -139,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.listenForAuthStateChanges.call(this);
 
             } catch (error) {
-                console.error("CRITICAL: Error initializing Firebase:", error.message);
+                console.error("CRITICAL: Error initializing Firebase:", error.message, error.stack);
                 const loadingMessageElement = document.getElementById('loading-auth-message');
                 if (loadingMessageElement) {
                     loadingMessageElement.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${error.message}</p>`;
@@ -1929,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(`User "${name}" added successfully!`);
                     this.elements.userManagementForm.reset();
                     await this.methods.renderUserManagement.call(this);
-                    this.methods.updateAssignedToDropdowns.call(this); // BUG FIX: Use targeted update
+                    this.methods.updateAssignedToDropdowns.call(this);
 
                 } catch (error) {
                     console.error("Error adding new user:", error);
@@ -1966,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(`User "${name}" updated successfully!`);
                     this.methods.exitEditMode.call(this);
                     await this.methods.renderUserManagement.call(this);
-                    this.methods.updateAssignedToDropdowns.call(this); // BUG FIX: Use targeted update
+                    this.methods.updateAssignedToDropdowns.call(this);
             
                 } catch (error) {
                     console.error("Error updating user:", error);
@@ -2019,7 +2020,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert(`User "${userToRemove.name}" has been removed.`);
                         this.methods.exitEditMode.call(this);
                         await this.methods.renderUserManagement.call(this);
-                        this.methods.updateAssignedToDropdowns.call(this); // BUG FIX: Use targeted update
+                        this.methods.updateAssignedToDropdowns.call(this);
                     } catch (error) {
                         console.error("Error removing user:", error);
                         alert("An error occurred while removing the user: " + error.message);
@@ -2402,7 +2403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await batch.commit();
                         alert(`Successfully imported ${newUsers.length} new user(s)!`);
                         await this.methods.renderUserManagement.call(this);
-                        this.methods.updateAssignedToDropdowns.call(this); // BUG FIX: Use targeted update
+                        this.methods.updateAssignedToDropdowns.call(this);
             
                     } catch (error) {
                         console.error("Error processing user CSV:", error);
@@ -2469,6 +2470,110 @@ document.addEventListener('DOMContentLoaded', () => {
                     select.value = currentValue; // Try to preserve selection
                 });
                 console.log("Assigned To dropdowns updated.");
+            },
+            
+            // ERROR FIX: Restored missing function for project import
+            async handleProcessCsvImport() {
+                const file = this.elements.csvFileInput.files[0];
+                if (!file) {
+                    alert("Please select a CSV file to import.");
+                    return;
+                }
+
+                this.methods.showLoading.call(this, "Processing CSV file...");
+                this.elements.processCsvBtn.disabled = true;
+                this.elements.csvImportStatus.textContent = 'Reading file...';
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const csvText = e.target.result;
+                        const parsedProjects = this.methods.parseCsvToProjects.call(this, csvText);
+
+                        if (parsedProjects.length === 0) {
+                            alert("No valid project data found in the CSV file. Please ensure it matches the export format and contains data.");
+                            this.elements.csvImportStatus.textContent = 'No valid data found.';
+                            return;
+                        }
+
+                        if (!confirm(`Found ${parsedProjects.length} project(s) in CSV. Do you want to import them? This will add new tasks to your tracker.`)) {
+                            this.elements.csvImportStatus.textContent = 'Import cancelled.';
+                            return;
+                        }
+
+                        this.elements.csvImportStatus.textContent = `Importing ${parsedProjects.length} project(s)...`;
+                        this.methods.showLoading.call(this, `Importing ${parsedProjects.length} project(s)...`);
+
+                        const batch = this.db.batch();
+                        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+                        let importedCount = 0;
+
+                        const projectNameBatchIds = {};
+
+                        parsedProjects.forEach(projectData => {
+                            let currentBatchId;
+                            if (projectNameBatchIds[projectData.baseProjectName]) {
+                                currentBatchId = projectNameBatchIds[projectData.baseProjectName];
+                            } else {
+                                currentBatchId = `batch_${this.methods.generateId()}`;
+                                projectNameBatchIds[projectData.baseProjectName] = currentBatchId;
+                            }
+
+                            const newProjectRef = this.db.collection("projects").doc();
+                            batch.set(newProjectRef, {
+                                batchId: currentBatchId,
+                                creationTimestamp: serverTimestamp,
+                                lastModifiedTimestamp: serverTimestamp,
+                                isLocked: false,
+                                releasedToNextStage: false,
+                                isReassigned: false,
+                                originalProjectId: null,
+                                breakDurationMinutesDay1: projectData.breakDurationMinutesDay1 || 0,
+                                breakDurationMinutesDay2: projectData.breakDurationMinutesDay2 || 0,
+                                breakDurationMinutesDay3: projectData.breakDurationMinutesDay3 || 0,
+                                additionalMinutesManual: projectData.additionalMinutesManual || 0,
+                                fixCategory: projectData.fixCategory || "Fix1",
+                                baseProjectName: projectData.baseProjectName || "IMPORTED_PROJ",
+                                areaTask: projectData.areaTask || `Area${String(importedCount + 1).padStart(2, '0')}`,
+                                gsd: projectData.gsd || "3in",
+                                assignedTo: projectData.assignedTo || "",
+                                status: projectData.status || "Available",
+                                techNotes: projectData.techNotes || "",
+                                startTimeDay1: projectData.startTimeDay1 || null,
+                                finishTimeDay1: projectData.finishTimeDay1 || null,
+                                durationDay1Ms: this.methods.calculateDurationMs(projectData.startTimeDay1, projectData.finishTimeDay1),
+                                startTimeDay2: projectData.startTimeDay2 || null,
+                                finishTimeDay2: projectData.finishTimeDay2 || null,
+                                durationDay2Ms: this.methods.calculateDurationMs(projectData.startTimeDay2, projectData.finishTimeDay2),
+                                startTimeDay3: projectData.startTimeDay3 || null,
+                                finishTimeDay3: projectData.finishTimeDay3 || null,
+                                durationDay3Ms: this.methods.calculateDurationMs(projectData.startTimeDay3, projectData.finishTimeDay3),
+                            });
+                            importedCount++;
+                        });
+
+                        await batch.commit();
+                        this.elements.csvImportStatus.textContent = `Successfully imported ${importedCount} project(s)!`;
+                        alert(`Successfully imported ${importedCount} project(s)!`);
+                        this.elements.importCsvModal.style.display = 'none';
+                        this.methods.initializeFirebaseAndLoadData.call(this);
+
+                    } catch (error) {
+                        console.error("Error processing CSV import:", error);
+                        this.elements.csvImportStatus.textContent = `Error: ${error.message}`;
+                        alert(`Error importing CSV: ${error.message}`);
+                    } finally {
+                        this.methods.hideLoading.call(this);
+                        this.elements.processCsvBtn.disabled = false;
+                    }
+                };
+                reader.onerror = () => {
+                    this.elements.csvImportStatus.textContent = 'Error reading file.';
+                    alert('Error reading file. Please try again.');
+                    this.methods.hideLoading.call(this);
+                    this.elements.processCsvBtn.disabled = false;
+                };
+                reader.readAsText(file);
             },
         }
     };
