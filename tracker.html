@@ -378,7 +378,7 @@
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
         #projectFormModal .modal-content { max-width: 480px; }
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
-        #settingsModal .modal-content { max-width: 550px; max-height: 85vh; overflow-y: auto;}
+        #settingsModal .modal-content { max-width: 700px; max-height: 85vh; overflow-y: auto;} /* MODIFIED: Increased width for new layout */
         #importCsvModal .modal-content { max-width: 500px; } /* Added for Import CSV Modal */
         .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
         #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
@@ -432,9 +432,43 @@
             display: none;
         }
 
-        /* ====================================================== */
-        /* END: YOUR ORIGINAL CODE STYLES (UNCHANGED)           */
-        /* ====================================================== */
+        /* === START: NEW STYLES FOR USER MANAGEMENT === */
+        #userManagementForm {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        #userManagementForm .form-group {
+            margin-bottom: 0;
+        }
+        #userManagementForm label {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+            display: block;
+        }
+        #userManagementTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #userManagementTable th, #userManagementTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #userManagementTable th {
+            background-color: #e9ecef;
+        }
+        #userManagementTable .btn-danger {
+            padding: 4px 8px;
+        }
+        /* === END: NEW STYLES FOR USER MANAGEMENT === */
+
     </style>
     <link rel="icon" type="image/png" href="icon.png">
 </head>
@@ -515,28 +549,37 @@
             <div id="settingsModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeSettingsBtn">&times;</span>
-                    <h2>⚙️ User Settings</h2>
+                    <h2>⚙️ User Management</h2>
+                    <p style="font-size: 0.9em; color: #666; margin-top: -8px; margin-bottom: 20px;">Add, view, and remove authorized users. The Tech ID will appear in dropdowns, and the Full Name will show on hover.</p>
                     
-                    <div class="user-info-section">
-                        <h3>My User Information</h3>
-                        <p style="font-size: 0.9em; color: #666; margin-top: -8px; margin-bottom: 12px;">Set your full name and Tech ID. This ID will be added to the 'Assigned To' dropdown for everyone.</p>
-                        
+                    <form id="userManagementForm">
                         <div class="form-group">
-                          <label for="userFullNameInput">Full Name:</label>
-                          <input type="text" id="userFullNameInput" class="form-control" placeholder="e.g., John Doe">
+                            <label for="newUserName">Full Name</label>
+                            <input type="text" id="newUserName" placeholder="e.g., John Doe" class="form-control" required>
                         </div>
-                        
                         <div class="form-group">
-                          <label for="userTechIdInput">Tech ID:</label>
-                          <input type="text" id="userTechIdInput" class="form-control" placeholder="e.g., 1234JD">
+                            <label for="newUserEmail">Email Address</label>
+                            <input type="email" id="newUserEmail" placeholder="e.g., user@example.com" class="form-control" required>
                         </div>
-                        
-                        <button id="saveUserInfoBtn" class="btn btn-primary" style="margin-top: 5px;">Save My Info</button>
-                      </div>
-                      <hr>
-                    <h3>Manage Allowed User Emails</h3>
-                    <ul id="allowedEmailsList"></ul>
-                    <div class="settings-input-group"><input type="email" id="addEmailInput" placeholder="Enter new allowed email"><button id="addEmailBtn" class="btn btn-success">Add Email</button></div>
+                        <div class="form-group">
+                            <label for="newUserTechId">Tech ID</label>
+                            <input type="text" id="newUserTechId" placeholder="e.g., 1234JD" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Add User</button>
+                    </form>
+
+                    <table id="userManagementTable">
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Tech ID</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userManagementTableBody">
+                            </tbody>
+                    </table>
                 </div>
             </div>
             <div id="tlSummaryModal" class="modal">
@@ -544,7 +587,7 @@
                     <span class="close-button" id="closeTlSummaryBtn">&times;</span>
                     <div class="summary-header">
                         <h2 class="summary-title">TL Summary</h2>
-                        </div>
+                    </div>
                     <div id="tlSummaryContent">
                         <p>Loading summary...</p>
                     </div>
