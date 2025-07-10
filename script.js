@@ -7,14 +7,13 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.3.2
+ * @version 3.3.0
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
- * - FIXED: (User Request) Restored the missing `handleProcessCsvImport` function for projects, which was causing a critical startup error.
- * - FIXED: A visual bug where the project table would appear after adding a new user.
- * - ADDED: "Import Users" and "Export Users" buttons and functionality to the User Management modal.
- * - FIXED: A "TypeError" in the notification listener by explicitly binding the 'this' context.
- * - ADDED: Notifications now appear in a custom modal with a "View Project" button.
+ * - ADDED: (User Request) "Import Users" and "Export Users" buttons and functionality to the User Management modal.
+ * - Import logic skips existing users to prevent duplicates.
+ * - FIXED: Corrected a "TypeError: Cannot read properties of undefined (reading 'call')" error in the notification listener by explicitly binding the 'this' context.
+ * - ADDED: Notifications now appear in a custom modal with a "View Project" button that filters the dashboard.
  * - ADDED: The number of notifications in Firestore is now automatically limited to 5.
  * - REFACTORED: Implemented a centralized user management system with add/edit/remove functionality.
  */
@@ -140,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.listenForAuthStateChanges.call(this);
 
             } catch (error) {
-                console.error("CRITICAL: Error initializing Firebase:", error.message, error.stack);
+                console.error("CRITICAL: Error initializing Firebase:", error.message);
                 const loadingMessageElement = document.getElementById('loading-auth-message');
                 if (loadingMessageElement) {
                     loadingMessageElement.innerHTML = `<p style="color:red;">CRITICAL ERROR: Could not connect to Firebase. App will not function correctly. Error: ${error.message}</p>`;
@@ -318,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.userManagementForm.addEventListener('submit', self.methods.handleUserFormSubmit.bind(self));
                 }
 
+                // ADDED: Listeners for user import/export
                 attachClick(self.elements.importUsersBtn, () => self.elements.userCsvInput.click());
                 attachClick(self.elements.exportUsersBtn, self.methods.handleExportUsers.bind(self));
                 if (self.elements.userCsvInput) {
@@ -1930,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(`User "${name}" added successfully!`);
                     this.elements.userManagementForm.reset();
                     await this.methods.renderUserManagement.call(this);
-                    this.methods.updateAssignedToDropdowns.call(this);
+                    this.methods.renderProjects.call(this); 
 
                 } catch (error) {
                     console.error("Error adding new user:", error);
@@ -1967,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(`User "${name}" updated successfully!`);
                     this.methods.exitEditMode.call(this);
                     await this.methods.renderUserManagement.call(this);
-                    this.methods.updateAssignedToDropdowns.call(this);
+                    this.methods.renderProjects.call(this);
             
                 } catch (error) {
                     console.error("Error updating user:", error);
@@ -2020,7 +2020,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert(`User "${userToRemove.name}" has been removed.`);
                         this.methods.exitEditMode.call(this);
                         await this.methods.renderUserManagement.call(this);
-                        this.methods.updateAssignedToDropdowns.call(this);
+                        this.methods.renderProjects.call(this);
                     } catch (error) {
                         console.error("Error removing user:", error);
                         alert("An error occurred while removing the user: " + error.message);
@@ -2403,14 +2403,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         await batch.commit();
                         alert(`Successfully imported ${newUsers.length} new user(s)!`);
                         await this.methods.renderUserManagement.call(this);
-                        this.methods.updateAssignedToDropdowns.call(this);
+                        this.methods.renderProjects.call(this);
             
                     } catch (error) {
                         console.error("Error processing user CSV:", error);
                         alert("Error importing users: " + error.message);
                     } finally {
                         this.methods.hideLoading.call(this);
-                        this.elements.userCsvInput.value = '';
+                        this.elements.userCsvInput.value = ''; // Reset file input
                     }
                 };
             
@@ -2448,29 +2448,92 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
             
                     newUsers.push({ name, email, techId });
-                    existingEmails.add(email);
+                    existingEmails.add(email); // Add to set to prevent duplicates within the same file
                     existingTechIds.add(techId);
                 }
                 return newUsers;
             },
 
-            updateAssignedToDropdowns() {
-                const selects = document.querySelectorAll('select.assigned-to-select');
-                if (selects.length === 0) return; 
-            
-                let optionsHtml = '<option value="">Select Tech ID</option>';
-                this.state.users.sort((a, b) => a.techId.localeCompare(b.techId)).forEach(user => {
-                    optionsHtml += `<option value="${user.techId}" title="${user.name}">${user.techId}</option>`;
-                });
-            
-                selects.forEach(select => {
-                    const currentValue = select.value;
-                    select.innerHTML = optionsHtml;
-                    select.value = currentValue;
-                });
-                console.log("Assigned To dropdowns updated.");
+            async handleExportCsv() {
+                this.methods.showLoading.call(this, "Generating CSV for all projects...");
+                try {
+                    const allProjectsSnapshot = await this.db.collection("projects").get();
+                    let allProjectsData = [];
+                    allProjectsSnapshot.forEach(doc => {
+                        if (doc.exists) allProjectsData.push(doc.data());
+                    });
+
+                    if (allProjectsData.length === 0) {
+                        alert("No project data to export.");
+                        return;
+                    }
+
+                    const headers = [
+                        "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
+                        "Day 1 Start", "Day 1 Finish", "Day 1 Break",
+                        "Day 2 Start", "Day 2 Finish", "Day 2 Break",
+                        "Day 3 Start", "Day 3 Finish", "Day 3 Break",
+                        "Total (min)", "Tech Notes",
+                        "Creation Date", "Last Modified"
+                    ];
+
+                    const rows = [headers.join(',')];
+
+                    allProjectsData.forEach(project => {
+                        const formatTimeCsv = (ts) => ts?.toDate ? `"${ts.toDate().toISOString()}"` : "";
+                        const formatNotesCsv = (notes) => notes ? `"${notes.replace(/"/g, '""')}"` : "";
+
+                        const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                        const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
+                            (project.breakDurationMinutesDay2 || 0) +
+                            (project.breakDurationMinutesDay3 || 0)) * 60000;
+                        const additionalMs = (project.additionalMinutesManual || 0) * 60000;
+                        const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+                        const totalMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
+
+
+                        const rowData = [
+                            project.fixCategory || "",
+                            project.baseProjectName || "",
+                            project.areaTask || "",
+                            project.gsd || "",
+                            project.assignedTo || "",
+                            (project.status || "").replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
+                            formatTimeCsv(project.startTimeDay1),
+                            formatTimeCsv(project.finishTimeDay1),
+                            project.breakDurationMinutesDay1 || "0",
+                            formatTimeCsv(project.startTimeDay2),
+                            formatTimeCsv(project.finishTimeDay2),
+                            project.breakDurationMinutesDay2 || "0",
+                            formatTimeCsv(project.startTimeDay3),
+                            formatTimeCsv(project.finishTimeDay3),
+                            project.breakDurationMinutesDay3 || "0",
+                            totalMinutes,
+                            formatNotesCsv(project.techNotes),
+                            formatTimeCsv(project.creationTimestamp),
+                            formatTimeCsv(project.lastModifiedTimestamp)
+                        ];
+                        rows.push(rowData.join(','));
+                    });
+
+                    const csvContent = "data:text/csv;charset=utf-8," + rows.join('\n');
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `ProjectTracker_AllData_${new Date().toISOString().slice(0, 10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    alert("All project data exported successfully!");
+
+                } catch (error) {
+                    console.error("Error exporting CSV:", error);
+                    alert("Failed to export data: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
             },
-            
+
             async handleProcessCsvImport() {
                 const file = this.elements.csvFileInput.files[0];
                 if (!file) {
@@ -2573,38 +2636,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 reader.readAsText(file);
             },
-            
+
             parseCsvToProjects(csvText) {
-                const lines = csvText.split('\n').map(l => l.trim()).filter(l => l);
+                const lines = csvText.split('\n').filter(line => line.trim() !== '');
                 if (lines.length === 0) return [];
-            
+
                 const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, ''));
-            
+
                 const missingHeaders = this.config.CSV_HEADERS_FOR_IMPORT.filter(expected => !headers.includes(expected));
                 if (missingHeaders.length > 0) {
                     throw new Error(`CSV is missing required headers: ${missingHeaders.join(', ')}. Please use the exact headers from the export format.`);
                 }
-            
+
                 const projects = [];
                 for (let i = 1; i < lines.length; i++) {
                     const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
-            
+
                     if (values.length !== headers.length) {
                         console.warn(`Skipping row ${i + 1} due to column count mismatch. Expected ${headers.length}, got ${values.length}. Row: "${lines[i]}"`);
                         continue;
                     }
-            
+
                     let projectData = {};
                     for (let j = 0; j < headers.length; j++) {
                         const header = headers[j];
                         const fieldName = this.config.CSV_HEADER_TO_FIELD_MAP[header];
-            
+
                         if (fieldName === null) {
                             continue;
                         }
-            
+
                         let value = values[j];
-            
+
                         if (fieldName.startsWith('breakDurationMinutes')) {
                             projectData[fieldName] = parseInt(value, 10) || 0;
                         } else if (fieldName.startsWith('startTimeDay') || fieldName.startsWith('finishTimeDay')) {
@@ -2626,7 +2689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } else if (fieldName === 'status') {
                             let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
-            
+
                             if (cleanedStatus.includes('startedavailable')) {
                                 cleanedStatus = 'Available'; 
                             } else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
@@ -2638,13 +2701,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             else if (cleanedStatus.includes('completed')) cleanedStatus = 'Completed';
                             else if (cleanedStatus.includes('reassigned_techabsent')) cleanedStatus = 'Reassigned_TechAbsent';
                             else cleanedStatus = 'Available';
-            
+
                             projectData[fieldName] = cleanedStatus;
                         } else {
                             projectData[fieldName] = value;
                         }
                     }
-            
+
                     const requiredFieldsCheck = ["baseProjectName", "areaTask", "fixCategory", "gsd"];
                     let isValidProject = true;
                     for (const field of requiredFieldsCheck) {
@@ -2654,7 +2717,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                         }
                     }
-            
+
                     if (isValidProject) {
                         projects.push(projectData);
                     }
