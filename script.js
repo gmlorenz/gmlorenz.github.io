@@ -7,12 +7,14 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.2.1
+ * @version 3.3.0
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
- * - FIXED: (User Request) Corrected a "TypeError: Cannot read properties of undefined (reading 'call')" error in the notification listener by explicitly binding the 'this' context.
+ * - ADDED: (User Request) "Import Users" and "Export Users" buttons and functionality to the User Management modal.
+ * - Import logic skips existing users to prevent duplicates.
+ * - FIXED: Corrected a "TypeError: Cannot read properties of undefined (reading 'call')" error in the notification listener by explicitly binding the 'this' context.
  * - ADDED: Notifications now appear in a custom modal with a "View Project" button that filters the dashboard.
- * - ADDED: The number of notifications in Firestore is now automatically limited to 5. When a new one is added, the oldest is deleted.
+ * - ADDED: The number of notifications in Firestore is now automatically limited to 5.
  * - REFACTORED: Implemented a centralized user management system with add/edit/remove functionality.
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             users: [], 
             groupVisibilityState: {},
             isAppInitialized: false,
-            editingUser: null, // Holds the user object when in edit mode
+            editingUser: null,
             filters: {
                 batchId: localStorage.getItem('currentSelectedBatchId') || "",
                 fixCategory: "",
@@ -202,6 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     newUserTechId: document.getElementById('newUserTechId'),
                     userManagementTableBody: document.getElementById('userManagementTableBody'),
                     userFormButtons: document.getElementById('userFormButtons'),
+                    importUsersBtn: document.getElementById('importUsersBtn'),
+                    exportUsersBtn: document.getElementById('exportUsersBtn'),
+                    userCsvInput: document.getElementById('userCsvInput'),
                 };
             },
 
@@ -249,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.settingsModal.style.display = 'block';
                         self.methods.renderUserManagement.call(self);
-                        self.methods.exitEditMode.call(self); // Ensure form is in "add" mode
+                        self.methods.exitEditMode.call(self);
                     } else if (pin) alert("Incorrect PIN.");
                 });
 
@@ -310,6 +315,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (self.elements.userManagementForm) {
                     self.elements.userManagementForm.addEventListener('submit', self.methods.handleUserFormSubmit.bind(self));
+                }
+
+                // ADDED: Listeners for user import/export
+                attachClick(self.elements.importUsersBtn, () => self.elements.userCsvInput.click());
+                attachClick(self.elements.exportUsersBtn, self.methods.handleExportUsers.bind(self));
+                if (self.elements.userCsvInput) {
+                    self.elements.userCsvInput.onchange = self.methods.handleImportUsers.bind(self);
                 }
 
                 const resetPaginationAndReload = () => {
@@ -2244,7 +2256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     viewBtn.onclick = () => {
                         this.state.filters.batchId = notification.baseProjectName;
                         localStorage.setItem('currentSelectedBatchId', this.state.filters.batchId);
-                        this.state.filters.fixCategory = ""; // Clear other filters
+                        this.state.filters.fixCategory = "";
                         this.state.pagination.currentPage = 1;
                         this.state.pagination.paginatedProjectNameList = [];
                         this.methods.initializeFirebaseAndLoadData.call(this);
@@ -2300,25 +2312,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.notificationListenerUnsubscribe();
                 }
                 
-                // === START: ERROR FIX ===
-                // Explicitly bind `this` to ensure the correct context inside the callback.
                 const self = this;
-                // === END: ERROR FIX ===
 
                 this.notificationListenerUnsubscribe = this.db.collection(this.config.firestorePaths.NOTIFICATIONS)
                     .orderBy("timestamp", "desc")
                     .limit(1)
                     .onSnapshot(
-                        (snapshot) => { // Using arrow function is fine, but the explicit `self` is safer.
+                        (snapshot) => {
                             snapshot.docChanges().forEach(change => {
                                 if (change.type === "added") {
                                     const notification = change.doc.data();
                                     const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
                                     if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
-                                        // === START: ERROR FIX ===
-                                        // Use `self` instead of `this` to call the method.
                                         self.methods.showNotificationModal.call(self, notification);
-                                        // === END: ERROR FIX ===
                                     }
                                 }
                             });
@@ -2327,6 +2333,125 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.error("Error listening for notifications:", error);
                         }
                     );
+            },
+
+            async handleExportUsers() {
+                this.methods.showLoading.call(this, "Exporting users...");
+                try {
+                    if (this.state.users.length === 0) {
+                        alert("No users to export.");
+                        return;
+                    }
+            
+                    const headers = ["name", "email", "techId"];
+                    const rows = [headers.join(',')];
+            
+                    this.state.users.forEach(user => {
+                        const rowData = [
+                            `"${user.name.replace(/"/g, '""')}"`,
+                            `"${user.email.replace(/"/g, '""')}"`,
+                            `"${user.techId.replace(/"/g, '""')}"`
+                        ];
+                        rows.push(rowData.join(','));
+                    });
+            
+                    const csvContent = "data:text/csv;charset=utf-8," + rows.join('\n');
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `User_List_${new Date().toISOString().slice(0, 10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+            
+                } catch (error) {
+                    console.error("Error exporting users:", error);
+                    alert("Failed to export users: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+
+            handleImportUsers(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+            
+                this.methods.showLoading.call(this, "Processing user CSV...");
+                const reader = new FileReader();
+            
+                reader.onload = async (e) => {
+                    try {
+                        const csvText = e.target.result;
+                        const newUsers = this.methods.parseUserCsv.call(this, csvText);
+            
+                        if (newUsers.length === 0) {
+                            alert("No new, valid users found in the CSV file. Please check for duplicates or formatting errors.");
+                            return;
+                        }
+            
+                        if (!confirm(`Found ${newUsers.length} new user(s). Do you want to import them?`)) {
+                            return;
+                        }
+            
+                        this.methods.showLoading.call(this, `Importing ${newUsers.length} user(s)...`);
+                        const batch = this.db.batch();
+                        newUsers.forEach(user => {
+                            const newDocRef = this.db.collection(this.config.firestorePaths.USERS).doc();
+                            batch.set(newDocRef, user);
+                        });
+            
+                        await batch.commit();
+                        alert(`Successfully imported ${newUsers.length} new user(s)!`);
+                        await this.methods.renderUserManagement.call(this);
+                        this.methods.renderProjects.call(this);
+            
+                    } catch (error) {
+                        console.error("Error processing user CSV:", error);
+                        alert("Error importing users: " + error.message);
+                    } finally {
+                        this.methods.hideLoading.call(this);
+                        this.elements.userCsvInput.value = ''; // Reset file input
+                    }
+                };
+            
+                reader.readAsText(file);
+            },
+
+            parseUserCsv(csvText) {
+                const lines = csvText.split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length <= 1) return [];
+            
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const requiredHeaders = ["name", "email", "techid"];
+                if (!requiredHeaders.every(h => headers.includes(h))) {
+                    throw new Error("CSV must contain 'name', 'email', and 'techId' headers.");
+                }
+            
+                const newUsers = [];
+                const existingEmails = new Set(this.state.users.map(u => u.email.toLowerCase()));
+                const existingTechIds = new Set(this.state.users.map(u => u.techId.toUpperCase()));
+            
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    const name = (values[headers.indexOf('name')] || "").trim();
+                    const email = (values[headers.indexOf('email')] || "").trim().toLowerCase();
+                    const techId = (values[headers.indexOf('techid')] || "").trim().toUpperCase();
+            
+                    if (!name || !email || !techId) {
+                        console.warn(`Skipping row ${i+1}: Missing required data.`);
+                        continue;
+                    }
+            
+                    if (existingEmails.has(email) || existingTechIds.has(techId)) {
+                        console.warn(`Skipping row ${i+1}: User with email '${email}' or Tech ID '${techId}' already exists.`);
+                        continue;
+                    }
+            
+                    newUsers.push({ name, email, techId });
+                    existingEmails.add(email); // Add to set to prevent duplicates within the same file
+                    existingTechIds.add(techId);
+                }
+                return newUsers;
             },
 
             async handleExportCsv() {
