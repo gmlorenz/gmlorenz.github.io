@@ -2058,10 +2058,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryHeader.style.paddingBottom = '10px';
                 summaryHeader.style.borderBottom = '1px solid #ddd';
             
-                const summaryTitle = document.createElement('h3');
-                summaryTitle.textContent = 'Team Lead Summary';
-                summaryTitle.style.margin = '0';
-            
                 const refreshButton = document.createElement('button');
                 refreshButton.className = 'btn btn-primary';
                 refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
