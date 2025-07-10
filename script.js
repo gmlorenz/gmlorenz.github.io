@@ -7,41 +7,19 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.0.0
+ * @version 3.1.0
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - REFACTORED: (User Request) Implemented a centralized user management system.
+ * - Admins now add users by providing Name, Email, and Tech ID in User Settings.
+ * - The `users` collection in Firestore is now the single source of truth for authorization and Tech ID lists.
+ * - Login authorization now checks against the emails in the `users` collection.
+ * - The "Assigned To" dropdown is now populated from the central user list.
+ * - Hovering over a Tech ID in the dropdown now shows the user's full name.
+ * - REMOVED: Old logic for separate `allowedEmails` and `techIds` collections.
  * - MODIFIED: (User Request) The "Add Extra Area" button in Project Settings is now only available for projects with an active Fix1 stage.
- * - ADDED: (User Request) In User Settings, users can now save their Full Name and Tech ID. New Tech IDs are dynamically added to the "Assigned To" dropdown.
  * - MODIFIED: (User Request) The Refresh button in the TL Summary has been redesigned for a better UI and spacing.
  * - MODIFIED: (User Request) The font size for project names in the TL Summary is now smaller to fit longer names.
- * - MODIFIED: Progress bar now changes color from green to red based on time consumed (out of 8 hours).
- * - FIXED: Expand/Collapse functionality now correctly reapplies column visibility settings.
- * - ADDED: Professional TL Summary with project and tech info.
- * - ADDED: "Refresh" button to the TL Summary modal.
- * - ADDED: "Copy" button for decimal hours in the TL Summary.
- * - MODIFIED: Redesigned TL Summary UI with a modern card-based layout.
- * - ADDED: Checkboxes for showing/hiding "Project Title", "Day 2", and "Day 3" columns.
- * - FIXED: Checkbox states are now saved to localStorage and restored on page refresh.
- * - ADDED: A "Recalc Totals" button in Project Settings to fix old tasks with missing duration calculations in a single batch.
- * - FIXED: Corrected a critical bug in `updateProjectState` where `serverTimestamp` was used for client-side calculations, causing "End Day" and "Mark Done" buttons to fail. Replaced with `firebase.firestore.Timestamp.now()` for consistent and correct duration calculation.
- * - MODIFIED: Implemented group-level locking. In Project Settings, users can now lock/unlock an entire Fix stage (e.g., "Lock All Fix1").
- * - MODIFIED: Added status icons (🔒, 🔑, 🔓) to the main table's Fix group headers to show if a group is fully locked, unlocked, or partially locked.
- * - MODIFIED: Ensured that when tasks are released to a new Fix stage, they are always created in an unlocked state, regardless of the original task's status.
- * - REMOVED: The per-task "Reset" and "Lock" functionality from the dashboard has been removed in favor of the group-level controls.
- * - Integrated new login UI. Script now handles showing/hiding the login screen and the main dashboard.
- * - ADDED: Real-time notification system for new project creation and Fix stage releases.
- * - ADDED: Export project data to CSV feature.
- * - ADDED: Visual progress bar for each project in the main table.
- * - MODIFIED: CSV Export now exports ALL projects from the database.
- * - FIXED: Replaced Unicode lock icons with standard emojis (🔒, 🔓, 🔑).
- * - ADDED: Import CSV feature for adding new projects from a file.
- * - MODIFIED: Import CSV now explicitly matches export headers and skips calculated/generated fields.
- * - FIXED: Changed CSV export of timestamps to ISO format for reliable import, ensuring time data and calculated totals are correct after import.
- * - FIXED: Corrected scope issue in setupAuthActions where 'self' was undefined, now uses 'this'.
- * - FIXED: Ensured imported projects group correctly by assigning a consistent batchId based on Project Name during import.
- * - MODIFIED: TL Summary project name now shows full name on hover using a bubble/tooltip, triggered by hovering over the entire project name area.
- * - FIXED: `ReferenceError: year is not defined` in `populateMonthFilter` by explicitly parsing `year` as an integer.
- * - MODIFIED: Changed TL Summary full project name display from hover tooltip to click-on-info-icon alert.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -49,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. CONFIGURATION AND CONSTANTS ---
         config: {
             firebase: {
-               apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
+                apiKey: "AIzaSyAblGk1BHPF3J6w--Ii1pfDyKqcN-MFZyQ",
                 authDomain: "time-tracker-41701.firebaseapp.com",
                 projectId: "time-tracker-41701",
                 storageBucket: "time-tracker-41701.firebasestorage.app",
@@ -62,13 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 TL_DASHBOARD_PIN: "1234"
             },
             firestorePaths: {
-                ALLOWED_EMAILS: "settings/allowedEmails",
-                TECH_IDS: "settings/techIds", // NEW: Firestore path for dynamic Tech IDs
-                USERS: "users", // NEW: Firestore path for user-specific data
+                // MODIFIED: Centralized user management collection
+                USERS: "users",
                 NOTIFICATIONS: "notifications"
             },
-            // MODIFIED: This is now a fallback list. The app will prioritize fetching from Firestore.
-            TECH_IDS: ["4232JD", "7248AA", "4426KV", "4472JS", "7236LE", "4475JT", "7039NO", "7231NR", "7240HH", "7247JA", "7249SS", "7244AA", "7314VP"].sort(),
             FIX_CATEGORIES: {
                 ORDER: ["Fix1", "Fix2", "Fix3", "Fix4", "Fix5", "Fix6"],
                 COLORS: {
@@ -81,8 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     "default": "#FFFFFF"
                 }
             },
-            NUM_TABLE_COLUMNS: 19, // UPDATED for Progress column
-            // UPDATED: Expected headers for CSV import, matching export order
+            NUM_TABLE_COLUMNS: 19,
             CSV_HEADERS_FOR_IMPORT: [
                 "Fix Cat", "Project Name", "Area/Task", "GSD", "Assigned To", "Status",
                 "Day 1 Start", "Day 1 Finish", "Day 1 Break",
@@ -90,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start", "Day 3 Finish", "Day 3 Break",
                 "Total (min)", "Tech Notes", "Creation Date", "Last Modified"
             ],
-            // UPDATED: Map CSV headers to Firestore field names (if they differ)
             CSV_HEADER_TO_FIELD_MAP: {
                 "Fix Cat": "fixCategory",
                 "Project Name": "baseProjectName",
@@ -107,10 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Day 3 Start": "startTimeDay3",
                 "Day 3 Finish": "finishTimeDay3",
                 "Day 3 Break": "breakDurationMinutesDay3",
-                "Total (min)": null, // This is calculated, not directly imported, set to null to ignore
+                "Total (min)": null,
                 "Tech Notes": "techNotes",
-                "Creation Date": null, // This is generated, not imported, set to null to ignore
-                "Last Modified": null // This is generated, not imported, set to null to ignore
+                "Creation Date": null,
+                "Last Modified": null
             }
         },
 
@@ -124,8 +97,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 3. APPLICATION STATE ---
         state: {
             projects: [],
+            // MODIFIED: Centralized user list state
+            users: [], // Will hold {id, name, email, techId} objects
             groupVisibilityState: {},
-            allowedEmails: [],
             isAppInitialized: false,
             filters: {
                 batchId: localStorage.getItem('currentSelectedBatchId') || "",
@@ -139,9 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 paginatedProjectNameList: [],
                 totalPages: 0,
                 sortOrderForPaging: 'newest',
-                monthForPaging: '' // Track which month the list was built for
+                monthForPaging: ''
             },
-            isSummaryPopupListenerAttached: false // Initialize the flag
         },
 
         // --- 4. DOM ELEMENT REFERENCES ---
@@ -223,21 +196,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     nextPageBtn: document.getElementById('nextPageBtn'),
                     pageInfo: document.getElementById('pageInfo'),
                     tlDashboardContentElement: document.getElementById('tlDashboardContent'),
-                    allowedEmailsList: document.getElementById('allowedEmailsList'),
-                    addEmailInput: document.getElementById('addEmailInput'),
-                    addEmailBtn: document.getElementById('addEmailBtn'),
                     tlSummaryContent: document.getElementById('tlSummaryContent'),
                     toggleTitleCheckbox: document.getElementById('toggleTitleCheckbox'),
                     toggleDay2Checkbox: document.getElementById('toggleDay2Checkbox'),
                     toggleDay3Checkbox: document.getElementById('toggleDay3Checkbox'),
-                    // REMOVED: tlSummaryRefreshBtn is now generated dynamically
-                    // tlSummaryRefreshBtn: document.getElementById('tlSummaryRefreshBtn'),
 
-                    // ADDED: (User Request) New DOM elements for User Settings.
-                    // IMPORTANT: You must add these elements to your HTML file inside the 'settingsModal'.
-                    userFullNameInput: document.getElementById('userFullNameInput'), // e.g., <input type="text" id="userFullNameInput">
-                    userTechIdInput: document.getElementById('userTechIdInput'), // e.g., <input type="text" id="userTechIdInput">
-                    saveUserInfoBtn: document.getElementById('saveUserInfoBtn'), // e.g., <button id="saveUserInfoBtn">Save My Info</button>
+                    // ADDED: New DOM elements for centralized user management
+                    userManagementForm: document.getElementById('userManagementForm'),
+                    newUserName: document.getElementById('newUserName'),
+                    newUserEmail: document.getElementById('newUserEmail'),
+                    newUserTechId: document.getElementById('newUserTechId'),
+                    userManagementTableBody: document.getElementById('userManagementTableBody'),
                 };
             },
 
@@ -284,8 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const pin = prompt("Enter PIN to access User Settings:");
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.settingsModal.style.display = 'block';
-                        // MODIFIED: (User Request) Call new function to render all user settings
-                        self.methods.renderUserSettings.call(self);
+                        self.methods.renderUserManagement.call(self);
                     } else if (pin) alert("Incorrect PIN.");
                 });
 
@@ -293,9 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.tlSummaryModal.style.display = 'block';
                     self.methods.generateTlSummaryData.call(self);
                 });
-
-                // REMOVED: Refresh button is now created dynamically in generateTlSummaryData
-                // attachClick(self.elements.tlSummaryRefreshBtn, self.methods.generateTlSummaryData.bind(self));
 
                 attachClick(self.elements.exportCsvBtn, self.methods.handleExportCsv.bind(self));
 
@@ -338,9 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.tlSummaryModal.style.display = 'none';
                 });
 
-                attachClick(self.elements.addEmailBtn, self.methods.handleAddEmail.bind(self));
-                // ADDED: (User Request) Attach listener for the new "Save User Info" button
-                attachClick(self.elements.saveUserInfoBtn, self.methods.handleSaveUserInfo.bind(self));
                 attachClick(self.elements.clearDataBtn, self.methods.handleClearData.bind(self));
                 attachClick(self.elements.nextPageBtn, self.methods.handleNextPage.bind(self));
                 attachClick(self.elements.prevPageBtn, self.methods.handlePrevPage.bind(self));
@@ -348,6 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (self.elements.newProjectForm) {
                     self.elements.newProjectForm.addEventListener('submit', self.methods.handleAddProjectSubmit.bind(self));
+                }
+
+                // ADDED: Listener for the new user management form
+                if (self.elements.userManagementForm) {
+                    self.elements.userManagementForm.addEventListener('submit', self.methods.handleAddNewUser.bind(self));
                 }
 
                 const resetPaginationAndReload = () => {
@@ -436,13 +403,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error("Firebase Auth is not initialized. Application cannot function.");
                     return;
                 }
+                // MODIFIED: Authorization logic now checks against the central 'users' collection
                 this.auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.methods.showLoading.call(this, "Checking authorization...");
-                        await this.methods.fetchAllowedEmails.call(this);
+                        await this.methods.fetchUsers.call(this); // Fetch all users first
                         const userEmailLower = user.email ? user.email.toLowerCase() : "";
+                        const authorizedUser = this.state.users.find(u => u.email.toLowerCase() === userEmailLower);
 
-                        if (this.state.allowedEmails.map(e => e.toLowerCase()).includes(userEmailLower)) {
+                        if (authorizedUser) {
                             this.methods.handleAuthorizedUser.call(this, user);
                         } else {
                             alert("Access Denied: Your email address is not authorized for this application.");
@@ -455,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             },
 
-            async handleAuthorizedUser(user) { // MODIFIED: Added async
+            async handleAuthorizedUser(user) {
                 this.elements.body.classList.remove('login-view-active');
                 this.elements.authWrapper.style.display = 'none';
                 this.elements.mainContainer.style.display = 'block';
@@ -471,8 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'block';
 
                 if (!this.state.isAppInitialized) {
-                    // ADDED: (User Request) Fetch dynamic tech IDs before loading data
-                    await this.methods.fetchTechIds.call(this);
+                    // Users are already fetched during auth check
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     this.state.isAppInitialized = true;
                     this.methods.listenForNotifications.call(this);
@@ -495,7 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.firestoreListenerUnsubscribe();
                     this.firestoreListenerUnsubscribe = null;
                 }
-                // Stop listening to notifications on sign out
                 if (this.notificationListenerUnsubscribe) {
                     this.notificationListenerUnsubscribe();
                     this.notificationListenerUnsubscribe = null;
@@ -519,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (this.elements.signOutBtn) {
-                    this.elements.signOutBtn.onclick = () => { // FIXED: Changed from self.elements.signOutBtn to this.elements.signOutBtn
+                    this.elements.signOutBtn.onclick = () => {
                         this.methods.showLoading.call(this, "Signing out...");
                         this.auth.signOut().catch((error) => {
                             console.error("Sign-out error:", error);
@@ -629,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         breakDurationMinutesDay2: 0,
                         breakDurationMinutesDay3: 0,
                         additionalMinutesManual: 0,
-                        isLocked: p.isLocked || false, // Ensure isLocked defaults to false
+                        isLocked: p.isLocked || false,
                         ...p
                     }));
                     this.methods.refreshAllViews.call(this);
@@ -658,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const [year, month] = monthYear.split('-');
                         const option = document.createElement('option');
                         option.value = monthYear;
-                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', { // FIX: parseInt(year)
+                        option.textContent = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'long'
                         });
@@ -1035,7 +1002,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return 0;
                 });
             
-                // Pre-calculate lock status for each group
                 const groupLockStatus = {};
                 sortedProjects.forEach(p => {
                     const groupKey = `${p.baseProjectName}_${p.fixCategory}`;
@@ -1122,7 +1088,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const assignedToSelect = document.createElement('select');
                     assignedToSelect.className = 'assigned-to-select';
                     assignedToSelect.disabled = project.status === "Reassigned_TechAbsent" || project.isLocked;
-                    assignedToSelect.innerHTML = `<option value="">Select Tech ID</option>` + this.config.TECH_IDS.map(id => `<option value="${id}">${id}</option>`).join('');
+                    
+                    // MODIFIED: Populate dropdown from central user list and add tooltips
+                    let optionsHtml = '<option value="">Select Tech ID</option>';
+                    this.state.users.sort((a, b) => a.techId.localeCompare(b.techId)).forEach(user => {
+                        optionsHtml += `<option value="${user.techId}" title="${user.name}">${user.techId}</option>`;
+                    });
+                    assignedToSelect.innerHTML = optionsHtml;
+
                     assignedToSelect.value = project.assignedTo || "";
                     assignedToSelect.onchange = (e) => this.db.collection("projects").doc(project.id).update({
                         assignedTo: e.target.value,
@@ -1269,9 +1242,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('projectTrackerGroupVisibility', JSON.stringify(this.state.groupVisibilityState));
             },
             loadColumnVisibilityState() {
-                const showTitle = localStorage.getItem('showTitleColumn') !== 'false'; // Default to true
-                const showDay2 = localStorage.getItem('showDay2Column') !== 'false';   // Default to true
-                const showDay3 = localStorage.getItem('showDay3Column') !== 'false';   // Default to true
+                const showTitle = localStorage.getItem('showTitleColumn') !== 'false';
+                const showDay2 = localStorage.getItem('showDay2Column') !== 'false';
+                const showDay3 = localStorage.getItem('showDay3Column') !== 'false';
             
                 if (this.elements.toggleTitleCheckbox) {
                     this.elements.toggleTitleCheckbox.checked = showTitle;
@@ -1304,49 +1277,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('#projectTable .column-day3').forEach(el => el.classList.toggle('column-hidden', !showDay3));
             },
 
-            async fetchAllowedEmails() {
-                try {
-                    const docSnap = await this.db.doc(this.config.firestorePaths.ALLOWED_EMAILS).get();
-                    this.state.allowedEmails = docSnap.exists ? docSnap.data().emails || [] : ["ev.lorens.ebrado@gmail.com"];
-                } catch (error) {
-                    console.error("Error fetching allowed emails:", error);
-                    this.state.allowedEmails = ["ev.lorens.ebrado@gmail.com"];
-                }
-            },
-            
             /**
-             * ADDED: (User Request) Fetches the dynamic list of Tech IDs from Firestore.
-             * Falls back to the hardcoded list if the Firestore document doesn't exist.
+             * MODIFIED: Fetches all users from the central 'users' collection.
              */
-            async fetchTechIds() {
+            async fetchUsers() {
                 try {
-                    const docSnap = await this.db.doc(this.config.firestorePaths.TECH_IDS).get();
-                    if (docSnap.exists) {
-                        const ids = docSnap.data().ids || [];
-                        if (ids.length > 0) {
-                            this.config.TECH_IDS = ids.sort();
-                            console.log("Successfully fetched dynamic Tech IDs from Firestore.");
-                        }
-                    }
+                    const snapshot = await this.db.collection(this.config.firestorePaths.USERS).get();
+                    this.state.users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log("Successfully fetched user list.", this.state.users);
                 } catch (error) {
-                    console.error("Error fetching dynamic Tech IDs. Falling back to local list.", error);
-                }
-            },
-
-            async updateAllowedEmailsInFirestore(emailsArray) {
-                this.methods.showLoading.call(this, "Updating allowed emails...");
-                try {
-                    await this.db.doc(this.config.firestorePaths.ALLOWED_EMAILS).set({
-                        emails: emailsArray
-                    });
-                    this.state.allowedEmails = emailsArray;
-                    return true;
-                } catch (error) {
-                    console.error("Error updating allowed emails:", error);
-                    alert("Error saving allowed emails: " + error.message);
-                    return false;
-                } finally {
-                    this.methods.hideLoading.call(this);
+                    console.error("Error fetching user list:", error);
+                    this.state.users = []; // Default to empty on error
                 }
             },
 
@@ -1363,7 +1304,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     batchId: task.batchId,
                                     baseProjectName: task.baseProjectName || "N/A",
                                     tasksByFix: {},
-                                    // Add creationTimestamp to the batch object (assuming first task represents batch creation)
                                     creationTimestamp: task.creationTimestamp || null
                                 };
                             }
@@ -1377,11 +1317,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    // Sort batches by creationTimestamp (newest first)
                     let sortedBatches = Object.values(batches).sort((a, b) => {
                         const tsA = a.creationTimestamp?.toMillis ? a.creationTimestamp.toMillis() : 0;
                         const tsB = b.creationTimestamp?.toMillis ? b.creationTimestamp.toMillis() : 0;
-                        return tsB - tsA; // Descending order
+                        return tsB - tsA;
                     });
 
                     return sortedBatches;
@@ -1394,9 +1333,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // --- Start of script.js modifications ---
-
-            // MODIFIED: 'renderTLDashboard' function updated with new logic for "Add Extra Area" button.
             async renderTLDashboard() {
                 if (!this.elements.tlDashboardContentElement) return;
                 this.elements.tlDashboardContentElement.innerHTML = "";
@@ -1451,17 +1387,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     addAreaBtn.textContent = 'Add Extra Area';
                     addAreaBtn.className = 'btn btn-success';
                     addAreaBtn.style.marginLeft = '10px';
-                    // --- MODIFIED: (User Request) "Add Extra Area" button logic ---
-                    // The button is now disabled if 'Fix1' is not one of the present stages.
                     addAreaBtn.disabled = !stagesPresent.includes('Fix1');
                     addAreaBtn.title = addAreaBtn.disabled ? 'Adding areas is only enabled for projects with a Fix1 stage.' : 'Add a new task area to the latest Fix stage.';
-                    // --- End of modification ---
                     addAreaBtn.onclick = () => this.methods.handleAddExtraArea.call(this, batch.batchId, batch.baseProjectName);
                     releaseActionsDiv.appendChild(addAreaBtn);
                     releaseGroup.appendChild(releaseActionsDiv);
                     actionsContainer.appendChild(releaseGroup);
 
-                    // Lock Actions Group
                     const lockGroup = document.createElement('div');
                     lockGroup.className = 'dashboard-actions-group';
                     lockGroup.innerHTML = '<h6>Manage Locking:</h6>';
@@ -1488,7 +1420,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     lockGroup.appendChild(lockActionsDiv);
                     actionsContainer.appendChild(lockGroup);
 
-                    // NEW: Delete Entire Project Group - Moved here
                     const deleteEntireProjectGroup = document.createElement('div');
                     deleteEntireProjectGroup.className = 'dashboard-actions-group';
                     deleteEntireProjectGroup.innerHTML = '<h6>Delete Current Project:</h6>';
@@ -1505,7 +1436,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteEntireProjectGroup.appendChild(deleteEntireProjectButtonsDiv);
                     actionsContainer.appendChild(deleteEntireProjectGroup);
 
-                    // Delete Specific Fix Stages Group
                     const deleteGroup = document.createElement('div');
                     deleteGroup.className = 'dashboard-actions-group';
                     deleteGroup.innerHTML = '<h6>Delete Specific Fix Stages:</h6>';
@@ -1537,7 +1467,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.elements.tlDashboardContentElement.appendChild(batchItemDiv);
                 });
             },
-            // --- End of script.js modifications ---
 
             async recalculateFixStageTotals(batchId, fixCategory) {
                 this.methods.showLoading.call(this, `Recalculating totals for ${fixCategory}...`);
@@ -1615,7 +1544,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     await batch.commit();
 
-                    // Refresh the dashboard to show the new button state
                     await this.methods.renderTLDashboard.call(this);
                 } catch (error) {
                     console.error("Error toggling lock state:", error);
@@ -1657,8 +1585,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         lastAreaNumber = parseInt(lastTask.areaTask.replace('Area', ''), 10) || 0;
                     } else {
-                        // If no tasks in the latest fix category, fall back to the first task found for project
-                        // This assumes at least one task exists for the project, which is checked earlier.
                         lastTask = allTasks[0];
                     }
 
@@ -1705,7 +1631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             creationTimestamp: serverTimestamp,
                             lastModifiedTimestamp: serverTimestamp
                         };
-                        delete newTaskData.id; // FIX: Changed from newNextFixTask.id to newTaskData.id
+                        delete newTaskData.id;
 
                         const newDocRef = this.db.collection("projects").doc();
                         firestoreBatch.set(newDocRef, newTaskData);
@@ -1937,123 +1863,94 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
             /**
-             * ADDED: (User Request) New function to render all components within the User Settings modal.
-             * It populates the user's name/Tech ID and the allowed emails list.
+             * ADDED: Renders the user management table in the settings modal.
              */
-            async renderUserSettings() {
-                // First, render the allowed emails list as usual
-                this.methods.renderAllowedEmailsList.call(this);
+            async renderUserManagement() {
+                if (!this.elements.userManagementTableBody) return;
+                this.methods.showLoading.call(this, "Loading user list...");
 
-                // Second, fetch and display the current user's info
-                if (!this.auth.currentUser) return;
-                const uid = this.auth.currentUser.uid;
-                const userDocRef = this.db.collection(this.config.firestorePaths.USERS).doc(uid);
+                // Ensure the latest user list is available
+                await this.methods.fetchUsers.call(this);
 
-                try {
-                    const docSnap = await userDocRef.get();
-                    if (docSnap.exists) {
-                        const userData = docSnap.data();
-                        if (this.elements.userFullNameInput) this.elements.userFullNameInput.value = userData.fullName || '';
-                        if (this.elements.userTechIdInput) this.elements.userTechIdInput.value = userData.techId || '';
-                    }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
+                this.elements.userManagementTableBody.innerHTML = "";
+                if (this.state.users.length === 0) {
+                    this.elements.userManagementTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No users found. Add one above.</td></tr>';
+                } else {
+                    this.state.users.sort((a,b) => a.name.localeCompare(b.name)).forEach(user => {
+                        const row = this.elements.userManagementTableBody.insertRow();
+                        row.insertCell().textContent = user.name;
+                        row.insertCell().textContent = user.email;
+                        row.insertCell().textContent = user.techId;
+                        const actionCell = row.insertCell();
+                        const removeBtn = document.createElement('button');
+                        removeBtn.textContent = "Remove";
+                        removeBtn.className = 'btn btn-danger btn-small';
+                        removeBtn.onclick = () => this.methods.handleRemoveUser.call(this, user);
+                        actionCell.appendChild(removeBtn);
+                    });
                 }
+                this.methods.hideLoading.call(this);
             },
 
             /**
-             * ADDED: (User Request) New handler to save user's custom info (Full Name, Tech ID).
-             * Also updates the global Tech ID list in Firestore.
+             * ADDED: Handles the submission of the new user form.
              */
-            async handleSaveUserInfo() {
-                if (!this.auth.currentUser) {
-                    alert("You must be logged in to save user info.");
-                    return;
-                }
-                const uid = this.auth.currentUser.uid;
-                const fullName = this.elements.userFullNameInput ? this.elements.userFullNameInput.value.trim() : '';
-                const techId = this.elements.userTechIdInput ? this.elements.userTechIdInput.value.trim().toUpperCase() : '';
+            async handleAddNewUser(event) {
+                event.preventDefault();
+                const name = this.elements.newUserName.value.trim();
+                const email = this.elements.newUserEmail.value.trim().toLowerCase();
+                const techId = this.elements.newUserTechId.value.trim().toUpperCase();
 
-                if (!fullName || !techId) {
-                    alert("Please fill in both your Full Name and Tech ID.");
+                if (!name || !email || !techId) {
+                    alert("Please fill in all fields: Full Name, Email, and Tech ID.");
                     return;
                 }
 
-                this.methods.showLoading.call(this, "Saving your info...");
+                // Check for duplicates
+                if (this.state.users.some(u => u.email === email)) {
+                    alert(`Error: The email "${email}" is already registered.`);
+                    return;
+                }
+                if (this.state.users.some(u => u.techId === techId)) {
+                    alert(`Error: The Tech ID "${techId}" is already registered.`);
+                    return;
+                }
 
+                this.methods.showLoading.call(this, `Adding user ${name}...`);
                 try {
-                    // Save the user-specific info
-                    const userDocRef = this.db.collection(this.config.firestorePaths.USERS).doc(uid);
-                    await userDocRef.set({
-                        fullName,
-                        techId,
-                        email: this.auth.currentUser.email
-                    }, {
-                        merge: true
-                    });
-
-                    // Update the global list of Tech IDs if the new one is unique
-                    if (!this.config.TECH_IDS.includes(techId)) {
-                        const updatedTechIds = [...this.config.TECH_IDS, techId].sort();
-                        await this.db.doc(this.config.firestorePaths.TECH_IDS).set({
-                            ids: updatedTechIds
-                        });
-                        // Update the local config immediately for instant refresh
-                        this.config.TECH_IDS = updatedTechIds;
-                        // Refresh the main project view to repopulate dropdowns with the new ID
-                        this.methods.renderProjects.call(this);
-                    }
-
-                    alert("Your information has been saved successfully!");
+                    const newUser = { name, email, techId };
+                    await this.db.collection(this.config.firestorePaths.USERS).add(newUser);
+                    
+                    alert(`User "${name}" added successfully!`);
+                    this.elements.userManagementForm.reset();
+                    await this.methods.renderUserManagement.call(this); // Refresh the list
+                    this.methods.renderProjects.call(this); // Refresh main table to update dropdowns
 
                 } catch (error) {
-                    console.error("Error saving user info:", error);
-                    alert("An error occurred while saving your info: " + error.message);
+                    console.error("Error adding new user:", error);
+                    alert("An error occurred while adding the user: " + error.message);
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
             },
 
-            async renderAllowedEmailsList() {
-                if (!this.elements.allowedEmailsList) return;
-                this.methods.showLoading.call(this, "Rendering allowed emails...");
-                this.elements.allowedEmailsList.innerHTML = "";
-                if (this.state.allowedEmails.length === 0) {
-                    this.elements.allowedEmailsList.innerHTML = "<li>No allowed emails configured.</li>";
-                } else {
-                    this.state.allowedEmails.forEach(email => {
-                        const li = document.createElement('li');
-                        li.textContent = email;
-                        const removeBtn = document.createElement('button');
-                        removeBtn.textContent = "Remove";
-                        removeBtn.className = 'btn btn-danger btn-small';
-                        removeBtn.onclick = () => this.methods.handleRemoveEmail.call(this, email);
-                        li.appendChild(removeBtn);
-                        this.elements.allowedEmailsList.appendChild(li);
-                    });
-                }
-                this.methods.hideLoading.call(this);
-            },
-
-            async handleAddEmail() {
-                this.methods.showLoading.call(this, "Adding email...");
-                const emailToAdd = this.elements.addEmailInput.value.trim().toLowerCase();
-                if (!emailToAdd || !emailToAdd.includes('@')) return alert("Please enter a valid email address.");
-                if (this.state.allowedEmails.map(e => e.toLowerCase()).includes(emailToAdd)) return alert("This email is already in the list.");
-
-                const success = await this.methods.updateAllowedEmailsInFirestore.call(this, [...this.state.allowedEmails, emailToAdd].sort());
-                if (success) {
-                    this.elements.addEmailInput.value = "";
-                    this.methods.renderAllowedEmailsList.call(this);
-                }
-                this.methods.hideLoading.call(this);
-            },
-
-            async handleRemoveEmail(emailToRemove) {
-                if (confirm(`Are you sure you want to remove ${emailToRemove}?`)) {
-                    this.methods.showLoading.call(this, "Removing email...");
-                    const success = await this.methods.updateAllowedEmailsInFirestore.call(this, this.state.allowedEmails.filter(e => e !== emailToRemove));
-                    if (success) this.methods.renderAllowedEmailsList.call(this);
+            /**
+             * ADDED: Handles the removal of a user from the list.
+             */
+            async handleRemoveUser(userToRemove) {
+                if (confirm(`Are you sure you want to remove the user "${userToRemove.name}" (${userToRemove.email})? This action cannot be undone.`)) {
+                    this.methods.showLoading.call(this, `Removing user ${userToRemove.name}...`);
+                    try {
+                        await this.db.collection(this.config.firestorePaths.USERS).doc(userToRemove.id).delete();
+                        alert(`User "${userToRemove.name}" has been removed.`);
+                        await this.methods.renderUserManagement.call(this); // Refresh the list
+                        this.methods.renderProjects.call(this); // Refresh main table to update dropdowns
+                    } catch (error) {
+                        console.error("Error removing user:", error);
+                        alert("An error occurred while removing the user: " + error.message);
+                    } finally {
+                        this.methods.hideLoading.call(this);
+                    }
                 }
             },
 
@@ -2084,7 +1981,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.showLoading.call(this, "Generating TL Summary...");
                 this.elements.tlSummaryContent.innerHTML = "";
             
-                // --- MODIFIED: (User Request) UI Refresh for TL Summary Header ---
                 const summaryHeader = document.createElement('div');
                 summaryHeader.style.display = 'flex';
                 summaryHeader.style.justifyContent = 'space-between';
@@ -2099,14 +1995,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
                 const refreshButton = document.createElement('button');
                 refreshButton.className = 'btn btn-primary';
-                // Using a refresh icon (assuming Font Awesome is available, otherwise text)
                 refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
                 refreshButton.onclick = () => this.methods.generateTlSummaryData.call(this);
             
                 summaryHeader.appendChild(summaryTitle);
                 summaryHeader.appendChild(refreshButton);
                 this.elements.tlSummaryContent.appendChild(summaryHeader);
-                // --- End of UI Refresh modification ---
             
                 try {
                     const snapshot = await this.db.collection("projects").get();
@@ -2161,7 +2055,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             const projectCard = document.createElement('div');
                             projectCard.className = 'project-summary-card';
             
-                            // --- MODIFIED: (User Request) Smaller font size for project name ---
                             let cardHtml = `<h4 class="project-name-header" style="font-size: 1.1rem; margin-bottom: 12px;">${projName}</h4><div class="fix-categories-grid">`;
                             const fixCategoryTotals = projectTotals[projName];
                             const sortedFixCategories = Object.keys(fixCategoryTotals).sort((a, b) => this.config.FIX_CATEGORIES.ORDER.indexOf(a) - this.config.FIX_CATEGORIES.ORDER.indexOf(b));
@@ -2504,12 +2397,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else if (fieldName === 'status') {
                             let cleanedStatus = (value || "").replace(/\s/g, '').toLowerCase();
 
-                            // --- MODIFICATION START ---
-                            if (cleanedStatus.includes('startedavailable')) { // If CSV has "Started Available"
-                                // Map it to Day1Ended_AwaitingNext or similar, depending on what state you want it to represent internally
-                                // For simplicity, let's map it to "Available" for new imports unless specific logic is needed.
-                                // If you want it to represent 'Day1Ended_AwaitingNext' you can set that.
-                                cleanedStatus = 'Available'; // Or 'Day1Ended_AwaitingNext' if that's the intended internal state after "Started Available"
+                            if (cleanedStatus.includes('startedavailable')) {
+                                cleanedStatus = 'Available'; 
                             } else if (cleanedStatus.includes('inprogressday1')) cleanedStatus = 'InProgressDay1';
                             else if (cleanedStatus.includes('day1ended_awaitingnext')) cleanedStatus = 'Day1Ended_AwaitingNext';
                             else if (cleanedStatus.includes('inprogressday2')) cleanedStatus = 'InProgressDay2';
@@ -2521,7 +2410,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             else cleanedStatus = 'Available';
 
                             projectData[fieldName] = cleanedStatus;
-                            // --- MODIFICATION END ---
                         } else {
                             projectData[fieldName] = value;
                         }
