@@ -7,9 +7,10 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.7
+ * @version 2.9.8
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - MODIFIED: Progress bar now changes color from green to red based on time consumed (out of 8 hours).
  * - FIXED: Expand/Collapse functionality now correctly reapplies column visibility settings.
  * - ADDED: Professional TL Summary with project and tech info.
  * - ADDED: "Refresh" button to the TL Summary modal.
@@ -51,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messagingSenderId: "401097667777",
                 appId: "1:401097667777:web:d6c0c6e7741a2046945040",
                 measurementId: "G-BY9CV5ZQ11"
+
             },
             pins: {
                 TL_DASHBOARD_PIN: "1234"
@@ -982,6 +984,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.nextPageBtn.disabled = currentPage >= totalPages;
             },
 
+            getProgressBarColor(percentage) {
+                if (percentage < 50) {
+                    return '#2ecc71'; // Green
+                } else if (percentage < 85) {
+                    return '#f1c40f'; // Yellow
+                } else {
+                    return '#e74c3c'; // Red
+                }
+            },
+
             renderProjects() {
                 if (!this.elements.projectTableBody) return;
                 this.elements.projectTableBody.innerHTML = "";
@@ -1155,9 +1167,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const progressPercentage = totalMinutes === "N/A" ? 0 : Math.min(100, (totalMinutes / 480) * 100);
             
                     const progressBarCell = row.insertCell();
+                    const progressBarColor = this.methods.getProgressBarColor(progressPercentage);
                     progressBarCell.innerHTML = `
                         <div style="background-color: #e0e0e0; border-radius: 5px; height: 15px; width: 100%; overflow: hidden;">
-                            <div style="background-color: #4CAF50; height: 100%; width: ${progressPercentage}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
+                            <div style="background-color: ${progressBarColor}; height: 100%; width: ${progressPercentage}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
                                 ${Math.round(progressPercentage)}%
                             </div>
                         </div>
