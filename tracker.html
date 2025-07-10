@@ -464,8 +464,13 @@
         #userManagementTable th {
             background-color: #e9ecef;
         }
-        #userManagementTable .btn-danger {
+        #userManagementTable .btn-danger, #userManagementTable .btn-secondary {
             padding: 4px 8px;
+            margin-right: 5px;
+        }
+        #userFormButtons {
+            display: flex;
+            gap: 10px;
         }
         /* === END: NEW STYLES FOR USER MANAGEMENT === */
 
@@ -546,6 +551,7 @@
                     <div id="tlDashboardContent"></div>
                 </div>
             </div>
+            <!-- === START: MODIFIED USER SETTINGS MODAL === -->
             <div id="settingsModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeSettingsBtn">&times;</span>
@@ -565,7 +571,9 @@
                             <label for="newUserTechId">Tech ID</label>
                             <input type="text" id="newUserTechId" placeholder="e.g., 1234JD" class="form-control" required>
                         </div>
-                        <button type="submit" class="btn btn-success">Add User</button>
+                        <div id="userFormButtons">
+                             <button type="submit" class="btn btn-success">Add User</button>
+                        </div>
                     </form>
 
                     <table id="userManagementTable">
@@ -578,10 +586,12 @@
                             </tr>
                         </thead>
                         <tbody id="userManagementTableBody">
-                            </tbody>
+                            <!-- User rows will be inserted here by the script -->
+                        </tbody>
                     </table>
                 </div>
             </div>
+            <!-- === END: MODIFIED USER SETTINGS MODAL === -->
             <div id="tlSummaryModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button" id="closeTlSummaryBtn">&times;</span>
