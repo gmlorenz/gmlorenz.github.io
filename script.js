@@ -7,19 +7,17 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 3.1.0
+ * @version 3.2.0
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
+ * - ADDED: (User Request) Notifications now appear in a custom modal with a "View Project" button that filters the dashboard.
+ * - ADDED: (User Request) The number of notifications in Firestore is now automatically limited to 5. When a new one is added, the oldest is deleted.
+ * - MODIFIED: The `alert()` for notifications has been replaced with the new custom modal system.
  * - REFACTORED: (User Request) Implemented a centralized user management system.
  * - Admins now add users by providing Name, Email, and Tech ID in User Settings.
  * - The `users` collection in Firestore is now the single source of truth for authorization and Tech ID lists.
- * - Login authorization now checks against the emails in the `users` collection.
  * - The "Assigned To" dropdown is now populated from the central user list.
  * - Hovering over a Tech ID in the dropdown now shows the user's full name.
- * - REMOVED: Old logic for separate `allowedEmails` and `techIds` collections.
- * - MODIFIED: (User Request) The "Add Extra Area" button in Project Settings is now only available for projects with an active Fix1 stage.
- * - MODIFIED: (User Request) The Refresh button in the TL Summary has been redesigned for a better UI and spacing.
- * - MODIFIED: (User Request) The font size for project names in the TL Summary is now smaller to fit longer names.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -40,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 TL_DASHBOARD_PIN: "1234"
             },
             firestorePaths: {
-                // MODIFIED: Centralized user management collection
                 USERS: "users",
                 NOTIFICATIONS: "notifications"
             },
@@ -97,10 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 3. APPLICATION STATE ---
         state: {
             projects: [],
-            // MODIFIED: Centralized user list state
-            users: [], // Will hold {id, name, email, techId} objects
+            users: [], 
             groupVisibilityState: {},
             isAppInitialized: false,
+            editingUser: null, // Holds the user object when in edit mode
             filters: {
                 batchId: localStorage.getItem('currentSelectedBatchId') || "",
                 fixCategory: "",
@@ -136,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Firebase initialized successfully!");
 
                 this.methods.setupDOMReferences.call(this);
+                this.methods.injectNotificationStyles.call(this); // ADDED: Inject styles for custom notifications
                 this.methods.loadColumnVisibilityState.call(this);
                 this.methods.setupAuthRelatedDOMReferences.call(this);
                 this.methods.attachEventListeners.call(this);
@@ -201,12 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleDay2Checkbox: document.getElementById('toggleDay2Checkbox'),
                     toggleDay3Checkbox: document.getElementById('toggleDay3Checkbox'),
 
-                    // ADDED: New DOM elements for centralized user management
+                    // User Management DOM elements
                     userManagementForm: document.getElementById('userManagementForm'),
                     newUserName: document.getElementById('newUserName'),
                     newUserEmail: document.getElementById('newUserEmail'),
                     newUserTechId: document.getElementById('newUserTechId'),
                     userManagementTableBody: document.getElementById('userManagementTableBody'),
+                    userFormButtons: document.getElementById('userFormButtons'),
                 };
             },
 
@@ -254,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pin === self.config.pins.TL_DASHBOARD_PIN) {
                         self.elements.settingsModal.style.display = 'block';
                         self.methods.renderUserManagement.call(self);
+                        self.methods.exitEditMode.call(self); // Ensure form is in "add" mode
                     } else if (pin) alert("Incorrect PIN.");
                 });
 
@@ -312,9 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     self.elements.newProjectForm.addEventListener('submit', self.methods.handleAddProjectSubmit.bind(self));
                 }
 
-                // ADDED: Listener for the new user management form
                 if (self.elements.userManagementForm) {
-                    self.elements.userManagementForm.addEventListener('submit', self.methods.handleAddNewUser.bind(self));
+                    self.elements.userManagementForm.addEventListener('submit', self.methods.handleUserFormSubmit.bind(self));
                 }
 
                 const resetPaginationAndReload = () => {
@@ -403,11 +402,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error("Firebase Auth is not initialized. Application cannot function.");
                     return;
                 }
-                // MODIFIED: Authorization logic now checks against the central 'users' collection
                 this.auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.methods.showLoading.call(this, "Checking authorization...");
-                        await this.methods.fetchUsers.call(this); // Fetch all users first
+                        await this.methods.fetchUsers.call(this); 
                         const userEmailLower = user.email ? user.email.toLowerCase() : "";
                         const authorizedUser = this.state.users.find(u => u.email.toLowerCase() === userEmailLower);
 
@@ -440,7 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this.elements.openSettingsBtn) this.elements.openSettingsBtn.style.display = 'block';
 
                 if (!this.state.isAppInitialized) {
-                    // Users are already fetched during auth check
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     this.state.isAppInitialized = true;
                     this.methods.listenForNotifications.call(this);
@@ -696,12 +693,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.methods.hideLoading.call(this);
                     return;
                 }
-
-                const batchId = `batch_${this.methods.generateId.call(this)}`;
-                const creationTimestamp = firebase.firestore.FieldValue.serverTimestamp();
-                const batch = this.db.batch();
-
+                
                 try {
+                    // MODIFIED: Use the new centralized notification creator
+                    const message = `A new project "${baseProjectName}" with ${numRows} areas has been added!`;
+                    await this.methods.createNotification.call(this, message, "new_project", baseProjectName);
+
+                    const batchId = `batch_${this.methods.generateId.call(this)}`;
+                    const creationTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+                    const batch = this.db.batch();
+                    
                     for (let i = 1; i <= numRows; i++) {
                         const projectData = {
                             batchId,
@@ -736,12 +737,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         batch.set(newProjectRef, projectData);
                     }
                     await batch.commit();
-
-                    await this.db.collection(this.config.firestorePaths.NOTIFICATIONS).add({
-                        message: `A new project "${baseProjectName}" with ${numRows} areas has been added!`,
-                        type: "new_project",
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
 
                     this.elements.newProjectForm.reset();
                     this.elements.projectFormModal.style.display = 'none';
@@ -1089,7 +1084,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     assignedToSelect.className = 'assigned-to-select';
                     assignedToSelect.disabled = project.status === "Reassigned_TechAbsent" || project.isLocked;
                     
-                    // MODIFIED: Populate dropdown from central user list and add tooltips
                     let optionsHtml = '<option value="">Select Tech ID</option>';
                     this.state.users.sort((a, b) => a.techId.localeCompare(b.techId)).forEach(user => {
                         optionsHtml += `<option value="${user.techId}" title="${user.name}">${user.techId}</option>`;
@@ -1277,9 +1271,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('#projectTable .column-day3').forEach(el => el.classList.toggle('column-hidden', !showDay3));
             },
 
-            /**
-             * MODIFIED: Fetches all users from the central 'users' collection.
-             */
             async fetchUsers() {
                 try {
                     const snapshot = await this.db.collection(this.config.firestorePaths.USERS).get();
@@ -1287,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("Successfully fetched user list.", this.state.users);
                 } catch (error) {
                     console.error("Error fetching user list:", error);
-                    this.state.users = []; // Default to empty on error
+                    this.state.users = []; 
                 }
             },
 
@@ -1694,19 +1685,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.showLoading.call(this, `Releasing ${currentFixCategory} tasks...`);
                 try {
                     const snapshot = await this.db.collection("projects").where("batchId", "==", batchId).where("fixCategory", "==", currentFixCategory).where("releasedToNextStage", "==", false).get();
+                    
+                    let projectNameForNotification = "";
+                    if (!snapshot.empty) {
+                        projectNameForNotification = snapshot.docs[0].data().baseProjectName;
+                    } else {
+                        alert("No tasks to release.");
+                        return;
+                    }
+
+                    const message = `Tasks from ${currentFixCategory} for project "${projectNameForNotification}" have been released to ${nextFixCategory}!`;
+                    await this.methods.createNotification.call(this, message, "fix_release", projectNameForNotification);
+
                     const firestoreBatch = this.db.batch();
                     const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
-
-                    let projectNameForNotification = "";
-
+                    
                     for (const doc of snapshot.docs) {
                         const task = {
                             id: doc.id,
                             ...doc.data()
                         };
                         if (task.status === "Reassigned_TechAbsent") continue;
-
-                        projectNameForNotification = task.baseProjectName;
 
                         const newNextFixTask = {
                             ...task,
@@ -1743,14 +1742,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                     await firestoreBatch.commit();
-
-                    if (projectNameForNotification) {
-                        await this.db.collection(this.config.firestorePaths.NOTIFICATIONS).add({
-                            message: `Tasks from ${currentFixCategory} for project "${projectNameForNotification}" have been released to ${nextFixCategory}!`,
-                            type: "fix_release",
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
 
                     alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
 
@@ -1862,14 +1853,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            /**
-             * ADDED: Renders the user management table in the settings modal.
-             */
             async renderUserManagement() {
                 if (!this.elements.userManagementTableBody) return;
                 this.methods.showLoading.call(this, "Loading user list...");
 
-                // Ensure the latest user list is available
                 await this.methods.fetchUsers.call(this);
 
                 this.elements.userManagementTableBody.innerHTML = "";
@@ -1882,6 +1869,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         row.insertCell().textContent = user.email;
                         row.insertCell().textContent = user.techId;
                         const actionCell = row.insertCell();
+                        
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = "Edit";
+                        editBtn.className = 'btn btn-secondary btn-small';
+                        editBtn.onclick = () => this.methods.enterEditMode.call(this, user);
+                        actionCell.appendChild(editBtn);
+
                         const removeBtn = document.createElement('button');
                         removeBtn.textContent = "Remove";
                         removeBtn.className = 'btn btn-danger btn-small';
@@ -1892,11 +1886,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.methods.hideLoading.call(this);
             },
 
-            /**
-             * ADDED: Handles the submission of the new user form.
-             */
-            async handleAddNewUser(event) {
+            async handleUserFormSubmit(event) {
                 event.preventDefault();
+                if (this.state.editingUser) {
+                    await this.methods.handleUpdateUser.call(this);
+                } else {
+                    await this.methods.handleAddNewUser.call(this);
+                }
+            },
+
+            async handleAddNewUser() {
                 const name = this.elements.newUserName.value.trim();
                 const email = this.elements.newUserEmail.value.trim().toLowerCase();
                 const techId = this.elements.newUserTechId.value.trim().toUpperCase();
@@ -1906,7 +1905,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // Check for duplicates
                 if (this.state.users.some(u => u.email === email)) {
                     alert(`Error: The email "${email}" is already registered.`);
                     return;
@@ -1923,8 +1921,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     alert(`User "${name}" added successfully!`);
                     this.elements.userManagementForm.reset();
-                    await this.methods.renderUserManagement.call(this); // Refresh the list
-                    this.methods.renderProjects.call(this); // Refresh main table to update dropdowns
+                    await this.methods.renderUserManagement.call(this);
+                    this.methods.renderProjects.call(this); 
 
                 } catch (error) {
                     console.error("Error adding new user:", error);
@@ -1934,17 +1932,88 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            /**
-             * ADDED: Handles the removal of a user from the list.
-             */
+            async handleUpdateUser() {
+                const name = this.elements.newUserName.value.trim();
+                const email = this.elements.newUserEmail.value.trim().toLowerCase();
+                const techId = this.elements.newUserTechId.value.trim().toUpperCase();
+            
+                if (!name || !email || !techId) {
+                    alert("Please fill in all fields: Full Name, Email, and Tech ID.");
+                    return;
+                }
+            
+                // Check for duplicates, excluding the user being edited
+                if (this.state.users.some(u => u.email === email && u.id !== this.state.editingUser.id)) {
+                    alert(`Error: The email "${email}" is already registered to another user.`);
+                    return;
+                }
+                if (this.state.users.some(u => u.techId === techId && u.id !== this.state.editingUser.id)) {
+                    alert(`Error: The Tech ID "${techId}" is already registered to another user.`);
+                    return;
+                }
+            
+                this.methods.showLoading.call(this, `Updating user ${name}...`);
+                try {
+                    const updatedUser = { name, email, techId };
+                    await this.db.collection(this.config.firestorePaths.USERS).doc(this.state.editingUser.id).update(updatedUser);
+                    
+                    alert(`User "${name}" updated successfully!`);
+                    this.methods.exitEditMode.call(this);
+                    await this.methods.renderUserManagement.call(this);
+                    this.methods.renderProjects.call(this);
+            
+                } catch (error) {
+                    console.error("Error updating user:", error);
+                    alert("An error occurred while updating the user: " + error.message);
+                } finally {
+                    this.methods.hideLoading.call(this);
+                }
+            },
+            
+            enterEditMode(user) {
+                this.state.editingUser = user;
+                this.elements.newUserName.value = user.name;
+                this.elements.newUserEmail.value = user.email;
+                this.elements.newUserTechId.value = user.techId;
+            
+                this.elements.userFormButtons.innerHTML = ''; // Clear existing buttons
+            
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'submit';
+                saveBtn.className = 'btn btn-primary';
+                saveBtn.textContent = 'Save Changes';
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-secondary';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = () => this.methods.exitEditMode.call(this);
+            
+                this.elements.userFormButtons.appendChild(saveBtn);
+                this.elements.userFormButtons.appendChild(cancelBtn);
+            },
+            
+            exitEditMode() {
+                this.state.editingUser = null;
+                this.elements.userManagementForm.reset();
+                this.elements.userFormButtons.innerHTML = '';
+            
+                const addBtn = document.createElement('button');
+                addBtn.type = 'submit';
+                addBtn.className = 'btn btn-success';
+                addBtn.textContent = 'Add User';
+                this.elements.userFormButtons.appendChild(addBtn);
+            },
+
             async handleRemoveUser(userToRemove) {
                 if (confirm(`Are you sure you want to remove the user "${userToRemove.name}" (${userToRemove.email})? This action cannot be undone.`)) {
                     this.methods.showLoading.call(this, `Removing user ${userToRemove.name}...`);
                     try {
                         await this.db.collection(this.config.firestorePaths.USERS).doc(userToRemove.id).delete();
                         alert(`User "${userToRemove.name}" has been removed.`);
-                        await this.methods.renderUserManagement.call(this); // Refresh the list
-                        this.methods.renderProjects.call(this); // Refresh main table to update dropdowns
+                        this.methods.exitEditMode.call(this); // Exit edit mode if the deleted user was being edited
+                        await this.methods.renderUserManagement.call(this);
+                        this.methods.renderProjects.call(this);
                     } catch (error) {
                         console.error("Error removing user:", error);
                         alert("An error occurred while removing the user: " + error.message);
@@ -2132,6 +2201,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
+            // --- NOTIFICATION METHODS (MODIFIED) ---
+
+            injectNotificationStyles() {
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    .notification-modal-backdrop {
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background-color: rgba(0,0,0,0.4); z-index: 10000; display: flex;
+                        justify-content: center; align-items: flex-start; padding-top: 50px;
+                    }
+                    .notification-modal-content {
+                        background-color: white; padding: 25px; border-radius: 8px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 450px;
+                        text-align: center;
+                    }
+                    .notification-modal-content h4 { margin-top: 0; }
+                    .notification-modal-buttons { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+                `;
+                document.head.appendChild(style);
+            },
+
+            showNotificationModal(notification) {
+                const backdrop = document.createElement('div');
+                backdrop.className = 'notification-modal-backdrop';
+
+                const modal = document.createElement('div');
+                modal.className = 'notification-modal-content';
+
+                const title = document.createElement('h4');
+                title.textContent = '🔔 New Update';
+                
+                const messageP = document.createElement('p');
+                messageP.textContent = notification.message;
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'notification-modal-buttons';
+
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = 'Close';
+                closeBtn.className = 'btn btn-secondary';
+                closeBtn.onclick = () => document.body.removeChild(backdrop);
+
+                const viewBtn = document.createElement('button');
+                viewBtn.textContent = 'View Project';
+                viewBtn.className = 'btn btn-primary';
+                
+                if (notification.baseProjectName) {
+                    viewBtn.onclick = () => {
+                        this.state.filters.batchId = notification.baseProjectName;
+                        localStorage.setItem('currentSelectedBatchId', this.state.filters.batchId);
+                        this.state.filters.fixCategory = ""; // Clear other filters
+                        this.state.pagination.currentPage = 1;
+                        this.state.pagination.paginatedProjectNameList = [];
+                        this.methods.initializeFirebaseAndLoadData.call(this);
+                        document.body.removeChild(backdrop);
+                    };
+                } else {
+                    viewBtn.disabled = true;
+                }
+
+                buttonContainer.appendChild(closeBtn);
+                buttonContainer.appendChild(viewBtn);
+                modal.appendChild(title);
+                modal.appendChild(messageP);
+                modal.appendChild(buttonContainer);
+                backdrop.appendChild(modal);
+                document.body.appendChild(backdrop);
+            },
+            
+            async createNotification(message, type, baseProjectName) {
+                const notificationsRef = this.db.collection(this.config.firestorePaths.NOTIFICATIONS);
+                
+                try {
+                    // Check and enforce the 5-notification limit
+                    const query = notificationsRef.orderBy("timestamp", "asc");
+                    const snapshot = await query.get();
+
+                    if (snapshot.size >= 5) {
+                        const batch = this.db.batch();
+                        const toDelete = snapshot.docs.slice(0, snapshot.size - 4); // Keep 4, delete the rest
+                        toDelete.forEach(doc => batch.delete(doc.ref));
+                        await batch.commit();
+                        console.log(`Cleared ${toDelete.length} oldest notification(s).`);
+                    }
+
+                    // Add the new notification
+                    await notificationsRef.add({
+                        message,
+                        type,
+                        baseProjectName: baseProjectName || null,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                } catch (error) {
+                    console.error("Error creating notification:", error);
+                }
+            },
+
             listenForNotifications() {
                 if (!this.db) {
                     console.error("Firestore not initialized for notifications.");
@@ -2150,7 +2317,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const notification = change.doc.data();
                                     const fiveSecondsAgo = firebase.firestore.Timestamp.now().toMillis() - 5000;
                                     if (notification.timestamp && notification.timestamp.toMillis() > fiveSecondsAgo) {
-                                        alert(`🔔 New Update: ${notification.message}`);
+                                        this.methods.showNotificationModal.call(this, notification);
                                     }
                                 }
                             });
