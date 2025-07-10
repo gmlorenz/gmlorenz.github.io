@@ -849,7 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     console.error(`Error updating ${fieldName}:`, error);
                     alert(`Error updating time: ${error.message}`);
-                    this.methods.refreshAllViews.call(this);
+                    this.methods.AllViews.call(this);
                 } finally {
                     this.methods.hideLoading.call(this);
                 }
@@ -937,13 +937,13 @@ document.addEventListener('DOMContentLoaded', () => {
             },
 
 
-            refreshAllViews() {
+            AllViews() {
                 try {
                     this.methods.renderProjects.call(this);
                     this.methods.updatePaginationUI.call(this);
                     this.methods.applyColumnVisibility.call(this);
                 } catch (error) {
-                    console.error("Error during refreshAllViews:", error);
+                    console.error("Error during AllViews:", error);
                     if (this.elements.projectTableBody) this.elements.projectTableBody.innerHTML = `<tr><td colspan="${this.config.NUM_TABLE_COLUMNS}" style="color:red;text-align:center;">Error loading projects.</td></tr>`;
                 }
                 this.methods.hideLoading.call(this);
@@ -1743,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     await firestoreBatch.commit();
 
-                    alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now refresh.`);
+                    alert(`Release Successful! Tasks from ${currentFixCategory} have been moved to ${nextFixCategory}. The dashboard will now .`);
 
                     this.methods.initializeFirebaseAndLoadData.call(this);
                     await this.methods.renderTLDashboard.call(this);
@@ -2057,6 +2057,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryHeader.style.marginBottom = '20px';
                 summaryHeader.style.paddingBottom = '10px';
                 summaryHeader.style.borderBottom = '1px solid #ddd';
+
+                const summaryTitle = document.createElement('h3');
+                summaryTitle.textContent = 'Team Lead Summary';
+                summaryTitle.style.margin = '0';
+
             
                 const refreshButton = document.createElement('button');
                 refreshButton.className = 'btn btn-primary';
