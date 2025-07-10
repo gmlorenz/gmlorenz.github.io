@@ -7,7 +7,7 @@
  * global variables, improves performance, and ensures correct
  * timezone handling.
  *
- * @version 2.9.6
+ * @version 2.9.7
  * @author Gemini AI Refactor & Bug-Fix
  * @changeLog
  * - FIXED: Expand/Collapse functionality now correctly reapplies column visibility settings.
@@ -985,7 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderProjects() {
                 if (!this.elements.projectTableBody) return;
                 this.elements.projectTableBody.innerHTML = "";
-
+            
                 const sortedProjects = [...this.state.projects].sort((a, b) => {
                     const nameA = a.baseProjectName || "";
                     const nameB = b.baseProjectName || "";
@@ -993,7 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const fixB = this.config.FIX_CATEGORIES.ORDER.indexOf(b.fixCategory || "");
                     const areaA = a.areaTask || "";
                     const areaB = b.areaTask || "";
-
+            
                     if (nameA < nameB) return -1;
                     if (nameA > nameB) return 1;
                     if (fixA < fixB) return -1;
@@ -1002,8 +1002,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (areaA > areaB) return 1;
                     return 0;
                 });
-
-                // NEW: Pre-calculate lock status for each group
+            
+                // Pre-calculate lock status for each group
                 const groupLockStatus = {};
                 sortedProjects.forEach(p => {
                     const groupKey = `${p.baseProjectName}_${p.fixCategory}`;
@@ -1018,19 +1018,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         groupLockStatus[groupKey].locked++;
                     }
                 });
-
+            
                 let currentBaseProjectNameHeader = null,
                     currentFixCategoryHeader = null;
-
+            
                 if (sortedProjects.length === 0) {
                     const row = this.elements.projectTableBody.insertRow();
                     row.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}" style="text-align:center; padding: 20px;">No projects to display for the current filter or page.</td>`;
                     return;
                 }
-
+            
                 sortedProjects.forEach(project => {
                     if (!project?.id || !project.baseProjectName || !project.fixCategory) return;
-
+            
                     if (project.baseProjectName !== currentBaseProjectNameHeader) {
                         currentBaseProjectNameHeader = project.baseProjectName;
                         currentFixCategoryHeader = null;
@@ -1038,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         headerRow.className = "batch-header-row";
                         headerRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}"># ${project.baseProjectName}</td>`;
                     }
-
+            
                     if (project.fixCategory !== currentFixCategoryHeader) {
                         currentFixCategoryHeader = project.fixCategory;
                         const groupKey = `${currentBaseProjectNameHeader}_${currentFixCategoryHeader}`;
@@ -1048,8 +1048,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                         }
                         const isExpanded = this.state.groupVisibilityState[groupKey]?.isExpanded !== false;
-
-                        // UPDATED: Determine lock icon based on pre-calculated status, using emojis
+            
                         const status = groupLockStatus[groupKey];
                         let lockIcon = '';
                         if (status && status.total > 0) {
@@ -1061,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 lockIcon = ' 🔓';
                             }
                         }
-
+            
                         const groupHeaderRow = this.elements.projectTableBody.insertRow();
                         groupHeaderRow.className = "fix-group-header";
                         groupHeaderRow.innerHTML = `<td colspan="${this.config.NUM_TABLE_COLUMNS}">${currentFixCategoryHeader}${lockIcon} <button class="btn btn-group-toggle">${isExpanded ? "Collapse" : "Expand"}</button></td>`;
@@ -1072,21 +1071,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             this.methods.applyColumnVisibility.call(this);
                         };
                     }
-
+            
                     const row = this.elements.projectTableBody.insertRow();
                     row.style.backgroundColor = this.config.FIX_CATEGORIES.COLORS[project.fixCategory] || this.config.FIX_CATEGORIES.COLORS.default;
                     const groupKey = `${currentBaseProjectNameHeader}_${project.fixCategory}`;
                     if (this.state.groupVisibilityState[groupKey]?.isExpanded === false) row.classList.add("hidden-group-row");
                     if (project.isReassigned) row.classList.add("reassigned-task-highlight");
                     if (project.isLocked) row.classList.add("locked-task-highlight");
-
+            
                     row.insertCell().textContent = project.fixCategory;
                     const projectNameCell = row.insertCell();
                     projectNameCell.textContent = project.baseProjectName;
-                    projectNameCell.className = 'column-project-name'; // Add a specific class
+                    projectNameCell.className = 'column-project-name';
                     row.insertCell().textContent = project.areaTask;
                     row.insertCell().textContent = project.gsd;
-
+            
                     const assignedToCell = row.insertCell();
                     const assignedToSelect = document.createElement('select');
                     assignedToSelect.className = 'assigned-to-select';
@@ -1098,23 +1097,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     assignedToCell.appendChild(assignedToSelect);
-
+            
                     const statusCell = row.insertCell();
-                    // --- MODIFICATION START ---
                     let displayStatus = project.status || "Unknown";
-                    if (displayStatus === "Day1Ended_AwaitingNext" ||
-                        displayStatus === "Day2Ended_AwaitingNext" ||
-                        displayStatus === "Day3Ended_AwaitingNext") {
+                    if (displayStatus === "Day1Ended_AwaitingNext" || displayStatus === "Day2Ended_AwaitingNext" || displayStatus === "Day3Ended_AwaitingNext") {
                         displayStatus = "Started Available";
                     } else {
-                        // Original formatting for other statuses
                         displayStatus = displayStatus.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
                     }
                     statusCell.innerHTML = `<span class="status status-${(project.status || "unknown").toLowerCase()}">${displayStatus}</span>`;
-                    // --- MODIFICATION END ---
-
+            
                     const formatTime = (ts) => ts?.toDate ? ts.toDate().toTimeString().slice(0, 5) : "";
-
+            
                     const createTimeInput = (timeValue, fieldName, dayClass) => {
                         const cell = row.insertCell();
                         cell.className = dayClass || '';
@@ -1125,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         input.onchange = (e) => this.methods.updateTimeField.call(this, project.id, fieldName, e.target.value);
                         cell.appendChild(input);
                     };
-
+            
                     const createBreakSelect = (day, currentProject, dayClass) => {
                         const cell = row.insertCell();
                         cell.className = `break-cell ${dayClass || ''}`;
@@ -1133,54 +1127,46 @@ document.addEventListener('DOMContentLoaded', () => {
                         select.className = 'break-select';
                         select.disabled = currentProject.status === "Reassigned_TechAbsent" || currentProject.isLocked;
                         select.innerHTML = `<option value="0">No Break</option><option value="15">15m</option><option value="60">1h</option><option value="75">1h15m</option><option value="90">1h30m</option>`;
-
                         select.value = currentProject[`breakDurationMinutesDay${day}`] || 0;
-
                         select.onchange = (e) => this.db.collection("projects").doc(currentProject.id).update({
                             [`breakDurationMinutesDay${day}`]: parseInt(e.target.value, 10),
                             lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         cell.appendChild(select);
                     };
-
+            
                     createTimeInput(project.startTimeDay1, 'startTimeDay1');
                     createTimeInput(project.finishTimeDay1, 'finishTimeDay1');
                     createBreakSelect(1, project);
-
+            
                     createTimeInput(project.startTimeDay2, 'startTimeDay2', 'column-day2');
                     createTimeInput(project.finishTimeDay2, 'finishTimeDay2', 'column-day2');
                     createBreakSelect(2, project, 'column-day2');
-
+            
                     createTimeInput(project.startTimeDay3, 'startTimeDay3', 'column-day3');
                     createTimeInput(project.finishTimeDay3, 'finishTimeDay3', 'column-day3');
                     createBreakSelect(3, project, 'column-day3');
-
-                    // PROGRESS BAR
+            
+                    const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
+                    const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) + (project.breakDurationMinutesDay2 || 0) + (project.breakDurationMinutesDay3 || 0)) * 60000;
+                    const additionalMs = (project.additionalMinutesManual || 0) * 60000;
+                    const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
+                    const totalMinutes = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
+                    const progressPercentage = totalMinutes === "N/A" ? 0 : Math.min(100, (totalMinutes / 480) * 100);
+            
                     const progressBarCell = row.insertCell();
-                    const statusOrder = ["Available", "InProgressDay1", "Day1Ended_AwaitingNext", "InProgressDay2", "Day2Ended_AwaitingNext", "InProgressDay3", "Day3Ended_AwaitingNext", "Completed"];
-                    const currentStatusIndex = statusOrder.indexOf(project.status);
-                    const progressPercentage = (currentStatusIndex / (statusOrder.length - 1)) * 100;
-                    const clampedProgress = Math.min(100, Math.max(0, progressPercentage));
-                    const progressBarHtml = `
+                    progressBarCell.innerHTML = `
                         <div style="background-color: #e0e0e0; border-radius: 5px; height: 15px; width: 100%; overflow: hidden;">
-                            <div style="background-color: #4CAF50; height: 100%; width: ${clampedProgress}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
-                                ${project.status === 'Completed' ? '100%' : ''}
+                            <div style="background-color: #4CAF50; height: 100%; width: ${progressPercentage}%; border-radius: 5px; text-align: center; color: white; font-size: 0.7em;">
+                                ${Math.round(progressPercentage)}%
                             </div>
                         </div>
                     `;
-                    progressBarCell.innerHTML = progressBarHtml;
-
-                    const totalDurationMs = (project.durationDay1Ms || 0) + (project.durationDay2Ms || 0) + (project.durationDay3Ms || 0);
-                    const totalBreakMs = ((project.breakDurationMinutesDay1 || 0) +
-                        (project.breakDurationMinutesDay2 || 0) +
-                        (project.breakDurationMinutesDay3 || 0)) * 60000;
-                    const additionalMs = (project.additionalMinutesManual || 0) * 60000;
-                    const finalAdjustedDurationMs = Math.max(0, totalDurationMs - totalBreakMs) + additionalMs;
-
+            
                     const totalDurationCell = row.insertCell();
-                    totalDurationCell.textContent = this.methods.formatMillisToMinutes.call(this, finalAdjustedDurationMs);
+                    totalDurationCell.textContent = totalMinutes;
                     totalDurationCell.className = 'total-duration-column';
-
+            
                     const techNotesCell = row.insertCell();
                     const techNotesInput = document.createElement('textarea');
                     techNotesInput.value = project.techNotes || "";
@@ -1191,11 +1177,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         lastModifiedTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     techNotesCell.appendChild(techNotesInput);
-
+            
                     const actionsCell = row.insertCell();
                     const actionButtonsDiv = document.createElement('div');
                     actionButtonsDiv.className = 'action-buttons-container';
-
+            
                     const createActionButton = (text, className, disabled, action) => {
                         const button = document.createElement('button');
                         button.textContent = text;
@@ -1204,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         button.onclick = () => this.methods.updateProjectState.call(this, project.id, action);
                         return button;
                     };
-
+            
                     actionButtonsDiv.appendChild(createActionButton("Start D1", "btn-day-start", project.status !== "Available", "startDay1"));
                     actionButtonsDiv.appendChild(createActionButton("End D1", "btn-day-end", project.status !== "InProgressDay1", "endDay1"));
                     actionButtonsDiv.appendChild(createActionButton("Start D2", "btn-day-start", project.status !== "Day1Ended_AwaitingNext", "startDay2"));
@@ -1212,11 +1198,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionButtonsDiv.appendChild(createActionButton("Start D3", "btn-day-start", project.status !== "Day2Ended_AwaitingNext", "startDay3"));
                     actionButtonsDiv.appendChild(createActionButton("End D3", "btn-day-end", project.status !== "InProgressDay3", "endD3"));
                     actionButtonsDiv.appendChild(createActionButton("Done", "btn-mark-done", project.status === "Completed" || project.status === "Reassigned_TechAbsent" || (project.status === "Available" && !(project.durationDay1Ms || project.durationDay2Ms || project.durationDay3Ms)), "markDone"));
-
+            
                     const reassignBtn = createActionButton("Re-Assign", "btn-warning", project.status === "Completed" || project.status === "Reassigned_TechAbsent", "reassign");
                     reassignBtn.onclick = () => this.methods.handleReassignment.call(this, project);
                     actionButtonsDiv.appendChild(reassignBtn);
-
+            
                     actionsCell.appendChild(actionButtonsDiv);
                 });
             },
