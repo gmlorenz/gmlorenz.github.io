@@ -81,6 +81,9 @@
                     <p class="text-sm text-gray-500 mt-1">Manage product and money loans with interest calculation.</p>
                 </div>
                 <div class="flex items-center mt-4 sm:mt-0">
+                     <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400 mr-2">
+                        How It Works
+                    </button>
                      <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 mr-2">
                         Import CSV
                     </button>
@@ -273,6 +276,49 @@
         </div>
     </div>
 
+    <div id="howItWorksModal" class="modal-backdrop">
+        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-3">
+                     <h3 class="text-2xl font-semibold text-gray-900">How It Works: Loan Logic & Calculations</h3>
+                     <button id="closeHowItWorksButton" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <div class="mt-4 space-y-4 text-gray-700">
+                    <div>
+                        <h4 class="font-bold text-lg">Loan Types</h4>
+                        <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
+                            <li><strong>Product:</strong> Defaults to 0% interest. Used for tracking physical items with a monetary value.</li>
+                            <li><strong>E-Loan:</strong> Defaults to 20% interest, 1 payment, and weekly frequency. Designed for short-term cash loans.</li>
+                            <li><strong>Long Term E-Loan:</strong> Defaults to 20% interest. For cash loans with multiple payments.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg">Core Calculations</h4>
+                        <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
+                            <li><strong>Interest:</strong> Calculated as a simple, one-time percentage of the principal: <code class="bg-gray-200 p-1 rounded">Principal * (Interest Rate / 100)</code>.</li>
+                            <li><strong>Installment Amount:</strong> The total amount (Principal + Interest) is divided equally by the number of payments: <code class="bg-gray-200 p-1 rounded">(Principal + Interest) / Number of Payments</code>.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg">Penalty System</h4>
+                        <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
+                            <li>A penalty of 5% of the original loan amount is applied for <span class="font-bold">each day</span> an installment is overdue.</li>
+                            <li><strong>Formula:</strong> <code class="bg-gray-200 p-1 rounded">(Principal * 0.05) * Days Delayed</code>.</li>
+                            <li>The total penalty is the sum of penalties for all overdue, unpaid installments.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg">Button Functions</h4>
+                        <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
+                            <li><strong>Mark Paid:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
+                            <li><strong>Pay Interest Only:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="csvFileInput" class="hidden" accept=".csv">
 
     <script type="module">
@@ -329,6 +375,9 @@
         const importButton = document.getElementById('importButton');
         const exportButton = document.getElementById('exportButton');
         const csvFileInput = document.getElementById('csvFileInput');
+        const howItWorksButton = document.getElementById('howItWorksButton');
+        const howItWorksModal = document.getElementById('howItWorksModal');
+        const closeHowItWorksButton = document.getElementById('closeHowItWorksButton');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -387,6 +436,8 @@
 
         historyButton.addEventListener('click', () => showLoanerHistory(allLoans));
         closeHistoryButton.addEventListener('click', () => historyModal.style.display = 'none');
+        howItWorksButton.addEventListener('click', () => howItWorksModal.style.display = 'flex');
+        closeHowItWorksButton.addEventListener('click', () => howItWorksModal.style.display = 'none');
         
         importButton.addEventListener('click', () => csvFileInput.click());
         exportButton.addEventListener('click', () => exportToCSV(allLoans));
@@ -829,8 +880,8 @@
                     let daysDelayed = 0;
 
                     if (!isPaymentPaid) {
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>`;
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Pay Interest Only</button>`;
                     } else {
                          actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
                     }
@@ -925,6 +976,7 @@
 
                         const docRef = doc(db, sharedDataPath, loanId);
                         await updateDoc(docRef, { paymentSchedule: updatedSchedule, status: newStatus });
+                        showAlert('Success', 'Payment has been marked as paid.');
                     });
                 });
             });
@@ -957,6 +1009,7 @@
                             paymentSchedule: newSchedule,
                             returnDate: newSchedule[newSchedule.length - 1].dueDate
                         });
+                        showAlert('Success', 'Interest has been paid and the schedule has been updated.');
                     });
                 });
             });
