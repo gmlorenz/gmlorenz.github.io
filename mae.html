@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Loan Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -44,24 +45,38 @@
             background-color: #4f46e5; /* indigo-600 */
             color: white;
         }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #receiptModal, #receiptModal * {
+                visibility: visible;
+            }
+            #receiptModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
     <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100">
-        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
-            <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-6">
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        <div class="max-w-md w-full bg-white dark:bg-gray-700 p-8 rounded-xl shadow-lg">
+            <h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
                 Sign in to your account
             </h2>
             <form id="loginForm" class="space-y-6">
                 <div>
                     <label for="username" class="sr-only">Username</label>
-                    <input id="username" name="username" type="text" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Username">
+                    <input id="username" name="username" type="text" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Username">
                 </div>
                 <div>
                     <label for="password" class="sr-only">Password</label>
-                    <input id="password" name="password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
+                    <input id="password" name="password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
                 </div>
                 <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Sign in
@@ -74,31 +89,25 @@
     <div id="mainApp" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl hidden">
 
         <!-- Header -->
-        <header class="bg-white shadow-md rounded-xl p-6 mb-8">
+        <header class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Smart Loan Tracker</h1>
-                    <p class="text-sm text-gray-500 mt-1">Manage product and money loans with interest calculation.</p>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Smart Loan Tracker</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage product and money loans with interest calculation.</p>
                 </div>
-                <div class="flex items-center mt-4 sm:mt-0">
-                     <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400 mr-2">
-                        How It Works
-                    </button>
-                     <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 mr-2">
-                        Import CSV
-                    </button>
-                     <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 mr-4">
-                        Export CSV
-                    </button>
-                     <button id="historyButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 mr-4">
-                        Loaner History
-                    </button>
-                    <div class="text-sm text-gray-600 text-right mr-4">
+                <div class="flex items-center mt-4 sm:mt-0 flex-wrap gap-2">
+                     <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">How It Works</button>
+                     <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Import CSV</button>
+                     <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Export CSV</button>
+                     <button id="historyButton" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md shadow-lg">Loaner History</button>
+                    <div class="text-sm text-gray-600 dark:text-gray-300 text-right">
                         <span class="font-semibold">Logged in as:</span>
                         <span id="loggedInUser" class="break-all"></span>
                     </div>
-                    <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Logout
+                    <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Logout</button>
+                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 18a1 1 0 011-1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 13.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm1.414-9.9a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM16 10a1 1 0 01-1-1h-1a1 1 0 110-2h1a1 1 0 011 1zM4 10a1 1 0 01-1-1H2a1 1 0 110-2h1a1 1 0 011 1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                     </button>
                 </div>
             </div>
@@ -113,104 +122,63 @@
             <!-- Left Column -->
             <div class="lg:col-span-1 space-y-8">
                  <!-- Summary & Profits -->
-                <div class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex flex-col sm:flex-row justify-between items-center border-b pb-4 mb-5">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                    <div class="flex flex-col sm:flex-row justify-between items-center border-b dark:border-gray-700 pb-4 mb-5">
                         <h2 class="text-2xl font-semibold">Summary & Profits</h2>
                          <div id="summaryFilterButtons" class="flex space-x-1 mt-4 sm:mt-0">
-                            <button data-filter="weekly" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Weekly</button>
-                            <button data-filter="monthly" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Monthly</button>
-                            <button data-filter="custom" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Custom</button>
+                            <button data-filter="weekly" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-xs">Weekly</button>
+                            <button data-filter="monthly" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-xs">Monthly</button>
+                            <button data-filter="custom" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-xs">Custom</button>
                         </div>
                     </div>
                     <div id="summaryDateRange" class="hidden flex items-center space-x-2 mb-4">
-                        <input type="date" id="startDate" class="text-xs p-1 border rounded-md">
+                        <input type="date" id="startDate" class="text-xs p-1 border dark:border-gray-600 rounded-md dark:bg-gray-700">
                         <span>to</span>
-                        <input type="date" id="endDate" class="text-xs p-1 border rounded-md">
+                        <input type="date" id="endDate" class="text-xs p-1 border dark:border-gray-600 rounded-md dark:bg-gray-700">
                     </div>
                     <div id="summaryContent" class="space-y-3 text-sm">
                         <div class="flex justify-between"><span>Total Principal Loaned:</span> <span id="totalPrincipal" class="font-medium">₱0.00</span></div>
                         <div class="flex justify-between"><span>Potential Profit (Interest):</span> <span id="totalInterest" class="font-medium text-blue-600">₱0.00</span></div>
                         <div class="flex justify-between"><span>Potential Profit (Penalties):</span> <span id="totalPenalties" class="font-medium text-red-600">₱0.00</span></div>
-                        <div class="flex justify-between font-bold border-t pt-2"><span>Total Potential Profit:</span> <span id="totalProfit" class="text-green-600">₱0.00</span></div>
+                        <div class="flex justify-between font-bold border-t dark:border-gray-700 pt-2"><span>Total Potential Profit:</span> <span id="totalProfit" class="text-green-600">₱0.00</span></div>
                         <div class="flex justify-between mt-4"><span>Active Loans:</span> <span id="activeLoans" class="font-medium">0</span></div>
                         <div class="flex justify-between"><span>Completed Loans:</span> <span id="completedLoans" class="font-medium">0</span></div>
                     </div>
+                    <div class="mt-6">
+                        <canvas id="loanTypeChart"></canvas>
+                    </div>
                 </div>
                 <!-- Add Loan Form -->
-                <div class="bg-white p-6 rounded-xl shadow-md sticky top-8">
-                    <h2 class="text-2xl font-semibold mb-5 border-b pb-4">Add New Loan</h2>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md sticky top-8">
+                    <h2 class="text-2xl font-semibold mb-5 border-b dark:border-gray-700 pb-4">Add New Loan</h2>
                     <form id="addLoanForm" class="space-y-4">
-                        <div>
-                            <label for="borrowerName" class="block text-sm font-medium text-gray-700">Borrower's Name</label>
-                            <input type="text" id="borrowerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="loanType" class="block text-sm font-medium text-gray-700">Loan Type</label>
-                            <select id="loanType" name="loanType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="Product">Product</option>
-                                <option value="E-Loan">E-Loan</option>
-                                <option value="Long Term E-Loan">Long Term E-Loan</option>
-                            </select>
-                        </div>
-                        <div id="productNameField">
-                            <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
-                            <input type="text" id="productName" name="productName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <div class="space-y-4">
-                             <div>
-                                <label for="loanAmount" class="block text-sm font-medium text-gray-700">Loan Amount (₱)</label>
-                                <input type="number" id="loanAmount" name="loanAmount" min="0" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="interestRate" class="block text-sm font-medium text-gray-700">Interest Rate (%)</label>
-                                <input type="number" id="interestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="numberOfPayments" class="block text-sm font-medium text-gray-700">Number of Payments (Gives)</label>
-                                <input type="number" id="numberOfPayments" name="numberOfPayments" min="1" step="1" value="1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                             <div>
-                                <label for="paymentFrequency" class="block text-sm font-medium text-gray-700">Payment Frequency</label>
-                                <select id="paymentFrequency" name="paymentFrequency" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                    <option value="weekly">Weekly</option>
-                                    <option value="bi-weekly">Bi-Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="loanDate" class="block text-sm font-medium text-gray-700">Loan Date</label>
-                            <input type="date" id="loanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Add Loan Record
-                        </button>
+                        <!-- Form content will be injected by JS wizard -->
                     </form>
                 </div>
             </div>
 
             <!-- Loan Records List -->
             <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="border-b pb-4 mb-5">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                    <div class="border-b dark:border-gray-700 pb-4 mb-5">
                         <div class="flex flex-col sm:flex-row justify-between items-center">
                              <h2 class="text-2xl font-semibold">Loan Records</h2>
                              <div class="mt-4 sm:mt-0">
-                                <input type="text" id="searchLoaner" placeholder="Search by name..." class="w-full sm:w-auto px-3 py-1 border border-gray-300 rounded-md text-sm">
+                                <input type="text" id="searchLoaner" placeholder="Search by name..." class="w-full sm:w-auto px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700">
                             </div>
                         </div>
                         <div id="filterButtons" class="flex flex-wrap gap-2 mt-4">
                             <button data-filter="all" class="filter-btn active px-3 py-1 rounded-md text-sm">All</button>
-                            <button data-filter="active" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Active</button>
-                            <button data-filter="overdue" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">With Penalty</button>
-                            <button data-filter="paid" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Paid</button>
-                            <button data-filter="Product" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Product</button>
-                            <button data-filter="E-Loan" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">E-Loan</button>
-                            <button data-filter="Long Term E-Loan" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Long Term</button>
+                            <button data-filter="active" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Active</button>
+                            <button data-filter="overdue" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">With Penalty</button>
+                            <button data-filter="paid" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Paid</button>
+                            <button data-filter="Product" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Product</button>
+                            <button data-filter="E-Loan" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">E-Loan</button>
+                            <button data-filter="Long Term E-Loan" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Long Term</button>
                         </div>
                     </div>
                     <div id="loanList" class="space-y-4">
-                        <p id="loadingMessage" class="text-center text-gray-500 py-8">Please log in to see records.</p>
+                        <p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>
                     </div>
                 </div>
             </div>
@@ -219,14 +187,14 @@
 
     <!-- Modals -->
     <div id="alertModal" class="modal-backdrop">
-        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-sm m-4">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
             <div class="p-6">
-                <h3 id="alertTitle" class="text-lg font-medium leading-6 text-gray-900">Alert</h3>
+                <h3 id="alertTitle" class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Alert</h3>
                 <div class="mt-2">
-                    <p id="alertMessage" class="text-sm text-gray-500">Your message here.</p>
+                    <p id="alertMessage" class="text-sm text-gray-500 dark:text-gray-400">Your message here.</p>
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button type="button" id="alertOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
                     OK
                 </button>
@@ -235,7 +203,7 @@
     </div>
     
     <div id="confirmModal" class="modal-backdrop">
-        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-lg m-4">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
             <div class="p-6">
                 <div class="sm:flex sm:items-start">
                     <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -244,18 +212,18 @@
                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 id="confirmTitle" class="text-lg font-medium leading-6 text-gray-900">Confirmation</h3>
+                        <h3 id="confirmTitle" class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Confirmation</h3>
                         <div class="mt-2">
-                            <p id="confirmMessage" class="text-sm text-gray-500">Are you sure?</p>
+                            <p id="confirmMessage" class="text-sm text-gray-500 dark:text-gray-400">Are you sure?</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button type="button" id="confirmOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
                     Confirm
                 </button>
-                <button type="button" id="confirmCancelButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                <button type="button" id="confirmCancelButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
                     Cancel
                 </button>
             </div>
@@ -263,11 +231,11 @@
     </div>
 
     <div id="historyModal" class="modal-backdrop">
-        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-3">
-                     <h3 id="historyModalTitle" class="text-2xl font-semibold text-gray-900">Loaner History</h3>
-                     <button id="closeHistoryButton" class="text-gray-400 hover:text-gray-600">&times;</button>
+                <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3">
+                     <h3 id="historyModalTitle" class="text-2xl font-semibold text-gray-900 dark:text-white">Loaner History</h3>
+                     <button id="closeHistoryButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <div id="historyContent" class="mt-4 space-y-4">
                     <!-- History content will be injected here -->
@@ -277,13 +245,13 @@
     </div>
 
     <div id="howItWorksModal" class="modal-backdrop">
-        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-3">
-                     <h3 class="text-2xl font-semibold text-gray-900">How It Works: Loan Logic & Calculations</h3>
-                     <button id="closeHowItWorksButton" class="text-gray-400 hover:text-gray-600">&times;</button>
+                <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3">
+                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">How It Works: Loan Logic & Calculations</h3>
+                     <button id="closeHowItWorksButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
-                <div class="mt-4 space-y-4 text-gray-700">
+                <div class="mt-4 space-y-4 text-gray-700 dark:text-gray-300">
                     <div>
                         <h4 class="font-bold text-lg">Loan Types</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
@@ -295,15 +263,15 @@
                      <div>
                         <h4 class="font-bold text-lg">Core Calculations</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
-                            <li><strong>Interest:</strong> Calculated as a simple, one-time percentage of the principal: <code class="bg-gray-200 p-1 rounded">Principal * (Interest Rate / 100)</code>.</li>
-                            <li><strong>Installment Amount:</strong> The total amount (Principal + Interest) is divided equally by the number of payments: <code class="bg-gray-200 p-1 rounded">(Principal + Interest) / Number of Payments</code>.</li>
+                            <li><strong>Interest:</strong> Calculated as a simple, one-time percentage of the principal: <code class="bg-gray-200 dark:bg-gray-700 p-1 rounded">Principal * (Interest Rate / 100)</code>.</li>
+                            <li><strong>Installment Amount:</strong> The total amount (Principal + Interest) is divided equally by the number of payments: <code class="bg-gray-200 dark:bg-gray-700 p-1 rounded">(Principal + Interest) / Number of Payments</code>.</li>
                         </ul>
                     </div>
                      <div>
                         <h4 class="font-bold text-lg">Penalty System</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
                             <li>A penalty of 5% of the original loan amount is applied for <span class="font-bold">each day</span> an installment is overdue.</li>
-                            <li><strong>Formula:</strong> <code class="bg-gray-200 p-1 rounded">(Principal * 0.05) * Days Delayed</code>.</li>
+                            <li><strong>Formula:</strong> <code class="bg-gray-200 dark:bg-gray-700 p-1 rounded">(Principal * 0.05) * Days Delayed</code>.</li>
                             <li>The total penalty is the sum of penalties for all overdue, unpaid installments.</li>
                         </ul>
                     </div>
@@ -315,6 +283,38 @@
                         </ul>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="partialPaymentModal" class="modal-backdrop">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
+             <div class="p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Record Partial Payment</h3>
+                <div class="mt-4">
+                    <label for="partialAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount to Pay (₱)</label>
+                    <input type="number" id="partialAmount" name="partialAmount" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="confirmPartialPaymentButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    Record Payment
+                </button>
+                <button type="button" id="cancelPartialPaymentButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+     <div id="receiptModal" class="modal-backdrop">
+        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-md m-4 p-6">
+            <div id="receiptContent">
+                <!-- Receipt content will be injected here -->
+            </div>
+             <div class="mt-6 flex justify-end space-x-2">
+                <button id="printReceiptButton" class="bg-blue-500 text-white px-4 py-2 rounded-md">Print</button>
+                <button id="closeReceiptButton" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md">Close</button>
             </div>
         </div>
     </div>
@@ -348,6 +348,7 @@
         let unsubscribeFromLoans = null;
         let allLoans = [];
         let currentFilter = 'all';
+        let loanTypeChart = null;
         
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -378,6 +379,17 @@
         const howItWorksButton = document.getElementById('howItWorksButton');
         const howItWorksModal = document.getElementById('howItWorksModal');
         const closeHowItWorksButton = document.getElementById('closeHowItWorksButton');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const partialPaymentModal = document.getElementById('partialPaymentModal');
+        const confirmPartialPaymentButton = document.getElementById('confirmPartialPaymentButton');
+        const cancelPartialPaymentButton = document.getElementById('cancelPartialPaymentButton');
+        const partialAmountInput = document.getElementById('partialAmount');
+        const receiptModal = document.getElementById('receiptModal');
+        const receiptContent = document.getElementById('receiptContent');
+        const printReceiptButton = document.getElementById('printReceiptButton');
+        const closeReceiptButton = document.getElementById('closeReceiptButton');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -450,10 +462,10 @@
                 currentFilter = e.target.dataset.filter;
                 document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
                     btn.classList.remove('active');
-                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
                 });
                 e.target.classList.add('active');
-                e.target.classList.remove('bg-gray-200', 'text-gray-700');
+                e.target.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
                 renderLoanList();
             }
         });
@@ -513,7 +525,7 @@
         function showLoginScreen() {
             mainApp.style.display = 'none';
             loginScreen.style.display = 'flex';
-            loanList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 py-8">Please log in to see records.</p>';
+            loanList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
         }
 
         // --- Firestore Operations ---
@@ -661,7 +673,7 @@
             });
 
             if (filteredLoans.length === 0) {
-                 loanList.innerHTML = `<p class="text-center text-gray-500 py-8">No loans found for the current filters.</p>`;
+                 loanList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No loans found for the current filters.</p>`;
                  return;
             }
 
@@ -769,6 +781,53 @@
             document.getElementById('totalProfit').textContent = `₱${(totalInterest + totalPenalties).toFixed(2)}`;
             document.getElementById('activeLoans').textContent = activeLoans;
             document.getElementById('completedLoans').textContent = completedLoans;
+            
+            // Update Chart
+            const loanTypeCounts = filteredForSummary.reduce((acc, loan) => {
+                acc[loan.loanType] = (acc[loan.loanType] || 0) + 1;
+                return acc;
+            }, {});
+
+            if (loanTypeChart) {
+                loanTypeChart.data.labels = Object.keys(loanTypeCounts);
+                loanTypeChart.data.datasets[0].data = Object.values(loanTypeCounts);
+                loanTypeChart.update();
+            } else {
+                 const ctx = document.getElementById('loanTypeChart').getContext('2d');
+                 loanTypeChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(loanTypeCounts),
+                        datasets: [{
+                            label: 'Loan Types',
+                            data: Object.values(loanTypeCounts),
+                            backgroundColor: [
+                                'rgba(129, 140, 248, 0.7)', // indigo-400
+                                'rgba(59, 130, 246, 0.7)', // blue-500
+                                'rgba(16, 185, 129, 0.7)', // green-500
+                            ],
+                            borderColor: [
+                                'rgba(129, 140, 248, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(16, 185, 129, 1)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Loan Type Distribution'
+                            }
+                        }
+                    },
+                });
+            }
         }
 
         function showLoanerHistory(loans, specificLoaner = null) {
@@ -812,7 +871,7 @@
             for (const name in loanerData) {
                 const data = loanerData[name];
                 const historyCard = document.createElement('div');
-                historyCard.className = 'p-4 bg-gray-100 rounded-lg';
+                historyCard.className = 'p-4 bg-gray-100 dark:bg-gray-700 rounded-lg';
                 historyCard.innerHTML = `
                     <h4 class="font-bold text-lg">${name}</h4>
                     <div class="text-sm grid grid-cols-3 gap-2 mt-2">
@@ -850,8 +909,8 @@
             const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
 
             let title, detailsHtml, scheduleHtml = '';
-            const cardColor = loan.loanType === 'E-Loan' ? 'bg-blue-50 border-blue-200' : (loan.loanType === 'Long Term E-Loan' ? 'bg-teal-50 border-teal-200' : 'bg-purple-50 border-purple-200');
-            const titleColor = isFullyPaid ? 'text-green-800' : (loan.loanType === 'E-Loan' ? 'text-blue-800' : (loan.loanType === 'Long Term E-Loan' ? 'text-teal-800' : 'text-purple-800'));
+            const cardColor = loan.loanType === 'E-Loan' ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-200 dark:border-blue-800' : (loan.loanType === 'Long Term E-Loan' ? 'bg-teal-50 dark:bg-teal-900/50 border-teal-200 dark:border-teal-800' : 'bg-purple-50 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800');
+            const titleColor = isFullyPaid ? 'text-green-800 dark:text-green-300' : (loan.loanType === 'E-Loan' ? 'text-blue-800 dark:text-blue-300' : (loan.loanType === 'Long Term E-Loan' ? 'text-teal-800 dark:text-teal-300' : 'text-purple-800 dark:text-purple-300'));
 
             const interest = loan.loanAmount * (loan.interestRate / 100);
             const totalDue = loan.loanAmount + interest + totalPenalty;
@@ -869,7 +928,7 @@
             `;
 
             if(loan.paymentSchedule && loan.paymentSchedule.length > 0) {
-                scheduleHtml = '<h4 class="font-semibold text-gray-700 mt-4 mb-2 col-span-full">Payment Schedule</h4>';
+                scheduleHtml = '<h4 class="font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2 col-span-full">Payment Schedule</h4>';
                 loan.paymentSchedule.forEach((payment, index) => {
                     const isPaymentPaid = payment.status === 'Paid';
                     const dueDate = new Date(payment.dueDate);
@@ -900,11 +959,11 @@
                             </div>
                         `;
                     } else {
-                         paymentDetailsHtml = `<span class="text-gray-600">- ₱${payment.amount.toFixed(2)}</span>`;
+                         paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- ₱${payment.amount.toFixed(2)}</span>`;
                     }
                     
                     scheduleHtml += `
-                        <div class="col-span-full p-2 rounded-md ${isPaymentPaid ? 'bg-green-100' : (isPaymentDelayed ? 'bg-red-100' : 'bg-gray-100')}">
+                        <div class="col-span-full p-2 rounded-md ${isPaymentPaid ? 'bg-green-100 dark:bg-green-900/50' : (isPaymentDelayed ? 'bg-red-100 dark:bg-red-900/50' : 'bg-gray-100 dark:bg-gray-700')}">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <span class="font-medium">${index + 1}. Due: ${payment.dueDate}</span>
@@ -920,12 +979,12 @@
                 });
             }
 
-            card.className = `p-4 rounded-lg border transition-all ${isFullyPaid ? 'bg-green-50 border-green-200' : cardColor} shadow-sm`;
+            card.className = `p-4 rounded-lg border transition-all ${isFullyPaid ? 'bg-green-50 dark:bg-green-900/50 border-green-200 dark:border-green-800' : cardColor} shadow-sm`;
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start">
                     <div>
                         <h3 class="font-bold text-lg ${titleColor}">${title}</h3>
-                        <p class="text-sm text-gray-600 flex items-center">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                             Loaned to: <span class="font-medium ml-1">${loan.borrowerName}</span>
                             <svg data-borrower="${loan.borrowerName}" class="loaner-info-btn h-5 w-5 ml-2 text-blue-500 cursor-pointer hover:text-blue-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
@@ -942,7 +1001,7 @@
                         </span>
                     </div>
                 </div>
-                <div class="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div class="text-sm text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <div>
                         <p><strong>Loan Date:</strong> ${loan.loanDate}</p>
                         <p><strong>Final Due Date:</strong> ${loan.returnDate}</p>
@@ -952,7 +1011,7 @@
                     </div>
                     ${scheduleHtml}
                 </div>
-                <div class="mt-4 pt-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="mt-4 pt-3 border-t dark:border-gray-700 flex justify-end space-x-2">
                     <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Delete</button>
                 </div>
             `;
@@ -1115,6 +1174,38 @@
             };
             reader.readAsText(file);
         }
+        
+        // --- Theme Toggle ---
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            themeToggleLightIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeToggleDarkIcon.classList.remove('hidden');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                }
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+        });
 
     </script>
 </body>
