@@ -268,8 +268,8 @@
                      <div>
                         <h4 class="font-bold text-lg">Button Functions</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
-                            <li><strong>Mark Paid:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
-                            <li><strong>Pay Interest Only:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
+                            <li><strong>PAID:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
+                            <li><strong>RELOAN:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
                         </ul>
                     </div>
                 </div>
@@ -897,8 +897,8 @@
                     let daysDelayed = 0;
 
                     if (!isPaymentPaid) {
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Pay Interest Only</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
                     } else {
                          actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
                     }
