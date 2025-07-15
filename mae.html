@@ -123,14 +123,22 @@
                                 <label for="interestRate" class="block text-sm font-medium text-gray-700">Interest Rate (%)</label>
                                 <input type="number" id="interestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
+                            <div>
+                                <label for="numberOfPayments" class="block text-sm font-medium text-gray-700">Number of Payments (Gives)</label>
+                                <input type="number" id="numberOfPayments" name="numberOfPayments" min="1" step="1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                             <div>
+                                <label for="paymentFrequency" class="block text-sm font-medium text-gray-700">Payment Frequency</label>
+                                <select id="paymentFrequency" name="paymentFrequency" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly">Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
                         </div>
                         <div>
                             <label for="loanDate" class="block text-sm font-medium text-gray-700">Loan Date</label>
                             <input type="date" id="loanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="returnDate" class="block text-sm font-medium text-gray-700">Expected Due Date</label>
-                            <input type="date" id="returnDate" name="returnDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Add Loan Record
@@ -333,13 +341,11 @@
             const borrowerName = addLoanForm.borrowerName.value.trim();
             const loanType = addLoanForm.loanType.value;
             const loanDate = addLoanForm.loanDate.value;
-            const returnDate = addLoanForm.returnDate.value;
-
+            
             let loanData = {
                 borrowerName,
                 loanType,
                 loanDate,
-                returnDate,
                 status: 'Active',
                 createdAt: serverTimestamp()
             };
@@ -351,15 +357,44 @@
                     return;
                 }
                 loanData.productName = productName;
+                loanData.returnDate = addLoanForm.returnDate.value;
             } else { // Money Loan
                 const loanAmount = parseFloat(addLoanForm.loanAmount.value);
                 const interestRate = parseFloat(addLoanForm.interestRate.value) || 0;
+                const numberOfPayments = parseInt(addLoanForm.numberOfPayments.value) || 1;
+                const paymentFrequency = addLoanForm.paymentFrequency.value;
+
                 if (isNaN(loanAmount) || loanAmount <= 0) {
                     showAlert('Validation Error', 'Please enter a valid loan amount.');
                     return;
                 }
                 loanData.loanAmount = loanAmount;
                 loanData.interestRate = interestRate;
+                loanData.numberOfPayments = numberOfPayments;
+                loanData.paymentFrequency = paymentFrequency;
+
+                // Create payment schedule
+                const paymentSchedule = [];
+                const totalDue = loanAmount * (1 + interestRate / 100);
+                const installmentAmount = totalDue / numberOfPayments;
+                let nextDueDate = new Date(loanDate);
+
+                for(let i = 0; i < numberOfPayments; i++) {
+                    if (paymentFrequency === 'weekly') {
+                        nextDueDate.setDate(nextDueDate.getDate() + 7);
+                    } else if (paymentFrequency === 'bi-weekly') {
+                        nextDueDate.setDate(nextDueDate.getDate() + 14);
+                    } else { // monthly
+                        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                    }
+                    paymentSchedule.push({
+                        dueDate: nextDueDate.toISOString().split('T')[0],
+                        amount: installmentAmount,
+                        status: 'Pending'
+                    });
+                }
+                loanData.paymentSchedule = paymentSchedule;
+                loanData.returnDate = paymentSchedule[paymentSchedule.length - 1].dueDate;
             }
 
             try {
@@ -416,12 +451,13 @@
 
         function createLoanCard(loan) {
             const card = document.createElement('div');
-            const isPaid = loan.status === 'Paid';
-            const isOverdue = !isPaid && new Date(loan.returnDate) < new Date();
+            const isFullyPaid = loan.status === 'Paid';
+            const finalDueDate = loan.returnDate || (loan.paymentSchedule && loan.paymentSchedule[loan.paymentSchedule.length - 1].dueDate);
+            const isOverdue = !isFullyPaid && new Date(finalDueDate) < new Date();
 
-            let title, detailsHtml;
+            let title, detailsHtml, scheduleHtml = '';
             const cardColor = loan.loanType === 'Money' ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200';
-            const titleColor = isPaid ? 'text-green-800' : (loan.loanType === 'Money' ? 'text-blue-800' : 'text-gray-800');
+            const titleColor = isFullyPaid ? 'text-green-800' : (loan.loanType === 'Money' ? 'text-blue-800' : 'text-gray-800');
 
             if (loan.loanType === 'Money') {
                 title = `Money Loan: $${loan.loanAmount.toFixed(2)}`;
@@ -432,12 +468,29 @@
                     <p><strong>Interest (${loan.interestRate}%):</strong> $${interest.toFixed(2)}</p>
                     <p class="font-bold"><strong>Total Due:</strong> $${totalDue.toFixed(2)}</p>
                 `;
+
+                if(loan.paymentSchedule && loan.paymentSchedule.length > 0) {
+                    scheduleHtml = '<h4 class="font-semibold text-gray-700 mt-4 mb-2 col-span-full">Payment Schedule</h4>';
+                    loan.paymentSchedule.forEach((payment, index) => {
+                        const isPaymentPaid = payment.status === 'Paid';
+                        scheduleHtml += `
+                            <div class="col-span-full flex justify-between items-center p-2 rounded-md ${isPaymentPaid ? 'bg-green-100' : 'bg-gray-100'}">
+                                <div>
+                                    <span class="font-medium">${index + 1}. Due: ${payment.dueDate}</span>
+                                    <span class="text-gray-600">- $${payment.amount.toFixed(2)}</span>
+                                </div>
+                                ${!isPaymentPaid ? `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>` : `<span class="text-xs font-bold text-green-700">PAID</span>`}
+                            </div>
+                        `;
+                    });
+                }
+
             } else {
                 title = loan.productName;
                 detailsHtml = `<p><strong>Product Loan</strong></p>`;
             }
 
-            card.className = `p-4 rounded-lg border transition-all ${isPaid ? 'bg-green-50 border-green-200' : cardColor} shadow-sm`;
+            card.className = `p-4 rounded-lg border transition-all ${isFullyPaid ? 'bg-green-50 border-green-200' : cardColor} shadow-sm`;
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start">
                     <div>
@@ -446,28 +499,46 @@
                     </div>
                     <div class="mt-2 sm:mt-0 sm:text-right">
                         <span class="text-xs font-semibold px-2 py-1 rounded-full ${
-                            isPaid ? 'bg-green-200 text-green-800' :
+                            isFullyPaid ? 'bg-green-200 text-green-800' :
                             isOverdue ? 'bg-red-200 text-red-800' :
                             'bg-yellow-200 text-yellow-800'
                         }">
-                            ${isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Active'}
+                            ${isFullyPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Active'}
                         </span>
                     </div>
                 </div>
                 <div class="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <div>
                         <p><strong>Loan Date:</strong> ${loan.loanDate}</p>
-                        <p><strong>Due Date:</strong> ${loan.returnDate}</p>
+                        <p><strong>Final Due Date:</strong> ${finalDueDate}</p>
                     </div>
                     <div class="md:text-right">
                         ${detailsHtml}
                     </div>
+                    ${scheduleHtml}
                 </div>
                 <div class="mt-4 pt-3 border-t border-gray-200 flex justify-end space-x-2">
-                    ${!isPaid ? `<button data-id="${loan.id}" class="paid-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Mark as Paid</button>` : ''}
+                    ${!isFullyPaid && loan.loanType !== 'Money' ? `<button data-id="${loan.id}" class="paid-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Mark as Paid</button>` : ''}
                     <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Delete</button>
                 </div>
             `;
+            
+            // Event listener for marking individual payments as paid
+            card.querySelectorAll('.payment-paid-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const loanId = e.target.dataset.loanId;
+                    const paymentIndex = parseInt(e.target.dataset.paymentIndex);
+                    
+                    const updatedSchedule = [...loan.paymentSchedule];
+                    updatedSchedule[paymentIndex].status = 'Paid';
+
+                    const allPaid = updatedSchedule.every(p => p.status === 'Paid');
+                    const newStatus = allPaid ? 'Paid' : 'Active';
+
+                    const docRef = doc(db, sharedDataPath, loanId);
+                    await updateDoc(docRef, { paymentSchedule: updatedSchedule, status: newStatus });
+                });
+            });
 
             const paidBtn = card.querySelector('.paid-btn');
             if (paidBtn) {
