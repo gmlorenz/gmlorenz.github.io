@@ -81,6 +81,12 @@
                     <p class="text-sm text-gray-500 mt-1">Manage product and money loans with interest calculation.</p>
                 </div>
                 <div class="flex items-center mt-4 sm:mt-0">
+                     <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 mr-2">
+                        Import CSV
+                    </button>
+                     <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 mr-4">
+                        Export CSV
+                    </button>
                      <button id="historyButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 mr-4">
                         Loaner History
                     </button>
@@ -183,9 +189,14 @@
             <!-- Loan Records List -->
             <div class="lg:col-span-2">
                 <div class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex flex-col sm:flex-row justify-between items-center border-b pb-4 mb-5">
-                        <h2 class="text-2xl font-semibold">Loan Records</h2>
-                        <div id="filterButtons" class="flex flex-wrap space-x-2 mt-4 sm:mt-0">
+                    <div class="border-b pb-4 mb-5">
+                        <div class="flex flex-col sm:flex-row justify-between items-center">
+                             <h2 class="text-2xl font-semibold">Loan Records</h2>
+                             <div class="mt-4 sm:mt-0">
+                                <input type="text" id="searchLoaner" placeholder="Search by name..." class="w-full sm:w-auto px-3 py-1 border border-gray-300 rounded-md text-sm">
+                            </div>
+                        </div>
+                        <div id="filterButtons" class="flex flex-wrap gap-2 mt-4">
                             <button data-filter="all" class="filter-btn active px-3 py-1 rounded-md text-sm">All</button>
                             <button data-filter="active" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Active</button>
                             <button data-filter="overdue" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">With Penalty</button>
@@ -252,7 +263,7 @@
         <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-3">
-                     <h3 class="text-2xl font-semibold text-gray-900">Loaner History</h3>
+                     <h3 id="historyModalTitle" class="text-2xl font-semibold text-gray-900">Loaner History</h3>
                      <button id="closeHistoryButton" class="text-gray-400 hover:text-gray-600">&times;</button>
                 </div>
                 <div id="historyContent" class="mt-4 space-y-4">
@@ -262,11 +273,12 @@
         </div>
     </div>
 
+    <input type="file" id="csvFileInput" class="hidden" accept=".csv">
 
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Environment and Firebase Configuration ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'product-loan-app';
@@ -306,12 +318,17 @@
         const historyModal = document.getElementById('historyModal');
         const closeHistoryButton = document.getElementById('closeHistoryButton');
         const historyContent = document.getElementById('historyContent');
+        const historyModalTitle = document.getElementById('historyModalTitle');
         const filterButtonsContainer = document.getElementById('filterButtons');
         const summaryFilterButtons = document.getElementById('summaryFilterButtons');
         const summaryDateRange = document.getElementById('summaryDateRange');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         const notificationArea = document.getElementById('notificationArea');
+        const searchLoanerInput = document.getElementById('searchLoaner');
+        const importButton = document.getElementById('importButton');
+        const exportButton = document.getElementById('exportButton');
+        const csvFileInput = document.getElementById('csvFileInput');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -362,14 +379,20 @@
             } else if (e.target.value === 'Long Term E-Loan') {
                  productNameField.style.display = 'none';
                  interestRateInput.value = 20;
-            }
-            else {
+            } else if (e.target.value === 'Product') {
                 productNameField.style.display = 'block';
+                interestRateInput.value = 0;
             }
         });
 
-        historyButton.addEventListener('click', () => historyModal.style.display = 'flex');
+        historyButton.addEventListener('click', () => showLoanerHistory(allLoans));
         closeHistoryButton.addEventListener('click', () => historyModal.style.display = 'none');
+        
+        importButton.addEventListener('click', () => csvFileInput.click());
+        exportButton.addEventListener('click', () => exportToCSV(allLoans));
+        csvFileInput.addEventListener('change', (e) => importFromCSV(e.target.files[0]));
+
+        searchLoanerInput.addEventListener('input', () => renderLoanList());
 
         filterButtonsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('filter-btn')) {
@@ -394,14 +417,14 @@
                     summaryDateRange.style.display = 'flex';
                 } else {
                     summaryDateRange.style.display = 'none';
-                    updateSummaryAndHistory(allLoans, filter);
+                    updateSummary(allLoans, filter);
                 }
             }
         });
 
         [startDateInput, endDateInput].forEach(input => {
             input.addEventListener('change', () => {
-                updateSummaryAndHistory(allLoans, 'custom');
+                updateSummary(allLoans, 'custom');
             });
         });
 
@@ -537,7 +560,7 @@
                 allLoans.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 
                 renderLoanList();
-                updateSummaryAndHistory(allLoans, 'weekly'); // Default summary to weekly
+                updateSummary(allLoans, 'weekly'); // Default summary to weekly
                 updateNotifications(allLoans);
 
             }, (error) => {
@@ -558,7 +581,16 @@
 
             loanList.innerHTML = '';
             
-            const filteredLoans = allLoans.filter(loan => {
+            const searchTerm = searchLoanerInput.value.toLowerCase();
+            let filteredLoans = allLoans;
+
+            if (searchTerm) {
+                filteredLoans = filteredLoans.filter(loan => 
+                    loan.borrowerName.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            filteredLoans = filteredLoans.filter(loan => {
                 if (currentFilter === 'all') return true;
 
                 const currentDate = new Date();
@@ -578,7 +610,7 @@
             });
 
             if (filteredLoans.length === 0) {
-                 loanList.innerHTML = `<p class="text-center text-gray-500 py-8">No loans found for the "${currentFilter}" filter.</p>`;
+                 loanList.innerHTML = `<p class="text-center text-gray-500 py-8">No loans found for the current filters.</p>`;
                  return;
             }
 
@@ -626,7 +658,7 @@
             }
         }
 
-        function updateSummaryAndHistory(loans, filter) {
+        function updateSummary(loans, filter) {
             const currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
 
@@ -654,8 +686,7 @@
             let totalPenalties = 0;
             let activeLoans = 0;
             let completedLoans = 0;
-            const loanerData = {};
-
+           
             filteredForSummary.forEach(loan => {
                 totalPrincipal += loan.loanAmount;
                 const interest = loan.loanAmount * (loan.interestRate / 100);
@@ -681,8 +712,23 @@
                 }
             });
 
-            // History is calculated on all loans, not filtered ones
-             loans.forEach(loan => {
+            document.getElementById('totalPrincipal').textContent = `₱${totalPrincipal.toFixed(2)}`;
+            document.getElementById('totalInterest').textContent = `₱${totalInterest.toFixed(2)}`;
+            document.getElementById('totalPenalties').textContent = `₱${totalPenalties.toFixed(2)}`;
+            document.getElementById('totalProfit').textContent = `₱${(totalInterest + totalPenalties).toFixed(2)}`;
+            document.getElementById('activeLoans').textContent = activeLoans;
+            document.getElementById('completedLoans').textContent = completedLoans;
+        }
+
+        function showLoanerHistory(loans, specificLoaner = null) {
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+            const loanerData = {};
+
+            const loansToProcess = specificLoaner ? loans.filter(l => l.borrowerName === specificLoaner) : loans;
+            historyModalTitle.textContent = specificLoaner ? `History for ${specificLoaner}` : 'Loaner History';
+
+            loansToProcess.forEach(loan => {
                 const name = loan.borrowerName;
                 if (!loanerData[name]) {
                     loanerData[name] = { count: 0, totalBorrowed: 0, outstandingBalance: 0 };
@@ -702,19 +748,16 @@
                             }
                         });
                     }
-                    const remainingBalance = (loan.loanAmount + interest + penalty) - (loan.paymentSchedule.filter(p => p.status === 'Paid').reduce((acc, p) => acc + p.amount, 0));
+                    const paidAmount = loan.paymentSchedule.filter(p => p.status === 'Paid').reduce((acc, p) => acc + p.amount, 0);
+                    const remainingBalance = (loan.loanAmount + interest + penalty) - paidAmount;
                     loanerData[name].outstandingBalance += remainingBalance;
                 }
             });
 
-            document.getElementById('totalPrincipal').textContent = `₱${totalPrincipal.toFixed(2)}`;
-            document.getElementById('totalInterest').textContent = `₱${totalInterest.toFixed(2)}`;
-            document.getElementById('totalPenalties').textContent = `₱${totalPenalties.toFixed(2)}`;
-            document.getElementById('totalProfit').textContent = `₱${(totalInterest + totalPenalties).toFixed(2)}`;
-            document.getElementById('activeLoans').textContent = activeLoans;
-            document.getElementById('completedLoans').textContent = completedLoans;
-
             historyContent.innerHTML = '';
+             if (Object.keys(loanerData).length === 0) {
+                historyContent.innerHTML = '<p>No history found.</p>';
+            }
             for (const name in loanerData) {
                 const data = loanerData[name];
                 const historyCard = document.createElement('div');
@@ -729,6 +772,7 @@
                 `;
                 historyContent.appendChild(historyCard);
             }
+            historyModal.style.display = 'flex';
         }
 
         function createLoanCard(loan) {
@@ -830,7 +874,12 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start">
                     <div>
                         <h3 class="font-bold text-lg ${titleColor}">${title}</h3>
-                        <p class="text-sm text-gray-600">Loaned to: <span class="font-medium">${loan.borrowerName}</span></p>
+                        <p class="text-sm text-gray-600 flex items-center">
+                            Loaned to: <span class="font-medium ml-1">${loan.borrowerName}</span>
+                            <svg data-borrower="${loan.borrowerName}" class="loaner-info-btn h-5 w-5 ml-2 text-blue-500 cursor-pointer hover:text-blue-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </p>
                     </div>
                     <div class="mt-2 sm:mt-0 sm:text-right">
                         <span class="text-xs font-semibold px-2 py-1 rounded-full ${
@@ -858,6 +907,11 @@
             `;
             
             // Event listeners
+            card.querySelector('.loaner-info-btn').addEventListener('click', (e) => {
+                const borrowerName = e.currentTarget.dataset.borrower;
+                showLoanerHistory(allLoans, borrowerName);
+            });
+
             card.querySelectorAll('.payment-paid-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const loanId = e.target.dataset.loanId;
@@ -924,6 +978,91 @@
 
             return card;
         }
+
+        function exportToCSV(loans) {
+            const headers = ['Borrower Name', 'Loan Type', 'Product Name', 'Loan Amount', 'Interest Rate', 'Loan Date', 'Final Due Date', 'Status'];
+            const rows = loans.map(loan => {
+                const isFullyPaid = loan.status === 'Paid';
+                const currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0);
+                let hasDelayedPayment = false;
+                if (loan.paymentSchedule && !isFullyPaid) {
+                    hasDelayedPayment = loan.paymentSchedule.some(p => p.status === 'Pending' && new Date(p.dueDate) < currentDate);
+                }
+                const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
+
+                return [
+                    `"${loan.borrowerName}"`,
+                    loan.loanType,
+                    loan.productName || '',
+                    loan.loanAmount,
+                    loan.interestRate,
+                    loan.loanDate,
+                    loan.returnDate,
+                    overallStatus
+                ].join(',');
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "loan_records.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function importFromCSV(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const rows = text.split('\n').slice(1); // Skip header row
+                const batch = writeBatch(db);
+
+                rows.forEach(rowStr => {
+                    if (!rowStr) return;
+                    const columns = rowStr.split(',');
+                    // CSV Template: Borrower Name,Loan Type,Product Name,Loan Amount,Interest Rate,Loan Date,Final Due Date,Status
+                    const loanData = {
+                        borrowerName: columns[0].replace(/"/g, ''),
+                        loanType: columns[1],
+                        productName: columns[2] || '',
+                        loanAmount: parseFloat(columns[3]),
+                        interestRate: parseFloat(columns[4]),
+                        loanDate: columns[5],
+                        returnDate: columns[6],
+                        status: 'Active', // Import as active
+                        numberOfPayments: 1, // Default values
+                        paymentFrequency: 'weekly',
+                        createdAt: serverTimestamp()
+                    };
+                    
+                    // Create a basic payment schedule
+                    const totalInterest = loanData.loanAmount * (loanData.interestRate / 100);
+                    loanData.paymentSchedule = [{
+                        dueDate: loanData.returnDate,
+                        amount: loanData.loanAmount + totalInterest,
+                        status: 'Pending'
+                    }];
+                    
+                    const docRef = doc(collection(db, sharedDataPath));
+                    batch.set(docRef, loanData);
+                });
+
+                try {
+                    await batch.commit();
+                    showAlert('Success', 'CSV data imported successfully!');
+                } catch (error) {
+                    console.error("Error importing CSV: ", error);
+                    showAlert('Import Error', 'Failed to import CSV data. Please check the file format and console.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
     </script>
 </body>
 </html>
