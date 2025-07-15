@@ -236,7 +236,7 @@
                      <button id="closeAddLoanButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <form id="addLoanForm" class="space-y-4">
-                    <!-- Form fields will be the same as before -->
+                    <!-- Form content is injected by JS -->
                 </form>
             </div>
         </div>
@@ -393,37 +393,37 @@
             const addLoanForm = document.getElementById('addLoanForm');
             addLoanForm.innerHTML = `
                 <div>
-                    <label for="borrowerName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Borrower's Name</label>
-                    <input type="text" id="borrowerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <label for="modalBorrowerName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Borrower's Name</label>
+                    <input type="text" id="modalBorrowerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
-                    <label for="loanType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Type</label>
-                    <select id="loanType" name="loanType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <label for="modalLoanType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Type</label>
+                    <select id="modalLoanType" name="loanType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option value="Product">Product</option>
                         <option value="E-Loan">E-Loan</option>
                         <option value="Long Term E-Loan">Long Term E-Loan</option>
                     </select>
                 </div>
-                <div id="productNameField">
-                    <label for="productName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
-                    <input type="text" id="productName" name="productName" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <div id="modalProductNameField">
+                    <label for="modalProductName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
+                    <input type="text" id="modalProductName" name="productName" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div class="space-y-4">
                         <div>
-                        <label for="loanAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
-                        <input type="number" id="loanAmount" name="loanAmount" min="0" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <label for="modalLoanAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
+                        <input type="number" id="modalLoanAmount" name="loanAmount" min="0" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     </div>
                     <div>
-                        <label for="interestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
-                        <input type="number" id="interestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <label for="modalInterestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
+                        <input type="number" id="modalInterestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     </div>
                     <div>
-                        <label for="numberOfPayments" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Payments (Gives)</label>
-                        <input type="number" id="numberOfPayments" name="numberOfPayments" min="1" step="1" value="1" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <label for="modalNumberOfPayments" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Payments (Gives)</label>
+                        <input type="number" id="modalNumberOfPayments" name="numberOfPayments" min="1" step="1" value="1" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     </div>
                         <div>
-                        <label for="paymentFrequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Frequency</label>
-                        <select id="paymentFrequency" name="paymentFrequency" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <label for="modalPaymentFrequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Frequency</label>
+                        <select id="modalPaymentFrequency" name="paymentFrequency" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                             <option value="weekly">Weekly</option>
                             <option value="bi-weekly">Bi-Weekly</option>
                             <option value="monthly">Monthly</option>
@@ -431,8 +431,8 @@
                     </div>
                 </div>
                 <div>
-                    <label for="loanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
-                    <input type="date" id="loanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <label for="modalLoanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
+                    <input type="date" id="modalLoanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Add Loan Record
@@ -446,11 +446,11 @@
                  document.getElementById('addLoanModal').style.display = 'none';
             });
             
-            document.getElementById('loanType').addEventListener('change', (e) => {
-                const interestRateInput = document.getElementById('interestRate');
-                const numberOfPaymentsInput = document.getElementById('numberOfPayments');
-                const paymentFrequencySelect = document.getElementById('paymentFrequency');
-                const productNameField = document.getElementById('productNameField');
+            document.getElementById('modalLoanType').addEventListener('change', (e) => {
+                const interestRateInput = document.getElementById('modalInterestRate');
+                const numberOfPaymentsInput = document.getElementById('modalNumberOfPayments');
+                const paymentFrequencySelect = document.getElementById('modalPaymentFrequency');
+                const productNameField = document.getElementById('modalProductNameField');
 
                 if (e.target.value === 'E-Loan') {
                     productNameField.style.display = 'none';
@@ -518,13 +518,13 @@
                     return;
                 }
 
-                const borrowerName = document.getElementById('borrowerName').value.trim();
-                const loanType = document.getElementById('loanType').value;
-                const loanDate = document.getElementById('loanDate').value;
-                const loanAmount = parseFloat(document.getElementById('loanAmount').value);
-                const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
-                const numberOfPayments = parseInt(document.getElementById('numberOfPayments').value) || 1;
-                const paymentFrequency = document.getElementById('paymentFrequency').value;
+                const borrowerName = document.getElementById('modalBorrowerName').value.trim();
+                const loanType = document.getElementById('modalLoanType').value;
+                const loanDate = document.getElementById('modalLoanDate').value;
+                const loanAmount = parseFloat(document.getElementById('modalLoanAmount').value);
+                const interestRate = parseFloat(document.getElementById('modalInterestRate').value) || 0;
+                const numberOfPayments = parseInt(document.getElementById('modalNumberOfPayments').value) || 1;
+                const paymentFrequency = document.getElementById('modalPaymentFrequency').value;
 
                 if (isNaN(loanAmount) || loanAmount <= 0) {
                     showAlert('Validation Error', 'Please enter a valid loan amount.');
@@ -545,7 +545,7 @@
                 };
 
                 if (loanType === 'Product') {
-                    const productName = document.getElementById('productName').value.trim();
+                    const productName = document.getElementById('modalProductName').value.trim();
                     if (!productName) {
                         showAlert('Validation Error', 'Please enter a product name.');
                         return;
@@ -578,7 +578,7 @@
                 try {
                     await addDoc(collection(db, sharedDataPath), loanData);
                     addLoanForm.reset();
-                    document.getElementById('loanType').dispatchEvent(new Event('change'));
+                    document.getElementById('modalLoanType').dispatchEvent(new Event('change'));
                     document.getElementById('addLoanModal').style.display = 'none';
                     showAlert('Success', 'Loan record added successfully!');
                 } catch (error) {
@@ -594,9 +594,11 @@
             if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
             } else {
                 document.documentElement.classList.remove('dark');
                 themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
             }
 
             themeToggleBtn.addEventListener('click', function() {
@@ -634,7 +636,10 @@
         function showLoginScreen() {
             mainApp.style.display = 'none';
             loginScreen.style.display = 'flex';
-            document.getElementById('loanList').innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
+            const loanList = document.getElementById('loanList');
+            if (loanList) {
+                loanList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
+            }
         }
 
         // --- Firestore Operations ---
@@ -1212,44 +1217,6 @@
             reader.readAsText(file);
         }
         
-        // --- Theme Toggle ---
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        if(themeToggleBtn) {
-            const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-            const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
-            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                themeToggleLightIcon.classList.remove('hidden');
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeToggleDarkIcon.classList.remove('hidden');
-            }
-
-            themeToggleBtn.addEventListener('click', function() {
-                themeToggleDarkIcon.classList.toggle('hidden');
-                themeToggleLightIcon.classList.toggle('hidden');
-
-                if (localStorage.getItem('color-theme')) {
-                    if (localStorage.getItem('color-theme') === 'light') {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('color-theme', 'dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('color-theme', 'light');
-                    }
-                } else {
-                    if (document.documentElement.classList.contains('dark')) {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('color-theme', 'light');
-                    } else {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('color-theme', 'dark');
-                    }
-                }
-            });
-        }
-
     </script>
 </body>
 </html>
