@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Loan Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-6">
+                Sign in to your account
+            </h2>
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Username">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
+                </div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sign in
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl hidden">
+
+        <!-- Header -->
+        <header class="bg-white shadow-md rounded-xl p-6 mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Product Loan Tracker</h1>
+                    <p class="text-sm text-gray-500 mt-1">Manage and track all your loaned products in one place.</p>
+                </div>
+                <div class="text-xs text-gray-400 mt-4 sm:mt-0 text-right">
+                    <span class="font-semibold">User ID:</span>
+                    <span id="userId" class="break-all">Loading...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Add Loan Form -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-md sticky top-8">
+                    <h2 class="text-2xl font-semibold mb-5 border-b pb-4">Add New Loan</h2>
+                    <form id="addLoanForm" class="space-y-4">
+                        <div>
+                            <label for="borrowerName" class="block text-sm font-medium text-gray-700">Borrower's Name</label>
+                            <input type="text" id="borrowerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" id="productName" name="productName" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="loanDate" class="block text-sm font-medium text-gray-700">Loan Date</label>
+                            <input type="date" id="loanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="returnDate" class="block text-sm font-medium text-gray-700">Expected Return Date</label>
+                            <input type="date" id="returnDate" name="returnDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add Loan Record
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Loan Records List -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-semibold mb-5 border-b pb-4">Loan Records</h2>
+                    <div id="loanList" class="space-y-4">
+                        <p id="loadingMessage" class="text-center text-gray-500 py-8">Please log in to see records.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alertModal" class="modal-backdrop">
+        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-sm m-4">
+            <div class="p-6">
+                <h3 id="alertTitle" class="text-lg font-medium leading-6 text-gray-900">Alert</h3>
+                <div class="mt-2">
+                    <p id="alertMessage" class="text-sm text-gray-500">Your message here.</p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="alertOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal-backdrop">
+        <div class="modal bg-white rounded-lg shadow-xl w-11/12 max-w-lg m-4">
+            <div class="p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 id="confirmTitle" class="text-lg font-medium leading-6 text-gray-900">Confirmation</h3>
+                        <div class="mt-2">
+                            <p id="confirmMessage" class="text-sm text-gray-500">Are you sure?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="confirmOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    Confirm
+                </button>
+                <button type="button" id="confirmCancelButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // --- Environment and Firebase Configuration ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'product-loan-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config)
+            : { // Fallback configuration
+                apiKey: "AIzaSyCg8sobR2ZzIu5pp8PhrQ2st8k7MEe1jTg",
+                authDomain: "loan-tracker-e1fc4.firebaseapp.com",
+                projectId: "loan-tracker-e1fc4",
+                storageBucket: "loan-tracker-e1fc4.firebasestorage.app",
+                messagingSenderId: "1032339865550",
+                appId: "1:1032339865550:web:6015ff89f037776011759f"
+            };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+        let confirmCallback = null;
+
+        // --- DOM Elements ---
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+        const loginForm = document.getElementById('loginForm');
+        const addLoanForm = document.getElementById('addLoanForm');
+        const loanList = document.getElementById('loanList');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const userIdDisplay = document.getElementById('userId');
+        
+        // Modal Elements
+        const alertModal = document.getElementById('alertModal');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertOkButton = document.getElementById('alertOkButton');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmOkButton = document.getElementById('confirmOkButton');
+        const confirmCancelButton = document.getElementById('confirmCancelButton');
+
+        // --- Custom Modals ---
+        function showAlert(title, message) {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertModal.style.display = 'flex';
+        }
+        alertOkButton.addEventListener('click', () => alertModal.style.display = 'none');
+
+        function showConfirm(title, message, callback) {
+            confirmTitle.textContent = title;
+            confirmMessage.textContent = message;
+            confirmCallback = callback;
+            confirmModal.style.display = 'flex';
+        }
+        confirmOkButton.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            confirmModal.style.display = 'none';
+            confirmCallback = null;
+        });
+        confirmCancelButton.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            confirmCallback = null;
+        });
+
+        // --- Authentication ---
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = loginForm.username.value;
+            const password = loginForm.password.value;
+
+            // Check for hardcoded credentials
+            if (username === 'mae111' && password === '248617') {
+                try {
+                    // Sign in anonymously to get a UID for Firestore rules
+                    await signInAnonymously(auth);
+                    // Hide login screen and show the main app
+                    loginScreen.style.display = 'none';
+                    mainApp.style.display = 'block';
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    showAlert('Login Error', 'Could not start a session. Please try again.');
+                }
+            } else {
+                showAlert('Login Failed', 'Invalid username or password.');
+            }
+        });
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                // User is signed in (anonymously after correct password).
+                currentUserId = user.uid;
+                userIdDisplay.textContent = currentUserId;
+                loadingMessage.textContent = 'Loading loan records...';
+                loadLoans();
+            } else {
+                // User is not signed in, ensure the main app is hidden.
+                currentUserId = null;
+                userIdDisplay.textContent = 'Not Logged In';
+                mainApp.style.display = 'none';
+                loginScreen.style.display = 'flex';
+            }
+        });
+
+        // --- Firestore Operations ---
+        addLoanForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUserId) {
+                showAlert('Error', 'User not authenticated. Cannot add loan.');
+                return;
+            }
+
+            const borrowerName = addLoanForm.borrowerName.value.trim();
+            const productName = addLoanForm.productName.value.trim();
+            const loanDate = addLoanForm.loanDate.value;
+            const returnDate = addLoanForm.returnDate.value;
+
+            if (borrowerName && productName && loanDate && returnDate) {
+                try {
+                    const loanCollectionPath = `artifacts/${appId}/users/${currentUserId}/loans`;
+                    await addDoc(collection(db, loanCollectionPath), {
+                        borrowerName,
+                        productName,
+                        loanDate,
+                        returnDate,
+                        status: 'Loaned',
+                        createdAt: serverTimestamp()
+                    });
+                    addLoanForm.reset();
+                    showAlert('Success', 'Loan record added successfully!');
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    showAlert('Database Error', 'Failed to add loan record. Please try again.');
+                }
+            } else {
+                showAlert('Validation Error', 'Please fill out all fields.');
+            }
+        });
+
+        function loadLoans() {
+            if (!currentUserId) return;
+
+            const loanCollectionPath = `artifacts/${appId}/users/${currentUserId}/loans`;
+            const q = query(collection(db, loanCollectionPath));
+
+            onSnapshot(q, (querySnapshot) => {
+                loadingMessage.style.display = 'none';
+                if (querySnapshot.empty) {
+                    loanList.innerHTML = '<p class="text-center text-gray-500 py-8">No loan records found. Add one using the form!</p>';
+                    return;
+                }
+
+                loanList.innerHTML = ''; // Clear existing list
+                const loans = [];
+                querySnapshot.forEach(doc => {
+                    loans.push({ id: doc.id, ...doc.data() });
+                });
+
+                loans.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+
+                loans.forEach(loan => {
+                    const loanCard = createLoanCard(loan);
+                    loanList.appendChild(loanCard);
+                });
+            }, (error) => {
+                console.error("Error fetching loans: ", error);
+                loadingMessage.textContent = 'Error loading data. Please check console and refresh.';
+                showAlert('Data Error', 'Could not fetch loan records from the database.');
+            });
+        }
+
+        function createLoanCard(loan) {
+            const card = document.createElement('div');
+            const isReturned = loan.status === 'Returned';
+            const isOverdue = !isReturned && new Date(loan.returnDate) < new Date();
+
+            card.className = `p-4 rounded-lg border transition-all ${isReturned ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 shadow-sm'}`;
+            card.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-lg ${isReturned ? 'text-green-800' : 'text-gray-800'}">${loan.productName}</h3>
+                        <p class="text-sm text-gray-600">Loaned to: <span class="font-medium">${loan.borrowerName}</span></p>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:text-right">
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full ${
+                            isReturned ? 'bg-green-200 text-green-800' :
+                            isOverdue ? 'bg-red-200 text-red-800' :
+                            'bg-yellow-200 text-yellow-800'
+                        }">
+                            ${isReturned ? 'Returned' : isOverdue ? 'Overdue' : 'Loaned'}
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200 flex flex-wrap justify-between items-center">
+                    <div>
+                        <p><strong>Loan Date:</strong> ${loan.loanDate}</p>
+                        <p><strong>Return by:</strong> ${loan.returnDate}</p>
+                    </div>
+                    <div class="flex space-x-2 mt-3 sm:mt-0">
+                        ${!isReturned ? `<button data-id="${loan.id}" class="return-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Mark as Returned</button>` : ''}
+                        <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Delete</button>
+                    </div>
+                </div>
+            `;
+
+            const returnBtn = card.querySelector('.return-btn');
+            if (returnBtn) {
+                returnBtn.addEventListener('click', async () => {
+                    const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/loans`, loan.id);
+                    await updateDoc(docRef, { status: 'Returned' }).catch(err => {
+                        console.error("Error updating document: ", err);
+                        showAlert('Database Error', 'Failed to update loan status.');
+                    });
+                });
+            }
+
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                showConfirm(
+                    'Delete Loan Record',
+                    'Are you sure you want to delete this record? This action cannot be undone.',
+                    async () => {
+                        const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/loans`, loan.id);
+                        await deleteDoc(docRef).catch(err => {
+                            console.error("Error deleting document: ", err);
+                            showAlert('Database Error', 'Failed to delete loan record.');
+                        });
+                    }
+                );
+            });
+
+            return card;
+        }
+    </script>
+</body>
+</html>
