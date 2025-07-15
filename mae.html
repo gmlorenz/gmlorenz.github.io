@@ -354,6 +354,7 @@
                 numberOfPayments,
                 paymentFrequency,
                 status: 'Active',
+                paidPenalties: 0, // Track paid penalties
                 createdAt: serverTimestamp()
             };
 
@@ -491,15 +492,20 @@
                     const dueDate = new Date(payment.dueDate);
                     const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
                     
-                    let installmentPenalty = 0;
-                    let daysDelayed = 0;
                     let paymentDetailsHtml;
                     let actionButtonsHtml = '';
 
+                    if (!isPaymentPaid) {
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Reschedule</button>`;
+                    } else {
+                         actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
+                    }
+
                     if (isPaymentDelayed) {
                         const timeDiff = currentDate.getTime() - dueDate.getTime();
-                        daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                        installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
+                        const daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        const installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
                         const installmentTotalDue = payment.amount + installmentPenalty;
 
                         paymentDetailsHtml = `
@@ -509,18 +515,8 @@
                                 <span class="font-bold ml-2">Total: ₱${installmentTotalDue.toFixed(2)}</span>
                             </div>
                         `;
-                        actionButtonsHtml = `
-                            <button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>
-                            <button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Pay Interest & Reschedule</button>
-                        `;
-
                     } else {
                          paymentDetailsHtml = `<span class="text-gray-600">- ₱${payment.amount.toFixed(2)}</span>`;
-                         if (!isPaymentPaid) {
-                            actionButtonsHtml = `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
-                         } else {
-                            actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
-                         }
                     }
                     
                     scheduleHtml += `
@@ -574,47 +570,50 @@
             
             // Event listeners
             card.querySelectorAll('.payment-paid-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+                btn.addEventListener('click', (e) => {
                     const loanId = e.target.dataset.loanId;
                     const paymentIndex = parseInt(e.target.dataset.paymentIndex);
-                    
-                    const updatedSchedule = [...loan.paymentSchedule];
-                    updatedSchedule[paymentIndex].status = 'Paid';
+                    showConfirm('Confirm Payment', 'Are you sure you want to mark this payment as paid?', async () => {
+                        const updatedSchedule = [...loan.paymentSchedule];
+                        updatedSchedule[paymentIndex].status = 'Paid';
 
-                    const allPaid = updatedSchedule.every(p => p.status === 'Paid');
-                    const newStatus = allPaid ? 'Paid' : 'Active';
+                        const allPaid = updatedSchedule.every(p => p.status === 'Paid');
+                        const newStatus = allPaid ? 'Paid' : 'Active';
 
-                    const docRef = doc(db, sharedDataPath, loanId);
-                    await updateDoc(docRef, { paymentSchedule: updatedSchedule, status: newStatus });
+                        const docRef = doc(db, sharedDataPath, loanId);
+                        await updateDoc(docRef, { paymentSchedule: updatedSchedule, status: newStatus });
+                    });
                 });
             });
 
             card.querySelectorAll('.reschedule-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+                btn.addEventListener('click', (e) => {
                     const loanId = e.target.dataset.loanId;
                     const paymentIndex = parseInt(e.target.dataset.paymentIndex);
                     const frequency = e.target.dataset.frequency;
 
-                    const newSchedule = [...loan.paymentSchedule];
-                    let nextDueDate = new Date(); // Start rescheduling from today
+                     showConfirm('Confirm Reschedule', 'This will move the due date for this and all future payments. Are you sure?', async () => {
+                        const newSchedule = [...loan.paymentSchedule];
+                        let nextDueDate = new Date(newSchedule[paymentIndex].dueDate); 
 
-                    for(let i = paymentIndex; i < newSchedule.length; i++) {
-                        if (newSchedule[i].status === 'Pending') {
-                            if (frequency === 'weekly') {
-                                nextDueDate.setDate(nextDueDate.getDate() + 7);
-                            } else if (frequency === 'bi-weekly') {
-                                nextDueDate.setDate(nextDueDate.getDate() + 14);
-                            } else { // monthly
-                                nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                        for(let i = paymentIndex; i < newSchedule.length; i++) {
+                            if (newSchedule[i].status === 'Pending') {
+                                if (frequency === 'weekly') {
+                                    nextDueDate.setDate(nextDueDate.getDate() + 7);
+                                } else if (frequency === 'bi-weekly') {
+                                    nextDueDate.setDate(nextDueDate.getDate() + 14);
+                                } else { // monthly
+                                    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                                }
+                                newSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
                             }
-                            newSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
                         }
-                    }
 
-                    const docRef = doc(db, sharedDataPath, loanId);
-                    await updateDoc(docRef, { 
-                        paymentSchedule: newSchedule,
-                        returnDate: newSchedule[newSchedule.length - 1].dueDate
+                        const docRef = doc(db, sharedDataPath, loanId);
+                        await updateDoc(docRef, { 
+                            paymentSchedule: newSchedule,
+                            returnDate: newSchedule[newSchedule.length - 1].dueDate
+                        });
                     });
                 });
             });
