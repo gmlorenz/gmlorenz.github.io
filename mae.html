@@ -192,7 +192,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="confirmModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
             <div class="p-6">
@@ -286,7 +286,7 @@
 
         // --- Environment and Firebase Configuration ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'product-loan-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
             ? JSON.parse(__firebase_config)
             : { // Fallback configuration
                 apiKey: "AIzaSyCg8sobR2ZzIu5pp8PhrQ2st8k7MEe1jTg",
@@ -307,13 +307,13 @@
         let allLoans = [];
         let currentFilter = 'all';
         let loanTypeChart = null;
-        
+
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const loginForm = document.getElementById('loginForm');
-        
-        // --- Theme Toggling ---
+
+        // --- Theme Toggling (FIXED) ---
         const themeToggleBtn = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
@@ -332,18 +332,21 @@
             }
         };
 
+        // Check for a saved theme in local storage, if not, default to 'light'
         const savedTheme = localStorage.getItem('color-theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+        // Apply the saved theme or default to light theme
         if (savedTheme) {
             applyTheme(savedTheme);
         } else {
-            applyTheme(prefersDark ? 'dark' : 'light');
+            // If no theme is saved, default to light
+            applyTheme('light');
         }
 
         themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = localStorage.getItem('color-theme');
-            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            // Check if 'dark' class is present on the html element
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            applyTheme(isDarkMode ? 'light' : 'dark');
         });
 
         // --- Custom Modals ---
@@ -375,7 +378,7 @@
             document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
-        
+
         // --- Authentication (Built-in) ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -400,7 +403,7 @@
                 }
                 showLoginScreen();
             });
-            
+
             const addLoanForm = document.getElementById('addLoanForm');
             addLoanForm.innerHTML = `
                 <div>
@@ -456,7 +459,7 @@
             document.getElementById('closeAddLoanButton').addEventListener('click', () => {
                  document.getElementById('addLoanModal').style.display = 'none';
             });
-            
+
             document.getElementById('modalLoanType').addEventListener('change', (e) => {
                 const interestRateInput = document.getElementById('modalInterestRate');
                 const numberOfPaymentsInput = document.getElementById('modalNumberOfPayments');
@@ -479,7 +482,7 @@
 
             document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
             document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
-            
+
             document.getElementById('importButton').addEventListener('click', () => document.getElementById('csvFileInput').click());
             document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allLoans));
             document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
@@ -519,7 +522,7 @@
                     updateSummary(allLoans, 'custom');
                 });
             });
-            
+
             addLoanForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!isLoggedIn) {
@@ -539,7 +542,7 @@
                     showAlert('Validation Error', 'Please enter a valid loan amount.');
                     return;
                 }
-                
+
                 let loanData = {
                     borrowerName,
                     loanType,
@@ -549,7 +552,7 @@
                     numberOfPayments,
                     paymentFrequency,
                     status: 'Active',
-                    paidPenalties: 0, 
+                    paidPenalties: 0,
                     createdAt: serverTimestamp()
                 };
 
@@ -572,7 +575,7 @@
                         nextDueDate.setDate(nextDueDate.getDate() + 7);
                     } else if (paymentFrequency === 'bi-weekly') {
                         nextDueDate.setDate(nextDueDate.getDate() + 14);
-                    } else { 
+                    } else {
                         nextDueDate.setMonth(nextDueDate.getMonth() + 1);
                     }
                     paymentSchedule.push({
@@ -619,7 +622,7 @@
 
         function loadLoans() {
             if (!isLoggedIn) return;
-            
+
             const loadingMsgEl = document.getElementById('loadingMessage');
             if(loadingMsgEl) loadingMsgEl.textContent = 'Loading loan records...';
 
@@ -632,7 +635,7 @@
                 });
 
                 allLoans.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-                
+
                 renderLoanList();
                 updateSummary(allLoans, 'weekly'); // Default summary to weekly
                 updateNotifications(allLoans);
@@ -655,12 +658,12 @@
 
             const loanList = document.getElementById('loanList');
             loanList.innerHTML = '';
-            
+
             const searchTerm = document.getElementById('searchLoaner').value.toLowerCase();
             let filteredLoans = allLoans;
 
             if (searchTerm) {
-                filteredLoans = filteredLoans.filter(loan => 
+                filteredLoans = filteredLoans.filter(loan =>
                     loan.borrowerName.toLowerCase().includes(searchTerm)
                 );
             }
@@ -694,7 +697,7 @@
                 loanList.appendChild(loanCard);
             });
         }
-        
+
         function updateNotifications(loans) {
             const notificationArea = document.getElementById('notificationArea');
             notificationArea.innerHTML = '';
@@ -762,7 +765,7 @@
             let totalPenalties = 0;
             let activeLoans = 0;
             let completedLoans = 0;
-           
+
             filteredForSummary.forEach(loan => {
                 totalPrincipal += loan.loanAmount;
                 const interest = loan.loanAmount * (loan.interestRate / 100);
@@ -794,7 +797,7 @@
             document.getElementById('totalProfit').textContent = `₱${(totalInterest + totalPenalties).toFixed(2)}`;
             document.getElementById('activeLoans').textContent = activeLoans;
             document.getElementById('completedLoans').textContent = completedLoans;
-            
+
             // Update Chart
             const loanTypeCounts = filteredForSummary.reduce((acc, loan) => {
                 acc[loan.loanType] = (acc[loan.loanType] || 0) + 1;
@@ -842,12 +845,12 @@
                 });
             }
         }
-        
+
         function createLoanCard(loan) {
             const card = document.createElement('div');
             const isFullyPaid = loan.status === 'Paid';
             const currentDate = new Date();
-            currentDate.setHours(0, 0, 0, 0); 
+            currentDate.setHours(0, 0, 0, 0);
 
             let totalPenalty = 0;
             let hasDelayedPayment = false;
@@ -872,7 +875,7 @@
 
             const interest = loan.loanAmount * (loan.interestRate / 100);
             const totalDue = loan.loanAmount + interest + totalPenalty;
-            
+
             title = loan.loanType;
             if (loan.loanType === 'Product') {
                 title += `: ${loan.productName}`;
@@ -891,7 +894,7 @@
                     const isPaymentPaid = payment.status === 'Paid';
                     const dueDate = new Date(payment.dueDate);
                     const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
-                    
+
                     let paymentDetailsHtml;
                     let actionButtonsHtml = '';
                     let daysDelayed = 0;
@@ -919,7 +922,7 @@
                     } else {
                          paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- ₱${payment.amount.toFixed(2)}</span>`;
                     }
-                    
+
                     scheduleHtml += `
                         <div class="col-span-full p-2 rounded-md ${isPaymentPaid ? 'bg-green-100 dark:bg-green-900/50' : (isPaymentDelayed ? 'bg-red-100 dark:bg-red-900/50' : 'bg-gray-100 dark:bg-gray-700')}">
                             <div class="flex justify-between items-center">
@@ -970,7 +973,7 @@
                     <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Delete</button>
                 </div>
             `;
-            
+
             // Event listeners
             card.querySelectorAll('.payment-paid-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -998,7 +1001,7 @@
 
                      showConfirm('Pay Interest & Reschedule', 'This will move the due date for this and all future payments. Are you sure?', async () => {
                         const newSchedule = [...loan.paymentSchedule];
-                        let nextDueDate = new Date(newSchedule[paymentIndex].dueDate); 
+                        let nextDueDate = new Date(newSchedule[paymentIndex].dueDate);
 
                         for(let i = paymentIndex; i < newSchedule.length; i++) {
                             if (newSchedule[i].status === 'Pending') {
@@ -1014,7 +1017,7 @@
                         }
 
                         const docRef = doc(db, sharedDataPath, loanId);
-                        await updateDoc(docRef, { 
+                        await updateDoc(docRef, {
                             paymentSchedule: newSchedule,
                             returnDate: newSchedule[newSchedule.length - 1].dueDate
                         });
@@ -1101,7 +1104,7 @@
                         paymentFrequency: 'weekly',
                         createdAt: serverTimestamp()
                     };
-                    
+
                     // Create a basic payment schedule
                     const totalInterest = loanData.loanAmount * (loanData.interestRate / 100);
                     loanData.paymentSchedule = [{
@@ -1109,7 +1112,7 @@
                         amount: loanData.loanAmount + totalInterest,
                         status: 'Pending'
                     }];
-                    
+
                     const docRef = doc(collection(db, sharedDataPath));
                     batch.set(docRef, loanData);
                 });
@@ -1124,7 +1127,7 @@
             };
             reader.readAsText(file);
         }
-        
+
     </script>
 </body>
 </html>
