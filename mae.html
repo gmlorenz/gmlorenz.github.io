@@ -492,6 +492,7 @@
                     const dueDate = new Date(payment.dueDate);
                     const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
                     
+                    let daysDelayed = 0;
                     let paymentDetailsHtml;
                     let actionButtonsHtml = '';
 
@@ -504,7 +505,7 @@
 
                     if (isPaymentDelayed) {
                         const timeDiff = currentDate.getTime() - dueDate.getTime();
-                        const daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
                         const installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
                         const installmentTotalDue = payment.amount + installmentPenalty;
 
@@ -624,7 +625,7 @@
                     'Delete Loan Record',
                     'Are you sure you want to delete this record? This action cannot be undone.',
                     async () => {
-                        const docRef = doc(db, sharedDataPath, loan.id);
+                        const docRef = doc(db, sharedDataPath, loanId);
                         await deleteDoc(docRef).catch(err => {
                             console.error("Error deleting document: ", err);
                             showAlert('Database Error', 'Failed to delete loan record.');
