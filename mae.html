@@ -352,135 +352,37 @@
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const loginForm = document.getElementById('loginForm');
-        const logoutButton = document.getElementById('logoutButton');
-        const addLoanForm = document.getElementById('addLoanForm');
-        const loanList = document.getElementById('loanList');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const loggedInUserDisplay = document.getElementById('loggedInUser');
-        const loanTypeSelect = document.getElementById('loanType');
-        const productNameField = document.getElementById('productNameField');
-        const historyButton = document.getElementById('historyButton');
-        const historyModal = document.getElementById('historyModal');
-        const closeHistoryButton = document.getElementById('closeHistoryButton');
-        const historyContent = document.getElementById('historyContent');
-        const historyModalTitle = document.getElementById('historyModalTitle');
-        const filterButtonsContainer = document.getElementById('filterButtons');
-        const summaryFilterButtons = document.getElementById('summaryFilterButtons');
-        const summaryDateRange = document.getElementById('summaryDateRange');
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
-        const notificationArea = document.getElementById('notificationArea');
-        const searchLoanerInput = document.getElementById('searchLoaner');
-        const importButton = document.getElementById('importButton');
-        const exportButton = document.getElementById('exportButton');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const howItWorksButton = document.getElementById('howItWorksButton');
-        const howItWorksModal = document.getElementById('howItWorksModal');
-        const closeHowItWorksButton = document.getElementById('closeHowItWorksButton');
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
         
-        // Modal Elements
-        const alertModal = document.getElementById('alertModal');
-        const alertTitle = document.getElementById('alertTitle');
-        const alertMessage = document.getElementById('alertMessage');
-        const alertOkButton = document.getElementById('alertOkButton');
-        const confirmModal = document.getElementById('confirmModal');
-        const confirmTitle = document.getElementById('confirmTitle');
-        const confirmMessage = document.getElementById('confirmMessage');
-        const confirmOkButton = document.getElementById('confirmOkButton');
-        const confirmCancelButton = document.getElementById('confirmCancelButton');
-
         // --- Custom Modals ---
         function showAlert(title, message) {
+            const alertTitle = document.getElementById('alertTitle');
+            const alertMessage = document.getElementById('alertMessage');
+            const alertModal = document.getElementById('alertModal');
             alertTitle.textContent = title;
             alertMessage.textContent = message;
             alertModal.style.display = 'flex';
         }
-        alertOkButton.addEventListener('click', () => alertModal.style.display = 'none');
+        document.getElementById('alertOkButton').addEventListener('click', () => document.getElementById('alertModal').style.display = 'none');
 
         function showConfirm(title, message, callback) {
+            const confirmTitle = document.getElementById('confirmTitle');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmModal = document.getElementById('confirmModal');
             confirmTitle.textContent = title;
             confirmMessage.textContent = message;
             confirmCallback = callback;
             confirmModal.style.display = 'flex';
         }
-        confirmOkButton.addEventListener('click', () => {
+        document.getElementById('confirmOkButton').addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
-            confirmModal.style.display = 'none';
+            document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
-        confirmCancelButton.addEventListener('click', () => {
-            confirmModal.style.display = 'none';
+        document.getElementById('confirmCancelButton').addEventListener('click', () => {
+            document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
         
-        // --- UI Logic ---
-        loanTypeSelect.addEventListener('change', (e) => {
-            const interestRateInput = document.getElementById('interestRate');
-            const numberOfPaymentsInput = document.getElementById('numberOfPayments');
-            const paymentFrequencySelect = document.getElementById('paymentFrequency');
-
-            if (e.target.value === 'E-Loan') {
-                productNameField.style.display = 'none';
-                interestRateInput.value = 20;
-                numberOfPaymentsInput.value = 1;
-                paymentFrequencySelect.value = 'weekly';
-            } else if (e.target.value === 'Long Term E-Loan') {
-                 productNameField.style.display = 'none';
-                 interestRateInput.value = 20;
-            } else if (e.target.value === 'Product') {
-                productNameField.style.display = 'block';
-                interestRateInput.value = 0;
-            }
-        });
-
-        historyButton.addEventListener('click', () => showLoanerHistory(allLoans));
-        closeHistoryButton.addEventListener('click', () => historyModal.style.display = 'none');
-        howItWorksButton.addEventListener('click', () => howItWorksModal.style.display = 'flex');
-        closeHowItWorksButton.addEventListener('click', () => howItWorksModal.style.display = 'none');
-        
-        importButton.addEventListener('click', () => csvFileInput.click());
-        exportButton.addEventListener('click', () => exportToCSV(allLoans));
-        csvFileInput.addEventListener('change', (e) => importFromCSV(e.target.files[0]));
-
-        searchLoanerInput.addEventListener('input', () => renderLoanList());
-
-        filterButtonsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('filter-btn')) {
-                currentFilter = e.target.dataset.filter;
-                document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-                });
-                e.target.classList.add('active');
-                e.target.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-                renderLoanList();
-            }
-        });
-
-        summaryFilterButtons.addEventListener('click', (e) => {
-             if (e.target.classList.contains('filter-btn')) {
-                const filter = e.target.dataset.filter;
-                document.querySelectorAll('#summaryFilterButtons .filter-btn').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-
-                if (filter === 'custom') {
-                    summaryDateRange.style.display = 'flex';
-                } else {
-                    summaryDateRange.style.display = 'none';
-                    updateSummary(allLoans, filter);
-                }
-            }
-        });
-
-        [startDateInput, endDateInput].forEach(input => {
-            input.addEventListener('change', () => {
-                updateSummary(allLoans, 'custom');
-            });
-        });
-
         // --- Authentication (Built-in) ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -496,105 +398,208 @@
             }
         });
         
-        logoutButton.addEventListener('click', () => {
-            isLoggedIn = false;
-            if (unsubscribeFromLoans) {
-                unsubscribeFromLoans();
-                unsubscribeFromLoans = null;
+        function initializeMainAppEventListeners() {
+            document.getElementById('logoutButton').addEventListener('click', () => {
+                isLoggedIn = false;
+                if (unsubscribeFromLoans) {
+                    unsubscribeFromLoans();
+                    unsubscribeFromLoans = null;
+                }
+                showLoginScreen();
+            });
+
+            document.getElementById('loanType').addEventListener('change', (e) => {
+                const interestRateInput = document.getElementById('interestRate');
+                const numberOfPaymentsInput = document.getElementById('numberOfPayments');
+                const paymentFrequencySelect = document.getElementById('paymentFrequency');
+                const productNameField = document.getElementById('productNameField');
+
+                if (e.target.value === 'E-Loan') {
+                    productNameField.style.display = 'none';
+                    interestRateInput.value = 20;
+                    numberOfPaymentsInput.value = 1;
+                    paymentFrequencySelect.value = 'weekly';
+                } else if (e.target.value === 'Long Term E-Loan') {
+                    productNameField.style.display = 'none';
+                    interestRateInput.value = 20;
+                } else if (e.target.value === 'Product') {
+                    productNameField.style.display = 'block';
+                    interestRateInput.value = 0;
+                }
+            });
+
+            document.getElementById('historyButton').addEventListener('click', () => showLoanerHistory(allLoans));
+            document.getElementById('closeHistoryButton').addEventListener('click', () => document.getElementById('historyModal').style.display = 'none');
+            document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
+            document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
+            
+            document.getElementById('importButton').addEventListener('click', () => document.getElementById('csvFileInput').click());
+            document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allLoans));
+            document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
+
+            document.getElementById('searchLoaner').addEventListener('input', () => renderLoanList());
+
+            document.getElementById('filterButtons').addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-btn')) {
+                    currentFilter = e.target.dataset.filter;
+                    document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    });
+                    e.target.classList.add('active');
+                    e.target.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    renderLoanList();
+                }
+            });
+
+            document.getElementById('summaryFilterButtons').addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-btn')) {
+                    const filter = e.target.dataset.filter;
+                    document.querySelectorAll('#summaryFilterButtons .filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    if (filter === 'custom') {
+                        document.getElementById('summaryDateRange').style.display = 'flex';
+                    } else {
+                        document.getElementById('summaryDateRange').style.display = 'none';
+                        updateSummary(allLoans, filter);
+                    }
+                }
+            });
+
+            [document.getElementById('startDate'), document.getElementById('endDate')].forEach(input => {
+                input.addEventListener('change', () => {
+                    updateSummary(allLoans, 'custom');
+                });
+            });
+            
+            document.getElementById('addLoanForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!isLoggedIn) {
+                    showAlert('Error', 'You are not logged in.');
+                    return;
+                }
+
+                const borrowerName = document.getElementById('borrowerName').value.trim();
+                const loanType = document.getElementById('loanType').value;
+                const loanDate = document.getElementById('loanDate').value;
+                const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+                const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
+                const numberOfPayments = parseInt(document.getElementById('numberOfPayments').value) || 1;
+                const paymentFrequency = document.getElementById('paymentFrequency').value;
+
+                if (isNaN(loanAmount) || loanAmount <= 0) {
+                    showAlert('Validation Error', 'Please enter a valid loan amount.');
+                    return;
+                }
+                
+                let loanData = {
+                    borrowerName,
+                    loanType,
+                    loanDate,
+                    loanAmount,
+                    interestRate,
+                    numberOfPayments,
+                    paymentFrequency,
+                    status: 'Active',
+                    paidPenalties: 0, 
+                    createdAt: serverTimestamp()
+                };
+
+                if (loanType === 'Product') {
+                    const productName = document.getElementById('productName').value.trim();
+                    if (!productName) {
+                        showAlert('Validation Error', 'Please enter a product name.');
+                        return;
+                    }
+                    loanData.productName = productName;
+                }
+
+                const paymentSchedule = [];
+                const totalInterest = loanAmount * (interestRate / 100);
+                const installmentAmount = (loanAmount + totalInterest) / numberOfPayments;
+                let nextDueDate = new Date(loanDate);
+
+                for(let i = 0; i < numberOfPayments; i++) {
+                    if (paymentFrequency === 'weekly') {
+                        nextDueDate.setDate(nextDueDate.getDate() + 7);
+                    } else if (paymentFrequency === 'bi-weekly') {
+                        nextDueDate.setDate(nextDueDate.getDate() + 14);
+                    } else { 
+                        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                    }
+                    paymentSchedule.push({
+                        dueDate: nextDueDate.toISOString().split('T')[0],
+                        amount: installmentAmount,
+                        status: 'Pending'
+                    });
+                }
+                loanData.paymentSchedule = paymentSchedule;
+                loanData.returnDate = paymentSchedule[paymentSchedule.length - 1].dueDate;
+
+                try {
+                    await addDoc(collection(db, sharedDataPath), loanData);
+                    document.getElementById('addLoanForm').reset();
+                    document.getElementById('loanType').dispatchEvent(new Event('change'));
+                    showAlert('Success', 'Loan record added successfully!');
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
+                }
+            });
+            
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+            const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+            
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                themeToggleLightIcon.classList.remove('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeToggleDarkIcon.classList.remove('hidden');
             }
-            showLoginScreen();
-        });
+
+            themeToggleBtn.addEventListener('click', function() {
+                themeToggleDarkIcon.classList.toggle('hidden');
+                themeToggleLightIcon.classList.toggle('hidden');
+
+                if (localStorage.getItem('color-theme')) {
+                    if (localStorage.getItem('color-theme') === 'light') {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('color-theme', 'dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('color-theme', 'light');
+                    }
+                } else {
+                    if (document.documentElement.classList.contains('dark')) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('color-theme', 'light');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('color-theme', 'dark');
+                    }
+                }
+            });
+        }
 
         function showMainApp(username) {
-            loggedInUserDisplay.textContent = username;
+            document.getElementById('loggedInUser').textContent = username;
             loginScreen.style.display = 'none';
             mainApp.style.display = 'block';
+            initializeMainAppEventListeners();
             loadLoans();
         }
 
         function showLoginScreen() {
             mainApp.style.display = 'none';
             loginScreen.style.display = 'flex';
-            loanList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
+            document.getElementById('loanList').innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
         }
 
         // --- Firestore Operations ---
         const sharedDataPath = `artifacts/${appId}/loans`;
-
-        addLoanForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isLoggedIn) {
-                showAlert('Error', 'You are not logged in.');
-                return;
-            }
-
-            const borrowerName = addLoanForm.borrowerName.value.trim();
-            const loanType = addLoanForm.loanType.value;
-            const loanDate = addLoanForm.loanDate.value;
-            const loanAmount = parseFloat(addLoanForm.loanAmount.value);
-            const interestRate = parseFloat(addLoanForm.interestRate.value) || 0;
-            const numberOfPayments = parseInt(addLoanForm.numberOfPayments.value) || 1;
-            const paymentFrequency = addLoanForm.paymentFrequency.value;
-
-            if (isNaN(loanAmount) || loanAmount <= 0) {
-                showAlert('Validation Error', 'Please enter a valid loan amount.');
-                return;
-            }
-            
-            let loanData = {
-                borrowerName,
-                loanType,
-                loanDate,
-                loanAmount,
-                interestRate,
-                numberOfPayments,
-                paymentFrequency,
-                status: 'Active',
-                paidPenalties: 0, 
-                createdAt: serverTimestamp()
-            };
-
-            if (loanType === 'Product') {
-                const productName = addLoanForm.productName.value.trim();
-                if (!productName) {
-                    showAlert('Validation Error', 'Please enter a product name.');
-                    return;
-                }
-                loanData.productName = productName;
-            }
-
-            const paymentSchedule = [];
-            const totalInterest = loanAmount * (interestRate / 100);
-            const installmentAmount = (loanAmount + totalInterest) / numberOfPayments;
-            let nextDueDate = new Date(loanDate);
-
-            for(let i = 0; i < numberOfPayments; i++) {
-                if (paymentFrequency === 'weekly') {
-                    nextDueDate.setDate(nextDueDate.getDate() + 7);
-                } else if (paymentFrequency === 'bi-weekly') {
-                    nextDueDate.setDate(nextDueDate.getDate() + 14);
-                } else { 
-                    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                }
-                paymentSchedule.push({
-                    dueDate: nextDueDate.toISOString().split('T')[0],
-                    amount: installmentAmount,
-                    status: 'Pending'
-                });
-            }
-            loanData.paymentSchedule = paymentSchedule;
-            loanData.returnDate = paymentSchedule[paymentSchedule.length - 1].dueDate;
-
-            try {
-                await addDoc(collection(db, sharedDataPath), loanData);
-                addLoanForm.reset();
-                loanTypeSelect.dispatchEvent(new Event('change'));
-                showAlert('Success', 'Loan record added successfully!');
-            } catch (error) {
-                console.error("Error adding document: ", error);
-                showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
-            }
-        });
 
         function loadLoans() {
             if (!isLoggedIn) return;
@@ -632,9 +637,10 @@
                 loadingMessageEl.style.display = 'none';
             }
 
+            const loanList = document.getElementById('loanList');
             loanList.innerHTML = '';
             
-            const searchTerm = searchLoanerInput.value.toLowerCase();
+            const searchTerm = document.getElementById('searchLoaner').value.toLowerCase();
             let filteredLoans = allLoans;
 
             if (searchTerm) {
@@ -674,6 +680,7 @@
         }
         
         function updateNotifications(loans) {
+            const notificationArea = document.getElementById('notificationArea');
             notificationArea.innerHTML = '';
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -725,9 +732,9 @@
                 const oneMonthAgo = new Date(currentDate);
                 oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
                 filteredForSummary = loans.filter(l => new Date(l.loanDate) >= oneMonthAgo);
-            } else if (filter === 'custom' && startDateInput.value && endDateInput.value) {
-                const start = new Date(startDateInput.value);
-                const end = new Date(endDateInput.value);
+            } else if (filter === 'custom' && document.getElementById('startDate').value && document.getElementById('endDate').value) {
+                const start = new Date(document.getElementById('startDate').value);
+                const end = new Date(document.getElementById('endDate').value);
                 filteredForSummary = loans.filter(l => {
                     const loanDate = new Date(l.loanDate);
                     return loanDate >= start && loanDate <= end;
@@ -826,7 +833,7 @@
             const loanerData = {};
 
             const loansToProcess = specificLoaner ? loans.filter(l => l.borrowerName === specificLoaner) : loans;
-            historyModalTitle.textContent = specificLoaner ? `History for ${specificLoaner}` : 'Loaner History';
+            document.getElementById('historyModalTitle').textContent = specificLoaner ? `History for ${specificLoaner}` : 'Loaner History';
 
             loansToProcess.forEach(loan => {
                 const name = loan.borrowerName;
@@ -854,6 +861,7 @@
                 }
             });
 
+            const historyContent = document.getElementById('historyContent');
             historyContent.innerHTML = '';
              if (Object.keys(loanerData).length === 0) {
                 historyContent.innerHTML = '<p>No history found.</p>';
@@ -872,7 +880,7 @@
                 `;
                 historyContent.appendChild(historyCard);
             }
-            historyModal.style.display = 'flex';
+            document.getElementById('historyModal').style.display = 'flex';
         }
 
         function createLoanCard(loan) {
@@ -1166,11 +1174,13 @@
         }
         
         // --- Theme Toggle ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
             themeToggleLightIcon.classList.remove('hidden');
         } else {
-            document.documentElement.classList.remove('dark');
             themeToggleDarkIcon.classList.remove('hidden');
         }
 
