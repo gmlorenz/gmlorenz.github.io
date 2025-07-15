@@ -76,9 +76,14 @@
                     <h1 class="text-3xl font-bold text-gray-900">Product Loan Tracker</h1>
                     <p class="text-sm text-gray-500 mt-1">Manage and track all your loaned products in one place.</p>
                 </div>
-                <div class="text-xs text-gray-400 mt-4 sm:mt-0 text-right">
-                    <span class="font-semibold">User ID:</span>
-                    <span id="userId" class="break-all">Loading...</span>
+                <div class="flex items-center mt-4 sm:mt-0">
+                    <div class="text-xs text-gray-400 text-right mr-4">
+                        <span class="font-semibold">User ID:</span>
+                        <span id="userId" class="break-all">Loading...</span>
+                    </div>
+                    <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Logout
+                    </button>
                 </div>
             </div>
         </header>
@@ -176,7 +181,7 @@
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Environment and Firebase Configuration ---
@@ -204,6 +209,7 @@
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const loginForm = document.getElementById('loginForm');
+        const logoutButton = document.getElementById('logoutButton');
         const addLoanForm = document.getElementById('addLoanForm');
         const loanList = document.getElementById('loanList');
         const loadingMessage = document.getElementById('loadingMessage');
@@ -255,9 +261,6 @@
                 try {
                     // Sign in anonymously to get a UID for Firestore rules
                     await signInAnonymously(auth);
-                    // Hide login screen and show the main app
-                    loginScreen.style.display = 'none';
-                    mainApp.style.display = 'block';
                 } catch (error) {
                     console.error("Anonymous sign-in failed:", error);
                     showAlert('Login Error', 'Could not start a session. Please try again.');
@@ -266,18 +269,29 @@
                 showAlert('Login Failed', 'Invalid username or password.');
             }
         });
+        
+        logoutButton.addEventListener('click', () => {
+            signOut(auth);
+        });
 
         onAuthStateChanged(auth, user => {
             if (user) {
-                // User is signed in (anonymously after correct password).
+                // User is signed in.
                 currentUserId = user.uid;
                 userIdDisplay.textContent = currentUserId;
+                
+                // Hide login screen and show the main app
+                loginScreen.style.display = 'none';
+                mainApp.style.display = 'block';
+                
                 loadingMessage.textContent = 'Loading loan records...';
                 loadLoans();
             } else {
-                // User is not signed in, ensure the main app is hidden.
+                // User is not signed in.
                 currentUserId = null;
                 userIdDisplay.textContent = 'Not Logged In';
+                
+                // Show login screen and hide the main app
                 mainApp.style.display = 'none';
                 loginScreen.style.display = 'flex';
             }
