@@ -63,7 +63,13 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
-    <!-- Login Screen -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5 shadow-lg bg-white dark:bg-gray-800">
+            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 18a1 1 0 011-1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 13.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm1.414-9.9a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM16 10a1 1 0 01-1-1h-1a1 1 0 110-2h1a1 1 0 011 1zM4 10a1 1 0 01-1-1H2a1 1 0 110-2h1a1 1 0 011 1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+        </button>
+    </div>
+
     <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-800">
         <div class="max-w-md w-full bg-white dark:bg-gray-700 p-8 rounded-xl shadow-lg">
             <h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
@@ -85,10 +91,8 @@
         </div>
     </div>
 
-    <!-- Main Application -->
     <div id="mainApp" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl hidden">
 
-        <!-- Header -->
         <header class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-center">
                 <div>
@@ -105,29 +109,21 @@
                         <span id="loggedInUser" class="break-all"></span>
                     </div>
                     <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Logout</button>
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 18a1 1 0 011-1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 13.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm1.414-9.9a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM16 10a1 1 0 01-1-1h-1a1 1 0 110-2h1a1 1 0 011 1zM4 10a1 1 0 01-1-1H2a1 1 0 110-2h1a1 1 0 011 1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-                    </button>
                 </div>
             </div>
         </header>
 
-        <!-- Notifications -->
         <div id="notificationArea" class="mb-8 space-y-2"></div>
 
-        <!-- Main Content -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <!-- Left Column -->
             <div class="lg:col-span-1 space-y-8">
                  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
                     <button id="addNewLoanerButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md shadow-lg">
                         ADD NEW LOAN
                     </button>
                 </div>
-                 <!-- Summary & Profits -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <div class="flex flex-col sm:flex-row justify-between items-center border-b dark:border-gray-700 pb-4 mb-5">
                         <h2 class="text-2xl font-semibold">Summary & Profits</h2>
                          <div id="summaryFilterButtons" class="flex space-x-1 mt-4 sm:mt-0">
@@ -155,7 +151,6 @@
                 </div>
             </div>
 
-            <!-- Loan Records List -->
             <div class="lg:col-span-2">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <div class="border-b dark:border-gray-700 pb-4 mb-5">
@@ -183,7 +178,6 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="alertModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
             <div class="p-6">
@@ -236,8 +230,7 @@
                      <button id="closeAddLoanButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <form id="addLoanForm" class="space-y-4">
-                    <!-- Form content is injected by JS -->
-                </form>
+                    </form>
             </div>
         </div>
     </div>
@@ -250,8 +243,7 @@
                      <button id="closeHistoryButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <div id="historyContent" class="mt-4 space-y-4">
-                    <!-- History content will be injected here -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -335,6 +327,39 @@
         const mainApp = document.getElementById('mainApp');
         const loginForm = document.getElementById('loginForm');
         
+        // --- Theme Toggling ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+                localStorage.setItem('color-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
+                localStorage.setItem('color-theme', 'light');
+            }
+        };
+
+        const savedTheme = localStorage.getItem('color-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            applyTheme(prefersDark ? 'dark' : 'light');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('color-theme');
+            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
         // --- Custom Modals ---
         function showAlert(title, message) {
             const alertTitle = document.getElementById('alertTitle');
@@ -584,43 +609,6 @@
                 } catch (error) {
                     console.error("Error adding document: ", error);
                     showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
-                }
-            });
-            
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-            const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-            
-            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                themeToggleLightIcon.classList.remove('hidden');
-                themeToggleDarkIcon.classList.add('hidden');
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeToggleDarkIcon.classList.remove('hidden');
-                themeToggleLightIcon.classList.add('hidden');
-            }
-
-            themeToggleBtn.addEventListener('click', function() {
-                themeToggleDarkIcon.classList.toggle('hidden');
-                themeToggleLightIcon.classList.toggle('hidden');
-
-                if (localStorage.getItem('color-theme')) {
-                    if (localStorage.getItem('color-theme') === 'light') {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('color-theme', 'dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('color-theme', 'light');
-                    }
-                } else {
-                    if (document.documentElement.classList.contains('dark')) {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('color-theme', 'light');
-                    } else {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('color-theme', 'dark');
-                    }
                 }
             });
         }
