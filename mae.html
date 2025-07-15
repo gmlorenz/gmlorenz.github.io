@@ -829,8 +829,8 @@
                     let daysDelayed = 0;
 
                     if (!isPaymentPaid) {
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
-                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Pay Interest Only</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>`;
+                         actionButtonsHtml += `<button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
                     } else {
                          actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
                     }
