@@ -77,9 +77,9 @@
                     <p class="text-sm text-gray-500 mt-1">Manage and track all your loaned products in one place.</p>
                 </div>
                 <div class="flex items-center mt-4 sm:mt-0">
-                    <div class="text-xs text-gray-400 text-right mr-4">
-                        <span class="font-semibold">User ID:</span>
-                        <span id="userId" class="break-all">Loading...</span>
+                    <div class="text-sm text-gray-600 text-right mr-4">
+                        <span class="font-semibold">Logged in as:</span>
+                        <span id="loggedInUser" class="break-all"></span>
                     </div>
                     <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Logout
@@ -181,7 +181,7 @@
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        // NOTE: No Firebase Auth functions are imported
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Environment and Firebase Configuration ---
@@ -197,13 +197,13 @@
                 appId: "1:1032339865550:web:6015ff89f037776011759f"
             };
 
-        // Initialize Firebase
+        // Initialize Firebase App and Firestore
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUserId = null;
+        let isLoggedIn = false;
         let confirmCallback = null;
+        let unsubscribeFromLoans = null; // To stop listening to Firestore updates on logout
 
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -213,7 +213,7 @@
         const addLoanForm = document.getElementById('addLoanForm');
         const loanList = document.getElementById('loanList');
         const loadingMessage = document.getElementById('loadingMessage');
-        const userIdDisplay = document.getElementById('userId');
+        const loggedInUserDisplay = document.getElementById('loggedInUser');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -250,58 +250,54 @@
             confirmCallback = null;
         });
 
-        // --- Authentication ---
-        loginForm.addEventListener('submit', async (e) => {
+        // --- Authentication (Built-in) ---
+        loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const username = loginForm.username.value;
             const password = loginForm.password.value;
 
             // Check for hardcoded credentials
             if (username === 'mae111' && password === '248617') {
-                try {
-                    // Sign in anonymously to get a UID for Firestore rules
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                    showAlert('Login Error', 'Could not start a session. Please try again.');
-                }
+                isLoggedIn = true;
+                loginForm.reset();
+                showMainApp(username);
             } else {
                 showAlert('Login Failed', 'Invalid username or password.');
             }
         });
         
         logoutButton.addEventListener('click', () => {
-            signOut(auth);
+            isLoggedIn = false;
+            // Stop listening to Firestore changes
+            if (unsubscribeFromLoans) {
+                unsubscribeFromLoans();
+                unsubscribeFromLoans = null;
+            }
+            showLoginScreen();
         });
 
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                // User is signed in.
-                currentUserId = user.uid;
-                userIdDisplay.textContent = currentUserId;
-                
-                // Hide login screen and show the main app
-                loginScreen.style.display = 'none';
-                mainApp.style.display = 'block';
-                
-                loadingMessage.textContent = 'Loading loan records...';
-                loadLoans();
-            } else {
-                // User is not signed in.
-                currentUserId = null;
-                userIdDisplay.textContent = 'Not Logged In';
-                
-                // Show login screen and hide the main app
-                mainApp.style.display = 'none';
-                loginScreen.style.display = 'flex';
-            }
-        });
+        function showMainApp(username) {
+            loggedInUserDisplay.textContent = username;
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+            loadLoans();
+        }
+
+        function showLoginScreen() {
+            mainApp.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            loanList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 py-8">Please log in to see records.</p>';
+        }
 
         // --- Firestore Operations ---
+        // Since there's no user auth, all data is stored under a single shared path.
+        // WARNING: This is insecure. Your Firestore rules must allow public writes.
+        const sharedDataPath = `artifacts/${appId}/shared/loans`;
+
         addLoanForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUserId) {
-                showAlert('Error', 'User not authenticated. Cannot add loan.');
+            if (!isLoggedIn) {
+                showAlert('Error', 'You are not logged in.');
                 return;
             }
 
@@ -312,8 +308,7 @@
 
             if (borrowerName && productName && loanDate && returnDate) {
                 try {
-                    const loanCollectionPath = `artifacts/${appId}/users/${currentUserId}/loans`;
-                    await addDoc(collection(db, loanCollectionPath), {
+                    await addDoc(collection(db, sharedDataPath), {
                         borrowerName,
                         productName,
                         loanDate,
@@ -325,7 +320,7 @@
                     showAlert('Success', 'Loan record added successfully!');
                 } catch (error) {
                     console.error("Error adding document: ", error);
-                    showAlert('Database Error', 'Failed to add loan record. Please try again.');
+                    showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
                 }
             } else {
                 showAlert('Validation Error', 'Please fill out all fields.');
@@ -333,13 +328,18 @@
         });
 
         function loadLoans() {
-            if (!currentUserId) return;
+            if (!isLoggedIn) return;
+            
+            const loadingMsgEl = document.getElementById('loadingMessage');
+            if(loadingMsgEl) loadingMsgEl.textContent = 'Loading loan records...';
 
-            const loanCollectionPath = `artifacts/${appId}/users/${currentUserId}/loans`;
-            const q = query(collection(db, loanCollectionPath));
+            const q = query(collection(db, sharedDataPath));
 
-            onSnapshot(q, (querySnapshot) => {
-                loadingMessage.style.display = 'none';
+            unsubscribeFromLoans = onSnapshot(q, (querySnapshot) => {
+                if (document.getElementById('loadingMessage')) {
+                    document.getElementById('loadingMessage').style.display = 'none';
+                }
+                
                 if (querySnapshot.empty) {
                     loanList.innerHTML = '<p class="text-center text-gray-500 py-8">No loan records found. Add one using the form!</p>';
                     return;
@@ -359,7 +359,9 @@
                 });
             }, (error) => {
                 console.error("Error fetching loans: ", error);
-                loadingMessage.textContent = 'Error loading data. Please check console and refresh.';
+                if (document.getElementById('loadingMessage')) {
+                   document.getElementById('loadingMessage').textContent = 'Error loading data. Please check console and refresh.';
+                }
                 showAlert('Data Error', 'Could not fetch loan records from the database.');
             });
         }
@@ -401,7 +403,7 @@
             const returnBtn = card.querySelector('.return-btn');
             if (returnBtn) {
                 returnBtn.addEventListener('click', async () => {
-                    const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/loans`, loan.id);
+                    const docRef = doc(db, sharedDataPath, loan.id);
                     await updateDoc(docRef, { status: 'Returned' }).catch(err => {
                         console.error("Error updating document: ", err);
                         showAlert('Database Error', 'Failed to update loan status.');
@@ -415,7 +417,7 @@
                     'Delete Loan Record',
                     'Are you sure you want to delete this record? This action cannot be undone.',
                     async () => {
-                        const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/loans`, loan.id);
+                        const docRef = doc(db, sharedDataPath, loan.id);
                         await deleteDoc(docRef).catch(err => {
                             console.error("Error deleting document: ", err);
                             showAlert('Database Error', 'Failed to delete loan record.');
