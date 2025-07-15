@@ -103,7 +103,6 @@
                      <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">How It Works</button>
                      <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Import CSV</button>
                      <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Export CSV</button>
-                     /*<button id="historyButton" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md shadow-lg">Loaner History</button>*/
                     <div class="text-sm text-gray-600 dark:text-gray-300 text-right">
                         <span class="font-semibold">Logged in as:</span>
                         <span id="loggedInUser" class="break-all"></span>
@@ -235,19 +234,6 @@
         </div>
     </div>
 
-    <div id="historyModal" class="modal-backdrop">
-        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3">
-                     <h3 id="historyModalTitle" class="text-2xl font-semibold text-gray-900 dark:text-white">Loaner History</h3>
-                     <button id="closeHistoryButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
-                </div>
-                <div id="historyContent" class="mt-4 space-y-4">
-                    </div>
-            </div>
-        </div>
-    </div>
-
     <div id="howItWorksModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-4xl m-4">
             <div class="p-6">
@@ -282,8 +268,8 @@
                      <div>
                         <h4 class="font-bold text-lg">Button Functions</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
-                            <li><strong>PAID:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
-                            <li><strong>RELOAN:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
+                            <li><strong>Mark Paid:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
+                            <li><strong>Pay Interest Only:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
                         </ul>
                     </div>
                 </div>
@@ -491,8 +477,6 @@
                 }
             });
 
-            document.getElementById('historyButton').addEventListener('click', () => showLoanerHistory(allLoans));
-            document.getElementById('closeHistoryButton').addEventListener('click', () => document.getElementById('historyModal').style.display = 'none');
             document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
             document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
             
@@ -858,63 +842,7 @@
                 });
             }
         }
-
-        function showLoanerHistory(loans, specificLoaner = null) {
-            const currentDate = new Date();
-            currentDate.setHours(0, 0, 0, 0);
-            const loanerData = {};
-
-            const loansToProcess = specificLoaner ? loans.filter(l => l.borrowerName === specificLoaner) : loans;
-            document.getElementById('historyModalTitle').textContent = specificLoaner ? `History for ${specificLoaner}` : 'Loaner History';
-
-            loansToProcess.forEach(loan => {
-                const name = loan.borrowerName;
-                if (!loanerData[name]) {
-                    loanerData[name] = { count: 0, totalBorrowed: 0, outstandingBalance: 0 };
-                }
-                loanerData[name].count++;
-                loanerData[name].totalBorrowed += loan.loanAmount;
-                if (loan.status !== 'Paid') {
-                    const interest = loan.loanAmount * (loan.interestRate / 100);
-                    let penalty = 0;
-                     if (loan.paymentSchedule) {
-                        loan.paymentSchedule.forEach(p => {
-                            const dueDate = new Date(p.dueDate);
-                            if (p.status === 'Pending' && dueDate < currentDate) {
-                                const timeDiff = currentDate.getTime() - dueDate.getTime();
-                                const daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                                penalty += (loan.loanAmount * 0.05) * daysDelayed;
-                            }
-                        });
-                    }
-                    const paidAmount = loan.paymentSchedule.filter(p => p.status === 'Paid').reduce((acc, p) => acc + p.amount, 0);
-                    const remainingBalance = (loan.loanAmount + interest + penalty) - paidAmount;
-                    loanerData[name].outstandingBalance += remainingBalance;
-                }
-            });
-
-            const historyContent = document.getElementById('historyContent');
-            historyContent.innerHTML = '';
-             if (Object.keys(loanerData).length === 0) {
-                historyContent.innerHTML = '<p>No history found.</p>';
-            }
-            for (const name in loanerData) {
-                const data = loanerData[name];
-                const historyCard = document.createElement('div');
-                historyCard.className = 'p-4 bg-gray-100 dark:bg-gray-700 rounded-lg';
-                historyCard.innerHTML = `
-                    <h4 class="font-bold text-lg">${name}</h4>
-                    <div class="text-sm grid grid-cols-3 gap-2 mt-2">
-                        <span><strong>Total Loans:</strong> ${data.count}</span>
-                        <span><strong>Total Borrowed:</strong> ₱${data.totalBorrowed.toFixed(2)}</span>
-                        <span class="font-semibold ${data.outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'}"><strong>Outstanding:</strong> ₱${data.outstandingBalance.toFixed(2)}</span>
-                    </div>
-                `;
-                historyContent.appendChild(historyCard);
-            }
-            document.getElementById('historyModal').style.display = 'flex';
-        }
-
+        
         function createLoanCard(loan) {
             const card = document.createElement('div');
             const isFullyPaid = loan.status === 'Paid';
@@ -1014,11 +942,8 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start">
                     <div>
                         <h3 class="font-bold text-lg ${titleColor}">${title}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
                             Loaned to: <span class="font-medium ml-1">${loan.borrowerName}</span>
-                            <svg data-borrower="${loan.borrowerName}" class="loaner-info-btn h-5 w-5 ml-2 text-blue-500 cursor-pointer hover:text-blue-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                            </svg>
                         </p>
                     </div>
                     <div class="mt-2 sm:mt-0 sm:text-right">
@@ -1047,11 +972,6 @@
             `;
             
             // Event listeners
-            card.querySelector('.loaner-info-btn').addEventListener('click', (e) => {
-                const borrowerName = e.currentTarget.dataset.borrower;
-                showLoanerHistory(allLoans, borrowerName);
-            });
-
             card.querySelectorAll('.payment-paid-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const loanId = e.target.dataset.loanId;
