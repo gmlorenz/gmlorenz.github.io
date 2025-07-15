@@ -290,9 +290,8 @@
         }
 
         // --- Firestore Operations ---
-        // Since there's no user auth, all data is stored under a single shared path.
-        // WARNING: This is insecure. Your Firestore rules must allow public writes.
-        const sharedDataPath = `artifacts/${appId}/shared/loans`;
+        // Corrected path with an odd number of segments: collection/document/collection
+        const sharedDataPath = `artifacts/${appId}/loans`;
 
         addLoanForm.addEventListener('submit', async (e) => {
             e.preventDefault();
