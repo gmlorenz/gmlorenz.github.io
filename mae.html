@@ -228,8 +228,7 @@
         let isLoggedIn = false;
         let confirmCallback = null;
         let unsubscribeFromLoans = null;
-        const currentDate = new Date('2025-07-15T23:59:59'); // Hardcoded current date for consistent penalty checks
-
+        
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
@@ -445,10 +444,22 @@
         function createLoanCard(loan) {
             const card = document.createElement('div');
             const isFullyPaid = loan.status === 'Paid';
-            
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0); // Normalize current date for accurate comparison
+
+            let totalPenalty = 0;
             let hasDelayedPayment = false;
+
             if (loan.paymentSchedule && !isFullyPaid) {
-                hasDelayedPayment = loan.paymentSchedule.some(p => p.status === 'Pending' && new Date(p.dueDate) < currentDate);
+                loan.paymentSchedule.forEach(p => {
+                    const dueDate = new Date(p.dueDate);
+                    if (p.status === 'Pending' && dueDate < currentDate) {
+                        hasDelayedPayment = true;
+                        const timeDiff = currentDate.getTime() - dueDate.getTime();
+                        const daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        totalPenalty += (loan.loanAmount * 0.05) * daysDelayed;
+                    }
+                });
             }
 
             const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
@@ -458,8 +469,7 @@
             const titleColor = isFullyPaid ? 'text-green-800' : (loan.loanType === 'Money' ? 'text-blue-800' : 'text-purple-800');
 
             const interest = loan.loanAmount * (loan.interestRate / 100);
-            const penalty = hasDelayedPayment ? loan.loanAmount * 0.05 : 0;
-            const totalDue = loan.loanAmount + interest + penalty;
+            const totalDue = loan.loanAmount + interest + totalPenalty;
             
             if (loan.loanType === 'Money') {
                 title = `Money Loan`;
@@ -470,7 +480,7 @@
             detailsHtml = `
                 <p><strong>Principal:</strong> ₱${loan.loanAmount.toFixed(2)}</p>
                 <p><strong>Interest (${loan.interestRate}%):</strong> ₱${interest.toFixed(2)}</p>
-                ${penalty > 0 ? `<p class="text-red-600"><strong>Penalty:</strong> ₱${penalty.toFixed(2)}</p>` : ''}
+                ${totalPenalty > 0 ? `<p class="text-red-600"><strong>Penalty:</strong> ₱${totalPenalty.toFixed(2)}</p>` : ''}
                 <p class="font-bold"><strong>Total Due:</strong> ₱${totalDue.toFixed(2)}</p>
             `;
 
@@ -478,14 +488,20 @@
                 scheduleHtml = '<h4 class="font-semibold text-gray-700 mt-4 mb-2 col-span-full">Payment Schedule</h4>';
                 loan.paymentSchedule.forEach((payment, index) => {
                     const isPaymentPaid = payment.status === 'Paid';
-                    const isPaymentDelayed = !isPaymentPaid && new Date(payment.dueDate) < currentDate;
+                    const dueDate = new Date(payment.dueDate);
+                    const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
+                    let daysDelayed = 0;
+                    if(isPaymentDelayed){
+                        const timeDiff = currentDate.getTime() - dueDate.getTime();
+                        daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    }
                     
                     scheduleHtml += `
                         <div class="col-span-full flex justify-between items-center p-2 rounded-md ${isPaymentPaid ? 'bg-green-100' : (isPaymentDelayed ? 'bg-red-100' : 'bg-gray-100')}">
                             <div>
                                 <span class="font-medium">${index + 1}. Due: ${payment.dueDate}</span>
                                 <span class="text-gray-600">- ₱${payment.amount.toFixed(2)}</span>
-                                ${isPaymentDelayed ? `<span class="ml-2 text-xs font-bold text-red-700">DELAYED</span>` : ''}
+                                ${isPaymentDelayed ? `<span class="ml-2 text-xs font-bold text-red-700">DELAYED (${daysDelayed} day/s)</span>` : ''}
                             </div>
                             ${!isPaymentPaid ? `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>` : `<span class="text-xs font-bold text-green-700">PAID</span>`}
                         </div>
