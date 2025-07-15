@@ -368,8 +368,8 @@
 
             // Create payment schedule for both loan types
             const paymentSchedule = [];
-            const totalDue = loanAmount * (1 + interestRate / 100);
-            const installmentAmount = totalDue / numberOfPayments;
+            const totalInterest = loanAmount * (interestRate / 100);
+            const installmentAmount = (loanAmount + totalInterest) / numberOfPayments;
             let nextDueDate = new Date(loanDate);
 
             for(let i = 0; i < numberOfPayments; i++) {
@@ -490,20 +490,51 @@
                     const isPaymentPaid = payment.status === 'Paid';
                     const dueDate = new Date(payment.dueDate);
                     const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
+                    
+                    let installmentPenalty = 0;
                     let daysDelayed = 0;
-                    if(isPaymentDelayed){
+                    let paymentDetailsHtml;
+                    let actionButtonsHtml = '';
+
+                    if (isPaymentDelayed) {
                         const timeDiff = currentDate.getTime() - dueDate.getTime();
                         daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
+                        const installmentTotalDue = payment.amount + installmentPenalty;
+
+                        paymentDetailsHtml = `
+                            <div class="text-xs mt-1">
+                                <span>Amount: ₱${payment.amount.toFixed(2)}</span>
+                                <span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span>
+                                <span class="font-bold ml-2">Total: ₱${installmentTotalDue.toFixed(2)}</span>
+                            </div>
+                        `;
+                        actionButtonsHtml = `
+                            <button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>
+                            <button data-loan-id="${loan.id}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">Pay Interest & Reschedule</button>
+                        `;
+
+                    } else {
+                         paymentDetailsHtml = `<span class="text-gray-600">- ₱${payment.amount.toFixed(2)}</span>`;
+                         if (!isPaymentPaid) {
+                            actionButtonsHtml = `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>`;
+                         } else {
+                            actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
+                         }
                     }
                     
                     scheduleHtml += `
-                        <div class="col-span-full flex justify-between items-center p-2 rounded-md ${isPaymentPaid ? 'bg-green-100' : (isPaymentDelayed ? 'bg-red-100' : 'bg-gray-100')}">
-                            <div>
-                                <span class="font-medium">${index + 1}. Due: ${payment.dueDate}</span>
-                                <span class="text-gray-600">- ₱${payment.amount.toFixed(2)}</span>
-                                ${isPaymentDelayed ? `<span class="ml-2 text-xs font-bold text-red-700">DELAYED (${daysDelayed} day/s)</span>` : ''}
+                        <div class="col-span-full p-2 rounded-md ${isPaymentPaid ? 'bg-green-100' : (isPaymentDelayed ? 'bg-red-100' : 'bg-gray-100')}">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="font-medium">${index + 1}. Due: ${payment.dueDate}</span>
+                                    ${isPaymentDelayed ? `<span class="ml-2 text-xs font-bold text-red-700">DELAYED (${daysDelayed} day/s)</span>` : ''}
+                                </div>
+                                <div class="flex space-x-2">
+                                    ${actionButtonsHtml}
+                                </div>
                             </div>
-                            ${!isPaymentPaid ? `<button data-loan-id="${loan.id}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">Mark Paid</button>` : `<span class="text-xs font-bold text-green-700">PAID</span>`}
+                            ${paymentDetailsHtml}
                         </div>
                     `;
                 });
@@ -541,7 +572,7 @@
                 </div>
             `;
             
-            // Event listener for marking individual payments as paid
+            // Event listeners
             card.querySelectorAll('.payment-paid-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const loanId = e.target.dataset.loanId;
@@ -555,6 +586,36 @@
 
                     const docRef = doc(db, sharedDataPath, loanId);
                     await updateDoc(docRef, { paymentSchedule: updatedSchedule, status: newStatus });
+                });
+            });
+
+            card.querySelectorAll('.reschedule-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const loanId = e.target.dataset.loanId;
+                    const paymentIndex = parseInt(e.target.dataset.paymentIndex);
+                    const frequency = e.target.dataset.frequency;
+
+                    const newSchedule = [...loan.paymentSchedule];
+                    let nextDueDate = new Date(); // Start rescheduling from today
+
+                    for(let i = paymentIndex; i < newSchedule.length; i++) {
+                        if (newSchedule[i].status === 'Pending') {
+                            if (frequency === 'weekly') {
+                                nextDueDate.setDate(nextDueDate.getDate() + 7);
+                            } else if (frequency === 'bi-weekly') {
+                                nextDueDate.setDate(nextDueDate.getDate() + 14);
+                            } else { // monthly
+                                nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                            }
+                            newSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
+                        }
+                    }
+
+                    const docRef = doc(db, sharedDataPath, loanId);
+                    await updateDoc(docRef, { 
+                        paymentSchedule: newSchedule,
+                        returnDate: newSchedule[newSchedule.length - 1].dueDate
+                    });
                 });
             });
 
