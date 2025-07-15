@@ -95,6 +95,9 @@
             </div>
         </header>
 
+        <!-- Notifications -->
+        <div id="notificationArea" class="mb-8 space-y-2"></div>
+
         <!-- Main Content -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -102,7 +105,19 @@
             <div class="lg:col-span-1 space-y-8">
                  <!-- Summary & Profits -->
                 <div class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-semibold mb-5 border-b pb-4">Summary & Profits</h2>
+                    <div class="flex flex-col sm:flex-row justify-between items-center border-b pb-4 mb-5">
+                        <h2 class="text-2xl font-semibold">Summary & Profits</h2>
+                         <div id="summaryFilterButtons" class="flex space-x-1 mt-4 sm:mt-0">
+                            <button data-filter="weekly" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Weekly</button>
+                            <button data-filter="monthly" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Monthly</button>
+                            <button data-filter="custom" class="filter-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs">Custom</button>
+                        </div>
+                    </div>
+                    <div id="summaryDateRange" class="hidden flex items-center space-x-2 mb-4">
+                        <input type="date" id="startDate" class="text-xs p-1 border rounded-md">
+                        <span>to</span>
+                        <input type="date" id="endDate" class="text-xs p-1 border rounded-md">
+                    </div>
                     <div id="summaryContent" class="space-y-3 text-sm">
                         <div class="flex justify-between"><span>Total Principal Loaned:</span> <span id="totalPrincipal" class="font-medium">₱0.00</span></div>
                         <div class="flex justify-between"><span>Potential Profit (Interest):</span> <span id="totalInterest" class="font-medium text-blue-600">₱0.00</span></div>
@@ -124,7 +139,8 @@
                             <label for="loanType" class="block text-sm font-medium text-gray-700">Loan Type</label>
                             <select id="loanType" name="loanType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="Product">Product</option>
-                                <option value="Money">Money</option>
+                                <option value="E-Loan">E-Loan</option>
+                                <option value="Long Term E-Loan">Long Term E-Loan</option>
                             </select>
                         </div>
                         <div id="productNameField">
@@ -169,11 +185,14 @@
                 <div class="bg-white p-6 rounded-xl shadow-md">
                     <div class="flex flex-col sm:flex-row justify-between items-center border-b pb-4 mb-5">
                         <h2 class="text-2xl font-semibold">Loan Records</h2>
-                        <div id="filterButtons" class="flex space-x-2 mt-4 sm:mt-0">
+                        <div id="filterButtons" class="flex flex-wrap space-x-2 mt-4 sm:mt-0">
                             <button data-filter="all" class="filter-btn active px-3 py-1 rounded-md text-sm">All</button>
                             <button data-filter="active" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Active</button>
                             <button data-filter="overdue" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">With Penalty</button>
                             <button data-filter="paid" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Paid</button>
+                            <button data-filter="Product" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Product</button>
+                            <button data-filter="E-Loan" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">E-Loan</button>
+                            <button data-filter="Long Term E-Loan" class="filter-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">Long Term</button>
                         </div>
                     </div>
                     <div id="loanList" class="space-y-4">
@@ -288,6 +307,11 @@
         const closeHistoryButton = document.getElementById('closeHistoryButton');
         const historyContent = document.getElementById('historyContent');
         const filterButtonsContainer = document.getElementById('filterButtons');
+        const summaryFilterButtons = document.getElementById('summaryFilterButtons');
+        const summaryDateRange = document.getElementById('summaryDateRange');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const notificationArea = document.getElementById('notificationArea');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -326,9 +350,20 @@
         
         // --- UI Logic ---
         loanTypeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'Money') {
+            const interestRateInput = document.getElementById('interestRate');
+            const numberOfPaymentsInput = document.getElementById('numberOfPayments');
+            const paymentFrequencySelect = document.getElementById('paymentFrequency');
+
+            if (e.target.value === 'E-Loan') {
                 productNameField.style.display = 'none';
-            } else {
+                interestRateInput.value = 20;
+                numberOfPaymentsInput.value = 1;
+                paymentFrequencySelect.value = 'weekly';
+            } else if (e.target.value === 'Long Term E-Loan') {
+                 productNameField.style.display = 'none';
+                 interestRateInput.value = 20;
+            }
+            else {
                 productNameField.style.display = 'block';
             }
         });
@@ -339,14 +374,35 @@
         filterButtonsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('filter-btn')) {
                 currentFilter = e.target.dataset.filter;
-                document.querySelectorAll('.filter-btn').forEach(btn => {
-                    btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
                     btn.classList.add('bg-gray-200', 'text-gray-700');
                 });
-                e.target.classList.add('active', 'bg-indigo-600', 'text-white');
+                e.target.classList.add('active');
                 e.target.classList.remove('bg-gray-200', 'text-gray-700');
                 renderLoanList();
             }
+        });
+
+        summaryFilterButtons.addEventListener('click', (e) => {
+             if (e.target.classList.contains('filter-btn')) {
+                const filter = e.target.dataset.filter;
+                document.querySelectorAll('#summaryFilterButtons .filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+
+                if (filter === 'custom') {
+                    summaryDateRange.style.display = 'flex';
+                } else {
+                    summaryDateRange.style.display = 'none';
+                    updateSummaryAndHistory(allLoans, filter);
+                }
+            }
+        });
+
+        [startDateInput, endDateInput].forEach(input => {
+            input.addEventListener('change', () => {
+                updateSummaryAndHistory(allLoans, 'custom');
+            });
         });
 
         // --- Authentication (Built-in) ---
@@ -481,7 +537,8 @@
                 allLoans.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 
                 renderLoanList();
-                updateSummaryAndHistory(allLoans);
+                updateSummaryAndHistory(allLoans, 'weekly'); // Default summary to weekly
+                updateNotifications(allLoans);
 
             }, (error) => {
                 console.error("Error fetching loans: ", error);
@@ -513,7 +570,11 @@
                 }
                 const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
 
-                return overallStatus.toLowerCase() === currentFilter;
+                if (['active', 'overdue', 'paid'].includes(currentFilter)) {
+                    return overallStatus.toLowerCase() === currentFilter;
+                } else {
+                    return loan.loanType === currentFilter;
+                }
             });
 
             if (filteredLoans.length === 0) {
@@ -526,10 +587,67 @@
                 loanList.appendChild(loanCard);
             });
         }
+        
+        function updateNotifications(loans) {
+            notificationArea.innerHTML = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
 
-        function updateSummaryAndHistory(loans) {
+            const todayStr = today.toISOString().split('T')[0];
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            let dueTodayCount = 0;
+            let dueTomorrowCount = 0;
+
+            loans.forEach(loan => {
+                if (loan.status === 'Active' && loan.paymentSchedule) {
+                    loan.paymentSchedule.forEach(p => {
+                        if (p.status === 'Pending') {
+                            if (p.dueDate === todayStr) dueTodayCount++;
+                            if (p.dueDate === tomorrowStr) dueTomorrowCount++;
+                        }
+                    });
+                }
+            });
+
+            if (dueTodayCount > 0) {
+                const notification = document.createElement('div');
+                notification.className = 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4';
+                notification.innerHTML = `<p class="font-bold">Due Today</p><p>You have ${dueTodayCount} loan payment(s) due today.</p>`;
+                notificationArea.appendChild(notification);
+            }
+            if (dueTomorrowCount > 0) {
+                const notification = document.createElement('div');
+                notification.className = 'bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4';
+                notification.innerHTML = `<p class="font-bold">Due Tomorrow</p><p>You have ${dueTomorrowCount} loan payment(s) due tomorrow.</p>`;
+                notificationArea.appendChild(notification);
+            }
+        }
+
+        function updateSummaryAndHistory(loans, filter) {
             const currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
+
+            let filteredForSummary = loans;
+
+            if (filter === 'weekly') {
+                const oneWeekAgo = new Date(currentDate);
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                filteredForSummary = loans.filter(l => new Date(l.loanDate) >= oneWeekAgo);
+            } else if (filter === 'monthly') {
+                const oneMonthAgo = new Date(currentDate);
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                filteredForSummary = loans.filter(l => new Date(l.loanDate) >= oneMonthAgo);
+            } else if (filter === 'custom' && startDateInput.value && endDateInput.value) {
+                const start = new Date(startDateInput.value);
+                const end = new Date(endDateInput.value);
+                filteredForSummary = loans.filter(l => {
+                    const loanDate = new Date(l.loanDate);
+                    return loanDate >= start && loanDate <= end;
+                });
+            }
 
             let totalPrincipal = 0;
             let totalInterest = 0;
@@ -538,7 +656,7 @@
             let completedLoans = 0;
             const loanerData = {};
 
-            loans.forEach(loan => {
+            filteredForSummary.forEach(loan => {
                 totalPrincipal += loan.loanAmount;
                 const interest = loan.loanAmount * (loan.interestRate / 100);
                 totalInterest += interest;
@@ -561,7 +679,10 @@
                 } else {
                     activeLoans++;
                 }
+            });
 
+            // History is calculated on all loans, not filtered ones
+             loans.forEach(loan => {
                 const name = loan.borrowerName;
                 if (!loanerData[name]) {
                     loanerData[name] = { count: 0, totalBorrowed: 0, outstandingBalance: 0 };
@@ -569,7 +690,19 @@
                 loanerData[name].count++;
                 loanerData[name].totalBorrowed += loan.loanAmount;
                 if (loan.status !== 'Paid') {
-                    const remainingBalance = (loan.loanAmount + interest + currentLoanPenalty) - (loan.paymentSchedule.filter(p => p.status === 'Paid').reduce((acc, p) => acc + p.amount, 0));
+                    const interest = loan.loanAmount * (loan.interestRate / 100);
+                    let penalty = 0;
+                     if (loan.paymentSchedule) {
+                        loan.paymentSchedule.forEach(p => {
+                            const dueDate = new Date(p.dueDate);
+                            if (p.status === 'Pending' && dueDate < currentDate) {
+                                const timeDiff = currentDate.getTime() - dueDate.getTime();
+                                const daysDelayed = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                                penalty += (loan.loanAmount * 0.05) * daysDelayed;
+                            }
+                        });
+                    }
+                    const remainingBalance = (loan.loanAmount + interest + penalty) - (loan.paymentSchedule.filter(p => p.status === 'Paid').reduce((acc, p) => acc + p.amount, 0));
                     loanerData[name].outstandingBalance += remainingBalance;
                 }
             });
@@ -622,16 +755,15 @@
             const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
 
             let title, detailsHtml, scheduleHtml = '';
-            const cardColor = loan.loanType === 'Money' ? 'bg-blue-50 border-blue-200' : 'bg-purple-50 border-purple-200';
-            const titleColor = isFullyPaid ? 'text-green-800' : (loan.loanType === 'Money' ? 'text-blue-800' : 'text-purple-800');
+            const cardColor = loan.loanType === 'E-Loan' ? 'bg-blue-50 border-blue-200' : (loan.loanType === 'Long Term E-Loan' ? 'bg-teal-50 border-teal-200' : 'bg-purple-50 border-purple-200');
+            const titleColor = isFullyPaid ? 'text-green-800' : (loan.loanType === 'E-Loan' ? 'text-blue-800' : (loan.loanType === 'Long Term E-Loan' ? 'text-teal-800' : 'text-purple-800'));
 
             const interest = loan.loanAmount * (loan.interestRate / 100);
             const totalDue = loan.loanAmount + interest + totalPenalty;
             
-            if (loan.loanType === 'Money') {
-                title = `Money Loan`;
-            } else {
-                title = `Product Loan: ${loan.productName}`;
+            title = loan.loanType;
+            if (loan.loanType === 'Product') {
+                title += `: ${loan.productName}`;
             }
 
             detailsHtml = `
