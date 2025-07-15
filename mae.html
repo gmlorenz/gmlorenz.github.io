@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Loan Management</title>
+    <title>Smart Loan Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -40,6 +40,9 @@
             max-height: 90vh;
             overflow-y: auto;
         }
+        #moneyLoanFields {
+            transition: all 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -73,8 +76,8 @@
         <header class="bg-white shadow-md rounded-xl p-6 mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Product Loan Tracker</h1>
-                    <p class="text-sm text-gray-500 mt-1">Manage and track all your loaned products in one place.</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Smart Loan Tracker</h1>
+                    <p class="text-sm text-gray-500 mt-1">Manage product and money loans with interest calculation.</p>
                 </div>
                 <div class="flex items-center mt-4 sm:mt-0">
                     <div class="text-sm text-gray-600 text-right mr-4">
@@ -101,15 +104,32 @@
                             <input type="text" id="borrowerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <div>
+                            <label for="loanType" class="block text-sm font-medium text-gray-700">Loan Type</label>
+                            <select id="loanType" name="loanType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="Product">Product</option>
+                                <option value="Money">Money</option>
+                            </select>
+                        </div>
+                        <div id="productNameField">
                             <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
-                            <input type="text" id="productName" name="productName" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <input type="text" id="productName" name="productName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div id="moneyLoanFields" class="hidden space-y-4">
+                             <div>
+                                <label for="loanAmount" class="block text-sm font-medium text-gray-700">Loan Amount ($)</label>
+                                <input type="number" id="loanAmount" name="loanAmount" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="interestRate" class="block text-sm font-medium text-gray-700">Interest Rate (%)</label>
+                                <input type="number" id="interestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
                         </div>
                         <div>
                             <label for="loanDate" class="block text-sm font-medium text-gray-700">Loan Date</label>
                             <input type="date" id="loanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <div>
-                            <label for="returnDate" class="block text-sm font-medium text-gray-700">Expected Return Date</label>
+                            <label for="returnDate" class="block text-sm font-medium text-gray-700">Expected Due Date</label>
                             <input type="date" id="returnDate" name="returnDate" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -181,7 +201,6 @@
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        // NOTE: No Firebase Auth functions are imported
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // --- Environment and Firebase Configuration ---
@@ -203,7 +222,7 @@
 
         let isLoggedIn = false;
         let confirmCallback = null;
-        let unsubscribeFromLoans = null; // To stop listening to Firestore updates on logout
+        let unsubscribeFromLoans = null;
 
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -214,6 +233,9 @@
         const loanList = document.getElementById('loanList');
         const loadingMessage = document.getElementById('loadingMessage');
         const loggedInUserDisplay = document.getElementById('loggedInUser');
+        const loanTypeSelect = document.getElementById('loanType');
+        const productNameField = document.getElementById('productNameField');
+        const moneyLoanFields = document.getElementById('moneyLoanFields');
         
         // Modal Elements
         const alertModal = document.getElementById('alertModal');
@@ -249,6 +271,17 @@
             confirmModal.style.display = 'none';
             confirmCallback = null;
         });
+        
+        // --- UI Logic ---
+        loanTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'Money') {
+                productNameField.style.display = 'none';
+                moneyLoanFields.classList.remove('hidden');
+            } else {
+                productNameField.style.display = 'block';
+                moneyLoanFields.classList.add('hidden');
+            }
+        });
 
         // --- Authentication (Built-in) ---
         loginForm.addEventListener('submit', (e) => {
@@ -256,7 +289,6 @@
             const username = loginForm.username.value;
             const password = loginForm.password.value;
 
-            // Check for hardcoded credentials
             if (username === 'mae111' && password === '248617') {
                 isLoggedIn = true;
                 loginForm.reset();
@@ -268,7 +300,6 @@
         
         logoutButton.addEventListener('click', () => {
             isLoggedIn = false;
-            // Stop listening to Firestore changes
             if (unsubscribeFromLoans) {
                 unsubscribeFromLoans();
                 unsubscribeFromLoans = null;
@@ -290,7 +321,6 @@
         }
 
         // --- Firestore Operations ---
-        // Corrected path with an odd number of segments: collection/document/collection
         const sharedDataPath = `artifacts/${appId}/loans`;
 
         addLoanForm.addEventListener('submit', async (e) => {
@@ -301,28 +331,45 @@
             }
 
             const borrowerName = addLoanForm.borrowerName.value.trim();
-            const productName = addLoanForm.productName.value.trim();
+            const loanType = addLoanForm.loanType.value;
             const loanDate = addLoanForm.loanDate.value;
             const returnDate = addLoanForm.returnDate.value;
 
-            if (borrowerName && productName && loanDate && returnDate) {
-                try {
-                    await addDoc(collection(db, sharedDataPath), {
-                        borrowerName,
-                        productName,
-                        loanDate,
-                        returnDate,
-                        status: 'Loaned',
-                        createdAt: serverTimestamp()
-                    });
-                    addLoanForm.reset();
-                    showAlert('Success', 'Loan record added successfully!');
-                } catch (error) {
-                    console.error("Error adding document: ", error);
-                    showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
+            let loanData = {
+                borrowerName,
+                loanType,
+                loanDate,
+                returnDate,
+                status: 'Active',
+                createdAt: serverTimestamp()
+            };
+
+            if (loanType === 'Product') {
+                const productName = addLoanForm.productName.value.trim();
+                if (!productName) {
+                    showAlert('Validation Error', 'Please enter a product name.');
+                    return;
                 }
-            } else {
-                showAlert('Validation Error', 'Please fill out all fields.');
+                loanData.productName = productName;
+            } else { // Money Loan
+                const loanAmount = parseFloat(addLoanForm.loanAmount.value);
+                const interestRate = parseFloat(addLoanForm.interestRate.value) || 0;
+                if (isNaN(loanAmount) || loanAmount <= 0) {
+                    showAlert('Validation Error', 'Please enter a valid loan amount.');
+                    return;
+                }
+                loanData.loanAmount = loanAmount;
+                loanData.interestRate = interestRate;
+            }
+
+            try {
+                await addDoc(collection(db, sharedDataPath), loanData);
+                addLoanForm.reset();
+                loanTypeSelect.dispatchEvent(new Event('change')); // Reset conditional fields
+                showAlert('Success', 'Loan record added successfully!');
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showAlert('Database Error', 'Failed to add loan record. Check Firestore rules and console.');
             }
         });
 
@@ -335,8 +382,9 @@
             const q = query(collection(db, sharedDataPath));
 
             unsubscribeFromLoans = onSnapshot(q, (querySnapshot) => {
-                if (document.getElementById('loadingMessage')) {
-                    document.getElementById('loadingMessage').style.display = 'none';
+                const loadingMessageEl = document.getElementById('loadingMessage');
+                if (loadingMessageEl) {
+                    loadingMessageEl.style.display = 'none';
                 }
                 
                 if (querySnapshot.empty) {
@@ -344,7 +392,7 @@
                     return;
                 }
 
-                loanList.innerHTML = ''; // Clear existing list
+                loanList.innerHTML = '';
                 const loans = [];
                 querySnapshot.forEach(doc => {
                     loans.push({ id: doc.id, ...doc.data() });
@@ -358,8 +406,9 @@
                 });
             }, (error) => {
                 console.error("Error fetching loans: ", error);
-                if (document.getElementById('loadingMessage')) {
-                   document.getElementById('loadingMessage').textContent = 'Error loading data. Please check console and refresh.';
+                const loadingMessageEl = document.getElementById('loadingMessage');
+                if (loadingMessageEl) {
+                   loadingMessageEl.textContent = 'Error loading data. Please check console and refresh.';
                 }
                 showAlert('Data Error', 'Could not fetch loan records from the database.');
             });
@@ -367,43 +416,64 @@
 
         function createLoanCard(loan) {
             const card = document.createElement('div');
-            const isReturned = loan.status === 'Returned';
-            const isOverdue = !isReturned && new Date(loan.returnDate) < new Date();
+            const isPaid = loan.status === 'Paid';
+            const isOverdue = !isPaid && new Date(loan.returnDate) < new Date();
 
-            card.className = `p-4 rounded-lg border transition-all ${isReturned ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 shadow-sm'}`;
+            let title, detailsHtml;
+            const cardColor = loan.loanType === 'Money' ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200';
+            const titleColor = isPaid ? 'text-green-800' : (loan.loanType === 'Money' ? 'text-blue-800' : 'text-gray-800');
+
+            if (loan.loanType === 'Money') {
+                title = `Money Loan: $${loan.loanAmount.toFixed(2)}`;
+                const interest = loan.loanAmount * (loan.interestRate / 100);
+                const totalDue = loan.loanAmount + interest;
+                detailsHtml = `
+                    <p><strong>Principal:</strong> $${loan.loanAmount.toFixed(2)}</p>
+                    <p><strong>Interest (${loan.interestRate}%):</strong> $${interest.toFixed(2)}</p>
+                    <p class="font-bold"><strong>Total Due:</strong> $${totalDue.toFixed(2)}</p>
+                `;
+            } else {
+                title = loan.productName;
+                detailsHtml = `<p><strong>Product Loan</strong></p>`;
+            }
+
+            card.className = `p-4 rounded-lg border transition-all ${isPaid ? 'bg-green-50 border-green-200' : cardColor} shadow-sm`;
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start">
                     <div>
-                        <h3 class="font-bold text-lg ${isReturned ? 'text-green-800' : 'text-gray-800'}">${loan.productName}</h3>
+                        <h3 class="font-bold text-lg ${titleColor}">${title}</h3>
                         <p class="text-sm text-gray-600">Loaned to: <span class="font-medium">${loan.borrowerName}</span></p>
                     </div>
                     <div class="mt-2 sm:mt-0 sm:text-right">
                         <span class="text-xs font-semibold px-2 py-1 rounded-full ${
-                            isReturned ? 'bg-green-200 text-green-800' :
+                            isPaid ? 'bg-green-200 text-green-800' :
                             isOverdue ? 'bg-red-200 text-red-800' :
                             'bg-yellow-200 text-yellow-800'
                         }">
-                            ${isReturned ? 'Returned' : isOverdue ? 'Overdue' : 'Loaned'}
+                            ${isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Active'}
                         </span>
                     </div>
                 </div>
-                <div class="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200 flex flex-wrap justify-between items-center">
+                <div class="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <div>
                         <p><strong>Loan Date:</strong> ${loan.loanDate}</p>
-                        <p><strong>Return by:</strong> ${loan.returnDate}</p>
+                        <p><strong>Due Date:</strong> ${loan.returnDate}</p>
                     </div>
-                    <div class="flex space-x-2 mt-3 sm:mt-0">
-                        ${!isReturned ? `<button data-id="${loan.id}" class="return-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Mark as Returned</button>` : ''}
-                        <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Delete</button>
+                    <div class="md:text-right">
+                        ${detailsHtml}
                     </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gray-200 flex justify-end space-x-2">
+                    ${!isPaid ? `<button data-id="${loan.id}" class="paid-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Mark as Paid</button>` : ''}
+                    <button data-id="${loan.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-md transition">Delete</button>
                 </div>
             `;
 
-            const returnBtn = card.querySelector('.return-btn');
-            if (returnBtn) {
-                returnBtn.addEventListener('click', async () => {
+            const paidBtn = card.querySelector('.paid-btn');
+            if (paidBtn) {
+                paidBtn.addEventListener('click', async () => {
                     const docRef = doc(db, sharedDataPath, loan.id);
-                    await updateDoc(docRef, { status: 'Returned' }).catch(err => {
+                    await updateDoc(docRef, { status: 'Paid' }).catch(err => {
                         console.error("Error updating document: ", err);
                         showAlert('Database Error', 'Failed to update loan status.');
                     });
