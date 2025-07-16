@@ -598,12 +598,20 @@
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label for="modalLoanAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
+                        <label for="modalLoanAmount" id="modalLoanAmountLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
                         <input type="number" id="modalLoanAmount" name="loanAmount" min="0" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     </div>
-                    <div>
+                    <div id="interestRateSection">
                         <label for="modalInterestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
                         <input type="number" id="modalInterestRate" name="interestRate" min="0" step="0.1" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div id="customInterestSection" class="hidden">
+                        <label for="modalCustomInterest" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest (₱)</label>
+                        <input type="number" id="modalCustomInterest" name="customInterest" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="flex items-center">
+                        <input id="customInterestCheckbox" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="customInterestCheckbox" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Custom Interest</label>
                     </div>
                     <div>
                         <label for="modalNumberOfPayments" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Payments (Gives)</label>
@@ -632,25 +640,45 @@
             document.getElementById('addNewLoanerButton').addEventListener('click', () => document.getElementById('addLoanModal').style.display = 'flex');
             document.getElementById('closeAddLoanButton').addEventListener('click', () => document.getElementById('addLoanModal').style.display = 'none');
             
-            document.getElementById('modalLoanType').addEventListener('change', (e) => {
-                const interestRateInput = document.getElementById('modalInterestRate');
-                const numberOfPaymentsInput = document.getElementById('modalNumberOfPayments');
-                const paymentFrequencySelect = document.getElementById('modalPaymentFrequency');
-                const productNameField = document.getElementById('modalProductNameField');
+            const loanAmountLabel = document.getElementById('modalLoanAmountLabel');
+            const interestRateInput = document.getElementById('modalInterestRate');
+            const numberOfPaymentsInput = document.getElementById('modalNumberOfPayments');
+            const paymentFrequencySelect = document.getElementById('modalPaymentFrequency');
+            const productNameField = document.getElementById('modalProductNameField');
 
+            document.getElementById('modalLoanType').addEventListener('change', (e) => {
                 if (e.target.value === 'E-Loan') {
                     productNameField.style.display = 'none';
+                    loanAmountLabel.textContent = 'Loan Amount (₱)';
                     interestRateInput.value = 20;
                     numberOfPaymentsInput.value = 1;
                     paymentFrequencySelect.value = 'weekly';
                 } else if (e.target.value === 'Long Term E-Loan') {
                      productNameField.style.display = 'none';
+                     loanAmountLabel.textContent = 'Loan Amount (₱)';
                      interestRateInput.value = 20;
                 } else if (e.target.value === 'Product') {
                     productNameField.style.display = 'block';
+                    loanAmountLabel.textContent = 'Product Amount (₱)';
                     interestRateInput.value = 0;
                 }
             });
+            
+            const customInterestCheckbox = document.getElementById('customInterestCheckbox');
+            const interestRateSection = document.getElementById('interestRateSection');
+            const customInterestSection = document.getElementById('customInterestSection');
+
+            customInterestCheckbox.addEventListener('change', (e) => {
+                if(e.target.checked) {
+                    interestRateSection.style.display = 'none';
+                    customInterestSection.style.display = 'block';
+                    interestRateInput.value = 0; 
+                } else {
+                    interestRateSection.style.display = 'block';
+                    customInterestSection.style.display = 'none';
+                }
+            });
+
 
             document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
             document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
@@ -769,12 +797,18 @@
 
             const loanDate = document.getElementById('modalLoanDate').value;
             if (!loanDate) return showAlert('Validation Error', 'Loan date is required.');
+
+            const isCustomInterest = document.getElementById('customInterestCheckbox').checked;
+            const interestRate = parseFloat(document.getElementById('modalInterestRate').value) || 0;
+            const customInterest = parseFloat(document.getElementById('modalCustomInterest').value) || 0;
             
             const newLoan = {
                 loanId: crypto.randomUUID(),
                 loanType: document.getElementById('modalLoanType').value,
                 loanAmount: loanAmount,
-                interestRate: parseFloat(document.getElementById('modalInterestRate').value) || 0,
+                interestRate: isCustomInterest ? 0 : interestRate,
+                customInterest: isCustomInterest ? customInterest : 0,
+                isCustomInterest: isCustomInterest,
                 numberOfPayments: parseInt(document.getElementById('modalNumberOfPayments').value) || 1,
                 paymentFrequency: document.getElementById('modalPaymentFrequency').value,
                 loanDate: loanDate,
@@ -791,7 +825,7 @@
             }
 
             const paymentSchedule = [];
-            const totalInterest = newLoan.loanAmount * (newLoan.interestRate / 100);
+            const totalInterest = newLoan.isCustomInterest ? newLoan.customInterest : newLoan.loanAmount * (newLoan.interestRate / 100);
             const installmentAmount = (newLoan.loanAmount + totalInterest) / newLoan.numberOfPayments;
             let nextDueDate = new Date(newLoan.loanDate);
 
@@ -1160,7 +1194,7 @@
 
                     if (includeInSummary) {
                         totalPrincipal += loan.loanAmount;
-                        totalInterest += loan.loanAmount * (loan.interestRate / 100);
+                        totalInterest += loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
                         loanTypeCounts[loan.loanType] = (loanTypeCounts[loan.loanType] || 0) + 1;
                     }
                     
@@ -1244,8 +1278,10 @@
                 }
                 
                 const title = loan.loanType === 'Product' ? `Product: ${loan.productName}` : loan.loanType;
-                const interest = loan.loanAmount * (loan.interestRate / 100);
+                const interest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
                 const totalDue = loan.loanAmount + interest + totalPenalty;
+                const principalLabel = loan.loanType === 'Product' ? 'Product Price' : 'Principal';
+
 
                 let scheduleHtml = '';
                 if(loan.paymentSchedule?.length > 0) {
@@ -1353,7 +1389,7 @@
                                 <p><strong>Final Due:</strong> ${loan.returnDate}</p>
                             </div>
                             <div class="md:text-right">
-                                <p><strong>Principal:</strong> ₱${loan.loanAmount.toFixed(2)}</p>
+                                <p><strong>${principalLabel}:</strong> ₱${loan.loanAmount.toFixed(2)}</p>
                                 <p><strong>Interest:</strong> ₱${interest.toFixed(2)}</p>
                                 ${totalPenalty > 0 ? `<p class="font-bold text-orange-600 dark:text-orange-500"><strong>Penalty:</strong> ₱${totalPenalty.toFixed(2)}</p>` : ''}
                                 <p class="font-bold"><strong>Total Due:</strong> ₱${totalDue.toFixed(2)}</p>
@@ -1402,7 +1438,8 @@
                 <div class="collapsible-body px-4 pb-4">
                     <div class="space-y-3">${loansHtml}</div>
                     <div class="mt-4 pt-3 border-t dark:border-gray-700 flex justify-end">
-                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>                    </div>
+                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>
+                    </div>
                 </div>
             `;
             
@@ -1638,7 +1675,7 @@
                         });
                     }
                     const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
-                    const interest = loan.loanAmount * (loan.interestRate / 100);
+                    const interest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
                     const totalDue = loan.loanAmount + interest + totalPenalty;
 
                     flatLoans.push({
