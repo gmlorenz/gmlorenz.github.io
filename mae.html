@@ -62,6 +62,15 @@
         #tableViewModal .modal {
             max-width: 90%;
         }
+        .sortable-header {
+            cursor: pointer;
+        }
+        .sortable-header:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        .dark .sortable-header:hover {
+             background-color: rgba(255,255,255,0.05);
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -258,13 +267,13 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Borrower</th>
+                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="borrowerName">Borrower</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Type</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Principal</th>
+                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="loanAmount">Principal</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Interest</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Penalty</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Due</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Date</th>
+                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="totalDue">Total Due</th>
+                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="loanDate">Loan Date</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
@@ -273,6 +282,42 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partial Payment Modal -->
+    <div id="partialPaymentModal" class="modal-backdrop">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
+            <div class="p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Make a Payment</h3>
+                <form id="partialPaymentForm" class="mt-4 space-y-4">
+                    <div>
+                        <label for="paymentAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Amount (₱)</label>
+                        <input type="number" id="paymentAmount" name="paymentAmount" required min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <p id="paymentDetails" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                    <div class="bg-gray-50 dark:bg-gray-700 -mx-6 -mb-6 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Submit Payment</button>
+                        <button type="button" id="closePartialPaymentButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Notes Modal -->
+    <div id="editNotesModal" class="modal-backdrop">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
+            <div class="p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Edit Loan Notes</h3>
+                <form id="editNotesForm" class="mt-4 space-y-4">
+                    <textarea id="loanNotesText" rows="4" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                    <div class="bg-gray-50 dark:bg-gray-700 -mx-6 -mb-6 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Save Notes</button>
+                        <button type="button" id="closeEditNotesButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -384,6 +429,7 @@
         let currentFilter = 'all';
         let loanTypeChart = null;
         const primaryAdmin = 'cristinemae111@gmail.com';
+        let sortState = { column: 'loanDate', direction: 'desc' };
         
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -476,6 +522,8 @@
             document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allBorrowers));
             document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
 
+            document.getElementById('closePartialPaymentButton').addEventListener('click', () => document.getElementById('partialPaymentModal').style.display = 'none');
+            document.getElementById('closeEditNotesButton').addEventListener('click', () => document.getElementById('editNotesModal').style.display = 'none');
 
             const addLoanForm = document.getElementById('addLoanForm');
             addLoanForm.innerHTML = `
@@ -516,6 +564,10 @@
                             <option value="monthly">Monthly</option>
                         </select>
                     </div>
+                </div>
+                 <div>
+                    <label for="modalLoanNotes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes (Optional)</label>
+                    <textarea id="modalLoanNotes" name="loanNotes" rows="3" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                 </div>
                 <div>
                     <label for="modalLoanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
@@ -587,6 +639,19 @@
             });
             
             addLoanForm.addEventListener('submit', handleAddLoanSubmit);
+
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.sort;
+                    if (sortState.column === column) {
+                        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortState.column = column;
+                        sortState.direction = 'asc';
+                    }
+                    renderLoanTable();
+                });
+            });
         }
 
         function showMainApp(user) {
@@ -656,6 +721,7 @@
                 numberOfPayments: parseInt(document.getElementById('modalNumberOfPayments').value) || 1,
                 paymentFrequency: document.getElementById('modalPaymentFrequency').value,
                 loanDate: loanDate,
+                notes: document.getElementById('modalLoanNotes').value.trim(),
                 status: 'Active',
                 paidPenalties: 0,
                 reloanHistory: []
@@ -681,6 +747,7 @@
                     dueDate: nextDueDate.toISOString().split('T')[0],
                     amount: installmentAmount,
                     status: 'Pending',
+                    paidAmount: 0,
                     paidDate: null
                 });
             }
@@ -840,12 +907,12 @@
                         }
                         
                         if (currentFilter === 'due') {
-                            return loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status === 'Pending' && p.dueDate === todayStr);
+                            return loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
                         }
 
                         const isFullyPaid = loan.status === 'Paid';
                         let overallStatus = isFullyPaid ? 'Paid' : 'Active';
-                        if (!isFullyPaid && loan.paymentSchedule?.some(p => p.status === 'Pending' && new Date(p.dueDate) < new Date())) {
+                        if (!isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date())) {
                             overallStatus = 'Overdue';
                         }
                         
@@ -888,7 +955,7 @@
                 b.loans.forEach(loan => {
                      if (loan.status === 'Active' && loan.paymentSchedule) {
                         loan.paymentSchedule.forEach(p => {
-                            if (p.status === 'Pending') {
+                            if (p.status !== 'Paid') {
                                 if (p.dueDate === todayStr) dueTodayCount++;
                                 if (p.dueDate === tomorrowStr) dueTomorrowCount++;
                             }
@@ -944,7 +1011,7 @@
                     
                     if (loan.status !== 'Paid' && loan.paymentSchedule) {
                          loan.paymentSchedule.forEach(p => {
-                            if (p.status === 'Pending' && new Date(p.dueDate) < currentDate) {
+                            if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
                                 const daysDelayed = Math.ceil((currentDate - new Date(p.dueDate)) / (1000 * 3600 * 24));
                                 totalPenalties += (loan.loanAmount * 0.05) * daysDelayed;
                             }
@@ -999,9 +1066,9 @@
                 const isFullyPaid = loan.status === 'Paid';
                 let hasDelayedPayment = false;
                 if (!isFullyPaid && loan.paymentSchedule) {
-                    hasDelayedPayment = loan.paymentSchedule.some(p => p.status === 'Pending' && new Date(p.dueDate) < currentDate);
+                    hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
                 }
-                const isDueToday = loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status === 'Pending' && p.dueDate === todayStr);
+                const isDueToday = loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
                 const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
 
                 let shouldDisplay = false;
@@ -1017,7 +1084,7 @@
                 let totalPenalty = 0;
                 if (hasDelayedPayment) {
                     loan.paymentSchedule.forEach(p => {
-                        if (p.status === 'Pending' && new Date(p.dueDate) < currentDate) {
+                        if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
                             const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
                             const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
                             totalPenalty += (loan.loanAmount * 0.05) * daysDelayed;
@@ -1042,8 +1109,8 @@
                         let daysDelayed = 0;
 
                         if (!isPaymentPaid) {
-                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>
-                                                <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" data-frequency="${loan.paymentFrequency}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
+                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAY</button>
+                                                <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
                         } else {
                             actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
                              if(payment.paidDate) {
@@ -1051,14 +1118,19 @@
                             }
                         }
 
+                        let installmentPenalty = 0;
                         if (isPaymentDelayed) {
                             const timeDiff = currentDate.getTime() - dueDate.getTime();
                             daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                            const installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
-                            const installmentTotalDue = payment.amount + installmentPenalty;
-                            paymentDetailsHtml = `<div class="text-xs mt-1"><span>Amount: ₱${payment.amount.toFixed(2)}</span><span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Total: ₱${installmentTotalDue.toFixed(2)}</span></div>`;
+                            installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
+                        }
+                        
+                        const remainingAmount = (payment.amount + installmentPenalty) - (payment.paidAmount || 0);
+
+                        if (isPaymentPaid) {
+                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${(payment.paidAmount || payment.amount).toFixed(2)}</span>`;
                         } else {
-                            paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- ₱${payment.amount.toFixed(2)}</span>`;
+                             paymentDetailsHtml = `<div class="text-xs mt-1"><span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span></div>`;
                         }
                         
                         scheduleHtml += `
@@ -1084,12 +1156,13 @@
                 loansHtml += `
                     <div class="loan-details-card p-3 rounded-lg shadow-inner space-y-2">
                         <div class="flex justify-between items-start">
-                             <div class="flex items-center gap-2">
+                             <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="font-bold text-md text-indigo-800 dark:text-indigo-300">${title}</h4>
                                 ${reloanSummary}
                              </div>
                              <span class="text-xs font-semibold px-2 py-1 rounded-full ${overallStatus === 'Paid' ? 'bg-green-200 text-green-800' : overallStatus === 'Overdue' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}">${overallStatus}</span>
                         </div>
+                        ${loan.notes ? `<div class="text-xs italic text-gray-600 dark:text-gray-400 p-2 bg-gray-100 dark:bg-gray-900/50 rounded-md">${loan.notes}</div>` : ''}
                         <div class="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t dark:border-gray-700/50 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 items-start">
                             <div>
                                 <p><strong>Loan Date:</strong> ${loan.loanDate}</p>
@@ -1104,6 +1177,7 @@
                             <div class="col-span-full space-y-1">${scheduleHtml}</div>
                         </div>
                         <div class="mt-3 pt-2 border-t dark:border-gray-700/50 flex justify-end space-x-2">
+                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="edit-notes-btn bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Notes</button>
                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="delete-loan-btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-3 rounded-md transition">Delete Loan</button>
                         </div>
                     </div>
@@ -1121,61 +1195,9 @@
             `;
             
             // --- Event Listeners for buttons inside the card ---
-            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', async e => {
-                const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-                const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
-                const loanIndex = borrowerDoc.loans.findIndex(l => l.loanId === loanId);
-                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans)); // Deep copy
-                const payment = updatedLoans[loanIndex].paymentSchedule[paymentIndex];
-                
-                let installmentPenalty = 0;
-                if (new Date(payment.dueDate) < new Date()) {
-                    const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 3600 * 24)));
-                    installmentPenalty = (updatedLoans[loanIndex].loanAmount * 0.05) * daysDelayed;
-                }
-                const totalPayment = payment.amount + installmentPenalty;
-
-                showConfirm('Confirm Payment', `Mark installment as paid for ₱${totalPayment.toFixed(2)} (includes ₱${installmentPenalty.toFixed(2)} penalty)?`, async () => {
-                    payment.status = 'Paid';
-                    payment.paidDate = new Date().toISOString();
-                    
-                    const allPaid = updatedLoans[loanIndex].paymentSchedule.every(p => p.status === 'Paid');
-                    if (allPaid) {
-                        updatedLoans[loanIndex].status = 'Paid';
-                    }
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    showAlert('Success', 'Payment marked as paid.');
-                });
-            }));
-
-            card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', async e => {
-                const { borrowerId, loanId, paymentIndex, frequency } = e.target.dataset;
-                showConfirm('Confirm Reloan', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
-                    const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
-                    const loanIndex = borrowerDoc.loans.findIndex(l => l.loanId === loanId);
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans)); // Deep copy
-                    const targetLoan = updatedLoans[loanIndex];
-                    
-                    targetLoan.reloanHistory.push({
-                        reloanDate: new Date().toISOString(),
-                        rescheduledInstallmentIndex: parseInt(paymentIndex)
-                    });
-
-                    let nextDueDate = new Date(targetLoan.paymentSchedule[paymentIndex].dueDate); 
-                    for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
-                        if (targetLoan.paymentSchedule[i].status === 'Pending') {
-                            if (frequency === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
-                            else if (frequency === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
-                            else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                            targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
-                        }
-                    }
-                    targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
-                    
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    showAlert('Success', 'Schedule updated.');
-                });
-            }));
+            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
+            card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
+            card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
 
             card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
                 const { borrowerId, loanId } = e.target.dataset;
@@ -1200,21 +1222,134 @@
             return card;
         }
 
+        function handlePaymentClick(e) {
+            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
+            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+            const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
+            const payment = loan.paymentSchedule[paymentIndex];
+
+            let installmentPenalty = 0;
+            if (new Date(payment.dueDate) < new Date()) {
+                const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 3600 * 24)));
+                installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
+            }
+            const remainingAmount = (payment.amount + installmentPenalty) - (payment.paidAmount || 0);
+
+            const modal = document.getElementById('partialPaymentModal');
+            const form = document.getElementById('partialPaymentForm');
+            const amountInput = document.getElementById('paymentAmount');
+            const detailsEl = document.getElementById('paymentDetails');
+            
+            amountInput.value = remainingAmount.toFixed(2);
+            amountInput.max = remainingAmount.toFixed(2);
+            detailsEl.textContent = `Installment: ₱${payment.amount.toFixed(2)}, Penalty: ₱${installmentPenalty.toFixed(2)}, Paid: ₱${(payment.paidAmount || 0).toFixed(2)}`;
+            
+            form.onsubmit = async (submitEvent) => {
+                submitEvent.preventDefault();
+                const paymentAmount = parseFloat(amountInput.value);
+                if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > remainingAmount) {
+                    showAlert('Invalid Amount', `Please enter a valid amount up to ₱${remainingAmount.toFixed(2)}.`);
+                    return;
+                }
+
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
+
+                paymentToUpdate.paidAmount = (paymentToUpdate.paidAmount || 0) + paymentAmount;
+                const newRemaining = (payment.amount + installmentPenalty) - paymentToUpdate.paidAmount;
+
+                if (newRemaining <= 0.01) { // Use a small threshold for float comparison
+                    paymentToUpdate.status = 'Paid';
+                    paymentToUpdate.paidDate = new Date().toISOString();
+                } else {
+                    paymentToUpdate.status = 'Partially Paid';
+                }
+
+                const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
+                if (allPaid) {
+                    loanToUpdate.status = 'Paid';
+                }
+
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                modal.style.display = 'none';
+                showAlert('Success', 'Payment has been recorded.');
+            };
+
+            modal.style.display = 'flex';
+        }
+        
+        function handleReloanClick(e) {
+            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
+            showConfirm('Confirm Reloan', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
+                const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const targetLoan = updatedLoans.find(l => l.loanId === loanId);
+                
+                targetLoan.reloanHistory.push({
+                    reloanDate: new Date().toISOString(),
+                    rescheduledInstallmentIndex: parseInt(paymentIndex)
+                });
+
+                let nextDueDate = new Date(targetLoan.paymentSchedule[paymentIndex].dueDate); 
+                for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
+                    if (targetLoan.paymentSchedule[i].status !== 'Paid') {
+                        const freq = targetLoan.paymentFrequency;
+                        if (freq === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
+                        else if (freq === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
+                        else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                        targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
+                    }
+                }
+                targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
+                
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                showAlert('Success', 'Schedule updated.');
+            });
+        }
+
+        function handleEditNotesClick(e) {
+            const { borrowerId, loanId } = e.target.dataset;
+            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+            const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
+
+            const modal = document.getElementById('editNotesModal');
+            const form = document.getElementById('editNotesForm');
+            const notesText = document.getElementById('loanNotesText');
+
+            notesText.value = loan.notes || '';
+
+            form.onsubmit = async (submitEvent) => {
+                submitEvent.preventDefault();
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                loanToUpdate.notes = notesText.value.trim();
+
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                modal.style.display = 'none';
+                showAlert('Success', 'Notes updated.');
+            };
+
+            modal.style.display = 'flex';
+        }
+
+
         function renderLoanTable() {
             const tableBody = document.getElementById('loanTableBody');
-            tableBody.innerHTML = ''; // Clear existing table data
+            tableBody.innerHTML = '';
             const currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
 
+            let flatLoans = [];
             allBorrowers.forEach(borrower => {
                 borrower.loans.forEach(loan => {
-                    const isFullyPaid = loan.status === 'Paid';
+                     const isFullyPaid = loan.status === 'Paid';
                     let hasDelayedPayment = false;
                     let totalPenalty = 0;
 
                     if (!isFullyPaid && loan.paymentSchedule) {
                         loan.paymentSchedule.forEach(p => {
-                            if (p.status === 'Pending' && new Date(p.dueDate) < currentDate) {
+                            if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
                                 hasDelayedPayment = true;
                                 const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
                                 const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
@@ -1222,37 +1357,63 @@
                             }
                         });
                     }
-
                     const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
                     const interest = loan.loanAmount * (loan.interestRate / 100);
                     const totalDue = loan.loanAmount + interest + totalPenalty;
 
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-100 dark:hover:bg-gray-700';
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${borrower.borrowerName}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanType === 'Product' ? loan.productName : loan.loanType}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.loanAmount.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${interest.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500">₱${totalPenalty.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-gray-200">₱${totalDue.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanDate}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                overallStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                                overallStatus === 'Overdue' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                            }">${overallStatus}</span>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
+                    flatLoans.push({
+                        borrowerName: borrower.borrowerName,
+                        loanType: loan.loanType,
+                        productName: loan.productName,
+                        loanAmount: loan.loanAmount,
+                        interest: interest,
+                        totalPenalty: totalPenalty,
+                        totalDue: totalDue,
+                        loanDate: loan.loanDate,
+                        status: overallStatus
+                    });
                 });
+            });
+
+            // Sorting logic
+            flatLoans.sort((a, b) => {
+                const valA = a[sortState.column];
+                const valB = b[sortState.column];
+                const direction = sortState.direction === 'asc' ? 1 : -1;
+
+                if (typeof valA === 'string') {
+                    return valA.localeCompare(valB) * direction;
+                } else {
+                    return (valA - valB) * direction;
+                }
+            });
+
+            flatLoans.forEach(loan => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100 dark:hover:bg-gray-700';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${loan.borrowerName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanType === 'Product' ? loan.productName : loan.loanType}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.loanAmount.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.interest.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500">₱${loan.totalPenalty.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-gray-200">₱${loan.totalDue.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            loan.status === 'Paid' ? 'bg-green-100 text-green-800' :
+                            loan.status === 'Overdue' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }">${loan.status}</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
             });
         }
 
         // --- CSV Import/Export ---
         function exportToCSV(borrowers) {
-            const headers = ['Borrower Name', 'Loan Type', 'Product Name', 'Loan Amount', 'Interest Rate', 'Loan Date', 'Final Due Date', 'Status'];
+            const headers = ['Borrower Name', 'Loan Type', 'Product Name', 'Loan Amount', 'Interest Rate', 'Loan Date', 'Final Due Date', 'Status', 'Notes'];
             const rows = [];
 
             borrowers.forEach(borrower => {
@@ -1262,7 +1423,7 @@
                     currentDate.setHours(0, 0, 0, 0);
                     let hasDelayedPayment = false;
                     if (loan.paymentSchedule && !isFullyPaid) {
-                        hasDelayedPayment = loan.paymentSchedule.some(p => p.status === 'Pending' && new Date(p.dueDate) < currentDate);
+                        hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
                     }
                     const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
 
@@ -1274,7 +1435,8 @@
                         loan.interestRate,
                         loan.loanDate,
                         loan.returnDate,
-                        overallStatus
+                        overallStatus,
+                        `"${(loan.notes || '').replace(/"/g, '""')}"`
                     ].join(','));
                 });
             });
@@ -1299,7 +1461,6 @@
                 const batch = writeBatch(db);
                 const borrowersToUpdate = new Map();
 
-                // Group loans by borrower name
                 rows.forEach(rowStr => {
                     if (!rowStr.trim()) return;
                     const columns = rowStr.split(',');
@@ -1313,21 +1474,23 @@
                         interestRate: parseFloat(columns[4]),
                         loanDate: columns[5],
                         status: 'Active',
-                        paymentFrequency: 'weekly', // Default
-                        numberOfPayments: 1, // Default
-                        reloanHistory: []
+                        paymentFrequency: 'weekly',
+                        numberOfPayments: 1,
+                        reloanHistory: [],
+                        notes: (columns[8] || '').replace(/"/g, '')
                     };
                     
                     const paymentSchedule = [];
                     const totalInterest = newLoan.loanAmount * (newLoan.interestRate / 100);
                     const installmentAmount = (newLoan.loanAmount + totalInterest) / newLoan.numberOfPayments;
                     let nextDueDate = new Date(newLoan.loanDate);
-                    nextDueDate.setDate(nextDueDate.getDate() + 7); // Default to weekly for import
+                    nextDueDate.setDate(nextDueDate.getDate() + 7);
                     
                     paymentSchedule.push({
                         dueDate: nextDueDate.toISOString().split('T')[0],
                         amount: installmentAmount,
                         status: 'Pending',
+                        paidAmount: 0,
                         paidDate: null
                     });
                     newLoan.paymentSchedule = paymentSchedule;
@@ -1339,17 +1502,14 @@
                     borrowersToUpdate.get(borrowerName).push(newLoan);
                 });
 
-                // Process the grouped loans
                 for (const [name, loansToAdd] of borrowersToUpdate.entries()) {
                     const q = query(collection(db, borrowersPath), where("borrowerName", "==", name));
                     const querySnapshot = await getDocs(q);
 
                     if (querySnapshot.empty) {
-                        // New borrower
                         const newBorrowerRef = doc(collection(db, borrowersPath));
                         batch.set(newBorrowerRef, { borrowerName: name, loans: loansToAdd, createdAt: serverTimestamp() });
                     } else {
-                        // Existing borrower
                         const borrowerRef = querySnapshot.docs[0].ref;
                         batch.update(borrowerRef, { loans: arrayUnion(...loansToAdd) });
                     }
