@@ -135,7 +135,6 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
-    <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-800">
         <div class="max-w-md w-full bg-white dark:bg-gray-700 p-8 rounded-xl shadow-lg text-center">
             <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
@@ -149,7 +148,6 @@
         </div>
     </div>
 
-    <!-- Main Application -->
     <div id="mainApp" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl hidden">
 
         <header class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 mb-8">
@@ -176,7 +174,6 @@
         <div id="notificationArea" class="mb-8 space-y-2"></div>
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Add Loan & Summary -->
             <div class="lg:col-span-1 space-y-8">
                  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
                     <button id="addNewLoanerButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md shadow-lg">
@@ -211,7 +208,6 @@
                 </div>
             </div>
 
-            <!-- Right Column: Loan Records -->
             <div class="lg:col-span-2">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <div class="border-b dark:border-gray-700 pb-4 mb-5">
@@ -235,14 +231,12 @@
                     <div id="borrowerList" class="space-y-2">
                         <p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>
                     </div>
-                    <!-- NEW: Pagination Controls -->
                     <div id="paginationControls" class="flex justify-center items-center mt-6 space-x-2"></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="alertModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
             <div class="p-6">
@@ -275,7 +269,6 @@
         </div>
     </div>
 
-    <!-- Existing Borrower Choice Modal -->
     <div id="existingBorrowerModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
             <div class="p-6">
@@ -317,7 +310,6 @@
         </div>
     </div>
 
-    <!-- Table View Modal -->
     <div id="tableViewModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 m-4">
             <div class="p-6">
@@ -340,15 +332,13 @@
                             </tr>
                         </thead>
                         <tbody id="loanTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Rows will be dynamically inserted here -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Partial Payment Modal -->
     <div id="partialPaymentModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-sm m-4">
             <div class="p-6">
@@ -368,14 +358,13 @@
         </div>
     </div>
 
-    <!-- Edit Notes Modal -->
     <div id="editNotesModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
             <div class="p-6">
                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Edit Loan Notes</h3>
                 <form id="editNotesForm" class="mt-4 space-y-4">
                     <textarea id="loanNotesText" rows="4" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                    <div class="bg-gray-50 dark:bg-gray-700 -mx-6 -mb-6 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <div class="sm:flex sm:flex-row-reverse">
                         <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Save Notes</button>
                         <button type="button" id="closeEditNotesButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
                     </div>
@@ -428,7 +417,6 @@
         </div>
     </div>
     
-    <!-- Settings Modal -->
     <div id="settingsModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-2xl m-4">
             <div class="p-6">
@@ -441,8 +429,7 @@
                         <h4 class="text-lg font-medium text-gray-900 dark:text-white">Authorized Emails</h4>
                         <p class="text-sm text-gray-500 dark:text-gray-400">These users can access the application.</p>
                         <div id="authorizedEmailsList" class="mt-4 space-y-2">
-                            <!-- Authorized emails will be dynamically inserted here -->
-                        </div>
+                            </div>
                     </div>
                     <div>
                         <h4 class="text-lg font-medium text-gray-900 dark:text-white">Add New Authorized Email</h4>
@@ -1415,8 +1402,7 @@
                 <div class="collapsible-body px-4 pb-4">
                     <div class="space-y-3">${loansHtml}</div>
                     <div class="mt-4 pt-3 border-t dark:border-gray-700 flex justify-end">
-                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>
-                    </div>
+                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>                    </div>
                 </div>
             `;
             
