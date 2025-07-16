@@ -71,6 +71,21 @@
         .dark .sortable-header:hover {
              background-color: rgba(255,255,255,0.05);
         }
+        .collapsible-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .borrower-card.expanded .collapsible-body {
+            max-height: 10000px; /* Large enough to fit content */
+            transition: max-height 0.5s ease-in;
+        }
+        .chevron-icon {
+            transition: transform 0.3s;
+        }
+        .borrower-card.expanded .chevron-icon {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -172,7 +187,7 @@
                             <button data-filter="Long Term E-Loan" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Long Term</button>
                         </div>
                     </div>
-                    <div id="borrowerList" class="space-y-6">
+                    <div id="borrowerList" class="space-y-2">
                         <p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>
                     </div>
                 </div>
@@ -1055,12 +1070,14 @@
         
         function createBorrowerCard(borrower) {
             const card = document.createElement('div');
-            card.className = 'p-4 rounded-lg border bg-gray-50 dark:bg-gray-800/50 shadow-md space-y-4';
+            card.className = 'borrower-card bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700 shadow-md';
             
             let loansHtml = '';
             const currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0); 
             const todayStr = currentDate.toISOString().split('T')[0];
+            let activeLoanCount = 0;
+            let overdueLoanCount = 0;
 
             borrower.loans.forEach((loan) => {
                 const isFullyPaid = loan.status === 'Paid';
@@ -1070,6 +1087,9 @@
                 }
                 const isDueToday = loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
                 const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
+                
+                if (overallStatus === 'Active') activeLoanCount++;
+                if (overallStatus === 'Overdue') overdueLoanCount++;
 
                 let shouldDisplay = false;
                 if (currentFilter === 'all' || 
@@ -1125,12 +1145,25 @@
                             installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
                         }
                         
-                        const remainingAmount = (payment.amount + installmentPenalty) - (payment.paidAmount || 0);
+                        const totalInstallmentDue = payment.amount + installmentPenalty;
+                        const paidAmount = payment.paidAmount || 0;
+                        const remainingAmount = totalInstallmentDue - paidAmount;
+                        const percentagePaid = totalInstallmentDue > 0 ? (paidAmount / totalInstallmentDue) * 100 : 0;
 
                         if (isPaymentPaid) {
-                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${(payment.paidAmount || payment.amount).toFixed(2)}</span>`;
+                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span>`;
                         } else {
-                             paymentDetailsHtml = `<div class="text-xs mt-1"><span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span></div>`;
+                             paymentDetailsHtml = `
+                                <div class="text-xs mt-1">
+                                    <span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${percentagePaid}%"></div>
+                                    </div>
+                                    <p class="text-xs text-right text-gray-500 mt-1">₱${paidAmount.toFixed(2)} / ₱${totalInstallmentDue.toFixed(2)}</p>
+                                </div>
+                             `;
                         }
                         
                         scheduleHtml += `
@@ -1184,16 +1217,36 @@
                 `;
             });
 
-            if (!loansHtml) return null; // If no loans for this borrower matched the filter, don't render the card
+            if (!loansHtml) return null;
+
+            let summaryHtml = `<span class="text-sm text-green-600">${borrower.loans.length - activeLoanCount - overdueLoanCount} Paid</span>`;
+            if (activeLoanCount > 0) summaryHtml += `, <span class="text-sm text-yellow-600">${activeLoanCount} Active</span>`;
+            if (overdueLoanCount > 0) summaryHtml += `, <span class="text-sm text-red-600">${overdueLoanCount} Overdue</span>`;
 
             card.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-xl text-gray-900 dark:text-white">${borrower.borrowerName}</h3>
-                    <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>
+                <div class="borrower-card-header p-4 cursor-pointer flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-xl text-gray-900 dark:text-white">${borrower.borrowerName}</h3>
+                        <div class="flex gap-2 items-center mt-1">
+                           ${summaryHtml}
+                        </div>
+                    </div>
+                    <svg class="chevron-icon w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-                <div class="space-y-3">${loansHtml}</div>
+                <div class="collapsible-body px-4 pb-4">
+                    <div class="space-y-3">${loansHtml}</div>
+                    <div class="mt-4 pt-3 border-t dark:border-gray-700 flex justify-end">
+                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>
+                    </div>
+                </div>
             `;
             
+            card.querySelector('.borrower-card-header').addEventListener('click', (e) => {
+                // Prevent toggle when clicking a button inside the header (if any were added)
+                if (e.target.closest('button')) return;
+                card.classList.toggle('expanded');
+            });
+
             // --- Event Listeners for buttons inside the card ---
             card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
@@ -1247,7 +1300,7 @@
             form.onsubmit = async (submitEvent) => {
                 submitEvent.preventDefault();
                 const paymentAmount = parseFloat(amountInput.value);
-                if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > remainingAmount) {
+                if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > remainingAmount + 0.01) { // Add tolerance
                     showAlert('Invalid Amount', `Please enter a valid amount up to ₱${remainingAmount.toFixed(2)}.`);
                     return;
                 }
@@ -1286,6 +1339,9 @@
                 const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                 const targetLoan = updatedLoans.find(l => l.loanId === loanId);
                 
+                if (!targetLoan.reloanHistory) {
+                    targetLoan.reloanHistory = [];
+                }
                 targetLoan.reloanHistory.push({
                     reloanDate: new Date().toISOString(),
                     rescheduledInstallmentIndex: parseInt(paymentIndex)
