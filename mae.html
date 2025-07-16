@@ -89,6 +89,8 @@
                 <div class="flex items-center mt-4 sm:mt-0 flex-wrap gap-2">
                      <button id="settingsButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Settings</button>
                      <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">How It Works</button>
+                     <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Import CSV</button>
+                     <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Export CSV</button>
                     <div class="text-sm text-gray-600 dark:text-gray-300 text-right">
                         <span class="font-semibold">Logged in as:</span>
                         <span id="loggedInUser" class="break-all"></span>
@@ -431,6 +433,11 @@
             document.getElementById('settingsButton').addEventListener('click', openSettingsModal);
             document.getElementById('closeSettingsButton').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
             document.getElementById('addEmailForm').addEventListener('submit', handleAddAuthorizedEmail);
+            
+            document.getElementById('importButton').addEventListener('click', () => document.getElementById('csvFileInput').click());
+            document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allBorrowers));
+            document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
+
 
             const addLoanForm = document.getElementById('addLoanForm');
             addLoanForm.innerHTML = `
@@ -1120,6 +1127,120 @@
             });
 
             return card;
+        }
+
+        // --- CSV Import/Export ---
+        function exportToCSV(borrowers) {
+            const headers = ['Borrower Name', 'Loan Type', 'Product Name', 'Loan Amount', 'Interest Rate', 'Loan Date', 'Final Due Date', 'Status'];
+            const rows = [];
+
+            borrowers.forEach(borrower => {
+                borrower.loans.forEach(loan => {
+                    const isFullyPaid = loan.status === 'Paid';
+                    const currentDate = new Date();
+                    currentDate.setHours(0, 0, 0, 0);
+                    let hasDelayedPayment = false;
+                    if (loan.paymentSchedule && !isFullyPaid) {
+                        hasDelayedPayment = loan.paymentSchedule.some(p => p.status === 'Pending' && new Date(p.dueDate) < currentDate);
+                    }
+                    const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
+
+                    rows.push([
+                        `"${borrower.borrowerName}"`,
+                        loan.loanType,
+                        loan.productName || '',
+                        loan.loanAmount,
+                        loan.interestRate,
+                        loan.loanDate,
+                        loan.returnDate,
+                        overallStatus
+                    ].join(','));
+                });
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "loan_records.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function importFromCSV(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const rows = text.split('\n').slice(1);
+                const batch = writeBatch(db);
+                const borrowersToUpdate = new Map();
+
+                // Group loans by borrower name
+                rows.forEach(rowStr => {
+                    if (!rowStr.trim()) return;
+                    const columns = rowStr.split(',');
+                    const borrowerName = columns[0].replace(/"/g, '').trim();
+
+                    const newLoan = {
+                        loanId: crypto.randomUUID(),
+                        loanType: columns[1],
+                        productName: columns[2] || '',
+                        loanAmount: parseFloat(columns[3]),
+                        interestRate: parseFloat(columns[4]),
+                        loanDate: columns[5],
+                        status: 'Active',
+                        paymentFrequency: 'weekly', // Default
+                        numberOfPayments: 1, // Default
+                    };
+                    
+                    const paymentSchedule = [];
+                    const totalInterest = newLoan.loanAmount * (newLoan.interestRate / 100);
+                    const installmentAmount = (newLoan.loanAmount + totalInterest) / newLoan.numberOfPayments;
+                    let nextDueDate = new Date(newLoan.loanDate);
+                    nextDueDate.setDate(nextDueDate.getDate() + 7); // Default to weekly for import
+                    
+                    paymentSchedule.push({
+                        dueDate: nextDueDate.toISOString().split('T')[0],
+                        amount: installmentAmount,
+                        status: 'Pending'
+                    });
+                    newLoan.paymentSchedule = paymentSchedule;
+                    newLoan.returnDate = paymentSchedule[paymentSchedule.length - 1].dueDate;
+
+                    if (!borrowersToUpdate.has(borrowerName)) {
+                        borrowersToUpdate.set(borrowerName, []);
+                    }
+                    borrowersToUpdate.get(borrowerName).push(newLoan);
+                });
+
+                // Process the grouped loans
+                for (const [name, loansToAdd] of borrowersToUpdate.entries()) {
+                    const q = query(collection(db, borrowersPath), where("borrowerName", "==", name));
+                    const querySnapshot = await getDocs(q);
+
+                    if (querySnapshot.empty) {
+                        // New borrower
+                        const newBorrowerRef = doc(collection(db, borrowersPath));
+                        batch.set(newBorrowerRef, { borrowerName: name, loans: loansToAdd, createdAt: serverTimestamp() });
+                    } else {
+                        // Existing borrower
+                        const borrowerRef = querySnapshot.docs[0].ref;
+                        batch.update(borrowerRef, { loans: arrayUnion(...loansToAdd) });
+                    }
+                }
+
+                try {
+                    await batch.commit();
+                    showAlert('Success', 'CSV data imported successfully!');
+                } catch (error) {
+                    console.error("Error importing CSV: ", error);
+                    showAlert('Import Error', 'Failed to import CSV data. Please check the file format and console.');
+                }
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
