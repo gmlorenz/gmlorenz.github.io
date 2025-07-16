@@ -752,6 +752,9 @@
                     renderLoanTable();
                 });
             });
+
+            // Set default summary filter button
+            document.querySelector('#summaryFilterButtons .filter-btn[data-filter="monthly"]').classList.add('active');
         }
 
         function showMainApp(user) {
@@ -790,7 +793,7 @@
                 
                 renderBorrowerList();
                 renderLoanTable();
-                updateSummary(allBorrowers, 'weekly');
+                updateSummary(allBorrowers, 'monthly');
                 updateNotifications(allBorrowers);
 
             }, (error) => {
