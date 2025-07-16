@@ -59,6 +59,9 @@
              background-color: rgba(0, 0, 0, 0.2);
              border: 1px solid rgba(255,255,255,0.1);
         }
+        #tableViewModal .modal {
+            max-width: 90%;
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -87,6 +90,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage product and money loans with interest calculation.</p>
                 </div>
                 <div class="flex items-center mt-4 sm:mt-0 flex-wrap gap-2">
+                     <button id="tableViewButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Table View</button>
                      <button id="settingsButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Settings</button>
                      <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">How It Works</button>
                      <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Import CSV</button>
@@ -238,6 +242,37 @@
                      <button id="closeAddLoanButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <form id="addLoanForm" class="space-y-4"></form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table View Modal -->
+    <div id="tableViewModal" class="modal-backdrop">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 m-4">
+            <div class="p-6">
+                 <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3 mb-5">
+                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">All Loans Table View</h3>
+                     <button id="closeTableViewButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white text-3xl">&times;</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Borrower</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Principal</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Interest</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Penalty</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Due</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loanTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Rows will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -434,6 +469,9 @@
             document.getElementById('closeSettingsButton').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
             document.getElementById('addEmailForm').addEventListener('submit', handleAddAuthorizedEmail);
             
+            document.getElementById('tableViewButton').addEventListener('click', () => document.getElementById('tableViewModal').style.display = 'flex');
+            document.getElementById('closeTableViewButton').addEventListener('click', () => document.getElementById('tableViewModal').style.display = 'none');
+
             document.getElementById('importButton').addEventListener('click', () => document.getElementById('csvFileInput').click());
             document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allBorrowers));
             document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
@@ -586,6 +624,7 @@
                 allBorrowers.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 
                 renderBorrowerList();
+                renderLoanTable();
                 updateSummary(allBorrowers, 'weekly');
                 updateNotifications(allBorrowers);
 
@@ -1127,6 +1166,56 @@
             });
 
             return card;
+        }
+
+        function renderLoanTable() {
+            const tableBody = document.getElementById('loanTableBody');
+            tableBody.innerHTML = ''; // Clear existing table data
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+
+            allBorrowers.forEach(borrower => {
+                borrower.loans.forEach(loan => {
+                    const isFullyPaid = loan.status === 'Paid';
+                    let hasDelayedPayment = false;
+                    let totalPenalty = 0;
+
+                    if (!isFullyPaid && loan.paymentSchedule) {
+                        loan.paymentSchedule.forEach(p => {
+                            if (p.status === 'Pending' && new Date(p.dueDate) < currentDate) {
+                                hasDelayedPayment = true;
+                                const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
+                                const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+                                totalPenalty += (loan.loanAmount * 0.05) * daysDelayed;
+                            }
+                        });
+                    }
+
+                    const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
+                    const interest = loan.loanAmount * (loan.interestRate / 100);
+                    const totalDue = loan.loanAmount + interest + totalPenalty;
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-100 dark:hover:bg-gray-700';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${borrower.borrowerName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanType === 'Product' ? loan.productName : loan.loanType}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.loanAmount.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${interest.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500">₱${totalPenalty.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-gray-200">₱${totalDue.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                overallStatus === 'Paid' ? 'bg-green-100 text-green-800' :
+                                overallStatus === 'Overdue' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                            }">${overallStatus}</span>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
         }
 
         // --- CSV Import/Export ---
