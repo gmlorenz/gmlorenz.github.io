@@ -636,8 +636,23 @@
                 </div>
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">Add Loan Record</button>
             `;
+            
+            document.getElementById('addNewLoanerButton').addEventListener('click', () => {
+                // Reset the form to clear previous entries and set controls to their default state
+                document.getElementById('addLoanForm').reset();
+                
+                // Make the modal visible
+                document.getElementById('addLoanModal').style.display = 'flex';
+            
+                // Manually trigger the change event on the loan type dropdown
+                // This ensures the UI is correct for the default selection ('Product')
+                document.getElementById('modalLoanType').dispatchEvent(new Event('change'));
+                
+                // Manually trigger change on the custom interest checkbox
+                // This ensures the correct interest section is visible based on the default unchecked state
+                document.getElementById('customInterestCheckbox').dispatchEvent(new Event('change'));
+            });
 
-            document.getElementById('addNewLoanerButton').addEventListener('click', () => document.getElementById('addLoanModal').style.display = 'flex');
             document.getElementById('closeAddLoanButton').addEventListener('click', () => document.getElementById('addLoanModal').style.display = 'none');
             
             const loanAmountLabel = document.getElementById('modalLoanAmountLabel');
