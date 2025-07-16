@@ -86,6 +86,51 @@
         .borrower-card.expanded .chevron-icon {
             transform: rotate(180deg);
         }
+        /* --- NEW: Timeline styles for payment history --- */
+        .payment-timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+        .payment-timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background-color: #cbd5e1; /* gray-300 */
+        }
+        .dark .payment-timeline::before {
+            background-color: #4b5563; /* gray-600 */
+        }
+        .timeline-item {
+            position: relative;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 9999px;
+            background-color: #fff;
+            border: 2px solid #6366f1; /* indigo-500 */
+        }
+        .dark .timeline-item::before {
+            background-color: #1f2937; /* gray-800 */
+        }
+        .timeline-item:last-child::after {
+             content: '';
+             position: absolute;
+             left: -20px;
+             bottom: -5px; /* Adjust to align with the line */
+             width: 12px;
+             height: 12px;
+             border-radius: 9999px;
+             background-color: #10b981; /* emerald-500 */
+             border: 2px solid #fff;
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -155,7 +200,7 @@
                     <div id="summaryContent" class="space-y-3 text-sm">
                         <div class="flex justify-between"><span>Total Principal Loaned:</span> <span id="totalPrincipal" class="font-medium">₱0.00</span></div>
                         <div class="flex justify-between"><span>Potential Profit (Interest):</span> <span id="totalInterest" class="font-medium text-blue-600">₱0.00</span></div>
-                        <div class="flex justify-between"><span>Potential Profit (Penalties):</span> <span id="totalPenalties" class="font-medium text-red-600">₱0.00</span></div>
+                        <div class="flex justify-between"><span>Potential Profit (Penalties):</span> <span id="totalPenalties" class="font-medium text-orange-600 dark:text-orange-500">₱0.00</span></div>
                         <div class="flex justify-between font-bold border-t dark:border-gray-700 pt-2"><span>Total Potential Profit:</span> <span id="totalProfit" class="text-green-600">₱0.00</span></div>
                         <div class="flex justify-between mt-4"><span>Active Loans:</span> <span id="activeLoans" class="font-medium">0</span></div>
                         <div class="flex justify-between"><span>Completed Loans:</span> <span id="completedLoans" class="font-medium">0</span></div>
@@ -190,6 +235,8 @@
                     <div id="borrowerList" class="space-y-2">
                         <p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>
                     </div>
+                    <!-- NEW: Pagination Controls -->
+                    <div id="paginationControls" class="flex justify-center items-center mt-6 space-x-2"></div>
                 </div>
             </div>
         </main>
@@ -371,8 +418,9 @@
                      <div>
                         <h4 class="font-bold text-lg">Button Functions</h4>
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
-                            <li><strong>PAID:</strong> Settles the full installment amount, including any accrued penalties for that specific payment.</li>
-                            <li><strong>RELOAN:</strong> This button pays off any accrued penalty for an installment and reschedules it and all subsequent payments. The new due date is calculated from the original due date of the rescheduled payment, not from today.</li>
+                            <li><strong>PAY:</strong> Opens a modal to enter a partial or full payment amount for an installment.</li>
+                            <li><strong>PAID:</strong> A shortcut to fully settle an installment, including any accrued penalties.</li>
+                            <li><strong>RELOAN:</strong> Reschedules the due date for the selected installment and all future ones.</li>
                         </ul>
                     </div>
                 </div>
@@ -445,6 +493,9 @@
         let loanTypeChart = null;
         const primaryAdmin = 'cristinemae111@gmail.com';
         let sortState = { column: 'loanDate', direction: 'desc' };
+        let expandedBorrowerIds = new Set();
+        let currentPage = 1; // <-- NEW: Pagination state
+        const loansPerPage = 10; // <-- NEW: Pagination limit
         
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -617,10 +668,14 @@
             document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
             document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
             
-            document.getElementById('searchLoaner').addEventListener('input', () => renderBorrowerList());
+            document.getElementById('searchLoaner').addEventListener('input', () => {
+                currentPage = 1; // Reset to first page on search
+                renderBorrowerList();
+            });
 
             document.getElementById('filterButtons').addEventListener('click', (e) => {
                 if (e.target.classList.contains('filter-btn')) {
+                    currentPage = 1; // Reset to first page on filter change
                     currentFilter = e.target.dataset.filter;
                     document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
                         btn.classList.remove('active', 'bg-indigo-600', 'text-white');
@@ -763,7 +818,8 @@
                     amount: installmentAmount,
                     status: 'Pending',
                     paidAmount: 0,
-                    paidDate: null
+                    paidDate: null,
+                    paymentHistory: [] 
                 });
             }
             newLoan.paymentSchedule = paymentSchedule;
@@ -924,32 +980,129 @@
                         if (currentFilter === 'due') {
                             return loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
                         }
+                        
+                        if (currentFilter === 'overdue') {
+                             return loan.status !== 'Paid' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
+                        }
 
                         const isFullyPaid = loan.status === 'Paid';
-                        let overallStatus = isFullyPaid ? 'Paid' : 'Active';
-                        if (!isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date())) {
-                            overallStatus = 'Overdue';
-                        }
                         
-                        if (['active', 'overdue', 'paid'].includes(currentFilter)) {
-                            return overallStatus.toLowerCase() === currentFilter;
+                        if (['active', 'paid'].includes(currentFilter)) {
+                             const isOverdue = loan.status !== 'Paid' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
+                             if (currentFilter === 'active') return !isFullyPaid && !isOverdue;
+                             if (currentFilter === 'paid') return isFullyPaid;
                         }
                         return false;
                     });
                 });
             }
 
-            if (filteredBorrowers.length === 0) {
-                 borrowerList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No records found for the current filters.</p>`;
-                 return;
-            }
+            // --- NEW: Pagination Logic ---
+            const totalLoans = filteredBorrowers.reduce((acc, b) => acc + b.loans.filter(l => {
+                 // Re-apply filter logic to count accurately
+                if (currentFilter === 'all') return true;
+                if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter)) return l.loanType === currentFilter;
+                const isFullyPaid = l.status === 'Paid';
+                const isDueToday = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+                const isOverdue = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
+                if (currentFilter === 'due') return isDueToday;
+                if (currentFilter === 'overdue') return isOverdue;
+                if (currentFilter === 'paid') return isFullyPaid;
+                if (currentFilter === 'active') return !isFullyPaid && !isOverdue;
+                return false;
+            }).length, 0);
 
-            filteredBorrowers.forEach(borrower => {
-                const borrowerCard = createBorrowerCard(borrower);
-                if (borrowerCard) { // createBorrowerCard can return null if no loans match
-                    borrowerList.appendChild(borrowerCard);
+            const totalPages = Math.ceil(totalLoans / loansPerPage);
+            
+            let allFilteredLoans = [];
+             filteredBorrowers.forEach(borrower => {
+                borrower.loans.forEach(loan => {
+                    // Re-apply filter logic to get the correct list of loans
+                    const isFullyPaid = loan.status === 'Paid';
+                    const isDueToday = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+                    const isOverdue = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
+                    let matchesFilter = false;
+                    if (currentFilter === 'all') matchesFilter = true;
+                    else if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter) && loan.loanType === currentFilter) matchesFilter = true;
+                    else if (currentFilter === 'due' && isDueToday) matchesFilter = true;
+                    else if (currentFilter === 'overdue' && isOverdue) matchesFilter = true;
+                    else if (currentFilter === 'paid' && isFullyPaid) matchesFilter = true;
+                    else if (currentFilter === 'active' && !isFullyPaid && !isOverdue) matchesFilter = true;
+                    
+                    if(matchesFilter) {
+                        allFilteredLoans.push({ ...loan, borrowerId: borrower.id, borrowerName: borrower.borrowerName });
+                    }
+                });
+            });
+
+            const startIndex = (currentPage - 1) * loansPerPage;
+            const endIndex = startIndex + loansPerPage;
+            const paginatedLoans = allFilteredLoans.slice(startIndex, endIndex);
+
+            // Group paginated loans by borrower to render cards
+            const borrowersOnPage = new Map();
+            paginatedLoans.forEach(loan => {
+                if (!borrowersOnPage.has(loan.borrowerId)) {
+                    borrowersOnPage.set(loan.borrowerId, {
+                        id: loan.borrowerId,
+                        borrowerName: loan.borrowerName,
+                        loans: []
+                    });
+                }
+                borrowersOnPage.get(loan.borrowerId).loans.push(loan);
+            });
+
+
+            if (borrowersOnPage.size === 0) {
+                 borrowerList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No records found for the current filters.</p>`;
+            } else {
+                borrowersOnPage.forEach(borrower => {
+                    const borrowerCard = createBorrowerCard(borrower);
+                    if (borrowerCard) { 
+                        borrowerList.appendChild(borrowerCard);
+                    }
+                });
+            }
+            
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            // Previous Button
+            const prevButton = document.createElement('button');
+            prevButton.textContent = 'Previous';
+            prevButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderBorrowerList();
                 }
             });
+            paginationControls.appendChild(prevButton);
+
+            // Page Info
+            const pageInfo = document.createElement('span');
+            pageInfo.className = 'text-sm text-gray-700 dark:text-gray-300';
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            paginationControls.appendChild(pageInfo);
+
+            // Next Button
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Next';
+            nextButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderBorrowerList();
+                }
+            });
+            paginationControls.appendChild(nextButton);
         }
         
         function updateNotifications(borrowers) {
@@ -1071,6 +1224,7 @@
         function createBorrowerCard(borrower) {
             const card = document.createElement('div');
             card.className = 'borrower-card bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700 shadow-md';
+            card.dataset.borrowerId = borrower.id;
             
             let loansHtml = '';
             const currentDate = new Date();
@@ -1090,16 +1244,6 @@
                 
                 if (overallStatus === 'Active') activeLoanCount++;
                 if (overallStatus === 'Overdue') overdueLoanCount++;
-
-                let shouldDisplay = false;
-                if (currentFilter === 'all' || 
-                   (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter) && loan.loanType === currentFilter) ||
-                   (currentFilter === 'due' && isDueToday) ||
-                   (['active', 'overdue', 'paid'].includes(currentFilter) && overallStatus.toLowerCase() === currentFilter)) {
-                    shouldDisplay = true;
-                }
-
-                if (!shouldDisplay) return;
 
                 let totalPenalty = 0;
                 if (hasDelayedPayment) {
@@ -1129,7 +1273,8 @@
                         let daysDelayed = 0;
 
                         if (!isPaymentPaid) {
-                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAY</button>
+                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>
+                                                <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAY</button>
                                                 <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
                         } else {
                             actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
@@ -1147,22 +1292,41 @@
                         
                         const totalInstallmentDue = payment.amount + installmentPenalty;
                         const paidAmount = payment.paidAmount || 0;
-                        const remainingAmount = totalInstallmentDue - paidAmount;
-                        const percentagePaid = totalInstallmentDue > 0 ? (paidAmount / totalInstallmentDue) * 100 : 0;
+                        let remainingAmount = totalInstallmentDue - paidAmount;
+                        if (remainingAmount < 0) remainingAmount = 0;
+
+                        // --- MODIFIED: Payment History Display ---
+                        let paymentHistoryHtml = '';
+                        if (payment.paymentHistory && payment.paymentHistory.length > 0) {
+                            let runningBalance = totalInstallmentDue;
+                            paymentHistoryHtml = `
+                                <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Payment Summary:</h5>
+                                    <div class="payment-timeline space-y-2">
+                                        ${payment.paymentHistory.map(p => {
+                                            const currentPayment = p.amount;
+                                            runningBalance -= currentPayment;
+                                            return `
+                                            <div class="timeline-item">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">₱${currentPayment.toFixed(2)}</span> paid on ${new Date(p.date).toLocaleDateString()}
+                                                </p>
+                                                <p class="text-xs text-blue-600 dark:text-blue-400 font-semibold">New Total: ₱${runningBalance.toFixed(2)}</p>
+                                            </div>
+                                        `}).join('')}
+                                    </div>
+                                </div>`;
+                        }
+
 
                         if (isPaymentPaid) {
-                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span>`;
+                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span> ${paymentHistoryHtml}`;
                         } else {
                              paymentDetailsHtml = `
                                 <div class="text-xs mt-1">
-                                    <span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-red-600 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span>
+                                    <span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-orange-600 dark:text-orange-500 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span>
                                 </div>
-                                <div class="mt-2">
-                                    <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
-                                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${percentagePaid}%"></div>
-                                    </div>
-                                    <p class="text-xs text-right text-gray-500 mt-1">₱${paidAmount.toFixed(2)} / ₱${totalInstallmentDue.toFixed(2)}</p>
-                                </div>
+                                ${paymentHistoryHtml}
                              `;
                         }
                         
@@ -1174,7 +1338,7 @@
                                         ${isPaymentDelayed ? `<span class="ml-2 text-xs font-bold text-red-700">DELAYED (${daysDelayed} day/s)</span>` : ''}
                                         ${!isPaymentDelayed && payment.dueDate === todayStr ? `<span class="ml-2 text-xs font-bold text-yellow-700">DUE TODAY</span>` : ''}
                                     </div>
-                                    <div class="flex space-x-2">${actionButtonsHtml}</div>
+                                    <div class="flex items-center space-x-2">${actionButtonsHtml}</div>
                                 </div>
                                 ${paymentDetailsHtml}
                             </div>`;
@@ -1204,7 +1368,7 @@
                             <div class="md:text-right">
                                 <p><strong>Principal:</strong> ₱${loan.loanAmount.toFixed(2)}</p>
                                 <p><strong>Interest:</strong> ₱${interest.toFixed(2)}</p>
-                                ${totalPenalty > 0 ? `<p class="text-red-600"><strong>Penalty:</strong> ₱${totalPenalty.toFixed(2)}</p>` : ''}
+                                ${totalPenalty > 0 ? `<p class="font-bold text-orange-600 dark:text-orange-500"><strong>Penalty:</strong> ₱${totalPenalty.toFixed(2)}</p>` : ''}
                                 <p class="font-bold"><strong>Total Due:</strong> ₱${totalDue.toFixed(2)}</p>
                             </div>
                             <div class="col-span-full space-y-1">${scheduleHtml}</div>
@@ -1219,9 +1383,24 @@
 
             if (!loansHtml) return null;
 
-            let summaryHtml = `<span class="text-sm text-green-600">${borrower.loans.length - activeLoanCount - overdueLoanCount} Paid</span>`;
-            if (activeLoanCount > 0) summaryHtml += `, <span class="text-sm text-yellow-600">${activeLoanCount} Active</span>`;
-            if (overdueLoanCount > 0) summaryHtml += `, <span class="text-sm text-red-600">${overdueLoanCount} Overdue</span>`;
+            // Recalculate summary based on all loans for the borrower, not just paginated ones
+            const originalBorrower = allBorrowers.find(b => b.id === borrower.id);
+            let totalActive = 0, totalOverdue = 0, totalPaid = 0;
+             originalBorrower.loans.forEach(loan => {
+                const isFullyPaid = loan.status === 'Paid';
+                if (isFullyPaid) {
+                    totalPaid++;
+                } else {
+                    const hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
+                    if(hasDelayedPayment) totalOverdue++;
+                    else totalActive++;
+                }
+            });
+
+
+            let summaryHtml = `<span class="text-sm text-green-600">${totalPaid} Paid</span>`;
+            if (totalActive > 0) summaryHtml += `, <span class="text-sm text-yellow-600">${totalActive} Active</span>`;
+            if (totalOverdue > 0) summaryHtml += `, <span class="text-sm text-red-600">${totalOverdue} Overdue</span>`;
 
             card.innerHTML = `
                 <div class="borrower-card-header p-4 cursor-pointer flex justify-between items-center">
@@ -1242,13 +1421,22 @@
             `;
             
             card.querySelector('.borrower-card-header').addEventListener('click', (e) => {
-                // Prevent toggle when clicking a button inside the header (if any were added)
                 if (e.target.closest('button')) return;
-                card.classList.toggle('expanded');
+                const isExpanded = card.classList.toggle('expanded');
+                if (isExpanded) {
+                    expandedBorrowerIds.add(borrower.id);
+                } else {
+                    expandedBorrowerIds.delete(borrower.id);
+                }
             });
+            
+            if (expandedBorrowerIds.has(borrower.id)) {
+                card.classList.add('expanded');
+            }
 
             // --- Event Listeners for buttons inside the card ---
             card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
+            card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e))); // <-- NEW
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
 
@@ -1309,10 +1497,18 @@
                 const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
                 const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
 
+                if (!paymentToUpdate.paymentHistory) {
+                    paymentToUpdate.paymentHistory = [];
+                }
+                paymentToUpdate.paymentHistory.push({
+                    amount: paymentAmount,
+                    date: new Date().toISOString()
+                });
+
                 paymentToUpdate.paidAmount = (paymentToUpdate.paidAmount || 0) + paymentAmount;
                 const newRemaining = (payment.amount + installmentPenalty) - paymentToUpdate.paidAmount;
 
-                if (newRemaining <= 0.01) { // Use a small threshold for float comparison
+                if (newRemaining <= 0.01) { 
                     paymentToUpdate.status = 'Paid';
                     paymentToUpdate.paidDate = new Date().toISOString();
                 } else {
@@ -1330,6 +1526,48 @@
             };
 
             modal.style.display = 'flex';
+        }
+
+        async function handleMarkAsPaidClick(e) {
+            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
+            
+            showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async () => {
+                const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
+
+                let installmentPenalty = 0;
+                if (new Date(paymentToUpdate.dueDate) < new Date()) {
+                    const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(paymentToUpdate.dueDate)) / (1000 * 3600 * 24)));
+                    installmentPenalty = (loanToUpdate.loanAmount * 0.05) * daysDelayed;
+                }
+                const totalInstallmentDue = paymentToUpdate.amount + installmentPenalty;
+                const remainingAmount = totalInstallmentDue - (paymentToUpdate.paidAmount || 0);
+
+                // Add the final payment to history
+                 if (!paymentToUpdate.paymentHistory) {
+                    paymentToUpdate.paymentHistory = [];
+                }
+                if (remainingAmount > 0) {
+                    paymentToUpdate.paymentHistory.push({
+                        amount: remainingAmount,
+                        date: new Date().toISOString()
+                    });
+                }
+
+                paymentToUpdate.paidAmount = totalInstallmentDue;
+                paymentToUpdate.status = 'Paid';
+                paymentToUpdate.paidDate = new Date().toISOString();
+
+                const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
+                if (allPaid) {
+                    loanToUpdate.status = 'Paid';
+                }
+
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                showAlert('Success', 'Installment marked as paid.');
+            });
         }
         
         function handleReloanClick(e) {
@@ -1452,7 +1690,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanType === 'Product' ? loan.productName : loan.loanType}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.loanAmount.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">₱${loan.interest.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500">₱${loan.totalPenalty.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-500">₱${loan.totalPenalty.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-gray-200">₱${loan.totalDue.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${loan.loanDate}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -1547,7 +1785,8 @@
                         amount: installmentAmount,
                         status: 'Pending',
                         paidAmount: 0,
-                        paidDate: null
+                        paidDate: null,
+                        paymentHistory: []
                     });
                     newLoan.paymentSchedule = paymentSchedule;
                     newLoan.returnDate = paymentSchedule[paymentSchedule.length - 1].dueDate;
