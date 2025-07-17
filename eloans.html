@@ -229,6 +229,13 @@
                         <canvas id="loanTypeChart"></canvas>
                     </div>
                 </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                     <h2 class="text-2xl font-semibold border-b dark:border-gray-700 pb-4 mb-5">My Activity</h2>
+                     <div id="activityContent" class="space-y-3 text-sm">
+                         <div class="flex justify-between"><span>Loans Created:</span> <span id="loansCreated" class="font-medium">0</span></div>
+                         <div class="flex justify-between"><span>Payments Recorded:</span> <span id="paymentsRecorded" class="font-medium">0</span></div>
+                     </div>
+                 </div>
             </div>
 
             <div class="lg:col-span-2">
@@ -977,6 +984,7 @@
                 renderLoanTable();
                 updateSummary(allBorrowers, 'monthly');
                 updateNotifications(allBorrowers);
+                updateActivityCard(allBorrowers);
 
             }, (error) => {
                 console.error("Error fetching borrowers: ", error);
@@ -1016,7 +1024,8 @@
                 notes: document.getElementById('modalLoanNotes').value.trim(),
                 status: 'Active',
                 paidPenalties: 0,
-                reloanHistory: []
+                reloanHistory: [],
+                createdBy: currentUser.email
             };
 
             if (newLoan.loanType === 'Product') {
@@ -1105,6 +1114,7 @@
                     contactDetails: contactDetails,
                     loans: [loan],
                     isBanned: false,
+                    loanScore: 0,
                     createdAt: serverTimestamp()
                 });
                 document.getElementById('addLoanForm').reset();
@@ -1269,16 +1279,29 @@
                     const isBannedTag = borrower.isBanned ? `<span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded-full ml-2">Banned</span>` : '';
                     item.className = 'flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600';
                     item.innerHTML = `
-                        <div>
+                        <div class="flex-1">
                             <span class="font-medium text-gray-900 dark:text-white">${borrower.borrowerName}</span>
                             ${isBannedTag}
                         </div>
-                        <button class="edit-loaner-btn text-indigo-600 dark:text-indigo-400 font-bold text-xs">Edit</button>
+                        <div class="flex space-x-2">
+                             <button class="check-history-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs py-1 px-2 rounded-md transition">History</button>
+                             <button class="edit-loaner-btn text-indigo-600 dark:text-indigo-400 font-bold text-xs">Edit</button>
+                        </div>
                     `;
                     item.dataset.borrowerId = borrower.id;
                     item.querySelector('.edit-loaner-btn').addEventListener('click', () => {
                         openEditLoanerModal(borrower);
                     });
+                     item.querySelector('.check-history-btn').addEventListener('click', () => {
+                         document.getElementById('manageLoanerModal').style.display = 'none';
+                         window.scrollTo({ top: 0, behavior: 'smooth' });
+                         setTimeout(() => {
+                             const borrowerCard = document.querySelector(`.borrower-card[data-borrower-id="${borrower.id}"]`);
+                             if (borrowerCard && !borrowerCard.classList.contains('expanded')) {
+                                 borrowerCard.querySelector('.borrower-card-header').click();
+                             }
+                         }, 500);
+                     });
                     container.appendChild(item);
                 });
             }
@@ -1603,6 +1626,59 @@
             }
         }
         
+        function calculateLoanScore(borrower) {
+            let score = 100; // Base score
+            const today = new Date();
+            
+            borrower.loans.forEach(loan => {
+                if (loan.status === 'Paid') {
+                    score += 5; // Reward for a completed loan
+                }
+                
+                if (loan.paymentSchedule) {
+                    loan.paymentSchedule.forEach(payment => {
+                        const dueDate = new Date(payment.dueDate);
+                        if (payment.status === 'Paid' && new Date(payment.paidDate) <= dueDate) {
+                            score += 2; // Reward for on-time payment
+                        } else if (payment.status === 'Paid' && new Date(payment.paidDate) > dueDate) {
+                            score -= 3; // Penalty for late payment
+                        }
+                        if (payment.status !== 'Paid' && dueDate < today) {
+                            score -= 5; // Larger penalty for being overdue
+                        }
+                    });
+                }
+            });
+            
+            return Math.max(0, Math.min(100, score)); // Keep score between 0 and 100
+        }
+
+        function updateActivityCard(borrowers) {
+            let loansCreated = 0;
+            let paymentsRecorded = 0;
+
+            borrowers.forEach(borrower => {
+                borrower.loans.forEach(loan => {
+                    if (loan.createdBy === currentUser.email) {
+                        loansCreated++;
+                    }
+                    if (loan.paymentSchedule) {
+                        loan.paymentSchedule.forEach(payment => {
+                            if (payment.paymentHistory) {
+                                payment.paymentHistory.forEach(history => {
+                                    if (history.recordedBy === currentUser.email) {
+                                        paymentsRecorded++;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            document.getElementById('loansCreated').textContent = loansCreated;
+            document.getElementById('paymentsRecorded').textContent = paymentsRecorded;
+        }
+
         function createBorrowerCard(borrower) {
             const card = document.createElement('div');
             card.className = 'borrower-card bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700 shadow-md';
@@ -1944,6 +2020,7 @@
                         paidPrincipal: 0,
                         paidInterest: 0,
                         paidPenalty: 0,
+                        recordedBy: currentUser.email
                     };
                     
                     let remainingPayment = paymentAmount;
@@ -2038,7 +2115,8 @@
                             date: new Date().toISOString(),
                             paidPrincipal: installmentPrincipal,
                             paidInterest: installmentInterest,
-                            paidPenalty: installmentPenalty
+                            paidPenalty: installmentPenalty,
+                            recordedBy: currentUser.email
                         });
                     }
 
@@ -2079,7 +2157,8 @@
                     }
                     targetLoan.reloanHistory.push({
                         reloanDate: new Date().toISOString(),
-                        rescheduledInstallmentIndex: parseInt(paymentIndex)
+                        rescheduledInstallmentIndex: parseInt(paymentIndex),
+                        recordedBy: currentUser.email
                     });
 
                     let nextDueDate = new Date(targetLoan.paymentSchedule[parseInt(paymentIndex)].dueDate); 
