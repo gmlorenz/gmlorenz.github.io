@@ -414,7 +414,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Interest</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Penalty</th>
                                 <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="totalDue">Total Due</th>
-                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="loanDate">Loan Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Date</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
@@ -1885,9 +1885,15 @@
             return card;
         }
 
-        function handlePaymentClick(e) {
+        async function handlePaymentClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+            const borrowerRef = doc(db, borrowersPath, borrowerId);
+            const borrowerSnap = await getDoc(borrowerRef);
+            if (!borrowerSnap.exists()) {
+                showAlert('Error', 'Borrower not found in database.');
+                return;
+            }
+            const borrowerDoc = borrowerSnap.data();
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
             const payment = loan.paymentSchedule[paymentIndex];
 
@@ -1993,7 +1999,13 @@
             toggleButtonSpinner(e.target, true);
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async () => {
                  try {
-                    const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                    const borrowerRef = doc(db, borrowersPath, borrowerId);
+                    const borrowerSnap = await getDoc(borrowerRef);
+                    if (!borrowerSnap.exists()) {
+                        showAlert('Error', 'Borrower not found in database.');
+                        return;
+                    }
+                    const borrowerDoc = borrowerSnap.data();
                     const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                     const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
                     const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
@@ -2041,12 +2053,18 @@
             });
         }
         
-        function handleReloanClick(e) {
+        async function handleReloanClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.target.dataset;
             toggleButtonSpinner(e.target, true);
             showConfirm('Confirm Reloan', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
                 try {
-                    const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                    const borrowerRef = doc(db, borrowersPath, borrowerId);
+                    const borrowerSnap = await getDoc(borrowerRef);
+                    if (!borrowerSnap.exists()) {
+                        showAlert('Error', 'Borrower not found in database.');
+                        return;
+                    }
+                    const borrowerDoc = borrowerSnap.data();
                     const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                     const targetLoan = updatedLoans.find(l => l.loanId === loanId);
                     
@@ -2078,9 +2096,15 @@
             });
         }
 
-        function handleEditNotesClick(e) {
+        async function handleEditNotesClick(e) {
             const { borrowerId, loanId } = e.target.dataset;
-            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+            const borrowerRef = doc(db, borrowersPath, borrowerId);
+            const borrowerSnap = await getDoc(borrowerRef);
+            if (!borrowerSnap.exists()) {
+                showAlert('Error', 'Borrower not found in database.');
+                return;
+            }
+            const borrowerDoc = borrowerSnap.data();
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
 
             const modal = document.getElementById('editNotesModal');
