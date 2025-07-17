@@ -1892,7 +1892,7 @@
         }
 
         async function handlePaymentClick(e) {
-            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
+            const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
             const borrowerRef = doc(db, borrowersPath, borrowerId);
             const borrowerSnap = await getDoc(borrowerRef);
             if (!borrowerSnap.exists()) {
@@ -2001,8 +2001,8 @@
         }
 
         async function handleMarkAsPaidClick(e) {
-            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            toggleButtonSpinner(e.target, true);
+            const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
+            toggleButtonSpinner(e.currentTarget, true);
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async () => {
                  try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
@@ -2054,14 +2054,14 @@
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
                     showAlert('Success', 'Installment marked as paid.');
                  } finally {
-                    toggleButtonSpinner(e.target, false);
+                    toggleButtonSpinner(e.currentTarget, false);
                  }
             });
         }
         
         async function handleReloanClick(e) {
-            const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            toggleButtonSpinner(e.target, true);
+            const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
+            toggleButtonSpinner(e.currentTarget, true);
             showConfirm('Confirm Reloan', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
                 try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
@@ -2097,13 +2097,13 @@
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
                     showAlert('Success', 'Schedule updated.');
                 } finally {
-                    toggleButtonSpinner(e.target, false);
+                    toggleButtonSpinner(e.currentTarget, false);
                 }
             });
         }
 
         async function handleEditNotesClick(e) {
-            const { borrowerId, loanId } = e.target.dataset;
+            const { borrowerId, loanId } = e.currentTarget.dataset;
             const borrowerRef = doc(db, borrowersPath, borrowerId);
             const borrowerSnap = await getDoc(borrowerRef);
             if (!borrowerSnap.exists()) {
