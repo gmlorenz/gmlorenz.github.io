@@ -328,7 +328,7 @@
                      <span class="button-text">Create New Borrower</span>
                     <svg class="spinner-icon w-5 h-5 text-gray-700 dark:text-gray-300 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </button>
-                 <button type="button" id="existingBorrowerCancelButton" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                 <button type="button" id="existingBorrowerCancelButton" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:w-auto sm:text-sm">
                     Cancel
                 </button>
             </div>
@@ -593,13 +593,12 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config)
             : { // Fallback configuration for local development
-                apiKey: "AIzaSyB_eeYSYZPeYRr3m3xiX7OLoRzsd37yNwI",
-                authDomain: "e-loan-9457a.firebaseapp.com",
-                projectId: "e-loan-9457a",
-                storageBucket: "e-loan-9457a.firebasestorage.app",
-                messagingSenderId: "905622570857",
-                appId: "1:905622570857:web:5dfb76c60f9e5d9fdedff8",
-                measurementId: "G-SQF73TTGMX"
+                apiKey: "AIzaSyCg8sobR2ZzIu5pp8PhrQ2st8k7jTg",
+                authDomain: "loan-tracker-e1fc4.firebaseapp.com",
+                projectId: "loan-tracker-e1fc4",
+                storageBucket: "loan-tracker-e1fc4.firebasestorage.app",
+                messagingSenderId: "1032339865550",
+                appId: "1:1032339865550:web:6015ff89f037776011759f"
             };
 
         // Initialize Firebase App, Auth, and Firestore
@@ -1145,7 +1144,7 @@
                 });
                 await addDoc(collection(db, activityLogPath), {
                     action: 'created new loaner',
-                    details: `${name}`,
+                    details: `for ${name}`,
                     timestamp: serverTimestamp(),
                     user: currentUser.email
                 });
@@ -1422,7 +1421,7 @@
                     await deleteDoc(doc(db, borrowersPath, borrowerId));
                     await addDoc(collection(db, activityLogPath), {
                         action: 'deleted loaner',
-                        details: `${allBorrowers.find(b => b.id === borrowerId).borrowerName}`,
+                        details: `${allBorrowers.find(b => b.id === borrowerId)?.borrowerName}`,
                         timestamp: serverTimestamp(),
                         user: currentUser.email
                     });
@@ -2145,6 +2144,12 @@
                     }
 
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                    await addDoc(collection(db, activityLogPath), {
+                        action: 'recorded a payment',
+                        details: `for a loan for ${borrowerDoc.borrowerName}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     modal.style.display = 'none';
                     showAlert('Success', 'Payment has been recorded.');
                 } finally {
@@ -2208,6 +2213,12 @@
                     }
 
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                    await addDoc(collection(db, activityLogPath), {
+                        action: 'marked as paid',
+                        details: `an installment for a loan for ${borrowerDoc.borrowerName}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     showAlert('Success', 'Installment marked as paid.');
                  } finally {
                     toggleButtonSpinner(e.currentTarget, false);
@@ -2252,6 +2263,12 @@
                     targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
                     
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                    await addDoc(collection(db, activityLogPath), {
+                        action: 'rescheduled a loan',
+                        details: `for ${borrowerDoc.borrowerName}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     showAlert('Success', 'Schedule updated.');
                 } finally {
                     toggleButtonSpinner(e.currentTarget, false);
