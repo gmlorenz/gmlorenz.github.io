@@ -1749,7 +1749,6 @@
                     reloanSummary = `<span class="text-xs bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-full">Reloaned ${loan.reloanHistory.length} time(s)</span>`;
                 }
                 
-                // FIXED: Moved these variable declarations outside the inner payment loop
                 const isNotesDisabled = isFullyPaid ? 'disabled' : '';
                 const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
 
