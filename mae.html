@@ -2055,7 +2055,7 @@
                         rescheduledInstallmentIndex: parseInt(paymentIndex)
                     });
 
-                    let nextDueDate = new Date(targetLoan.paymentSchedule[paymentIndex].dueDate); 
+                    let nextDueDate = new Date(targetLoan.paymentSchedule[parseInt(paymentIndex)].dueDate); 
                     for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
                         if (targetLoan.paymentSchedule[i].status !== 'Paid') {
                             const freq = targetLoan.paymentFrequency;
