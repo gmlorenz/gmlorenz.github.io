@@ -610,20 +610,21 @@
         const provider = new GoogleAuthProvider();
 
         // --- Global State ---
-        let currentUser = null;
-        let confirmCallback = null;
-        let unsubscribeFromBorrowers = null;
-        let allBorrowers = [];
-        let currentFilter = 'all';
-        let loanTypeChart = null;
-        const primaryAdmin = 'cristinemae111@gmail.com';
-        let sortState = { column: 'loanDate', direction: 'desc' };
-        let expandedBorrowerIds = new Set();
-        let currentPage = 1; 
-        const loansPerPage = 7;
-        let appSettings = {};
-        let currentUserRole = 'user';
-        let historyModalOpen = false;
+let currentUser = null;
+let confirmCallback = null;
+let cancelCallback = null; // Added for cancel action
+let unsubscribeFromBorrowers = null;
+let allBorrowers = [];
+let currentFilter = 'all';
+let loanTypeChart = null;
+const primaryAdmin = 'cristinemae111@gmail.com';
+let sortState = { column: 'loanDate', direction: 'desc' };
+let expandedBorrowerIds = new Set();
+let currentPage = 1; 
+const loansPerPage = 7;
+let appSettings = {};
+let currentUserRole = 'user';
+let historyModalOpen = false;
 
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -632,27 +633,32 @@
         
         // --- Custom Modals ---
         function showAlert(title, message) {
-            document.getElementById('alertTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = message;
-            document.getElementById('alertModal').style.display = 'flex';
-        }
-        document.getElementById('alertOkButton').addEventListener('click', () => document.getElementById('alertModal').style.display = 'none');
+    document.getElementById('alertTitle').textContent = title;
+    document.getElementById('alertMessage').textContent = message;
+    document.getElementById('alertModal').style.display = 'flex';
+}
+document.getElementById('alertOkButton').addEventListener('click', () => document.getElementById('alertModal').style.display = 'none');
 
-        function showConfirm(title, message, callback) {
-            document.getElementById('confirmTitle').textContent = title;
-            document.getElementById('confirmMessage').textContent = message;
-            confirmCallback = callback;
-            document.getElementById('confirmModal').style.display = 'flex';
-        }
-        document.getElementById('confirmOkButton').addEventListener('click', () => {
-            if (confirmCallback) confirmCallback();
-            document.getElementById('confirmModal').style.display = 'none';
-            confirmCallback = null;
-        });
-        document.getElementById('confirmCancelButton').addEventListener('click', () => {
-            document.getElementById('confirmModal').style.display = 'none';
-            confirmCallback = null;
-        });
+function showConfirm(title, message, onConfirm, onCancel) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    confirmCallback = onConfirm;
+    cancelCallback = onCancel; // Store the cancel callback
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+document.getElementById('confirmOkButton').addEventListener('click', () => {
+    if (confirmCallback) confirmCallback();
+    document.getElementById('confirmModal').style.display = 'none';
+    confirmCallback = null;
+    cancelCallback = null;
+});
+
+document.getElementById('confirmCancelButton').addEventListener('click', () => {
+    if (cancelCallback) cancelCallback(); // Call the cancel callback
+    document.getElementById('confirmModal').style.display = 'none';
+    confirmCallback = null;
+    cancelCallback = null;
+});
 
         function toggleButtonSpinner(button, show) {
             if (!button) return;
@@ -2230,8 +2236,10 @@
         
         async function handleRescheduleClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
-            toggleButtonSpinner(e.currentTarget, true);
-            showConfirm('Confirm Reschedule', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
+            const rescheduleButton = e.currentTarget;
+            toggleButtonSpinner(rescheduleButton, true);
+
+            const onConfirm = async () => {
                 try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
                     const borrowerSnap = await getDoc(borrowerRef);
@@ -2252,16 +2260,16 @@
                         recordedBy: currentUser.email
                     });
 
-                   let nextDueDate = new Date(targetLoan.paymentSchedule[parseInt(paymentIndex)].dueDate); 
-for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
-    if (targetLoan.paymentSchedule[i].status !== 'Paid') {
-        const freq = targetLoan.paymentFrequency;
-        if (freq === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
-        else if (freq === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
-        else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-        targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
-    }
-}
+                    let nextDueDate = new Date(targetLoan.paymentSchedule[parseInt(paymentIndex)].dueDate); 
+                    for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
+                        if (targetLoan.paymentSchedule[i].status !== 'Paid') {
+                            const freq = targetLoan.paymentFrequency;
+                            if (freq === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
+                            else if (freq === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
+                            else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                            targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
+                        }
+                    }
                     targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
                     
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
@@ -2273,9 +2281,19 @@ for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) 
                     });
                     showAlert('Success', 'Schedule updated.');
                 } finally {
-                    toggleButtonSpinner(e.currentTarget, false);
+                    toggleButtonSpinner(rescheduleButton, false);
                 }
-            });
+            };
+
+            const onCancel = () => {
+                toggleButtonSpinner(rescheduleButton, false);
+            };
+
+            const confirmMessage = targetLoan.loanType === 'Product' 
+                ? 'This will reschedule the due date for this and all future payments. Are you sure?'
+                : 'This will reloan and reschedule the due date for this and all future payments. Are you sure?';
+
+            showConfirm('Confirm Action', confirmMessage, onConfirm, onCancel);
         }
 
         async function handleEditNotesClick(e) {
