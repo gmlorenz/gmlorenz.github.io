@@ -131,23 +131,6 @@
              background-color: #10b981; /* emerald-500 */
              border: 2px solid #fff;
         }
-        /* --- NEW: Spinner Styles --- */
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .loading-button .button-text {
-            display: none;
-        }
-        .loading-button .spinner-icon {
-            display: inline-block;
-        }
-        .spinner-icon {
-             display: none;
-        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -160,11 +143,7 @@
             <p class="mb-6 text-gray-600 dark:text-gray-300">Please sign in to continue</p>
             <button id="googleSignInButton" class="w-full inline-flex justify-center items-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <svg class="w-5 h-5 mr-2" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 58.4l-62.5 62.5C338.3 99.9 294.9 88 248 88c-88.3 0-160 71.7-160 160s71.7 160 160 160c92.6 0 145.5-68.2 149.9-105.5H248V256h239.8c1.3 7.8 2.2 15.6 2.2 23.8z"></path></svg>
-                <span class="button-text">Sign in with Google</span>
-                <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                Sign in with Google
             </button>
         </div>
     </div>
@@ -180,7 +159,6 @@
                 <div class="flex items-center mt-4 sm:mt-0 flex-wrap gap-2">
                      <button id="tableViewButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Table View</button>
                      <button id="settingsButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Settings</button>
-                     <button id="manageLoanerButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg hidden">Manage Loaners</button>
                      <button id="howItWorksButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">How It Works</button>
                      <button id="importButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Import CSV</button>
                      <button id="exportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">Export CSV</button>
@@ -199,8 +177,7 @@
             <div class="lg:col-span-1 space-y-8">
                  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
                     <button id="addNewLoanerButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md shadow-lg">
-                         <span class="button-text">ADD NEW LOAN</span>
-                        <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ADD NEW LOAN
                     </button>
                 </div>
                  <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
@@ -218,9 +195,9 @@
                         <input type="date" id="endDate" class="text-xs p-1 border dark:border-gray-600 rounded-md dark:bg-gray-700">
                     </div>
                     <div id="summaryContent" class="space-y-3 text-sm">
-                        <div class="flex justify-between"><span>Principal:</span> <span id="totalPrincipal" class="font-medium">₱0.00</span></div>
-                        <div class="flex justify-between"><span>Interest:</span> <span id="totalInterest" class="font-medium text-blue-600">₱0.00</span></div>
-                        <div class="flex justify-between"><span>Penalty:</span> <span id="totalPenalties" class="font-medium text-orange-600 dark:text-orange-500">₱0.00</span></div>
+                        <div class="flex justify-between"><span>Total Principal Loaned:</span> <span id="totalPrincipal" class="font-medium">₱0.00</span></div>
+                        <div class="flex justify-between"><span>Potential Profit (Interest):</span> <span id="totalInterest" class="font-medium text-blue-600">₱0.00</span></div>
+                        <div class="flex justify-between"><span>Potential Profit (Penalties):</span> <span id="totalPenalties" class="font-medium text-orange-600 dark:text-orange-500">₱0.00</span></div>
                         <div class="flex justify-between font-bold border-t dark:border-gray-700 pt-2"><span>Total Potential Profit:</span> <span id="totalProfit" class="text-green-600">₱0.00</span></div>
                         <div class="flex justify-between mt-4"><span>Active Loans:</span> <span id="activeLoans" class="font-medium">0</span></div>
                         <div class="flex justify-between"><span>Completed Loans:</span> <span id="completedLoans" class="font-medium">0</span></div>
@@ -267,10 +244,7 @@
                 <div class="mt-2"><p id="alertMessage" class="text-sm text-gray-500 dark:text-gray-400">Your message here.</p></div>
             </div>
             <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" id="alertOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                    <span class="button-text">OK</span>
-                    <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                </button>
+                <button type="button" id="alertOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">OK</button>
             </div>
         </div>
     </div>
@@ -289,10 +263,7 @@
                 </div>
             </div>
             <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" id="confirmOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                    <span class="button-text">Confirm</span>
-                    <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                </button>
+                <button type="button" id="confirmOkButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Confirm</button>
                 <button type="button" id="confirmCancelButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
             </div>
         </div>
@@ -317,12 +288,10 @@
             </div>
             <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
                 <button type="button" id="addToExistingButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:w-auto sm:text-sm">
-                    <span class="button-text">Add to Existing Record</span>
-                    <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Add to Existing Record
                 </button>
                 <button type="button" id="addAsNewButton" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:w-auto sm:text-sm">
-                     <span class="button-text">Create New Borrower</span>
-                    <svg class="spinner-icon w-5 h-5 text-gray-700 dark:text-gray-300 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Create New Borrower
                 </button>
                  <button type="button" id="existingBorrowerCancelButton" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:w-auto sm:text-sm">
                     Cancel
@@ -340,59 +309,6 @@
                      <button id="closeAddLoanButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
                 </div>
                 <form id="addLoanForm" class="space-y-4"></form>
-            </div>
-        </div>
-    </div>
-    
-    <div id="manageLoanerModal" class="modal-backdrop">
-        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-3xl m-4">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3 mb-5">
-                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Manage Loaners</h3>
-                     <button id="closeManageLoanerButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <input type="text" id="manageLoanerSearch" placeholder="Search by name..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700">
-                    </div>
-                    <div id="loanerListContainer" class="space-y-2">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-     <div id="editLoanerModal" class="modal-backdrop">
-        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
-            <div class="p-6">
-                 <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3 mb-5">
-                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Edit Loaner Details</h3>
-                     <button id="closeEditLoanerButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
-                </div>
-                 <form id="editLoanerForm" class="space-y-4">
-                    <div>
-                        <label for="editLoanerName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loaner's Name</label>
-                        <input type="text" id="editLoanerName" name="borrowerName" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
-                    </div>
-                     <div>
-                        <label for="editLoanerContact" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Details</label>
-                        <textarea id="editLoanerContact" name="contactDetails" rows="3" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm"></textarea>
-                    </div>
-                     <div class="flex items-center">
-                        <input id="banLoanerCheckbox" type="checkbox" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
-                        <label for="banLoanerCheckbox" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Ban this Loaner</label>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" id="editLoanerDeleteButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-lg">
-                            <span class="button-text">Delete Loaner</span>
-                            <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
-                            <span class="button-text">Save Changes</span>
-                            <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </button>
-                    </div>
-                 </form>
             </div>
         </div>
     </div>
@@ -414,7 +330,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Interest</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Penalty</th>
                                 <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="totalDue">Total Due</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loan Date</th>
+                                <th scope="col" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" data-sort="loanDate">Loan Date</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
@@ -437,10 +353,7 @@
                     </div>
                     <p id="paymentDetails" class="text-xs text-gray-500 dark:text-gray-400"></p>
                     <div class="bg-gray-50 dark:bg-gray-700 -mx-6 -mb-6 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                            <span class="button-text">Submit Payment</span>
-                            <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </button>
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Submit Payment</button>
                         <button type="button" id="closePartialPaymentButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
                     </div>
                 </form>
@@ -455,10 +368,7 @@
                 <form id="editNotesForm" class="mt-4 space-y-4">
                     <textarea id="loanNotesText" rows="4" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                     <div class="sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                            <span class="button-text">Save Notes</span>
-                            <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </button>
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Save Notes</button>
                         <button type="button" id="closeEditNotesButton" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-500 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
                     </div>
                 </form>
@@ -519,25 +429,6 @@
                 </div>
                 <div class="space-y-6">
                     <div>
-                        <h4 class="text-lg font-medium text-gray-900 dark:text-white">Loan Defaults</h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Set default values for new loans.</p>
-                        <form id="loanDefaultsForm" class="mt-2 space-y-4">
-                            <div>
-                                <label for="defaultPenaltyRateInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Default Penalty Rate (%) per day</label>
-                                <input type="number" id="defaultPenaltyRateInput" min="0" step="0.01" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                 <label for="defaultELoanInterest" class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-Loan Default Interest Rate (%)</label>
-                                 <input type="number" id="defaultELoanInterest" min="0" step="0.01" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                <span class="button-text">Save Defaults</span>
-                                <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            </button>
-                        </form>
-                    </div>
-
-                    <div>
                         <h4 class="text-lg font-medium text-gray-900 dark:text-white">Authorized Emails</h4>
                         <p class="text-sm text-gray-500 dark:text-gray-400">These users can access the application.</p>
                         <div id="authorizedEmailsList" class="mt-4 space-y-2">
@@ -547,10 +438,7 @@
                         <h4 class="text-lg font-medium text-gray-900 dark:text-white">Add New Authorized Email</h4>
                         <form id="addEmailForm" class="mt-2 flex gap-2">
                             <input type="email" id="newAuthEmail" placeholder="user@example.com" required class="flex-grow block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                <span class="button-text">Add</span>
-                                <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            </button>
+                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Add</button>
                         </form>
                     </div>
                 </div>
@@ -572,13 +460,12 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config)
             : { // Fallback configuration for local development
-               apiKey: "AIzaSyB_eeYSYZPeYRr3m3xiX7OLoRzsd37yNwI",
-               authDomain: "e-loan-9457a.firebaseapp.com",
-               projectId: "e-loan-9457a",
-               storageBucket: "e-loan-9457a.firebasestorage.app",
-               messagingSenderId: "905622570857",
-               appId: "1:905622570857:web:5dfb76c60f9e5d9fdedff8",
-               measurementId: "G-SQF73TTGMX"
+                apiKey: "AIzaSyCg8sobR2ZzIu5pp8PhrQ2st8k7MEe1jTg",
+                authDomain: "loan-tracker-e1fc4.firebaseapp.com",
+                projectId: "loan-tracker-e1fc4",
+                storageBucket: "loan-tracker-e1fc4.firebasestorage.app",
+                messagingSenderId: "1032339865550",
+                appId: "1:1032339865550:web:6015ff89f037776011759f"
             };
 
         // Initialize Firebase App, Auth, and Firestore
@@ -597,11 +484,9 @@
         const primaryAdmin = 'cristinemae111@gmail.com';
         let sortState = { column: 'loanDate', direction: 'desc' };
         let expandedBorrowerIds = new Set();
-        let currentPage = 1; 
-        const loansPerPage = 10;
-        let appSettings = {};
-        let currentUserRole = 'user';
-
+        let currentPage = 1; // <-- NEW: Pagination state
+        const loansPerPage = 10; // <-- NEW: Pagination limit
+        
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
@@ -630,32 +515,14 @@
             document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
-
-        function toggleButtonSpinner(button, show) {
-            if (!button) return;
-            const textSpan = button.querySelector('.button-text');
-            const spinnerSvg = button.querySelector('.spinner-icon');
-
-            if (show) {
-                button.disabled = true;
-                if (textSpan) textSpan.style.display = 'none';
-                if (spinnerSvg) spinnerSvg.style.display = 'inline-block';
-            } else {
-                button.disabled = false;
-                if (textSpan) textSpan.style.display = 'inline-block';
-                if (spinnerSvg) spinnerSvg.style.display = 'none';
-            }
-        }
         
         // --- Authentication ---
         googleSignInButton.addEventListener('click', () => {
-            toggleButtonSpinner(googleSignInButton, true);
             signInWithPopup(auth, provider).catch(error => {
                 console.error("Google Sign-In Error:", error);
                 if (error.code !== 'auth/popup-closed-by-user') {
                     showAlert('Sign-In Failed', `Error: ${error.message}`);
                 }
-                toggleButtonSpinner(googleSignInButton, false);
             });
         });
 
@@ -665,7 +532,6 @@
             } else {
                 currentUser = null;
                 showLoginScreen();
-                toggleButtonSpinner(googleSignInButton, false);
             }
         });
 
@@ -674,29 +540,13 @@
             try {
                 let configSnap = await getDoc(configRef);
                 if (!configSnap.exists()) {
-                    await setDoc(configRef, { 
-                        authorizedEmails: [primaryAdmin],
-                        defaultPenaltyRate: 5,
-                        defaultELoanInterest: 20,
-                        userRoles: { [primaryAdmin]: 'admin' }
-                    });
+                    await setDoc(configRef, { authorizedEmails: [primaryAdmin] });
                     configSnap = await getDoc(configRef);
                 }
                 
-                const data = configSnap.data();
-                const authorizedEmails = data.authorizedEmails || [];
-                const userRoles = data.userRoles || {};
-                
-                appSettings = {
-                    authorizedEmails: authorizedEmails,
-                    defaultPenaltyRate: data.defaultPenaltyRate || 5,
-                    defaultELoanInterest: data.defaultELoanInterest || 20,
-                    userRoles: userRoles
-                };
-                
-                currentUserRole = appSettings.userRoles[user.email] || 'user';
+                const authorizedEmails = configSnap.data().authorizedEmails || [];
 
-                if (appSettings.authorizedEmails.includes(user.email)) {
+                if (authorizedEmails.includes(user.email)) {
                     currentUser = user;
                     showMainApp(user);
                 } else {
@@ -717,38 +567,15 @@
                 signOut(auth);
             });
             
-            if (currentUserRole === 'admin') {
-                document.getElementById('settingsButton').style.display = 'inline-block';
-                document.getElementById('manageLoanerButton').style.display = 'inline-block';
-            } else {
-                document.getElementById('settingsButton').style.display = 'none';
-                document.getElementById('manageLoanerButton').style.display = 'none';
-            }
-            
             document.getElementById('settingsButton').addEventListener('click', openSettingsModal);
             document.getElementById('closeSettingsButton').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
             document.getElementById('addEmailForm').addEventListener('submit', handleAddAuthorizedEmail);
-            document.getElementById('loanDefaultsForm').addEventListener('submit', handleSaveDefaults);
-            
-            document.getElementById('manageLoanerButton').addEventListener('click', openManageLoanerModal);
-            document.getElementById('closeManageLoanerButton').addEventListener('click', () => document.getElementById('manageLoanerModal').style.display = 'none');
-            document.getElementById('manageLoanerSearch').addEventListener('input', renderManageLoanerList);
-            document.getElementById('closeEditLoanerButton').addEventListener('click', () => document.getElementById('editLoanerModal').style.display = 'none');
-            document.getElementById('editLoanerForm').addEventListener('submit', handleEditLoanerSubmit);
-            document.getElementById('editLoanerDeleteButton').addEventListener('click', handleDeleteLoaner);
             
             document.getElementById('tableViewButton').addEventListener('click', () => document.getElementById('tableViewModal').style.display = 'flex');
             document.getElementById('closeTableViewButton').addEventListener('click', () => document.getElementById('tableViewModal').style.display = 'none');
 
-            document.getElementById('importButton').addEventListener('click', (e) => {
-                toggleButtonSpinner(e.target, true);
-                document.getElementById('csvFileInput').click();
-            });
-            document.getElementById('exportButton').addEventListener('click', (e) => {
-                toggleButtonSpinner(e.target, true);
-                exportToCSV(allBorrowers);
-                setTimeout(() => toggleButtonSpinner(e.target, false), 1000); // Simulate export time
-            });
+            document.getElementById('importButton').addEventListener('click', () => document.getElementById('csvFileInput').click());
+            document.getElementById('exportButton').addEventListener('click', () => exportToCSV(allBorrowers));
             document.getElementById('csvFileInput').addEventListener('change', (e) => importFromCSV(e.target.files[0]));
 
             document.getElementById('closePartialPaymentButton').addEventListener('click', () => document.getElementById('partialPaymentModal').style.display = 'none');
@@ -799,7 +626,6 @@
                             <option value="weekly">Weekly</option>
                             <option value="bi-weekly">Bi-Weekly</option>
                             <option value="monthly">Monthly</option>
-                            <option value="one-time">One-time</option>
                         </select>
                     </div>
                 </div>
@@ -807,25 +633,26 @@
                     <label for="modalLoanNotes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes (Optional)</label>
                     <textarea id="modalLoanNotes" name="loanNotes" rows="3" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                 </div>
-                 <div>
-                    <label for="modalContactDetails" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Details (Optional)</label>
-                    <textarea id="modalContactDetails" name="contactDetails" rows="2" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                </div>
                 <div>
                     <label for="modalLoanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
                     <input type="date" id="modalLoanDate" name="loanDate" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
-                    <span class="button-text">Add Loan Record</span>
-                    <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                </button>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">Add Loan Record</button>
             `;
             
             document.getElementById('addNewLoanerButton').addEventListener('click', () => {
+                // Reset the form to clear previous entries and set controls to their default state
                 document.getElementById('addLoanForm').reset();
-                document.getElementById('modalInterestRate').value = appSettings.defaultELoanInterest;
+                
+                // Make the modal visible
                 document.getElementById('addLoanModal').style.display = 'flex';
+            
+                // Manually trigger the change event on the loan type dropdown
+                // This ensures the UI is correct for the default selection ('Product')
                 document.getElementById('modalLoanType').dispatchEvent(new Event('change'));
+                
+                // Manually trigger change on the custom interest checkbox
+                // This ensures the correct interest section is visible based on the default unchecked state
                 document.getElementById('customInterestCheckbox').dispatchEvent(new Event('change'));
             });
 
@@ -841,13 +668,13 @@
                 if (e.target.value === 'E-Loan') {
                     productNameField.style.display = 'none';
                     loanAmountLabel.textContent = 'Loan Amount (₱)';
-                    interestRateInput.value = appSettings.defaultELoanInterest;
+                    interestRateInput.value = 20;
                     numberOfPaymentsInput.value = 1;
                     paymentFrequencySelect.value = 'weekly';
                 } else if (e.target.value === 'Long Term E-Loan') {
                      productNameField.style.display = 'none';
                      loanAmountLabel.textContent = 'Loan Amount (₱)';
-                     interestRateInput.value = appSettings.defaultELoanInterest;
+                     interestRateInput.value = 20;
                 } else if (e.target.value === 'Product') {
                     productNameField.style.display = 'block';
                     loanAmountLabel.textContent = 'Product Amount (₱)';
@@ -870,17 +697,18 @@
                 }
             });
 
+
             document.getElementById('howItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'flex');
             document.getElementById('closeHowItWorksButton').addEventListener('click', () => document.getElementById('howItWorksModal').style.display = 'none');
             
             document.getElementById('searchLoaner').addEventListener('input', () => {
-                currentPage = 1;
+                currentPage = 1; // Reset to first page on search
                 renderBorrowerList();
             });
 
             document.getElementById('filterButtons').addEventListener('click', (e) => {
                 if (e.target.classList.contains('filter-btn')) {
-                    currentPage = 1;
+                    currentPage = 1; // Reset to first page on filter change
                     currentFilter = e.target.dataset.filter;
                     document.querySelectorAll('#filterButtons .filter-btn').forEach(btn => {
                         btn.classList.remove('active', 'bg-indigo-600', 'text-white');
@@ -913,14 +741,7 @@
                 });
             });
             
-            addLoanForm.addEventListener('submit', async (e) => {
-                toggleButtonSpinner(e.submitter, true);
-                try {
-                    await handleAddLoanSubmit(e);
-                } finally {
-                    toggleButtonSpinner(e.submitter, false);
-                }
-            });
+            addLoanForm.addEventListener('submit', handleAddLoanSubmit);
 
             document.querySelectorAll('.sortable-header').forEach(header => {
                 header.addEventListener('click', () => {
@@ -1001,7 +822,6 @@
             const isCustomInterest = document.getElementById('customInterestCheckbox').checked;
             const interestRate = parseFloat(document.getElementById('modalInterestRate').value) || 0;
             const customInterest = parseFloat(document.getElementById('modalCustomInterest').value) || 0;
-            const contactDetails = document.getElementById('modalContactDetails').value.trim();
             
             const newLoan = {
                 loanId: crypto.randomUUID(),
@@ -1031,10 +851,9 @@
             let nextDueDate = new Date(newLoan.loanDate);
 
             for(let i = 0; i < newLoan.numberOfPayments; i++) {
-                 if (newLoan.paymentFrequency === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
-                 else if (newLoan.paymentFrequency === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
-                 else if (newLoan.paymentFrequency === 'monthly') nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                 else if (newLoan.paymentFrequency === 'one-time') nextDueDate = new Date(newLoan.loanDate);
+                if (newLoan.paymentFrequency === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
+                else if (newLoan.paymentFrequency === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
+                else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
                 
                 paymentSchedule.push({
                     dueDate: nextDueDate.toISOString().split('T')[0],
@@ -1054,7 +873,7 @@
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                await createNewBorrower(borrowerName, contactDetails, newLoan);
+                createNewBorrower(borrowerName, newLoan);
             } else {
                 const existingBorrowerDoc = querySnapshot.docs[0];
                 showExistingBorrowerChoice(borrowerName, newLoan, existingBorrowerDoc.id);
@@ -1070,24 +889,14 @@
 
             msgEl.textContent = `A borrower named '${borrowerName}' already exists. How would you like to proceed?`;
             
-            addToExistingBtn.onclick = async () => {
-                toggleButtonSpinner(addToExistingBtn, true);
-                try {
-                    await updateExistingBorrower(existingBorrowerId, newLoan);
-                } finally {
-                    toggleButtonSpinner(addToExistingBtn, false);
-                    modal.style.display = 'none';
-                }
+            addToExistingBtn.onclick = () => {
+                updateExistingBorrower(existingBorrowerId, newLoan);
+                modal.style.display = 'none';
             };
 
-            addAsNewBtn.onclick = async () => {
-                toggleButtonSpinner(addAsNewBtn, true);
-                try {
-                    await createNewBorrower(borrowerName, newLoan);
-                } finally {
-                    toggleButtonSpinner(addAsNewBtn, false);
-                    modal.style.display = 'none';
-                }
+            addAsNewBtn.onclick = () => {
+                createNewBorrower(borrowerName, newLoan);
+                modal.style.display = 'none';
             };
 
             cancelBtn.onclick = () => {
@@ -1098,13 +907,11 @@
         }
 
 
-        async function createNewBorrower(name, contactDetails, loan) {
+        async function createNewBorrower(name, loan) {
             try {
                 await addDoc(collection(db, borrowersPath), {
                     borrowerName: name,
-                    contactDetails: contactDetails,
                     loans: [loan],
-                    isBanned: false,
                     createdAt: serverTimestamp()
                 });
                 document.getElementById('addLoanForm').reset();
@@ -1118,11 +925,6 @@
         async function updateExistingBorrower(docId, loan) {
              try {
                 const borrowerRef = doc(db, borrowersPath, docId);
-                const borrowerSnap = await getDoc(borrowerRef);
-                if (borrowerSnap.data().isBanned) {
-                    showAlert('Action Denied', 'This borrower is banned and cannot receive new loans.');
-                    return;
-                }
                 await updateDoc(borrowerRef, {
                     loans: arrayUnion(loan)
                 });
@@ -1138,10 +940,6 @@
         async function openSettingsModal() {
             const listEl = document.getElementById('authorizedEmailsList');
             listEl.innerHTML = '<p>Loading...</p>';
-            
-            document.getElementById('defaultPenaltyRateInput').value = appSettings.defaultPenaltyRate;
-            document.getElementById('defaultELoanInterest').value = appSettings.defaultELoanInterest;
-            
             document.getElementById('settingsModal').style.display = 'flex';
 
             try {
@@ -1154,36 +952,6 @@
             } catch(e) {
                 console.error(e);
                 listEl.innerHTML = '<p class="text-red-500">Error loading emails.</p>';
-            }
-        }
-        
-        async function handleSaveDefaults(e) {
-            e.preventDefault();
-            const newPenaltyRate = parseFloat(document.getElementById('defaultPenaltyRateInput').value);
-            const newELoanInterest = parseFloat(document.getElementById('defaultELoanInterest').value);
-
-            if (isNaN(newPenaltyRate) || newPenaltyRate < 0) {
-                return showAlert('Validation Error', 'Please enter a valid penalty rate (0 or higher).');
-            }
-            if (isNaN(newELoanInterest) || newELoanInterest < 0) {
-                 return showAlert('Validation Error', 'Please enter a valid E-Loan interest rate (0 or higher).');
-            }
-            
-            toggleButtonSpinner(e.submitter, true);
-            try {
-                await updateDoc(doc(db, configPath), {
-                    defaultPenaltyRate: newPenaltyRate,
-                    defaultELoanInterest: newELoanInterest
-                });
-                appSettings.defaultPenaltyRate = newPenaltyRate;
-                appSettings.defaultELoanInterest = newELoanInterest;
-                showAlert('Success', 'Default settings saved successfully.');
-            } catch (error) {
-                console.error("Error saving defaults:", error);
-                showAlert('Error', 'Could not save default settings.');
-            } finally {
-                toggleButtonSpinner(e.submitter, false);
-                document.getElementById('settingsModal').style.display = 'none';
             }
         }
 
@@ -1199,14 +967,7 @@
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = 'Remove';
                     deleteButton.className = 'text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600';
-                    deleteButton.onclick = async () => {
-                        toggleButtonSpinner(deleteButton, true);
-                        try {
-                             await handleDeleteAuthorizedEmail(email);
-                        } finally {
-                             toggleButtonSpinner(deleteButton, false);
-                        }
-                    };
+                    deleteButton.onclick = () => handleDeleteAuthorizedEmail(email);
                     item.appendChild(deleteButton);
                 } else {
                      item.innerHTML += `<span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">ADMIN</span>`;
@@ -1220,8 +981,6 @@
             const input = document.getElementById('newAuthEmail');
             const email = input.value.trim();
             if (!email) return;
-            
-            toggleButtonSpinner(e.submitter, true);
             try {
                 await updateDoc(doc(db, configPath), { authorizedEmails: arrayUnion(email) });
                 showAlert('Success', `${email} has been added.`);
@@ -1230,14 +989,12 @@
             } catch (error) {
                 console.error("Error adding email:", error);
                 showAlert('Error', 'Could not add email.');
-            } finally {
-                toggleButtonSpinner(e.submitter, false);
             }
         }
 
         async function handleDeleteAuthorizedEmail(email) {
             showConfirm('Confirm Deletion', `Are you sure you want to remove ${email}?`, async () => {
-                 try {
+                try {
                     await updateDoc(doc(db, configPath), { authorizedEmails: arrayRemove(email) });
                     showAlert('Success', `${email} has been removed.`);
                     openSettingsModal();
@@ -1248,105 +1005,6 @@
             });
         }
 
-        // --- Manage Loaners ---
-        function openManageLoanerModal() {
-            document.getElementById('manageLoanerModal').style.display = 'flex';
-            renderManageLoanerList();
-        }
-
-        function renderManageLoanerList() {
-            const container = document.getElementById('loanerListContainer');
-            const searchTerm = document.getElementById('manageLoanerSearch').value.toLowerCase();
-            container.innerHTML = '';
-            
-            const filtered = allBorrowers.filter(b => b.borrowerName.toLowerCase().includes(searchTerm));
-            
-            if (filtered.length === 0) {
-                 container.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-4">No loaners found.</p>`;
-            } else {
-                filtered.forEach(borrower => {
-                    const item = document.createElement('div');
-                    const isBannedTag = borrower.isBanned ? `<span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded-full ml-2">Banned</span>` : '';
-                    item.className = 'flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600';
-                    item.innerHTML = `
-                        <div>
-                            <span class="font-medium text-gray-900 dark:text-white">${borrower.borrowerName}</span>
-                            ${isBannedTag}
-                        </div>
-                        <button class="edit-loaner-btn text-indigo-600 dark:text-indigo-400 font-bold text-xs">Edit</button>
-                    `;
-                    item.dataset.borrowerId = borrower.id;
-                    item.querySelector('.edit-loaner-btn').addEventListener('click', () => {
-                        openEditLoanerModal(borrower);
-                    });
-                    container.appendChild(item);
-                });
-            }
-        }
-
-        function openEditLoanerModal(borrower) {
-            const modal = document.getElementById('editLoanerModal');
-            const nameInput = document.getElementById('editLoanerName');
-            const contactInput = document.getElementById('editLoanerContact');
-            const banCheckbox = document.getElementById('banLoanerCheckbox');
-            
-            nameInput.value = borrower.borrowerName;
-            contactInput.value = borrower.contactDetails || '';
-            banCheckbox.checked = borrower.isBanned || false;
-            
-            modal.dataset.borrowerId = borrower.id;
-            modal.style.display = 'flex';
-        }
-
-        async function handleEditLoanerSubmit(e) {
-            e.preventDefault();
-            const modal = document.getElementById('editLoanerModal');
-            const borrowerId = modal.dataset.borrowerId;
-            const name = document.getElementById('editLoanerName').value.trim();
-            const contact = document.getElementById('editLoanerContact').value.trim();
-            const isBanned = document.getElementById('banLoanerCheckbox').checked;
-
-            if (!name) return showAlert('Validation Error', 'Loaner name cannot be empty.');
-            
-            toggleButtonSpinner(e.submitter, true);
-            try {
-                const borrowerRef = doc(db, borrowersPath, borrowerId);
-                await updateDoc(borrowerRef, {
-                    borrowerName: name,
-                    contactDetails: contact,
-                    isBanned: isBanned
-                });
-                showAlert('Success', 'Loaner details updated successfully.');
-                modal.style.display = 'none';
-            } catch (error) {
-                console.error("Error updating loaner:", error);
-                showAlert('Error', 'Failed to update loaner details.');
-            } finally {
-                toggleButtonSpinner(e.submitter, false);
-            }
-        }
-
-        function handleDeleteLoaner(e) {
-            e.preventDefault();
-            const modal = document.getElementById('editLoanerModal');
-            const borrowerId = modal.dataset.borrowerId;
-            
-            showConfirm('Delete Loaner', 'Are you sure you want to delete this loaner and ALL their records? This cannot be undone.', async () => {
-                toggleButtonSpinner(e.target, true);
-                try {
-                    await deleteDoc(doc(db, borrowersPath, borrowerId));
-                    showAlert('Success', 'Loaner and all records deleted.');
-                    modal.style.display = 'none';
-                    document.getElementById('manageLoanerModal').style.display = 'none';
-                } catch (error) {
-                    console.error("Error deleting loaner:", error);
-                    showAlert('Error', 'Failed to delete loaner record.');
-                } finally {
-                    toggleButtonSpinner(e.target, false);
-                }
-            });
-        }
-        
         // --- UI Rendering ---
         function renderBorrowerList() {
             const loadingMessageEl = document.getElementById('loadingMessage');
@@ -1386,7 +1044,9 @@
                 });
             }
 
+            // --- NEW: Pagination Logic ---
             const totalLoans = filteredBorrowers.reduce((acc, b) => acc + b.loans.filter(l => {
+                 // Re-apply filter logic to count accurately
                 if (currentFilter === 'all') return true;
                 if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter)) return l.loanType === currentFilter;
                 const isFullyPaid = l.status === 'Paid';
@@ -1404,6 +1064,7 @@
             let allFilteredLoans = [];
              filteredBorrowers.forEach(borrower => {
                 borrower.loans.forEach(loan => {
+                    // Re-apply filter logic to get the correct list of loans
                     const isFullyPaid = loan.status === 'Paid';
                     const isDueToday = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
                     const isOverdue = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
@@ -1425,6 +1086,7 @@
             const endIndex = startIndex + loansPerPage;
             const paginatedLoans = allFilteredLoans.slice(startIndex, endIndex);
 
+            // Group paginated loans by borrower to render cards
             const borrowersOnPage = new Map();
             paginatedLoans.forEach(loan => {
                 if (!borrowersOnPage.has(loan.borrowerId)) {
@@ -1457,6 +1119,7 @@
             paginationControls.innerHTML = '';
             if (totalPages <= 1) return;
 
+            // Previous Button
             const prevButton = document.createElement('button');
             prevButton.textContent = 'Previous';
             prevButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700';
@@ -1469,11 +1132,13 @@
             });
             paginationControls.appendChild(prevButton);
 
+            // Page Info
             const pageInfo = document.createElement('span');
             pageInfo.className = 'text-sm text-gray-700 dark:text-gray-300';
             pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
             paginationControls.appendChild(pageInfo);
 
+            // Next Button
             const nextButton = document.createElement('button');
             nextButton.textContent = 'Next';
             nextButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700';
@@ -1563,7 +1228,7 @@
                          loan.paymentSchedule.forEach(p => {
                             if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
                                 const daysDelayed = Math.ceil((currentDate - new Date(p.dueDate)) / (1000 * 3600 * 24));
-                                totalPenalties += (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                                totalPenalties += (loan.loanAmount * 0.05) * daysDelayed;
                             }
                         });
                     }
@@ -1633,7 +1298,7 @@
                         if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
                             const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
                             const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                            totalPenalty += (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                            totalPenalty += (loan.loanAmount * 0.05) * daysDelayed;
                         }
                     });
                 }
@@ -1642,6 +1307,7 @@
                 const interest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
                 const totalDue = loan.loanAmount + interest + totalPenalty;
                 const principalLabel = loan.loanType === 'Product' ? 'Product Price' : 'Principal';
+
 
                 let scheduleHtml = '';
                 if(loan.paymentSchedule?.length > 0) {
@@ -1655,21 +1321,11 @@
                         let actionButtonsHtml = '';
                         let daysDelayed = 0;
 
-                        
                         if (!isPaymentPaid) {
-                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">
-                                <span class="button-text">PAID</span>
-                                <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            </button>
-                            <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">
-                                <span class="button-text">PAY</span>
-                                <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            </button>`;
+                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">PAID</button>
+                                                <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="payment-paid-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded">PAY</button>`;
                             if (loan.loanType !== 'Product') {
-                                actionButtonsHtml += `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">
-                                    <span class="button-text">RELOAN</span>
-                                    <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                </button>`;
+                                actionButtonsHtml += `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">RELOAN</button>`;
                             }
                         } else {
                             actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
@@ -1682,7 +1338,7 @@
                         if (isPaymentDelayed) {
                             const timeDiff = currentDate.getTime() - dueDate.getTime();
                             daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                            installmentPenalty = (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                            installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
                         }
                         
                         const totalInstallmentDue = payment.amount + installmentPenalty;
@@ -1690,6 +1346,7 @@
                         let remainingAmount = totalInstallmentDue - paidAmount;
                         if (remainingAmount < 0) remainingAmount = 0;
 
+                        // --- MODIFIED: Payment History Display ---
                         let paymentHistoryHtml = '';
                         if (payment.paymentHistory && payment.paymentHistory.length > 0) {
                             let runningBalance = totalInstallmentDue;
@@ -1698,18 +1355,14 @@
                                     <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Payment Summary:</h5>
                                     <div class="payment-timeline space-y-2">
                                         ${payment.paymentHistory.map(p => {
-                                            const paidPrincipal = p.paidPrincipal || 0;
-                                            const paidInterest = p.paidInterest || 0;
-                                            const paidPenalty = p.paidPenalty || 0;
-                                            const totalPaid = paidPrincipal + paidInterest + paidPenalty;
+                                            const currentPayment = p.amount;
+                                            runningBalance -= currentPayment;
                                             return `
                                             <div class="timeline-item">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                    <span class="font-medium text-gray-700 dark:text-gray-300">₱${totalPaid.toFixed(2)}</span> paid on ${new Date(p.date).toLocaleDateString()}
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">₱${currentPayment.toFixed(2)}</span> paid on ${new Date(p.date).toLocaleDateString()}
                                                 </p>
-                                                <p class="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                                    (P: ₱${paidPrincipal.toFixed(2)}, I: ₱${paidInterest.toFixed(2)}, Pen: ₱${paidPenalty.toFixed(2)})
-                                                </p>
+                                                <p class="text-xs text-blue-600 dark:text-blue-400 font-semibold">New Total: ₱${runningBalance.toFixed(2)}</p>
                                             </div>
                                         `}).join('')}
                                     </div>
@@ -1721,10 +1374,8 @@
                              paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span> ${paymentHistoryHtml}`;
                         } else {
                              paymentDetailsHtml = `
-                                <div class="text-sm mt-1 space-x-2">
-                                    <span class="text-yellow-600">Due: ₱${payment.amount.toFixed(2)}</span>
-                                    <span class="text-orange-600 dark:text-orange-500">Penalty: ₱${installmentPenalty.toFixed(2)}</span>
-                                    <span class="text-green-600">Remaining Balance: ₱${remainingAmount.toFixed(2)}</span>
+                                <div class="text-xs mt-1">
+                                    <span>Due: ₱${payment.amount.toFixed(2)}</span><span class="text-orange-600 dark:text-orange-500 ml-2">Penalty: ₱${installmentPenalty.toFixed(2)}</span><span class="font-bold ml-2">Remaining: ₱${remainingAmount.toFixed(2)}</span>
                                 </div>
                                 ${paymentHistoryHtml}
                              `;
@@ -1749,10 +1400,6 @@
                 if (loan.reloanHistory && loan.reloanHistory.length > 0) {
                     reloanSummary = `<span class="text-xs bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-full">Reloaned ${loan.reloanHistory.length} time(s)</span>`;
                 }
-                
-                const isNotesDisabled = isFullyPaid ? 'disabled' : '';
-                const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
-
 
                 loansHtml += `
                     <div class="loan-details-card p-3 rounded-lg shadow-inner space-y-2">
@@ -1778,14 +1425,8 @@
                             <div class="col-span-full space-y-1">${scheduleHtml}</div>
                         </div>
                         <div class="mt-3 pt-2 border-t dark:border-gray-700/50 flex justify-end space-x-2">
-                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="edit-notes-btn text-white text-xs font-bold py-1 px-3 rounded-md transition ${notesBtnClass}" ${isNotesDisabled}>
-                                <span class="button-text">Notes</span>
-                                <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                             </button>
-                            <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="delete-loan-btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-3 rounded-md transition">
-                                <span class="button-text">Delete Loan</span>
-                                <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            </button>
+                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="edit-notes-btn bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">Notes</button>
+                            <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="delete-loan-btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-3 rounded-md transition">Delete Loan</button>
                         </div>
                     </div>
                 `;
@@ -1793,6 +1434,7 @@
 
             if (!loansHtml) return null;
 
+            // Recalculate summary based on all loans for the borrower, not just paginated ones
             const originalBorrower = allBorrowers.find(b => b.id === borrower.id);
             let totalActive = 0, totalOverdue = 0, totalPaid = 0;
              originalBorrower.loans.forEach(loan => {
@@ -1824,10 +1466,7 @@
                 <div class="collapsible-body px-4 pb-4">
                     <div class="space-y-3">${loansHtml}</div>
                     <div class="mt-4 pt-3 border-t dark:border-gray-700 flex justify-end">
-                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">
-                            <span class="button-text">Delete All Records for this Borrower</span>
-                            <svg class="spinner-icon w-4 h-4 text-red-700 dark:text-red-300 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                         </button>
+                         <button data-borrower-id="${borrower.id}" class="delete-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold py-1 px-3 rounded-md transition">Delete All Records for this Borrower</button>
                     </div>
                 </div>
             `;
@@ -1846,69 +1485,47 @@
                 card.classList.add('expanded');
             }
 
+            // --- Event Listeners for buttons inside the card ---
             card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
-            card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
+            card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e))); // <-- NEW
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
 
             card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
                 const { borrowerId, loanId } = e.target.dataset;
                  showConfirm('Delete Loan', 'Are you sure you want to delete this specific loan record?', async () => {
-                    toggleButtonSpinner(e.target, true);
                     const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
                     const updatedLoans = borrowerDoc.loans.filter(l => l.loanId !== loanId);
-                    try {
-                        if (updatedLoans.length === 0) {
-                            await updateDoc(doc(db, borrowersPath, borrowerId), { loans: [] });
-                        } else {
-                            await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                        }
-                    } finally {
-                        showAlert('Success', 'Loan record deleted. The borrower name has been retained.');
-                        toggleButtonSpinner(e.target, false);
+                    if (updatedLoans.length === 0) {
+                        await deleteDoc(doc(db, borrowersPath, borrowerId));
+                    } else {
+                        await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
                     }
                  });
             }));
             
             card.querySelector('.delete-borrower-btn').addEventListener('click', e => {
                 const { borrowerId } = e.target.dataset;
-                showConfirm('Delete Borrower', 'Are you sure you want to delete this borrower and ALL their loan records? This action cannot be undone.', async () => {
-                    toggleButtonSpinner(e.target, true);
-                    try {
-                        await deleteDoc(doc(db, borrowersPath, borrowerId));
-                    } finally {
-                        toggleButtonSpinner(e.target, false);
-                    }
+                showConfirm('Delete Borrower', 'Are you sure you want to delete this borrower and ALL their loan records? This action cannot be undone.', () => {
+                    deleteDoc(doc(db, borrowersPath, borrowerId));
                 });
             });
 
             return card;
         }
 
-        async function handlePaymentClick(e) {
+        function handlePaymentClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            const borrowerRef = doc(db, borrowersPath, borrowerId);
-            const borrowerSnap = await getDoc(borrowerRef);
-            if (!borrowerSnap.exists()) {
-                showAlert('Error', 'Borrower not found in database.');
-                return;
-            }
-            const borrowerDoc = borrowerSnap.data();
+            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
             const payment = loan.paymentSchedule[paymentIndex];
-
-            const loanInterest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
-            const totalLoanAmount = loan.loanAmount + loanInterest;
-            const installmentPrincipal = loan.loanAmount / loan.numberOfPayments;
-            const installmentInterest = loanInterest / loan.numberOfPayments;
 
             let installmentPenalty = 0;
             if (new Date(payment.dueDate) < new Date()) {
                 const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 3600 * 24)));
-                installmentPenalty = (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                installmentPenalty = (loan.loanAmount * 0.05) * daysDelayed;
             }
-            const totalInstallmentDue = installmentPrincipal + installmentInterest + installmentPenalty;
-            const remainingAmount = totalInstallmentDue - (payment.paidAmount || 0);
+            const remainingAmount = (payment.amount + installmentPenalty) - (payment.paidAmount || 0);
 
             const modal = document.getElementById('partialPaymentModal');
             const form = document.getElementById('partialPaymentForm');
@@ -1917,78 +1534,46 @@
             
             amountInput.value = remainingAmount.toFixed(2);
             amountInput.max = remainingAmount.toFixed(2);
-            detailsEl.textContent = `Principal Due: ₱${installmentPrincipal.toFixed(2)}, Interest Due: ₱${installmentInterest.toFixed(2)}, Penalty Due: ₱${installmentPenalty.toFixed(2)}, Total Paid: ₱${(payment.paidAmount || 0).toFixed(2)}`;
+            detailsEl.textContent = `Installment: ₱${payment.amount.toFixed(2)}, Penalty: ₱${installmentPenalty.toFixed(2)}, Paid: ₱${(payment.paidAmount || 0).toFixed(2)}`;
             
             form.onsubmit = async (submitEvent) => {
-                toggleButtonSpinner(submitEvent.submitter, true);
-                try {
-                    submitEvent.preventDefault();
-                    let paymentAmount = parseFloat(amountInput.value);
-                    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                        return showAlert('Invalid Amount', `Please enter a valid amount.`);
-                    }
-
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
-                    const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
-                    const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
-
-                    const paidBreakdown = {
-                        date: new Date().toISOString(),
-                        amount: paymentAmount,
-                        paidPrincipal: 0,
-                        paidInterest: 0,
-                        paidPenalty: 0,
-                    };
-                    
-                    let remainingPayment = paymentAmount;
-                    let penaltyRemaining = installmentPenalty - ((paymentToUpdate.paidBreakdown?.paidPenalty || 0) + (paymentToUpdate.paidBreakdown?.paidInterest || 0));
-
-                    if (remainingPayment > 0 && penaltyRemaining > 0) {
-                         const penaltyPaid = Math.min(remainingPayment, penaltyRemaining);
-                         paidBreakdown.paidPenalty = penaltyPaid;
-                         remainingPayment -= penaltyPaid;
-                    }
-                    
-                    let interestRemaining = installmentInterest - (paymentToUpdate.paidBreakdown?.paidInterest || 0);
-                    if (remainingPayment > 0 && interestRemaining > 0) {
-                        const interestPaid = Math.min(remainingPayment, interestRemaining);
-                        paidBreakdown.paidInterest = interestPaid;
-                        remainingPayment -= interestPaid;
-                    }
-
-                    let principalRemaining = installmentPrincipal - (paymentToUpdate.paidBreakdown?.paidPrincipal || 0);
-                    if (remainingPayment > 0 && principalRemaining > 0) {
-                        const principalPaid = Math.min(remainingPayment, principalRemaining);
-                        paidBreakdown.paidPrincipal = principalPaid;
-                        remainingPayment -= principalPaid;
-                    }
-
-                    if (!paymentToUpdate.paymentHistory) {
-                        paymentToUpdate.paymentHistory = [];
-                    }
-                    paymentToUpdate.paymentHistory.push(paidBreakdown);
-
-                    paymentToUpdate.paidAmount = (paymentToUpdate.paidAmount || 0) + paymentAmount;
-                    const newRemaining = totalInstallmentDue - paymentToUpdate.paidAmount;
-
-                    if (newRemaining <= 0.01) { 
-                        paymentToUpdate.status = 'Paid';
-                        paymentToUpdate.paidDate = new Date().toISOString();
-                    } else {
-                        paymentToUpdate.status = 'Partially Paid';
-                    }
-
-                    const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
-                    if (allPaid) {
-                        loanToUpdate.status = 'Paid';
-                    }
-
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    modal.style.display = 'none';
-                    showAlert('Success', 'Payment has been recorded.');
-                } finally {
-                    toggleButtonSpinner(submitEvent.submitter, false);
+                submitEvent.preventDefault();
+                const paymentAmount = parseFloat(amountInput.value);
+                if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > remainingAmount + 0.01) { // Add tolerance
+                    showAlert('Invalid Amount', `Please enter a valid amount up to ₱${remainingAmount.toFixed(2)}.`);
+                    return;
                 }
+
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
+
+                if (!paymentToUpdate.paymentHistory) {
+                    paymentToUpdate.paymentHistory = [];
+                }
+                paymentToUpdate.paymentHistory.push({
+                    amount: paymentAmount,
+                    date: new Date().toISOString()
+                });
+
+                paymentToUpdate.paidAmount = (paymentToUpdate.paidAmount || 0) + paymentAmount;
+                const newRemaining = (payment.amount + installmentPenalty) - paymentToUpdate.paidAmount;
+
+                if (newRemaining <= 0.01) { 
+                    paymentToUpdate.status = 'Paid';
+                    paymentToUpdate.paidDate = new Date().toISOString();
+                } else {
+                    paymentToUpdate.status = 'Partially Paid';
+                }
+
+                const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
+                if (allPaid) {
+                    loanToUpdate.status = 'Paid';
+                }
+
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                modal.style.display = 'none';
+                showAlert('Success', 'Payment has been recorded.');
             };
 
             modal.style.display = 'flex';
@@ -1996,115 +1581,81 @@
 
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            toggleButtonSpinner(e.target, true);
+            
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async () => {
-                 try {
-                    const borrowerRef = doc(db, borrowersPath, borrowerId);
-                    const borrowerSnap = await getDoc(borrowerRef);
-                    if (!borrowerSnap.exists()) {
-                        showAlert('Error', 'Borrower not found in database.');
-                        return;
-                    }
-                    const borrowerDoc = borrowerSnap.data();
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
-                    const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
-                    const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
+                const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                const paymentToUpdate = loanToUpdate.paymentSchedule[paymentIndex];
 
-                    const loanInterest = loanToUpdate.isCustomInterest ? loanToUpdate.customInterest : loanToUpdate.loanAmount * (loanToUpdate.interestRate / 100);
-                    const installmentPrincipal = loanToUpdate.loanAmount / loanToUpdate.numberOfPayments;
-                    const installmentInterest = loanInterest / loanToUpdate.numberOfPayments;
+                let installmentPenalty = 0;
+                if (new Date(paymentToUpdate.dueDate) < new Date()) {
+                    const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(paymentToUpdate.dueDate)) / (1000 * 3600 * 24)));
+                    installmentPenalty = (loanToUpdate.loanAmount * 0.05) * daysDelayed;
+                }
+                const totalInstallmentDue = paymentToUpdate.amount + installmentPenalty;
+                const remainingAmount = totalInstallmentDue - (paymentToUpdate.paidAmount || 0);
 
-                    let installmentPenalty = 0;
-                    if (new Date(paymentToUpdate.dueDate) < new Date()) {
-                        const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(paymentToUpdate.dueDate)) / (1000 * 3600 * 24)));
-                        installmentPenalty = (loanToUpdate.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
-                    }
-                    
-                    const totalInstallmentDue = installmentPrincipal + installmentInterest + installmentPenalty;
-                    const remainingAmount = totalInstallmentDue - (paymentToUpdate.paidAmount || 0);
+                // Add the final payment to history
+                 if (!paymentToUpdate.paymentHistory) {
+                    paymentToUpdate.paymentHistory = [];
+                }
+                if (remainingAmount > 0) {
+                    paymentToUpdate.paymentHistory.push({
+                        amount: remainingAmount,
+                        date: new Date().toISOString()
+                    });
+                }
 
-                    if (!paymentToUpdate.paymentHistory) {
-                        paymentToUpdate.paymentHistory = [];
-                    }
-                    if (remainingAmount > 0) {
-                        paymentToUpdate.paymentHistory.push({
-                            amount: remainingAmount,
-                            date: new Date().toISOString(),
-                            paidPrincipal: installmentPrincipal,
-                            paidInterest: installmentInterest,
-                            paidPenalty: installmentPenalty
-                        });
-                    }
+                paymentToUpdate.paidAmount = totalInstallmentDue;
+                paymentToUpdate.status = 'Paid';
+                paymentToUpdate.paidDate = new Date().toISOString();
 
-                    paymentToUpdate.paidAmount = totalInstallmentDue;
-                    paymentToUpdate.status = 'Paid';
-                    paymentToUpdate.paidDate = new Date().toISOString();
+                const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
+                if (allPaid) {
+                    loanToUpdate.status = 'Paid';
+                }
 
-                    const allPaid = loanToUpdate.paymentSchedule.every(p => p.status === 'Paid');
-                    if (allPaid) {
-                        loanToUpdate.status = 'Paid';
-                    }
-
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    showAlert('Success', 'Installment marked as paid.');
-                 } finally {
-                    toggleButtonSpinner(e.target, false);
-                 }
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                showAlert('Success', 'Installment marked as paid.');
             });
         }
         
-        async function handleReloanClick(e) {
+        function handleReloanClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.target.dataset;
-            toggleButtonSpinner(e.target, true);
             showConfirm('Confirm Reloan', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
-                try {
-                    const borrowerRef = doc(db, borrowersPath, borrowerId);
-                    const borrowerSnap = await getDoc(borrowerRef);
-                    if (!borrowerSnap.exists()) {
-                        showAlert('Error', 'Borrower not found in database.');
-                        return;
-                    }
-                    const borrowerDoc = borrowerSnap.data();
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
-                    const targetLoan = updatedLoans.find(l => l.loanId === loanId);
-                    
-                    if (!targetLoan.reloanHistory) {
-                        targetLoan.reloanHistory = [];
-                    }
-                    targetLoan.reloanHistory.push({
-                        reloanDate: new Date().toISOString(),
-                        rescheduledInstallmentIndex: parseInt(paymentIndex)
-                    });
-
-                    let nextDueDate = new Date(targetLoan.paymentSchedule[parseInt(paymentIndex)].dueDate); 
-                    for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
-                        if (targetLoan.paymentSchedule[i].status !== 'Paid') {
-                            const freq = targetLoan.paymentFrequency;
-                            if (freq === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
-                            else if (freq === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
-                            else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                            targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
-                        }
-                    }
-                    targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
-                    
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    showAlert('Success', 'Schedule updated.');
-                } finally {
-                    toggleButtonSpinner(e.target, false);
+                const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const targetLoan = updatedLoans.find(l => l.loanId === loanId);
+                
+                if (!targetLoan.reloanHistory) {
+                    targetLoan.reloanHistory = [];
                 }
+                targetLoan.reloanHistory.push({
+                    reloanDate: new Date().toISOString(),
+                    rescheduledInstallmentIndex: parseInt(paymentIndex)
+                });
+
+                let nextDueDate = new Date(targetLoan.paymentSchedule[paymentIndex].dueDate); 
+                for(let i = parseInt(paymentIndex); i < targetLoan.paymentSchedule.length; i++) {
+                    if (targetLoan.paymentSchedule[i].status !== 'Paid') {
+                        const freq = targetLoan.paymentFrequency;
+                        if (freq === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
+                        else if (freq === 'bi-weekly') nextDueDate.setDate(nextDueDate.getDate() + 14);
+                        else nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                        targetLoan.paymentSchedule[i].dueDate = nextDueDate.toISOString().split('T')[0];
+                    }
+                }
+                targetLoan.returnDate = targetLoan.paymentSchedule[targetLoan.paymentSchedule.length - 1].dueDate;
+                
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                showAlert('Success', 'Schedule updated.');
             });
         }
 
-        async function handleEditNotesClick(e) {
+        function handleEditNotesClick(e) {
             const { borrowerId, loanId } = e.target.dataset;
-            const borrowerRef = doc(db, borrowersPath, borrowerId);
-            const borrowerSnap = await getDoc(borrowerRef);
-            if (!borrowerSnap.exists()) {
-                showAlert('Error', 'Borrower not found in database.');
-                return;
-            }
-            const borrowerDoc = borrowerSnap.data();
+            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
 
             const modal = document.getElementById('editNotesModal');
@@ -2114,19 +1665,14 @@
             notesText.value = loan.notes || '';
 
             form.onsubmit = async (submitEvent) => {
-                toggleButtonSpinner(submitEvent.submitter, true);
-                try {
-                    submitEvent.preventDefault();
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
-                    const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
-                    loanToUpdate.notes = notesText.value.trim();
+                submitEvent.preventDefault();
+                const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                loanToUpdate.notes = notesText.value.trim();
 
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                    modal.style.display = 'none';
-                    showAlert('Success', 'Notes updated.');
-                } finally {
-                    toggleButtonSpinner(submitEvent.submitter, false);
-                }
+                await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                modal.style.display = 'none';
+                showAlert('Success', 'Notes updated.');
             };
 
             modal.style.display = 'flex';
@@ -2152,7 +1698,7 @@
                                 hasDelayedPayment = true;
                                 const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
                                 const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                                totalPenalty += (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                                totalPenalty += (loan.loanAmount * 0.05) * daysDelayed;
                             }
                         });
                     }
@@ -2174,6 +1720,7 @@
                 });
             });
 
+            // Sorting logic
             flatLoans.sort((a, b) => {
                 const valA = a[sortState.column];
                 const valB = b[sortState.column];
@@ -2250,10 +1797,7 @@
         }
 
         async function importFromCSV(file) {
-            if (!file) {
-                 toggleButtonSpinner(document.getElementById('importButton'), false);
-                 return;
-            }
+            if (!file) return;
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -2323,8 +1867,6 @@
                 } catch (error) {
                     console.error("Error importing CSV: ", error);
                     showAlert('Import Error', 'Failed to import CSV data. Please check the file format and console.');
-                } finally {
-                    toggleButtonSpinner(document.getElementById('importButton'), false);
                 }
             };
             reader.readAsText(file);
