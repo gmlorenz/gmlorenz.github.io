@@ -1144,8 +1144,8 @@
                     createdAt: serverTimestamp()
                 });
                 await addDoc(collection(db, activityLogPath), {
-                    action: 'created loan',
-                    details: `for ${name}`,
+                    action: 'created new loaner',
+                    details: `${name}`,
                     timestamp: serverTimestamp(),
                     user: currentUser.email
                 });
@@ -1169,8 +1169,8 @@
                     loans: arrayUnion(loan)
                 });
                 await addDoc(collection(db, activityLogPath), {
-                    action: 'added loan',
-                    details: `to ${borrowerSnap.data().borrowerName}`,
+                    action: 'added new loan',
+                    details: `for ${borrowerSnap.data().borrowerName}`,
                     timestamp: serverTimestamp(),
                     user: currentUser.email
                 });
@@ -1223,6 +1223,12 @@
                     defaultPenaltyRate: newPenaltyRate,
                     defaultELoanInterest: newELoanInterest
                 });
+                await addDoc(collection(db, activityLogPath), {
+                    action: 'updated default settings',
+                    details: ``,
+                    timestamp: serverTimestamp(),
+                    user: currentUser.email
+                });
                 appSettings.defaultPenaltyRate = newPenaltyRate;
                 appSettings.defaultELoanInterest = newELoanInterest;
                 showAlert('Success', 'Default settings saved successfully.');
@@ -1272,6 +1278,12 @@
             toggleButtonSpinner(e.submitter, true);
             try {
                 await updateDoc(doc(db, configPath), { authorizedEmails: arrayUnion(email) });
+                await addDoc(collection(db, activityLogPath), {
+                    action: 'added new email',
+                    details: `${email}`,
+                    timestamp: serverTimestamp(),
+                    user: currentUser.email
+                });
                 showAlert('Success', `${email} has been added.`);
                 input.value = '';
                 openSettingsModal();
@@ -1287,6 +1299,12 @@
             showConfirm('Confirm Deletion', `Are you sure you want to remove ${email}?`, async () => {
                  try {
                     await updateDoc(doc(db, configPath), { authorizedEmails: arrayRemove(email) });
+                    await addDoc(collection(db, activityLogPath), {
+                        action: 'removed email',
+                        details: `${email}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     showAlert('Success', `${email} has been removed.`);
                     openSettingsModal();
                 } catch (error) {
@@ -1377,6 +1395,12 @@
                     contactDetails: contact,
                     isBanned: isBanned
                 });
+                await addDoc(collection(db, activityLogPath), {
+                    action: 'updated loaner details',
+                    details: `for ${name}`,
+                    timestamp: serverTimestamp(),
+                    user: currentUser.email
+                });
                 showAlert('Success', 'Loaner details updated successfully.');
                 modal.style.display = 'none';
             } catch (error) {
@@ -1396,6 +1420,12 @@
                 toggleButtonSpinner(e.target, true);
                 try {
                     await deleteDoc(doc(db, borrowersPath, borrowerId));
+                    await addDoc(collection(db, activityLogPath), {
+                        action: 'deleted loaner',
+                        details: `${allBorrowers.find(b => b.id === borrowerId).borrowerName}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     showAlert('Success', 'Loaner and all records deleted.');
                     modal.style.display = 'none';
                     document.getElementById('manageLoanerModal').style.display = 'none';
@@ -1697,37 +1727,17 @@
             const borrowerRef = doc(db, borrowersPath, borrowerId);
             try {
                 await updateDoc(borrowerRef, { loanScore: 100 });
+                await addDoc(collection(db, activityLogPath), {
+                    action: 'reset loan score',
+                    details: `for ${allBorrowers.find(b => b.id === borrowerId)?.borrowerName}`,
+                    timestamp: serverTimestamp(),
+                    user: currentUser.email
+                });
                 showAlert('Success', 'Loan score reset to 100.');
             } catch (error) {
                 console.error("Error resetting loan score:", error);
                 showAlert('Error', 'Failed to reset loan score.');
             }
-        }
-
-        function updateActivityCard(borrowers) {
-            let loansCreated = 0;
-            let paymentsRecorded = 0;
-
-            borrowers.forEach(borrower => {
-                borrower.loans.forEach(loan => {
-                    if (loan.createdBy === currentUser.email) {
-                        loansCreated++;
-                    }
-                    if (loan.paymentSchedule) {
-                        loan.paymentSchedule.forEach(payment => {
-                            if (payment.paymentHistory) {
-                                payment.paymentHistory.forEach(history => {
-                                    if (history.recordedBy === currentUser.email) {
-                                        paymentsRecorded++;
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
-            });
-            document.getElementById('loansCreated').textContent = loansCreated;
-            document.getElementById('paymentsRecorded').textContent = paymentsRecorded;
         }
 
         function renderActivityLog(logEntries) {
@@ -2272,9 +2282,16 @@
                     submitEvent.preventDefault();
                     const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                     const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
+                    const oldNotes = loanToUpdate.notes;
                     loanToUpdate.notes = notesText.value.trim();
 
                     await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                     await addDoc(collection(db, activityLogPath), {
+                        action: 'updated notes',
+                        details: `for loan for ${borrowerDoc.borrowerName}`,
+                        timestamp: serverTimestamp(),
+                        user: currentUser.email
+                    });
                     modal.style.display = 'none';
                     showAlert('Success', 'Notes updated.');
                 } finally {
