@@ -1342,6 +1342,7 @@
                         </div>
                         <div class="flex space-x-2">
                              <button class="edit-loaner-btn text-indigo-600 dark:text-indigo-400 font-bold text-xs">Edit</button>
+                             <button class="check-history-btn text-green-600 dark:text-green-400 font-bold text-xs">Check History</button>
                         </div>
                     `;
                     item.dataset.borrowerId = borrower.id;
@@ -1764,60 +1765,60 @@
         }
 
         function createBorrowerCard(borrower) {
-            const card = document.createElement('div');
-            card.className = 'borrower-card bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700 shadow-md';
-            card.dataset.borrowerId = borrower.id;
-            
-            let loansHtml = '';
-            const currentDate = new Date();
-            currentDate.setHours(0, 0, 0, 0); 
-            const todayStr = currentDate.toISOString().split('T')[0];
-            let activeLoanCount = 0;
-            let overdueLoanCount = 0;
+    const card = document.createElement('div');
+    card.className = 'borrower-card bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700 shadow-md';
+    card.dataset.borrowerId = borrower.id;
 
-            borrower.loans.forEach((loan) => {
-                const isFullyPaid = loan.status === 'Paid';
-                let hasDelayedPayment = false;
-                if (!isFullyPaid && loan.paymentSchedule) {
-                    hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
+    let loansHtml = '';
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    const todayStr = currentDate.toISOString().split('T')[0];
+    let activeLoanCount = 0;
+    let overdueLoanCount = 0;
+
+    borrower.loans.forEach((loan) => {
+        const isFullyPaid = loan.status === 'Paid';
+        let hasDelayedPayment = false;
+        if (!isFullyPaid && loan.paymentSchedule) {
+            hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
+        }
+        const isDueToday = loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+        const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
+
+        if (overallStatus === 'Active') activeLoanCount++;
+        if (overallStatus === 'Overdue') overdueLoanCount++;
+
+        let totalPenalty = 0;
+        if (hasDelayedPayment) {
+            loan.paymentSchedule.forEach(p => {
+                if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
+                    const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
+                    const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+                    totalPenalty += (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
                 }
-                const isDueToday = loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
-                const overallStatus = isFullyPaid ? 'Paid' : hasDelayedPayment ? 'Overdue' : 'Active';
-                
-                if (overallStatus === 'Active') activeLoanCount++;
-                if (overallStatus === 'Overdue') overdueLoanCount++;
+            });
+        }
 
-                let totalPenalty = 0;
-                if (hasDelayedPayment) {
-                    loan.paymentSchedule.forEach(p => {
-                        if (p.status !== 'Paid' && new Date(p.dueDate) < currentDate) {
-                            const timeDiff = currentDate.getTime() - new Date(p.dueDate).getTime();
-                            const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                            totalPenalty += (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
-                        }
-                    });
-                }
-                
-                const title = loan.loanType === 'Product' ? `Product: ${loan.productName}` : loan.loanType;
-                const interest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
-                const totalDue = loan.loanAmount + interest + totalPenalty;
-                const principalLabel = loan.loanType === 'Product' ? 'Product Price' : 'Principal';
+        const title = loan.loanType === 'Product' ? `Product: ${loan.productName}` : loan.loanType;
+        const interest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
+        const totalDue = loan.loanAmount + interest + totalPenalty;
+        const principalLabel = loan.loanType === 'Product' ? 'Product Price' : 'Principal';
 
-                let scheduleHtml = '';
-                if(loan.paymentSchedule?.length > 0) {
-                    scheduleHtml = '<h4 class="font-semibold text-gray-700 dark:text-gray-300 mt-3 mb-2 col-span-full text-sm">Payment Schedule</h4>';
-                    loan.paymentSchedule.forEach((payment, index) => {
-                        const isPaymentPaid = payment.status === 'Paid';
-                        const dueDate = new Date(payment.dueDate);
-                        const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
-                        
-                        let paymentDetailsHtml;
-                        let actionButtonsHtml = '';
-                        let daysDelayed = 0;
+        let scheduleHtml = '';
+        if (loan.paymentSchedule?.length > 0) {
+            scheduleHtml = '<h4 class="font-semibold text-gray-700 dark:text-gray-300 mt-3 mb-2 col-span-full text-sm">Payment Schedule</h4>';
+            loan.paymentSchedule.forEach((payment, index) => {
+                const isPaymentPaid = payment.status === 'Paid';
+                const dueDate = new Date(payment.dueDate);
+                const isPaymentDelayed = !isPaymentPaid && dueDate < currentDate;
 
-                        
-                        if (!isPaymentPaid) {
-                            actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">
+                let paymentDetailsHtml;
+                let actionButtonsHtml = '';
+                let daysDelayed = 0;
+
+
+                if (!isPaymentPaid) {
+                    actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">
                                 <span class="button-text">PAID</span>
                                 <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             </button>
@@ -1825,44 +1826,44 @@
                                 <span class="button-text">PAY</span>
                                 <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             </button>`;
-                            if (loan.loanType !== 'Product') {
-                                actionButtonsHtml += `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">
+                    if (loan.loanType !== 'Product') {
+                        actionButtonsHtml += `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">
                                     <span class="button-text">RESCHEDULE</span>
                                     <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 </button>`;
-                            }
-                        } else {
-                            actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
-                             if(payment.paidDate) {
-                                actionButtonsHtml += `<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">(${new Date(payment.paidDate).toLocaleDateString()})</span>`;
-                            }
-                        }
+                    }
+                } else {
+                    actionButtonsHtml = `<span class="text-xs font-bold text-green-700">PAID</span>`;
+                    if (payment.paidDate) {
+                        actionButtonsHtml += `<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">(${new Date(payment.paidDate).toLocaleDateString()})</span>`;
+                    }
+                }
 
-                        let installmentPenalty = 0;
-                        if (isPaymentDelayed) {
-                            const timeDiff = currentDate.getTime() - dueDate.getTime();
-                            const daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-                            installmentPenalty = (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
-                        }
-                        
-                        const totalInstallmentDue = payment.amount + installmentPenalty;
-                        const paidAmount = payment.paidAmount || 0;
-                        let remainingAmount = totalInstallmentDue - paidAmount;
-                        if (remainingAmount < 0) remainingAmount = 0;
+                let installmentPenalty = 0;
+                if (isPaymentDelayed) {
+                    const timeDiff = currentDate.getTime() - dueDate.getTime();
+                    daysDelayed = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+                    installmentPenalty = (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
+                }
 
-                        let paymentHistoryHtml = '';
-                        if (payment.paymentHistory && payment.paymentHistory.length > 0) {
-                            let runningBalance = totalInstallmentDue;
-                            paymentHistoryHtml = `
+                const totalInstallmentDue = payment.amount + installmentPenalty;
+                const paidAmount = payment.paidAmount || 0;
+                let remainingAmount = totalInstallmentDue - paidAmount;
+                if (remainingAmount < 0) remainingAmount = 0;
+
+                let paymentHistoryHtml = '';
+                if (payment.paymentHistory && payment.paymentHistory.length > 0) {
+                    let runningBalance = totalInstallmentDue;
+                    paymentHistoryHtml = `
                                 <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                                     <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Payment Summary:</h5>
                                     <div class="payment-timeline space-y-2">
                                         ${payment.paymentHistory.map(p => {
-                                            const paidPrincipal = p.paidPrincipal || 0;
-                                            const paidInterest = p.paidInterest || 0;
-                                            const paidPenalty = p.paidPenalty || 0;
-                                            const totalPaid = paidPrincipal + paidInterest + paidPenalty;
-                                            return `
+                        const paidPrincipal = p.paidPrincipal || 0;
+                        const paidInterest = p.paidInterest || 0;
+                        const paidPenalty = p.paidPenalty || 0;
+                        const totalPaid = paidPrincipal + paidInterest + paidPenalty;
+                        return `
                                             <div class="timeline-item">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">
                                                     <span class="font-medium text-gray-700 dark:text-gray-300">₱${totalPaid.toFixed(2)}</span> paid on ${new Date(p.date).toLocaleDateString()}
@@ -1874,13 +1875,13 @@
                                         `}).join('')}
                                     </div>
                                 </div>`;
-                        }
+                }
 
 
-                        if (isPaymentPaid) {
-                             paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span> ${paymentHistoryHtml}`;
-                        } else {
-                             paymentDetailsHtml = `
+                if (isPaymentPaid) {
+                    paymentDetailsHtml = `<span class="text-gray-600 dark:text-gray-400">- Paid: ₱${paidAmount.toFixed(2)}</span> ${paymentHistoryHtml}`;
+                } else {
+                    paymentDetailsHtml = `
                                 <div class="text-sm mt-1 space-x-2">
                                     <span class="text-yellow-600">Due: ₱${payment.amount.toFixed(2)}</span>
                                     <span class="text-orange-600 dark:text-orange-500">Penalty: ₱${installmentPenalty.toFixed(2)}</span>
@@ -1888,9 +1889,9 @@
                                 </div>
                                 ${paymentHistoryHtml}
                              `;
-                        }
-                        
-                        scheduleHtml += `
+                }
+
+                scheduleHtml += `
                             <div class="col-span-full p-2 rounded-md ${isPaymentPaid ? 'bg-green-100 dark:bg-green-900/50' : (isPaymentDelayed ? 'bg-red-100 dark:bg-red-900/50' : (payment.dueDate === todayStr ? 'bg-yellow-100 dark:bg-yellow-900/50' : 'bg-gray-100 dark:bg-gray-700'))}">
                                 <div class="flex justify-between items-center">
                                     <div>
@@ -1902,19 +1903,19 @@
                                 </div>
                                 ${paymentDetailsHtml}
                             </div>`;
-                    });
-                }
-                
-                let reloanSummary = '';
-                if (loan.reloanHistory && loan.reloanHistory.length > 0) {
-                    reloanSummary = `<span class="text-xs bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-full">Reloaned ${loan.reloanHistory.length} time(s)</span>`;
-                }
-                
-                const isNotesDisabled = isFullyPaid ? 'disabled' : '';
-                const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
+            });
+        }
+
+        let reloanSummary = '';
+        if (loan.reloanHistory && loan.reloanHistory.length > 0) {
+            reloanSummary = `<span class="text-xs bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-full">Reloaned ${loan.reloanHistory.length} time(s)</span>`;
+        }
+
+        const isNotesDisabled = isFullyPaid ? 'disabled' : '';
+        const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
 
 
-                loansHtml += `
+        loansHtml += `
                     <div class="loan-details-card p-3 rounded-lg shadow-inner space-y-2">
                         <div class="flex justify-between items-start">
                              <div class="flex items-center gap-2 flex-wrap">
@@ -1949,29 +1950,31 @@
                         </div>
                     </div>
                 `;
-            });
+    });
 
-            if (!loansHtml) return null;
+    if (!loansHtml) return null;
 
-            const originalBorrower = allBorrowers.find(b => b.id === borrower.id);
-            let totalActive = 0, totalOverdue = 0, totalPaid = 0;
-             originalBorrower.loans.forEach(loan => {
-                const isFullyPaid = loan.status === 'Paid';
-                if (isFullyPaid) {
-                    totalPaid++;
-                } else {
-                    const hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
-                    if(hasDelayedPayment) totalOverdue++;
-                    else totalActive++;
-                }
-            });
+    const originalBorrower = allBorrowers.find(b => b.id === borrower.id);
+    let totalActive = 0,
+        totalOverdue = 0,
+        totalPaid = 0;
+    originalBorrower.loans.forEach(loan => {
+        const isFullyPaid = loan.status === 'Paid';
+        if (isFullyPaid) {
+            totalPaid++;
+        } else {
+            const hasDelayedPayment = loan.paymentSchedule.some(p => p.status !== 'Paid' && new Date(p.dueDate) < currentDate);
+            if (hasDelayedPayment) totalOverdue++;
+            else totalActive++;
+        }
+    });
 
 
-            let summaryHtml = `<span class="text-sm text-green-600">${totalPaid} Paid</span>`;
-            if (totalActive > 0) summaryHtml += `, <span class="text-sm text-yellow-600">${totalActive} Active</span>`;
-            if (totalOverdue > 0) summaryHtml += `, <span class="text-sm text-red-600">${totalOverdue} Overdue</span>`;
+    let summaryHtml = `<span class="text-sm text-green-600">${totalPaid} Paid</span>`;
+    if (totalActive > 0) summaryHtml += `, <span class="text-sm text-yellow-600">${totalActive} Active</span>`;
+    if (totalOverdue > 0) summaryHtml += `, <span class="text-sm text-red-600">${totalOverdue} Overdue</span>`;
 
-            card.innerHTML = `
+    card.innerHTML = `
                 <div class="borrower-card-header p-4 cursor-pointer flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-xl text-gray-900 dark:text-white">${borrower.borrowerName}</h3>
@@ -1991,64 +1994,68 @@
                     </div>
                 </div>
             `;
-            
-            card.querySelector('.borrower-card-header').addEventListener('click', (e) => {
-                if (e.target.closest('button')) return;
-                const isExpanded = card.classList.toggle('expanded');
-                if (isExpanded) {
-                    expandedBorrowerIds.add(borrower.id);
-                } else {
-                    expandedBorrowerIds.delete(borrower.id);
-                }
-            });
-            
-            if (expandedBorrowerIds.has(borrower.id)) {
-                card.classList.add('expanded');
-            }
-             card.querySelector('.edit-borrower-btn').addEventListener('click', e => {
-                 const borrowerId = e.currentTarget.dataset.borrowerId;
-                 const borrower = allBorrowers.find(b => b.id === borrowerId);
-                 if (borrower) openEditLoanerModal(borrower);
-            });
 
-            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
-            card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
-            card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
-            card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
-
-            card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
-                const { borrowerId, loanId } = e.currentTarget.dataset;
-                 showConfirm('Delete Loan', 'Are you sure you want to delete this specific loan record?', async () => {
-                    toggleButtonSpinner(e.currentTarget, true);
-                    const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
-                    const updatedLoans = borrowerDoc.loans.filter(l => l.loanId !== loanId);
-                    try {
-                        if (updatedLoans.length === 0) {
-                            await updateDoc(doc(db, borrowersPath, borrowerId), { loans: [] });
-                        } else {
-                            await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
-                        }
-                    } finally {
-                        showAlert('Success', 'Loan record deleted. The borrower name has been retained.');
-                        toggleButtonSpinner(e.currentTarget, false);
-                    }
-                 });
-            }));
-            
-            card.querySelector('.delete-borrower-btn').addEventListener('click', e => {
-                const { borrowerId } = e.currentTarget.dataset;
-                showConfirm('Delete Borrower', 'Are you sure you want to delete this borrower and ALL their loan records? This action cannot be undone.', async () => {
-                    toggleButtonSpinner(e.currentTarget, true);
-                    try {
-                        await deleteDoc(doc(db, borrowersPath, borrowerId));
-                    } finally {
-                        toggleButtonSpinner(e.currentTarget, false);
-                    }
-                });
-            });
-
-            return card;
+    card.querySelector('.borrower-card-header').addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        const isExpanded = card.classList.toggle('expanded');
+        if (isExpanded) {
+            expandedBorrowerIds.add(borrower.id);
+        } else {
+            expandedBorrowerIds.delete(borrower.id);
         }
+    });
+
+    if (expandedBorrowerIds.has(borrower.id)) {
+        card.classList.add('expanded');
+    }
+
+    card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
+    card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
+    card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleReloanClick(e)));
+    card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
+
+    card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
+        const {
+            borrowerId,
+            loanId
+        } = e.currentTarget.dataset;
+        showConfirm('Delete Loan', 'Are you sure you want to delete this specific loan record?', async () => {
+            toggleButtonSpinner(e.currentTarget, true);
+            const borrowerDoc = allBorrowers.find(b => b.id === borrowerId);
+            const updatedLoans = borrowerDoc.loans.filter(l => l.loanId !== loanId);
+            try {
+                if (updatedLoans.length === 0) {
+                    await updateDoc(doc(db, borrowersPath, borrowerId), {
+                        loans: []
+                    });
+                } else {
+                    await updateDoc(doc(db, borrowersPath, borrowerId), {
+                        loans: updatedLoans
+                    });
+                }
+            } finally {
+                showAlert('Success', 'Loan record deleted. The borrower name has been retained.');
+                toggleButtonSpinner(e.currentTarget, false);
+            }
+        });
+    }));
+
+    card.querySelector('.delete-borrower-btn').addEventListener('click', e => {
+        const {
+            borrowerId
+        } = e.currentTarget.dataset;
+        showConfirm('Delete Borrower', 'Are you sure you want to delete this borrower and ALL their loan records? This action cannot be undone.', async () => {
+            toggleButtonSpinner(e.currentTarget, true);
+            try {
+                await deleteDoc(doc(db, borrowersPath, borrowerId));
+            } finally {
+                toggleButtonSpinner(e.currentTarget, false);
+            }
+        });
+    });
+
+    return card;
+}
 
         async function handlePaymentClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
