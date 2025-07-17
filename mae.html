@@ -1654,8 +1654,6 @@
                         let actionButtonsHtml = '';
                         let daysDelayed = 0;
 
-                        const isNotesDisabled = isFullyPaid ? 'disabled' : '';
-                        const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
                         
                         if (!isPaymentPaid) {
                             actionButtonsHtml = `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="mark-as-paid-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded">
@@ -1750,6 +1748,11 @@
                 if (loan.reloanHistory && loan.reloanHistory.length > 0) {
                     reloanSummary = `<span class="text-xs bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-full">Reloaned ${loan.reloanHistory.length} time(s)</span>`;
                 }
+                
+                // FIXED: Moved these variable declarations outside the inner payment loop
+                const isNotesDisabled = isFullyPaid ? 'disabled' : '';
+                const notesBtnClass = isFullyPaid ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-500 hover:bg-gray-600';
+
 
                 loansHtml += `
                     <div class="loan-details-card p-3 rounded-lg shadow-inner space-y-2">
