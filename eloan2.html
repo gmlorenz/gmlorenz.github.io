@@ -226,16 +226,16 @@
                         <canvas id="loanTypeChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                     <h2 class="text-2xl font-semibold border-b dark:border-gray-700 pb-4 mb-5">My Activity</h2>
-                     <div id="activityContent" class="space-y-3 text-sm">
-                         <div class="flex justify-between"><span>Loans Created:</span> <span id="loansCreated" class="font-medium">0</span></div>
-                         <div class="flex justify-between"><span>Payments Recorded:</span> <span id="paymentsRecorded" class="font-medium">0</span></div>
-                     </div>
-                 </div>
             </div>
 
             <div class="lg:col-span-2">
+               <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8">
+                    <h2 class="text-2xl font-semibold border-b dark:border-gray-700 pb-4 mb-5">My Activity</h2>
+                    <div id="activityContent" class="space-y-3 text-sm">
+                        <div class="flex justify-between"><span>Loans Created:</span> <span id="loansCreated" class="font-medium">0</span></div>
+                        <div class="flex justify-between"><span>Payments Recorded:</span> <span id="paymentsRecorded" class="font-medium">0</span></div>
+                    </div>
+                </div>
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <div class="border-b dark:border-gray-700 pb-4 mb-5">
                         <div class="flex flex-col sm:flex-row justify-between items-center">
@@ -248,6 +248,7 @@
                             <button data-filter="all" class="filter-btn active px-3 py-1 rounded-md text-sm">All</button>
                             <button data-filter="active" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Active</button>
                             <button data-filter="due" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Due Today</button>
+                            <button data-filter="due-tomorrow" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Due Tomorrow</button>
                             <button data-filter="overdue" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">With Penalty</button>
                             <button data-filter="paid" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Paid</button>
                             <button data-filter="Product" class="filter-btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm">Product</button>
@@ -523,7 +524,7 @@
                         <ul class="list-disc list-inside ml-4 space-y-1 mt-2">
                             <li><strong>PAY:</strong> Opens a modal to enter a partial or full payment amount for an installment.</li>
                             <li><strong>PAID:</strong> A shortcut to fully settle an installment, including any accrued penalties.</li>
-                            <li><strong>RELOAN:</strong> Reschedules the due date for the selected installment and all future ones.</li>
+                            <li><strong>RESCHEDULE:</strong> Reschedules the due date for the selected installment and all future ones.</li>
                         </ul>
                     </div>
                 </div>
@@ -1340,7 +1341,6 @@
                             ${isBannedTag}
                         </div>
                         <div class="flex space-x-2">
-                             <button class="check-history-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs py-1 px-3 rounded-md transition">History</button>
                              <button class="edit-loaner-btn text-indigo-600 dark:text-indigo-400 font-bold text-xs">Edit</button>
                         </div>
                     `;
@@ -1607,14 +1607,20 @@
 
             if (dueTodayCount > 0) {
                 const notification = document.createElement('div');
-                notification.className = 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md';
+                notification.className = 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md cursor-pointer';
                 notification.innerHTML = `<p class="font-bold">Due Today</p><p>You have ${dueTodayCount} loan payment(s) due today.</p>`;
+                notification.addEventListener('click', () => {
+                    document.querySelector('#filterButtons .filter-btn[data-filter="due"]').click();
+                });
                 notificationArea.appendChild(notification);
             }
             if (dueTomorrowCount > 0) {
                 const notification = document.createElement('div');
-                notification.className = 'bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md';
+                notification.className = 'bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md cursor-pointer';
                 notification.innerHTML = `<p class="font-bold">Due Tomorrow</p><p>You have ${dueTomorrowCount} loan payment(s) due tomorrow.</p>`;
+                notification.addEventListener('click', () => {
+                    document.querySelector('#filterButtons .filter-btn[data-filter="due-tomorrow"]').click();
+                });
                 notificationArea.appendChild(notification);
             }
         }
@@ -1821,7 +1827,7 @@
                             </button>`;
                             if (loan.loanType !== 'Product') {
                                 actionButtonsHtml += `<button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" data-payment-index="${index}" class="reschedule-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1 px-2 rounded">
-                                    <span class="button-text">RELOAN</span>
+                                    <span class="button-text">RESCHEDULE</span>
                                     <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 </button>`;
                             }
@@ -1973,7 +1979,6 @@
                            ${summaryHtml}
                         </div>
                     </div>
-                    <button data-borrower-id="${borrower.id}" class="edit-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-xs font-medium">Edit</button>
                     <svg class="chevron-icon w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
                 <div class="collapsible-body px-4 pb-4">
