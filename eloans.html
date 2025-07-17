@@ -161,9 +161,7 @@
             <button id="googleSignInButton" class="w-full inline-flex justify-center items-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <svg class="w-5 h-5 mr-2" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 58.4l-62.5 62.5C338.3 99.9 294.9 88 248 88c-88.3 0-160 71.7-160 160s71.7 160 160 160c92.6 0 145.5-68.2 149.9-105.5H248V256h239.8c1.3 7.8 2.2 15.6 2.2 23.8z"></path></svg>
                 <span class="button-text">Sign in with Google</span>
-                <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </button>
         </div>
     </div>
@@ -595,13 +593,13 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config)
             : { // Fallback configuration for local development
-               apiKey: "AIzaSyB_eeYSYZPeYRr3m3xiX7OLoRzsd37yNwI",
-               authDomain: "e-loan-9457a.firebaseapp.com",
-               projectId: "e-loan-9457a",
-               storageBucket: "e-loan-9457a.firebasestorage.app",
-               messagingSenderId: "905622570857",
-               appId: "1:905622570857:web:5dfb76c60f9e5d9fdedff8",
-               measurementId: "G-SQF73TTGMX"
+                apiKey: "AIzaSyB_eeYSYZPeYRr3m3xiX7OLoRzsd37yNwI",
+                authDomain: "e-loan-9457a.firebaseapp.com",
+                projectId: "e-loan-9457a",
+                storageBucket: "e-loan-9457a.firebasestorage.app",
+                messagingSenderId: "905622570857",
+                appId: "1:905622570857:web:5dfb76c60f9e5d9fdedff8",
+                measurementId: "G-SQF73TTGMX"
             };
 
         // Initialize Firebase App, Auth, and Firestore
@@ -978,7 +976,7 @@
             loginScreen.style.display = 'flex';
             const borrowerList = document.getElementById('borrowerList');
             if (borrowerList) {
-                borrowerList.innerHTML = '<p id="loadingMessage" class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
+                borrowerList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-8">Please log in to see records.</p>';
             }
         }
 
@@ -1147,7 +1145,7 @@
                 });
                 await addDoc(collection(db, activityLogPath), {
                     action: 'created loan',
-                    details: `${name}`,
+                    details: `for ${name}`,
                     timestamp: serverTimestamp(),
                     user: currentUser.email
                 });
@@ -1693,6 +1691,19 @@
             return Math.max(0, Math.min(100, score)); // Keep score between 0 and 100
         }
 
+        async function handleResetLoanScore() {
+            const borrowerId = document.getElementById('editLoanerModal').dataset.borrowerId;
+            if (!borrowerId) return;
+            const borrowerRef = doc(db, borrowersPath, borrowerId);
+            try {
+                await updateDoc(borrowerRef, { loanScore: 100 });
+                showAlert('Success', 'Loan score reset to 100.');
+            } catch (error) {
+                console.error("Error resetting loan score:", error);
+                showAlert('Error', 'Failed to reset loan score.');
+            }
+        }
+
         function updateActivityCard(borrowers) {
             let loansCreated = 0;
             let paymentsRecorded = 0;
@@ -1717,6 +1728,23 @@
             });
             document.getElementById('loansCreated').textContent = loansCreated;
             document.getElementById('paymentsRecorded').textContent = paymentsRecorded;
+        }
+
+        function renderActivityLog(logEntries) {
+            const logContainer = document.getElementById('activityContent');
+            logContainer.innerHTML = '';
+            
+            if (logEntries.length === 0) {
+                 logContainer.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-4">No recent activity.</p>`;
+            } else {
+                logEntries.slice(0, 10).forEach(entry => {
+                    const logItem = document.createElement('div');
+                    logItem.className = 'border-b dark:border-gray-700 pb-2 mb-2';
+                    const date = entry.timestamp.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    logItem.innerHTML = `<p class="text-sm"><strong>${date}</strong>: ${entry.user.split('@')[0]} ${entry.action} ${entry.details}.</p>`;
+                    logContainer.appendChild(logItem);
+                });
+            }
         }
 
         function createBorrowerCard(borrower) {
