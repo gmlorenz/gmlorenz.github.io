@@ -1818,6 +1818,7 @@
                            ${summaryHtml}
                         </div>
                     </div>
+                    <button data-borrower-id="${borrower.id}" class="edit-borrower-btn bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-xs font-medium">Edit</button>
                     <svg class="chevron-icon w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
                 <div class="collapsible-body px-4 pb-4">
@@ -1844,6 +1845,11 @@
             if (expandedBorrowerIds.has(borrower.id)) {
                 card.classList.add('expanded');
             }
+             card.querySelector('.edit-borrower-btn').addEventListener('click', e => {
+                 const borrowerId = e.target.dataset.borrowerId;
+                 const borrower = allBorrowers.find(b => b.id === borrowerId);
+                 if (borrower) openEditLoanerModal(borrower);
+            });
 
             card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
             card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
