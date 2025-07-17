@@ -610,21 +610,20 @@
         const provider = new GoogleAuthProvider();
 
         // --- Global State ---
-let currentUser = null;
-let confirmCallback = null;
-let cancelCallback = null; // Added for cancel action
-let unsubscribeFromBorrowers = null;
-let allBorrowers = [];
-let currentFilter = 'all';
-let loanTypeChart = null;
-const primaryAdmin = 'cristinemae111@gmail.com';
-let sortState = { column: 'loanDate', direction: 'desc' };
-let expandedBorrowerIds = new Set();
-let currentPage = 1; 
-const loansPerPage = 7;
-let appSettings = {};
-let currentUserRole = 'user';
-let historyModalOpen = false;
+        let currentUser = null;
+        let confirmCallback = null;
+        let unsubscribeFromBorrowers = null;
+        let allBorrowers = [];
+        let currentFilter = 'all';
+        let loanTypeChart = null;
+        const primaryAdmin = 'cristinemae111@gmail.com';
+        let sortState = { column: 'loanDate', direction: 'desc' };
+        let expandedBorrowerIds = new Set();
+        let currentPage = 1; 
+        const loansPerPage = 7;
+        let appSettings = {};
+        let currentUserRole = 'user';
+        let historyModalOpen = false;
 
         // --- DOM Elements ---
         const loginScreen = document.getElementById('loginScreen');
@@ -633,32 +632,27 @@ let historyModalOpen = false;
         
         // --- Custom Modals ---
         function showAlert(title, message) {
-    document.getElementById('alertTitle').textContent = title;
-    document.getElementById('alertMessage').textContent = message;
-    document.getElementById('alertModal').style.display = 'flex';
-}
-document.getElementById('alertOkButton').addEventListener('click', () => document.getElementById('alertModal').style.display = 'none');
+            document.getElementById('alertTitle').textContent = title;
+            document.getElementById('alertMessage').textContent = message;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+        document.getElementById('alertOkButton').addEventListener('click', () => document.getElementById('alertModal').style.display = 'none');
 
-function showConfirm(title, message, onConfirm, onCancel) {
-    document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmMessage').textContent = message;
-    confirmCallback = onConfirm;
-    cancelCallback = onCancel; // Store the cancel callback
-    document.getElementById('confirmModal').style.display = 'flex';
-}
-document.getElementById('confirmOkButton').addEventListener('click', () => {
-    if (confirmCallback) confirmCallback();
-    document.getElementById('confirmModal').style.display = 'none';
-    confirmCallback = null;
-    cancelCallback = null;
-});
-
-document.getElementById('confirmCancelButton').addEventListener('click', () => {
-    if (cancelCallback) cancelCallback(); // Call the cancel callback
-    document.getElementById('confirmModal').style.display = 'none';
-    confirmCallback = null;
-    cancelCallback = null;
-});
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            confirmCallback = callback;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        document.getElementById('confirmOkButton').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        });
+        document.getElementById('confirmCancelButton').addEventListener('click', () => {
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        });
 
         function toggleButtonSpinner(button, show) {
             if (!button) return;
@@ -2236,10 +2230,8 @@ document.getElementById('confirmCancelButton').addEventListener('click', () => {
         
         async function handleRescheduleClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
-            const rescheduleButton = e.currentTarget;
-            toggleButtonSpinner(rescheduleButton, true);
-
-            const onConfirm = async () => {
+            toggleButtonSpinner(e.currentTarget, true);
+            showConfirm('Confirm Reschedule', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
                 try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
                     const borrowerSnap = await getDoc(borrowerRef);
@@ -2281,19 +2273,9 @@ document.getElementById('confirmCancelButton').addEventListener('click', () => {
                     });
                     showAlert('Success', 'Schedule updated.');
                 } finally {
-                    toggleButtonSpinner(rescheduleButton, false);
+                    toggleButtonSpinner(e.currentTarget, false);
                 }
-            };
-
-            const onCancel = () => {
-                toggleButtonSpinner(rescheduleButton, false);
-            };
-
-            const confirmMessage = targetLoan.loanType === 'Product' 
-                ? 'This will reschedule the due date for this and all future payments. Are you sure?'
-                : 'This will reloan and reschedule the due date for this and all future payments. Are you sure?';
-
-            showConfirm('Confirm Action', confirmMessage, onConfirm, onCancel);
+            });
         }
 
         async function handleEditNotesClick(e) {
