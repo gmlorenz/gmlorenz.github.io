@@ -2182,9 +2182,12 @@
 
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
+            const button = e.currentTarget; // Keep track of the button
+            toggleButtonSpinner(button, true); // Show spinner immediately
+
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async (confirmed) => {
                  if (!confirmed) {
-                    toggleButtonSpinner(e.currentTarget, false);
+                    toggleButtonSpinner(button, false);
                     return;
                 }
                 try {
@@ -2219,9 +2222,9 @@
                         paymentToUpdate.paymentHistory.push({
                             amount: remainingAmount,
                             date: new Date().toISOString(),
-                            paidPrincipal: installmentPrincipal,
-                            paidInterest: installmentInterest,
-                            paidPenalty: installmentPenalty,
+                            paidPrincipal: installmentPrincipal - (paymentToUpdate.paymentHistory.reduce((acc, p) => acc + p.paidPrincipal, 0) || 0),
+                            paidInterest: installmentInterest - (paymentToUpdate.paymentHistory.reduce((acc, p) => acc + p.paidInterest, 0) || 0),
+                            paidPenalty: installmentPenalty - (paymentToUpdate.paymentHistory.reduce((acc, p) => acc + p.paidPenalty, 0) || 0),
                             recordedBy: currentUser.email
                         });
                     }
@@ -2244,7 +2247,7 @@
                     });
                     showAlert('Success', 'Installment marked as paid.');
                  } finally {
-                    toggleButtonSpinner(e.currentTarget, false);
+                    toggleButtonSpinner(button, false);
                  }
             });
         }
