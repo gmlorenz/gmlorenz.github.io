@@ -1490,95 +1490,19 @@
                 });
             }
 
-             // --- FIX STARTS HERE ---
-
-            // 1. Get the total number of filtered borrowers.
+            // Corrected Pagination Logic
             const totalBorrowers = filteredBorrowers.length;
-
-            // 2. Calculate total pages based on the number of borrowers.
             const totalPages = Math.ceil(totalBorrowers / loansPerPage);
             
-            // 3. Get the slice of borrowers for the current page.
             const startIndex = (currentPage - 1) * loansPerPage;
             const endIndex = startIndex + loansPerPage;
             const paginatedBorrowers = filteredBorrowers.slice(startIndex, endIndex);
 
+
             if (paginatedBorrowers.length === 0) {
                  borrowerList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No records found for the current filters.</p>`;
             } else {
-                // 4. Iterate over the paginated borrowers to render their cards.
                 paginatedBorrowers.forEach(borrower => {
-                    // You might want to filter the loans inside the card creation 
-                    // if a borrower should only show loans matching the filter.
-                    const borrowerCard = createBorrowerCard(borrower);
-                    if (borrowerCard) { 
-                        borrowerList.appendChild(borrowerCard);
-                    }
-                });
-            }
-            
-            // --- FIX ENDS HERE ---
-
-            const totalLoans = filteredBorrowers.reduce((acc, b) => acc + b.loans.filter(l => {
-                if (currentFilter === 'all') return true;
-                if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter)) return l.loanType === currentFilter;
-                const isFullyPaid = l.status === 'Paid';
-                const isDueToday = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
-                const isDueTomorrow = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === tomorrowStr);
-                const isOverdue = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
-                if (currentFilter === 'due') return isDueToday;
-                if (currentFilter === 'due-tomorrow') return isDueTomorrow;
-                if (currentFilter === 'overdue') return isOverdue;
-                if (currentFilter === 'paid') return isFullyPaid;
-                if (currentFilter === 'active') return !isFullyPaid && !isOverdue;
-                return false;
-            }).length, 0);
-
-            const totalPages = Math.ceil(totalLoans / loansPerPage);
-            
-            let allFilteredLoans = [];
-             filteredBorrowers.forEach(borrower => {
-                borrower.loans.forEach(loan => {
-                    const isFullyPaid = loan.status === 'Paid';
-                    const isDueToday = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
-                    const isDueTomorrow = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === tomorrowStr);
-                    const isOverdue = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
-                    let matchesFilter = false;
-                    if (currentFilter === 'all') matchesFilter = true;
-                    else if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter) && loan.loanType === currentFilter) matchesFilter = true;
-                    else if (currentFilter === 'due' && isDueToday) matchesFilter = true;
-                    else if (currentFilter === 'due-tomorrow' && isDueTomorrow) matchesFilter = true;
-                    else if (currentFilter === 'overdue' && isOverdue) matchesFilter = true;
-                    else if (currentFilter === 'paid' && isFullyPaid) matchesFilter = true;
-                    else if (currentFilter === 'active' && !isFullyPaid && !isOverdue) matchesFilter = true;
-                    
-                    if(matchesFilter) {
-                        allFilteredLoans.push({ ...loan, borrowerId: borrower.id, borrowerName: borrower.borrowerName });
-                    }
-                });
-            });
-
-            const startIndex = (currentPage - 1) * loansPerPage;
-            const endIndex = startIndex + loansPerPage;
-            const paginatedLoans = allFilteredLoans.slice(startIndex, endIndex);
-
-            const borrowersOnPage = new Map();
-            paginatedLoans.forEach(loan => {
-                if (!borrowersOnPage.has(loan.borrowerId)) {
-                    borrowersOnPage.set(loan.borrowerId, {
-                        id: loan.borrowerId,
-                        borrowerName: loan.borrowerName,
-                        loans: []
-                    });
-                }
-                borrowersOnPage.get(loan.borrowerId).loans.push(loan);
-            });
-
-
-            if (borrowersOnPage.size === 0) {
-                 borrowerList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No records found for the current filters.</p>`;
-            } else {
-                borrowersOnPage.forEach(borrower => {
                     const borrowerCard = createBorrowerCard(borrower);
                     if (borrowerCard) { 
                         borrowerList.appendChild(borrowerCard);
