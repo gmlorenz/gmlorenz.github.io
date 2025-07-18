@@ -2197,7 +2197,7 @@
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async (confirmed) => {
-                if (!confirmed) {
+                 if (!confirmed) {
                     toggleButtonSpinner(e.currentTarget, false);
                     return;
                 }
