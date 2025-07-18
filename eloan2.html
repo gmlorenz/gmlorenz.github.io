@@ -1986,7 +1986,7 @@
             card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleRescheduleClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
-            card.querySelectorAll('.edit-loan-btn').forEach(btn => btn.addEventListener('click', e => handleEditLoanClick(e)));
+            card.querySelectorAll('.edit-loan-btn').forEach(btn => btn.addEventListener('click', e => ));
 
             card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
                 const {
@@ -2331,6 +2331,7 @@
             const editLoanModal = document.getElementById('editLoanModal');
             const editLoanForm = document.getElementById('editLoanForm');
             
+            // --- UPDATED HTML FOR THE MODAL ---
             editLoanForm.innerHTML = `
                 <input type="hidden" name="borrowerId" value="${borrowerId}">
                 <input type="hidden" name="loanId" value="${loanId}">
@@ -2338,10 +2339,22 @@
                     <label for="editLoanAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
                     <input type="number" id="editLoanAmount" name="loanAmount" min="0" step="0.01" required value="${loan.loanAmount}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
                 </div>
-                 <div>
+
+                <div id="editInterestRateSection">
                     <label for="editInterestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
-                    <input type="number" id="editInterestRate" name="interestRate" min="0" step="0.1" value="${loan.interestRate}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                    <input type="number" id="editInterestRate" name="interestRate" min="0" step="0.1" value="${loan.interestRate || 0}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
                 </div>
+
+                <div id="editCustomInterestSection" class="hidden">
+                    <label for="editCustomInterest" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest (₱)</label>
+                    <input type="number" id="editCustomInterest" name="customInterest" min="0" step="0.01" value="${loan.customInterest || 0}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                </div>
+
+                <div class="flex items-center">
+                    <input id="editCustomInterestCheckbox" name="isCustomInterest" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="editCustomInterestCheckbox" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Custom Interest</label>
+                </div>
+
                  <div>
                     <label for="editLoanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
                     <input type="date" id="editLoanDate" name="loanDate" required value="${loan.loanDate}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
@@ -2359,7 +2372,29 @@
                     <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </button>
             `;
+
+            // --- LOGIC TO HANDLE CHECKBOX AND VISIBILITY ---
+            const customInterestCheckbox = document.getElementById('editCustomInterestCheckbox');
+            const interestRateSection = document.getElementById('editInterestRateSection');
+            const customInterestSection = document.getElementById('editCustomInterestSection');
+
+            // Set initial state from loan data
+            customInterestCheckbox.checked = loan.isCustomInterest || false;
+
+            const toggleInterestFields = () => {
+                if (customInterestCheckbox.checked) {
+                    interestRateSection.style.display = 'none';
+                    customInterestSection.style.display = 'block';
+                } else {
+                    interestRateSection.style.display = 'block';
+                    customInterestSection.style.display = 'none';
+                }
+            };
             
+            toggleInterestFields(); // Call on modal open
+            customInterestCheckbox.addEventListener('change', toggleInterestFields); // Add listener for changes
+
+            // --- UPDATED SUBMISSION LOGIC ---
             editLoanForm.onsubmit = async (submitEvent) => {
                  submitEvent.preventDefault();
                  const button = submitEvent.submitter;
@@ -2368,16 +2403,15 @@
                 try {
                     const formData = new FormData(editLoanForm);
                     const loanAmount = parseFloat(formData.get('loanAmount'));
-                    const interestRate = parseFloat(formData.get('interestRate'));
+                    const interestRate = parseFloat(formData.get('interestRate')) || 0;
+                    const customInterest = parseFloat(formData.get('customInterest')) || 0;
+                    const isCustomInterest = formData.get('isCustomInterest') === 'on';
                     const loanDate = formData.get('loanDate');
                     const returnDate = formData.get('returnDate');
-                    const resetPenalty = formData.get('resetPenalty') === 'on'; // Checkbox value
+                    const resetPenalty = formData.get('resetPenalty') === 'on';
 
                     if (isNaN(loanAmount) || loanAmount <= 0) {
                         return showAlert('Validation Error', 'Please enter a valid loan amount.');
-                    }
-                     if (isNaN(interestRate) || interestRate < 0) {
-                        return showAlert('Validation Error', 'Please enter a valid interest rate.');
                     }
                     if (!loanDate || !returnDate) {
                          return showAlert('Validation Error', 'Please select both a loan date and a final due date.');
@@ -2388,9 +2422,16 @@
                     const borrowerData = borrowerDoc.data();
                     const loans = borrowerData.loans.map(l => {
                         if (l.loanId === loanId) {
-                            const updatedLoan = { ...l, loanAmount, interestRate, loanDate, returnDate };
+                            const updatedLoan = { 
+                                ...l, 
+                                loanAmount, 
+                                interestRate, 
+                                customInterest,
+                                isCustomInterest,
+                                loanDate, 
+                                returnDate 
+                            };
                             
-                            // --- PENALTY RESET LOGIC ---
                             if (resetPenalty) {
                                 const todayStr = new Date().toISOString().split('T')[0];
                                 const today = new Date(todayStr);
@@ -2398,10 +2439,9 @@
                                 updatedLoan.paymentSchedule.forEach(payment => {
                                     const dueDate = new Date(payment.dueDate);
                                     if (payment.status !== 'Paid' && dueDate < today) {
-                                        payment.dueDate = todayStr; // Move due date to today
+                                        payment.dueDate = todayStr;
                                     }
                                 });
-                                // Recalculate final due date based on the last payment
                                 if (updatedLoan.paymentSchedule.length > 0) {
                                      updatedLoan.returnDate = updatedLoan.paymentSchedule[updatedLoan.paymentSchedule.length - 1].dueDate;
                                 }
