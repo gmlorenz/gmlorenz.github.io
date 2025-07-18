@@ -1229,6 +1229,7 @@
         }
         
         async function handleSaveDefaults(e) {
+            if (currentUserRole !== 'admin') return showAlert('Access Denied', 'You do not have permission to perform this action.');
             e.preventDefault();
             const newPenaltyRate = parseFloat(document.getElementById('defaultPenaltyRateInput').value);
             const newELoanInterest = parseFloat(document.getElementById('defaultELoanInterest').value);
@@ -1293,6 +1294,7 @@
         }
 
         async function handleAddAuthorizedEmail(e) {
+            if (currentUserRole !== 'admin') return showAlert('Access Denied', 'You do not have permission to perform this action.');
             e.preventDefault();
             const input = document.getElementById('newAuthEmail');
             const email = input.value.trim();
@@ -1319,6 +1321,7 @@
         }
 
         async function handleDeleteAuthorizedEmail(email) {
+            if (currentUserRole !== 'admin') return showAlert('Access Denied', 'You do not have permission to perform this action.');
             showConfirm('Confirm Deletion', `Are you sure you want to remove ${email}?`, async () => {
                  try {
                     await updateDoc(doc(db, configPath), { authorizedEmails: arrayRemove(email) });
@@ -2263,16 +2266,14 @@
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
                     const borrowerSnap = await getDoc(borrowerRef);
                     if (!borrowerSnap.exists()) {
-                        showAlert('Error', 'Borrower not found in database.');
-                        return;
+                        return showAlert('Error', 'Borrower not found in database.');
                     }
                     const borrowerDoc = borrowerSnap.data();
                     const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                     const targetLoan = updatedLoans.find(l => l.loanId === loanId);
                     
                     if (!targetLoan) {
-                        showAlert('Error', 'Loan not found in borrower records.');
-                        return;
+                        return showAlert('Error', 'Loan not found in borrower records.');
                     }
 
                     if (!targetLoan.reloanHistory) {
@@ -2306,9 +2307,8 @@
                     showAlert('Success', 'Schedule updated.');
                 } catch(error) {
                     console.error("Error during reschedule:", error);
-                    showAlert('Error', 'An unexpected error occurred during reschedule. Please check the console.');
-                } 
-                finally {
+                    showAlert('Error', 'An unexpected error occurred during reschedule.');
+                } finally {
                     toggleButtonSpinner(button, false);
                 }
             });
@@ -2319,8 +2319,7 @@
             const borrowerRef = doc(db, borrowersPath, borrowerId);
             const borrowerSnap = await getDoc(borrowerRef);
             if (!borrowerSnap.exists()) {
-                showAlert('Error', 'Borrower not found in database.');
-                return;
+                return showAlert('Error', 'Borrower not found in database.');
             }
             const borrowerDoc = borrowerSnap.data();
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
@@ -2332,25 +2331,29 @@
             notesText.value = loan.notes || '';
 
             form.onsubmit = async (submitEvent) => {
-                toggleButtonSpinner(submitEvent.submitter, true);
+                const button = submitEvent.submitter;
+                toggleButtonSpinner(button, true);
                 try {
                     submitEvent.preventDefault();
-                    const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
+                    // Re-fetch the latest data right before updating
+                    const currentSnap = await getDoc(borrowerRef);
+                    const currentData = currentSnap.data();
+                    const updatedLoans = JSON.parse(JSON.stringify(currentData.loans));
+
                     const loanToUpdate = updatedLoans.find(l => l.loanId === loanId);
-                    const oldNotes = loanToUpdate.notes;
                     loanToUpdate.notes = notesText.value.trim();
 
-                    await updateDoc(doc(db, borrowersPath, borrowerId), { loans: updatedLoans });
+                    await updateDoc(borrowerRef, { loans: updatedLoans });
                      await addDoc(collection(db, activityLogPath), {
                         action: 'updated notes',
-                        details: `for loan for ${borrowerDoc.borrowerName}`,
+                        details: `for loan for ${currentData.borrowerName}`,
                         timestamp: serverTimestamp(),
                         user: currentUser.email
                     });
                     modal.style.display = 'none';
                     showAlert('Success', 'Notes updated.');
                 } finally {
-                    toggleButtonSpinner(submitEvent.submitter, false);
+                    toggleButtonSpinner(button, false);
                 }
             };
 
