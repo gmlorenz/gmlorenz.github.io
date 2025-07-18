@@ -2348,7 +2348,7 @@
                 </div>
                 <div>
                     <label for="editReturnDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Final Due Date</label>
-                    <input type="date" id="editReturnDate" name="returnDate" required value="${loan.returnDate}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                    <input type="date" id="editReturnDate" name="returnDate" required value="${loan.returnDate || ''}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
                 </div>
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
                     <span class="button-text">Update Loan</span>
@@ -2366,7 +2366,7 @@
                     const loanAmount = parseFloat(formData.get('loanAmount'));
                     const interestRate = parseFloat(formData.get('interestRate'));
                     const loanDate = formData.get('loanDate');
-                    const returnDate = formData.get('returnDate'); // Get the new final due date
+                    const returnDate = formData.get('returnDate');
 
                     if (isNaN(loanAmount) || loanAmount <= 0) {
                         return showAlert('Validation Error', 'Please enter a valid loan amount.');
@@ -2374,7 +2374,7 @@
                      if (isNaN(interestRate) || interestRate < 0) {
                         return showAlert('Validation Error', 'Please enter a valid interest rate.');
                     }
-                    if (!loanDate || !returnDate) { // Also check if returnDate is selected
+                    if (!loanDate || !returnDate) {
                          return showAlert('Validation Error', 'Please select both a loan date and a final due date.');
                     }
 
@@ -2383,7 +2383,6 @@
                     const borrowerData = borrowerDoc.data();
                     const loans = borrowerData.loans.map(l => {
                         if (l.loanId === loanId) {
-                            // Include returnDate in the updated loan object
                             return { ...l, loanAmount, interestRate, loanDate, returnDate };
                         }
                         return l;
@@ -2401,6 +2400,9 @@
                     toggleButtonSpinner(button, false);
                 }
             };
+            
+            editLoanModal.style.display = 'flex';
+        } // <-- This closing brace was missing
 
 
         function renderLoanTable() {
