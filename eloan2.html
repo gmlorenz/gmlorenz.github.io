@@ -2120,7 +2120,7 @@
 
                     let principalRemaining = installmentPrincipal - (paymentToUpdate.paidBreakdown?.paidPrincipal || 0);
                     if (remainingPayment > 0 && principalRemaining > 0) {
-                        const principalPaid = Math.min(remainingPayment, principalRemaining);
+                        const principalPaid = Math.min(remainingPayment, principalPaid);
                         paidBreakdown.paidPrincipal = principalPaid;
                         remainingPayment -= principalPaid;
                     }
@@ -2230,8 +2230,10 @@
         
         async function handleRescheduleClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
-            toggleButtonSpinner(e.currentTarget, true);
+            const button = e.currentTarget;
+
             showConfirm('Confirm Reschedule', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
+                toggleButtonSpinner(button, true);
                 try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
                     const borrowerSnap = await getDoc(borrowerRef);
@@ -2243,6 +2245,11 @@
                     const updatedLoans = JSON.parse(JSON.stringify(borrowerDoc.loans));
                     const targetLoan = updatedLoans.find(l => l.loanId === loanId);
                     
+                    if (!targetLoan) {
+                        showAlert('Error', 'Loan not found in borrower records.');
+                        return;
+                    }
+
                     if (!targetLoan.reloanHistory) {
                         targetLoan.reloanHistory = [];
                     }
@@ -2272,8 +2279,12 @@
                         user: currentUser.email
                     });
                     showAlert('Success', 'Schedule updated.');
-                } finally {
-                    toggleButtonSpinner(e.currentTarget, false);
+                } catch(error) {
+                    console.error("Error during reschedule:", error);
+                    showAlert('Error', 'An unexpected error occurred during reschedule. Please check the console.');
+                } 
+                finally {
+                    toggleButtonSpinner(button, false);
                 }
             });
         }
