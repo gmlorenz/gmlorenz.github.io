@@ -349,6 +349,18 @@
         </div>
     </div>
     
+    <div id="editLoanModal" class="modal-backdrop">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-lg m-4">
+            <div class="p-6">
+                 <div class="flex justify-between items-center border-b dark:border-gray-700 pb-3 mb-5">
+                     <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Edit Loan</h3>
+                     <button id="closeEditLoanButton" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white">&times;</button>
+                </div>
+                <form id="editLoanForm" class="space-y-4"></form>
+            </div>
+        </div>
+    </div>
+
     <div id="manageLoanerModal" class="modal-backdrop">
         <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 max-w-3xl m-4">
             <div class="p-6">
@@ -645,11 +657,12 @@
             document.getElementById('confirmModal').style.display = 'flex';
         }
         document.getElementById('confirmOkButton').addEventListener('click', () => {
-            if (confirmCallback) confirmCallback();
+            if (confirmCallback) confirmCallback(true); // Pass true for confirmation
             document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
         document.getElementById('confirmCancelButton').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback(false); // Pass false for cancellation
             document.getElementById('confirmModal').style.display = 'none';
             confirmCallback = null;
         });
@@ -778,6 +791,7 @@
 
             document.getElementById('closePartialPaymentButton').addEventListener('click', () => document.getElementById('partialPaymentModal').style.display = 'none');
             document.getElementById('closeEditNotesButton').addEventListener('click', () => document.getElementById('editNotesModal').style.display = 'none');
+            document.getElementById('closeEditLoanButton').addEventListener('click', () => document.getElementById('editLoanModal').style.display = 'none');
 
             const addLoanForm = document.getElementById('addLoanForm');
             addLoanForm.innerHTML = `
@@ -1927,11 +1941,15 @@
                             </div>
                             <div class="col-span-full space-y-1">${scheduleHtml}</div>
                         </div>
-                        <div class="mt-3 pt-2 border-t dark:border-gray-700/50 flex justify-end space-x-2">
+                         <div class="mt-3 pt-2 border-t dark:border-gray-700/50 flex justify-end space-x-2">
                              <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="edit-notes-btn text-white text-xs font-bold py-1 px-3 rounded-md transition ${notesBtnClass}" ${isNotesDisabled}>
                                 <span class="button-text">Notes</span>
                                 <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                              </button>
+                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="edit-loan-btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1 px-3 rounded-md transition">
+                                <span class="button-text">Edit Loan</span>
+                                <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </button>
                             <button data-borrower-id="${borrower.id}" data-loan-id="${loan.loanId}" class="delete-loan-btn bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-3 rounded-md transition">
                                 <span class="button-text">Delete Loan</span>
                                 <svg class="spinner-icon w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -2002,6 +2020,7 @@
             card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleRescheduleClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
+            card.querySelectorAll('.edit-loan-btn').forEach(btn => btn.addEventListener('click', e => handleEditLoanClick(e)));
 
             card.querySelectorAll('.delete-loan-btn').forEach(btn => btn.addEventListener('click', e => {
                 const {
@@ -2232,7 +2251,8 @@
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
             const button = e.currentTarget;
 
-            showConfirm('Confirm Reschedule', 'This will reschedule the due date for this and all future payments. Are you sure?', async () => {
+            showConfirm('Confirm Reschedule', 'This will reschedule the due date for this and all future payments. Are you sure?', async (confirmed) => {
+                if (!confirmed) return;
                 toggleButtonSpinner(button, true);
                 try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
@@ -2330,6 +2350,84 @@
             };
 
             modal.style.display = 'flex';
+        }
+        
+        async function handleEditLoanClick(e) {
+            const { borrowerId, loanId } = e.currentTarget.dataset;
+            const borrower = allBorrowers.find(b => b.id === borrowerId);
+            if (!borrower) return showAlert('Error', 'Borrower not found.');
+            const loan = borrower.loans.find(l => l.loanId === loanId);
+            if (!loan) return showAlert('Error', 'Loan not found.');
+            
+            const editLoanModal = document.getElementById('editLoanModal');
+            const editLoanForm = document.getElementById('editLoanForm');
+            
+            editLoanForm.innerHTML = `
+                <input type="hidden" name="borrowerId" value="${borrowerId}">
+                <input type="hidden" name="loanId" value="${loanId}">
+                <div>
+                    <label for="editLoanAmount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Amount (₱)</label>
+                    <input type="number" id="editLoanAmount" name="loanAmount" min="0" step="0.01" required value="${loan.loanAmount}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                </div>
+                 <div>
+                    <label for="editInterestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Interest Rate (%)</label>
+                    <input type="number" id="editInterestRate" name="interestRate" min="0" step="0.1" value="${loan.interestRate}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                </div>
+                 <div>
+                    <label for="editLoanDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Loan Date</label>
+                    <input type="date" id="editLoanDate" name="loanDate" required value="${loan.loanDate}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
+                    <span class="button-text">Update Loan</span>
+                    <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </button>
+            `;
+            
+            editLoanForm.onsubmit = async (submitEvent) => {
+                 submitEvent.preventDefault();
+                 const button = submitEvent.submitter;
+                 toggleButtonSpinner(button, true);
+                 
+                try {
+                    const formData = new FormData(editLoanForm);
+                    const loanAmount = parseFloat(formData.get('loanAmount'));
+                    const interestRate = parseFloat(formData.get('interestRate'));
+                    const loanDate = formData.get('loanDate');
+
+                    if (isNaN(loanAmount) || loanAmount <= 0) {
+                        return showAlert('Validation Error', 'Please enter a valid loan amount.');
+                    }
+                     if (isNaN(interestRate) || interestRate < 0) {
+                        return showAlert('Validation Error', 'Please enter a valid interest rate.');
+                    }
+                    if (!loanDate) {
+                         return showAlert('Validation Error', 'Please select a loan date.');
+                    }
+
+                    const borrowerRef = doc(db, borrowersPath, borrowerId);
+                    const borrowerDoc = await getDoc(borrowerRef);
+                    const borrowerData = borrowerDoc.data();
+                    const loans = borrowerData.loans.map(l => {
+                        if (l.loanId === loanId) {
+                            return { ...l, loanAmount, interestRate, loanDate };
+                        }
+                        return l;
+                    });
+                    
+                    await updateDoc(borrowerRef, { loans });
+
+                    showAlert('Success', 'Loan updated successfully.');
+                    editLoanModal.style.display = 'none';
+
+                } catch (error) {
+                    console.error("Error updating loan:", error);
+                    showAlert('Error', 'Failed to update loan.');
+                } finally {
+                    toggleButtonSpinner(button, false);
+                }
+            };
+            
+            editLoanModal.style.display = 'flex';
         }
 
 
