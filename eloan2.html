@@ -2043,16 +2043,23 @@
             const loan = borrowerDoc.loans.find(l => l.loanId === loanId);
             const payment = loan.paymentSchedule[paymentIndex];
 
+            // --- CORRECTED DATE LOGIC ---
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+            const dueDate = new Date(payment.dueDate);
+            dueDate.setHours(0, 0, 0, 0); // Also set to start of day
+
             const loanInterest = loan.isCustomInterest ? loan.customInterest : loan.loanAmount * (loan.interestRate / 100);
-            const totalLoanAmount = loan.loanAmount + loanInterest;
             const installmentPrincipal = loan.loanAmount / loan.numberOfPayments;
             const installmentInterest = loanInterest / loan.numberOfPayments;
 
             let installmentPenalty = 0;
-            if (new Date(payment.dueDate) < new Date()) {
-                const daysDelayed = Math.max(0, Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 3600 * 24)));
+            // Only apply penalty if the due date is strictly before today
+            if (dueDate < today) {
+                const daysDelayed = Math.max(0, Math.ceil((today - dueDate) / (1000 * 3600 * 24)));
                 installmentPenalty = (loan.loanAmount * (appSettings.defaultPenaltyRate / 100)) * daysDelayed;
             }
+
             const totalInstallmentDue = installmentPrincipal + installmentInterest + installmentPenalty;
             const remainingAmount = totalInstallmentDue - (payment.paidAmount || 0);
 
@@ -2061,8 +2068,8 @@
             const amountInput = document.getElementById('paymentAmount');
             const detailsEl = document.getElementById('paymentDetails');
             
-            amountInput.value = remainingAmount.toFixed(2);
-            amountInput.max = remainingAmount.toFixed(2);
+            amountInput.value = remainingAmount > 0 ? remainingAmount.toFixed(2) : "0.00";
+            amountInput.max = remainingAmount > 0 ? remainingAmount.toFixed(2) : "0.00";
             detailsEl.textContent = `Principal Due: ₱${installmentPrincipal.toFixed(2)}, Interest Due: ₱${installmentInterest.toFixed(2)}, Penalty Due: ₱${installmentPenalty.toFixed(2)}, Total Paid: ₱${(payment.paidAmount || 0).toFixed(2)}`;
             
             form.onsubmit = async (submitEvent) => {
@@ -2087,37 +2094,34 @@
                         recordedBy: currentUser.email
                     };
                     
-                    // --- FIX STARTS HERE ---
-                    // Calculate totals already paid from history
+                    // --- CORRECTED PAYMENT DISTRIBUTION LOGIC ---
                     const alreadyPaidPenalty = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidPenalty || 0), 0) || 0;
                     const alreadyPaidInterest = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidInterest || 0), 0) || 0;
                     const alreadyPaidPrincipal = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidPrincipal || 0), 0) || 0;
 
                     let remainingPayment = paymentAmount;
                     
-                    // Calculate remaining amounts based on history
-                    let penaltyRemaining = installmentPenalty - alreadyPaidPenalty;
-                    if (remainingPayment > 0 && penaltyRemaining > 0) {
-                         const penaltyPaid = Math.min(remainingPayment, penaltyRemaining);
+                    let penaltyToPay = installmentPenalty - alreadyPaidPenalty;
+                    if (remainingPayment > 0 && penaltyToPay > 0) {
+                         const penaltyPaid = Math.min(remainingPayment, penaltyToPay);
                          paidBreakdown.paidPenalty = penaltyPaid;
                          remainingPayment -= penaltyPaid;
                     }
                     
-                    let interestRemaining = installmentInterest - alreadyPaidInterest;
-                    if (remainingPayment > 0 && interestRemaining > 0) {
-                        const interestPaid = Math.min(remainingPayment, interestRemaining);
+                    let interestToPay = installmentInterest - alreadyPaidInterest;
+                    if (remainingPayment > 0 && interestToPay > 0) {
+                        const interestPaid = Math.min(remainingPayment, interestToPay);
                         paidBreakdown.paidInterest = interestPaid;
                         remainingPayment -= interestPaid;
                     }
 
-                    let principalRemaining = installmentPrincipal - alreadyPaidPrincipal;
-                    if (remainingPayment > 0 && principalRemaining > 0) {
-                        const principalPaid = Math.min(remainingPayment, principalRemaining);
+                    let principalToPay = installmentPrincipal - alreadyPaidPrincipal;
+                    if (remainingPayment > 0 && principalToPay > 0) {
+                        const principalPaid = Math.min(remainingPayment, principalToPay);
                         paidBreakdown.paidPrincipal = principalPaid;
                         remainingPayment -= principalPaid;
                     }
-                    // --- FIX ENDS HERE ---
-
+                    
                     if (!paymentToUpdate.paymentHistory) {
                         paymentToUpdate.paymentHistory = [];
                     }
