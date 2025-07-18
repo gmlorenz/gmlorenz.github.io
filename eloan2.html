@@ -632,7 +632,7 @@
         let sortState = { column: 'loanDate', direction: 'desc' };
         let expandedBorrowerIds = new Set();
         let currentPage = 1; 
-        const loansPerPage = 7;
+        const loansPerPage = 10;
         let appSettings = {};
         let currentUserRole = 'user';
         let historyModalOpen = false;
@@ -1452,7 +1452,12 @@
             
             const searchTerm = document.getElementById('searchLoaner').value.toLowerCase();
             let filteredBorrowers = allBorrowers.filter(b => b.borrowerName.toLowerCase().includes(searchTerm));
-            const todayStr = new Date().toISOString().split('T')[0];
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const todayStr = today.toISOString().split('T')[0];
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
             if (currentFilter !== 'all') {
                  filteredBorrowers = filteredBorrowers.filter(borrower => {
@@ -1463,6 +1468,10 @@
                         
                         if (currentFilter === 'due') {
                             return loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+                        }
+
+                        if (currentFilter === 'due-tomorrow') {
+                            return loan.status === 'Active' && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === tomorrowStr);
                         }
                         
                         if (currentFilter === 'overdue') {
@@ -1486,8 +1495,10 @@
                 if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter)) return l.loanType === currentFilter;
                 const isFullyPaid = l.status === 'Paid';
                 const isDueToday = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+                const isDueTomorrow = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === tomorrowStr);
                 const isOverdue = !isFullyPaid && l.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
                 if (currentFilter === 'due') return isDueToday;
+                if (currentFilter === 'due-tomorrow') return isDueTomorrow;
                 if (currentFilter === 'overdue') return isOverdue;
                 if (currentFilter === 'paid') return isFullyPaid;
                 if (currentFilter === 'active') return !isFullyPaid && !isOverdue;
@@ -1501,11 +1512,13 @@
                 borrower.loans.forEach(loan => {
                     const isFullyPaid = loan.status === 'Paid';
                     const isDueToday = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === todayStr);
+                    const isDueTomorrow = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && p.dueDate === tomorrowStr);
                     const isOverdue = !isFullyPaid && loan.paymentSchedule?.some(p => p.status !== 'Paid' && new Date(p.dueDate) < new Date(todayStr));
                     let matchesFilter = false;
                     if (currentFilter === 'all') matchesFilter = true;
                     else if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter) && loan.loanType === currentFilter) matchesFilter = true;
                     else if (currentFilter === 'due' && isDueToday) matchesFilter = true;
+                    else if (currentFilter === 'due-tomorrow' && isDueTomorrow) matchesFilter = true;
                     else if (currentFilter === 'overdue' && isOverdue) matchesFilter = true;
                     else if (currentFilter === 'paid' && isFullyPaid) matchesFilter = true;
                     else if (currentFilter === 'active' && !isFullyPaid && !isOverdue) matchesFilter = true;
@@ -2183,9 +2196,12 @@
 
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
-            toggleButtonSpinner(e.currentTarget, true);
-            showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async () => {
-                 try {
+            showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async (confirmed) => {
+                if (!confirmed) {
+                    toggleButtonSpinner(e.currentTarget, false);
+                    return;
+                }
+                try {
                     const borrowerRef = doc(db, borrowersPath, borrowerId);
                     const borrowerSnap = await getDoc(borrowerRef);
                     if (!borrowerSnap.exists()) {
