@@ -1982,7 +1982,7 @@
                 card.classList.add('expanded');
             }
 
-            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
+            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => ));
             card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleRescheduleClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
@@ -2087,28 +2087,36 @@
                         recordedBy: currentUser.email
                     };
                     
-                    let remainingPayment = paymentAmount;
-                    let penaltyRemaining = installmentPenalty - ((paymentToUpdate.paidBreakdown?.paidPenalty || 0) + (paymentToUpdate.paidBreakdown?.paidInterest || 0));
+                    // --- FIX STARTS HERE ---
+                    // Calculate totals already paid from history
+                    const alreadyPaidPenalty = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidPenalty || 0), 0) || 0;
+                    const alreadyPaidInterest = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidInterest || 0), 0) || 0;
+                    const alreadyPaidPrincipal = paymentToUpdate.paymentHistory?.reduce((sum, p) => sum + (p.paidPrincipal || 0), 0) || 0;
 
+                    let remainingPayment = paymentAmount;
+                    
+                    // Calculate remaining amounts based on history
+                    let penaltyRemaining = installmentPenalty - alreadyPaidPenalty;
                     if (remainingPayment > 0 && penaltyRemaining > 0) {
                          const penaltyPaid = Math.min(remainingPayment, penaltyRemaining);
                          paidBreakdown.paidPenalty = penaltyPaid;
                          remainingPayment -= penaltyPaid;
                     }
                     
-                    let interestRemaining = installmentInterest - (paymentToUpdate.paidBreakdown?.paidInterest || 0);
+                    let interestRemaining = installmentInterest - alreadyPaidInterest;
                     if (remainingPayment > 0 && interestRemaining > 0) {
                         const interestPaid = Math.min(remainingPayment, interestRemaining);
                         paidBreakdown.paidInterest = interestPaid;
                         remainingPayment -= interestPaid;
                     }
 
-                    let principalRemaining = installmentPrincipal - (paymentToUpdate.paidBreakdown?.paidPrincipal || 0);
+                    let principalRemaining = installmentPrincipal - alreadyPaidPrincipal;
                     if (remainingPayment > 0 && principalRemaining > 0) {
-                        const principalPaid = Math.min(remainingPayment, principalPaid);
+                        const principalPaid = Math.min(remainingPayment, principalRemaining);
                         paidBreakdown.paidPrincipal = principalPaid;
                         remainingPayment -= principalPaid;
                     }
+                    // --- FIX ENDS HERE ---
 
                     if (!paymentToUpdate.paymentHistory) {
                         paymentToUpdate.paymentHistory = [];
@@ -2146,7 +2154,7 @@
 
             modal.style.display = 'flex';
         }
-
+        
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async (confirmed) => {
