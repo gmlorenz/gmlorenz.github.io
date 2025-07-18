@@ -955,14 +955,17 @@
                 });
             });
             
+            // --- THIS IS THE FIX ---
             addLoanForm.addEventListener('submit', async (e) => {
-                toggleButtonSpinner(e.submitter, true);
+                const button = e.submitter;
+                toggleButtonSpinner(button, true);
                 try {
                     await handleAddLoanSubmit(e);
                 } finally {
-                    toggleButtonSpinner(e.submitter, false);
+                    toggleButtonSpinner(button, false);
                 }
             });
+            // --- END OF FIX ---
 
             document.querySelectorAll('.sortable-header').forEach(header => {
                 header.addEventListener('click', () => {
