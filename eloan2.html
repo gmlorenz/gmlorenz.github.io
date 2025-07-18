@@ -29,7 +29,7 @@
         .modal-backdrop {
             display: none;
             position: fixed;
-            z-index: 50;
+            z-index: 1050; /* Changed from 50 to 1050 */
             top: 0;
             left: 0;
             width: 100%;
@@ -1027,7 +1027,12 @@
 
             onSnapshot(activityQ, (querySnapshot) => {
                 const activityLog = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                activityLog.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+                // Safeguard the sort function to prevent errors with missing timestamps
+                activityLog.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+                    const timeB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+                    return timeB - timeA;
+                });
                 renderActivityLog(activityLog);
             }, (error) => {
                 console.error("Error fetching activity log:", error);
@@ -1415,18 +1420,25 @@
             }
         }
 
-        function handleDeleteLoaner(e) {
+        async function handleDeleteLoaner(e) {
             e.preventDefault();
             const modal = document.getElementById('editLoanerModal');
             const borrowerId = modal.dataset.borrowerId;
+            const borrowerToDelete = allBorrowers.find(b => b.id === borrowerId); // Get borrower info first
+            if (!borrowerToDelete) {
+                showAlert('Error', 'Could not find the borrower to delete.');
+                return;
+            }
             
-            showConfirm('Delete Loaner', 'Are you sure you want to delete this loaner and ALL their records? This cannot be undone.', async () => {
+            showConfirm('Delete Loaner', 'Are you sure you want to delete this loaner and ALL their records? This cannot be undone.', async (confirmed) => {
+                if (!confirmed) return; // Stop if the user cancels
+
                 toggleButtonSpinner(e.target, true);
                 try {
                     await deleteDoc(doc(db, borrowersPath, borrowerId));
                     await addDoc(collection(db, activityLogPath), {
                         action: 'deleted loaner',
-                        details: `${allBorrowers.find(b => b.id === borrowerId)?.borrowerName}`,
+                        details: `${borrowerToDelete.borrowerName}`, // Use the stored name
                         timestamp: serverTimestamp(),
                         user: currentUser.email
                     });
