@@ -1490,6 +1490,38 @@
                 });
             }
 
+             // --- FIX STARTS HERE ---
+
+            // 1. Get the total number of filtered borrowers.
+            const totalBorrowers = filteredBorrowers.length;
+
+            // 2. Calculate total pages based on the number of borrowers.
+            const totalPages = Math.ceil(totalBorrowers / loansPerPage);
+            
+            // 3. Get the slice of borrowers for the current page.
+            const startIndex = (currentPage - 1) * loansPerPage;
+            const endIndex = startIndex + loansPerPage;
+            const paginatedBorrowers = filteredBorrowers.slice(startIndex, endIndex);
+
+            if (paginatedBorrowers.length === 0) {
+                 borrowerList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 py-8">No records found for the current filters.</p>`;
+            } else {
+                // 4. Iterate over the paginated borrowers to render their cards.
+                paginatedBorrowers.forEach(borrower => {
+                    // You might want to filter the loans inside the card creation 
+                    // if a borrower should only show loans matching the filter.
+                    const borrowerCard = createBorrowerCard(borrower);
+                    if (borrowerCard) { 
+                        borrowerList.appendChild(borrowerCard);
+                    }
+                });
+            }
+            
+            // --- FIX ENDS HERE ---
+            
+            renderPagination(totalPages);
+        }
+
             const totalLoans = filteredBorrowers.reduce((acc, b) => acc + b.loans.filter(l => {
                 if (currentFilter === 'all') return true;
                 if (['Product', 'E-Loan', 'Long Term E-Loan'].includes(currentFilter)) return l.loanType === currentFilter;
