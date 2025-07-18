@@ -2350,7 +2350,11 @@
                     <label for="editReturnDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Final Due Date</label>
                     <input type="date" id="editReturnDate" name="returnDate" required value="${loan.returnDate || ''}" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
+                <div class="flex items-center mt-4 p-3 bg-yellow-50 dark:bg-gray-700 rounded-md">
+                    <input id="resetPenaltyCheckbox" name="resetPenalty" type="checkbox" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                    <label for="resetPenaltyCheckbox" class="ml-2 block text-sm text-red-700 dark:text-red-400 font-medium">Reset Penalty (This will move all overdue payments to today's date)</label>
+                </div>
+                <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-lg">
                     <span class="button-text">Update Loan</span>
                     <svg class="spinner-icon w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </button>
@@ -2367,6 +2371,7 @@
                     const interestRate = parseFloat(formData.get('interestRate'));
                     const loanDate = formData.get('loanDate');
                     const returnDate = formData.get('returnDate');
+                    const resetPenalty = formData.get('resetPenalty') === 'on'; // Checkbox value
 
                     if (isNaN(loanAmount) || loanAmount <= 0) {
                         return showAlert('Validation Error', 'Please enter a valid loan amount.');
@@ -2383,7 +2388,31 @@
                     const borrowerData = borrowerDoc.data();
                     const loans = borrowerData.loans.map(l => {
                         if (l.loanId === loanId) {
-                            return { ...l, loanAmount, interestRate, loanDate, returnDate };
+                            const updatedLoan = { ...l, loanAmount, interestRate, loanDate, returnDate };
+                            
+                            // --- PENALTY RESET LOGIC ---
+                            if (resetPenalty) {
+                                const todayStr = new Date().toISOString().split('T')[0];
+                                const today = new Date(todayStr);
+
+                                updatedLoan.paymentSchedule.forEach(payment => {
+                                    const dueDate = new Date(payment.dueDate);
+                                    if (payment.status !== 'Paid' && dueDate < today) {
+                                        payment.dueDate = todayStr; // Move due date to today
+                                    }
+                                });
+                                // Recalculate final due date based on the last payment
+                                if (updatedLoan.paymentSchedule.length > 0) {
+                                     updatedLoan.returnDate = updatedLoan.paymentSchedule[updatedLoan.paymentSchedule.length - 1].dueDate;
+                                }
+                                if (!updatedLoan.reloanHistory) updatedLoan.reloanHistory = [];
+                                updatedLoan.reloanHistory.push({
+                                    reloanDate: new Date().toISOString(),
+                                    rescheduledInstallmentIndex: 'Penalty Reset',
+                                    recordedBy: currentUser.email
+                                });
+                            }
+                            return updatedLoan;
                         }
                         return l;
                     });
@@ -2402,7 +2431,7 @@
             };
             
             editLoanModal.style.display = 'flex';
-        } // <-- This closing brace was missing
+        }
 
 
         function renderLoanTable() {
