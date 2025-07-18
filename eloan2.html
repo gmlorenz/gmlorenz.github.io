@@ -1518,9 +1518,6 @@
             }
             
             // --- FIX ENDS HERE ---
-            
-            renderPagination(totalPages);
-        }
 
             const totalLoans = filteredBorrowers.reduce((acc, b) => acc + b.loans.filter(l => {
                 if (currentFilter === 'all') return true;
