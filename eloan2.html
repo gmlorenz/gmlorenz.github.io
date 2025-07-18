@@ -1982,7 +1982,7 @@
                 card.classList.add('expanded');
             }
 
-            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => ));
+            card.querySelectorAll('.payment-paid-btn').forEach(btn => btn.addEventListener('click', e => handlePaymentClick(e)));
             card.querySelectorAll('.mark-as-paid-btn').forEach(btn => btn.addEventListener('click', e => handleMarkAsPaidClick(e)));
             card.querySelectorAll('.reschedule-btn').forEach(btn => btn.addEventListener('click', e => handleRescheduleClick(e)));
             card.querySelectorAll('.edit-notes-btn').forEach(btn => btn.addEventListener('click', e => handleEditNotesClick(e)));
@@ -2154,7 +2154,7 @@
 
             modal.style.display = 'flex';
         }
-        
+
         async function handleMarkAsPaidClick(e) {
             const { borrowerId, loanId, paymentIndex } = e.currentTarget.dataset;
             showConfirm('Mark as Paid', 'Are you sure you want to mark this installment as fully paid?', async (confirmed) => {
