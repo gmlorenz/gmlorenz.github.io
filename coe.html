@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate of Employment - Clippers & Caffeine</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500&family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
@@ -83,14 +83,36 @@
             </p>
         </div>
 
-        <!-- Signature -->
-        <div class="mt-auto pt-8 text-left">
-            <div class="inline-block">
-                <p class="signature text-2xl md:text-3xl text-gray-800">Kerwin Rabaya</p>
-                <div class="border-t-2 border-gray-600 pt-2 mt-2">
-                    <p class="font-bold text-md md:text-lg">Manager</p>
-                    <p class="text-sm md:text-md text-gray-700">Clippers & Caffeine</p>
+        <!-- Signature and Stamp Section -->
+        <div class="mt-auto pt-8 flex justify-between items-end">
+            <!-- Signature Block -->
+            <div class="text-left">
+                <div class="inline-block">
+                    <p class="signature text-2xl md:text-3xl text-gray-800">Kerwin Rabaya</p>
+                    <div class="border-t-2 border-gray-600 pt-2 mt-2">
+                        <p class="font-bold text-md md:text-lg">Manager</p>
+                        <p class="text-sm md:text-md text-gray-700">Clippers & Caffeine</p>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Stamp -->
+            <div class="w-24 h-24 md:w-28 md:h-28 relative">
+                 <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <!-- Outer circle -->
+                    <circle cx="50" cy="50" r="48" stroke="#C0A062" stroke-width="2.5" fill="none"/>
+                    <!-- Inner dotted circle -->
+                    <circle cx="50" cy="50" r="42" stroke="#C0A062" stroke-width="1" fill="none" stroke-dasharray="2,3"/>
+                    <!-- Central Text -->
+                    <text x="50" y="55" font-family="Playfair Display, serif" font-size="20" font-weight="bold" fill="#374151" text-anchor="middle">C&C</text>
+                    <!-- Curved Text Path -->
+                    <path id="curve" d="M10 50 A 40 40, 0, 1, 1, 90 50" fill="none" />
+                    <text width="100" font-size="9" font-family="Montserrat, sans-serif" fill="#374151" font-weight="600" letter-spacing="1">
+                        <textPath xlink:href="#curve" startOffset="50%" text-anchor="middle">
+                            CLIPPERS & CAFFEINE
+                        </textPath>
+                    </text>
+                 </svg>
             </div>
         </div>
     </div>
