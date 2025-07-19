@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Employment - Clippers & Caffeine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500&family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .certificate-title {
+            font-family: 'Playfair Display', serif;
+        }
+        .certificate-container {
+            width: 800px;
+            height: 1120px; /* A4-like aspect ratio */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 10px solid #C0A062; /* Gold border */
+        }
+        .signature {
+             font-family: 'Great Vibes', cursive; /* A nice signature font */
+        }
+        @media print {
+            body, .certificate-container {
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center p-8">
+
+    <div class="certificate-container bg-white p-12 flex flex-col">
+        <!-- Header -->
+        <div class="text-center border-b-2 border-gray-200 pb-6 mb-8">
+            <h1 class="certificate-title text-5xl font-bold text-gray-800">Clippers & Caffeine</h1>
+            <p class="text-sm text-gray-500 mt-2">Bulacao area, Cebu City, 6000 Cebu</p>
+            <p class="text-sm text-gray-500">Phone: +639228652588 | Email: clipperscaffeinex@gmail.com</p>
+        </div>
+
+        <!-- Title -->
+        <div class="text-center my-6">
+            <h2 class="text-4xl font-bold text-[#C0A062]">CERTIFICATE OF EMPLOYMENT</h2>
+        </div>
+
+        <!-- Main Content -->
+        <div class="text-lg text-gray-700 leading-relaxed flex-grow">
+            <p class="mb-6">
+                <span class="font-medium">Date of Issuance:</span> July 19, 2025
+            </p>
+            <p class="mb-8">
+                This is to certify that **Shaojie Du** was employed at Clippers & Caffeine as a **Senior Barber**.
+            </p>
+
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
+                <h3 class="font-semibold text-xl text-gray-800 mb-4">Employment Details:</h3>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><span class="font-semibold">Position:</span> Senior Barber</li>
+                    <li><span class="font-semibold">Employment Period:</span> August 1, 2021 to July 21, 2024</li>
+                    <li><span class="font-semibold">Employment Status:</span> Full-Time</li>
+                </ul>
+            </div>
+
+            <div class="mb-8">
+                <h3 class="font-semibold text-xl text-gray-800 mb-4">Key Responsibilities:</h3>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>Provided a wide range of high-quality haircutting, styling, and grooming services to clients.</li>
+                    <li>Mentored junior barbers, providing training on advanced techniques and customer service standards.</li>
+                    <li>Managed client appointments, maintained a loyal client base, and ensured high levels of customer satisfaction.</li>
+                    <li>Upheld strict standards of hygiene and sanitation for all tools and workstations.</li>
+                </ul>
+            </div>
+
+            <p class="mt-8">
+                This certificate is issued upon the request of Mr. Du for whatever legal and legitimate purpose it may serve.
+            </p>
+        </div>
+
+        <!-- Signature -->
+        <div class="mt-auto pt-8 text-center">
+            <div class="inline-block">
+                <p class="signature text-5xl text-gray-800">Kerwin Rabaya</p>
+                <div class="border-t-2 border-gray-600 pt-2 mt-2">
+                    <p class="font-bold text-lg">Owner</p>
+                    <p class="text-md text-gray-700">Clippers & Caffeine</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
