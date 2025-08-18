@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/build/vanilla-calendar.min.css">
     <style>
         /* ====================================================== */
         /* START: NEW LOGIN UI STYLES                             */
@@ -332,7 +333,7 @@
         cursor: pointer;
         border: none;
         border-radius: 4px;
-        transition: background-color 0.3s ease;
+        transition: background-color: 0.3s ease;
         margin-top: 8px;
         }
         #signOutBtn { background-color: #e74c3c; color: white; } #signOutBtn:hover { background-color: #c0392b; }
@@ -357,7 +358,7 @@
         align-items: center;
         justify-content: flex-start;
         }
-        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
+        .btn { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; transition: background-color: 0.3s ease; margin: 2px; min-width: 60px; text-align: center; vertical-align: middle;}
         .btn-lg { padding: 7px 12px; font-size: 0.9em; }
         .btn-group-toggle { min-width: 25px; padding: 2px 6px; font-size: 0.9em; margin-left: 10px; background-color: #7f8c8d; color:white; }
         .btn-group-toggle:hover { background-color: #95a5a6;}
@@ -373,21 +374,25 @@
         .btn-warning:hover { background-color: #e67e22; }
         .btn-info { background-color: #17a2b8; color: white; }
         .btn-info:hover { background-color: #138496; }
+        .btn-secondary { background-color: #6c757d; color: white; } .btn-secondary:hover { background-color: #5a6268; }
         .btn:disabled { background-color: #bdc3c7 !important; color: #7f8c8d !important; cursor: not-allowed; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 15px; border: 1px solid #888; width: 90%; border-radius: 5px; position: relative; }
+        .modal-content.large { max-width: 800px; } /* For larger modals like chat */
         #projectFormModal .modal-content { max-width: 480px; }
         #tlDashboardModal .modal-content { max-width: 750px; max-height: 85vh; overflow-y: auto;}
         #settingsModal .modal-content { max-width: 700px; max-height: 85vh; overflow-y: auto;} /* MODIFIED: Increased width for new layout */
         #importCsvModal .modal-content { max-width: 500px; } /* Added for Import CSV Modal */
-        .close-button { color: #aaa; float: right; font-size: 24px; font-weight: bold; } .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
-        #newProjectForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
-        #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select, .form-control { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
-        #newProjectForm button[type="submit"] { margin-top: 12px; }
+        #leaveSchedulerModal .modal-content { max-width: 1100px; }
+        #disputeModal .modal-content { max-width: 900px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; } .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; cursor: pointer; }
+        #newProjectForm label, #disputeForm label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.85em;}
+        #newProjectForm input[type="text"], #newProjectForm input[type="number"], #newProjectForm select, .form-control, #disputeForm input, #disputeForm select, #disputeForm textarea { width: calc(100% - 18px); padding: 7px; margin-top: 3px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85em; }
+        #newProjectForm button[type="submit"], #disputeForm button[type="submit"] { margin-top: 12px; }
         .form-group { margin-bottom: 1rem; }
-        #projectTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
-        #projectTable th, #projectTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
-        #projectTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+        #projectTable, #disputeTable { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+        #projectTable th, #projectTable td, #disputeTable th, #disputeTable td { border: 1px solid #ddd; padding: 3px 5px; text-align: left; vertical-align: middle; white-space: nowrap; }
+        #projectTable thead th, #disputeTable thead th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; z-index: 10;}
         #projectTable td.wrap-text { white-space: normal; }
         #projectTable select.assigned-to-select,
         #projectTable select.break-select,
@@ -404,8 +409,7 @@
         #projectTable tbody tr:not(.fix-group-header):not(.batch-header-row):hover { background-color: #d0e0f0 !important; }
         .status { padding: 2px 5px; border-radius: 3px; color: white; font-weight: bold; text-align: center; display: inline-block; font-size:0.95em; }
         .status-available { background-color: #3498db; }
-        .status-inprogressday1, .status-day1ended_awaitingnext, .status-inprogressday2, .status-day2ended_awaitingnext { background-color: #f39c12; }
-        .status-inprogressday3 { background-color: #e9630e; }
+        .status-inprogressday1, .status-day1ended_awaitingnext, .status-inprogressday2, .status-day2ended_awaitingnext, .status-inprogressday3, .status-day3ended_awaitingnext, .status-inprogressday4, .status-day4ended_awaitingnext, .status-inprogressday5, .status-day5ended_awaitingnext, .status-inprogressday6, .status-day6ended_awaitingnext { background-color: #f39c12; }
         .status-completed { background-color: #2ecc71; }
         .status-reassigned_techabsent { background-color: #B0BEC5; color: #263238; }
         #tlDashboardContent { margin-top:15px; }
@@ -481,6 +485,214 @@
         }
         /* === END: NEW STYLES FOR USER MANAGEMENT === */
 
+        /* === START: NEW STYLES FOR TEAM CHAT === */
+        .chat-notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c; /* Red color for notification */
+            border-radius: 50%;
+            border: 2px solid white;
+            display: block; /* Will be toggled by JS */
+        }
+        .chat-messages {
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #f9f9f9;
+        }
+        .chat-message {
+            max-width: 75%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        .chat-message.current-user {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 3px;
+        }
+        .chat-message:not(.current-user) {
+            background-color: #e9ecef;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 3px;
+        }
+        .chat-message.invitation {
+            background-color: #e8f5e9; /* Light green background */
+            border-left: 4px solid #4CAF50; /* Green accent bar */
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            align-self: center;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 0.8em;
+        }
+        .message-user {
+            font-weight: bold;
+        }
+        .message-time {
+            color: #888;
+        }
+        .chat-message.current-user .message-time {
+            color: #e0e0e0;
+        }
+        .message-text {
+            margin: 0;
+            font-size: 0.95em;
+            white-space: pre-wrap; /* To respect newlines in the invitation */
+        }
+        .message-text a {
+            color: #0056b3;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .chat-form {
+            display: flex;
+        }
+        #chatMessageInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .typing-indicator {
+            height: 20px;
+            font-style: italic;
+            color: #888;
+            font-size: 0.9em;
+            padding-left: 5px;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        /* === END: NEW STYLES FOR TEAM CHAT === */
+        
+        /* === START: NEW STYLES FOR LEAVE SCHEDULER === */
+       .leave-scheduler-tabs {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 15px;
+        }
+        .leave-tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 1em;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+        }
+        .leave-tab-button.active {
+            border-bottom: 3px solid #007bff;
+            font-weight: bold;
+        }
+        .leave-tab-content {
+            display: none;
+        }
+        .leave-tab-content.active {
+            display: block;
+        }
+
+        #leaveRequestFormContainer {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        #leaveRequestForm label {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: block;
+        }
+
+        #leaveRequestForm input, #leaveRequestForm select, #leaveRequestForm textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #leaveRequestForm textarea {
+            resize: vertical;
+            height: 80px;
+        }
+        
+         #pendingRequestsContainer {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .pending-request-item {
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .pending-request-item .details {
+            font-size: 0.9em;
+        }
+         .pending-request-item .details p {
+            margin: 2px 0;
+        }
+        .pending-request-item .actions .btn {
+            margin-left: 5px;
+        }
+        #allLeaveRequestsTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+         #allLeaveRequestsTable th, #allLeaveRequestsTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+         #allLeaveRequestsTable th {
+            background-color: #f2f2f2;
+        }
+        .leave-status-pending { color: #f39c12; font-weight: bold; }
+        .leave-status-approved { color: #2ecc71; font-weight: bold; }
+        .leave-status-denied { color: #e74c3c; font-weight: bold; }
+
+        /* === END: NEW STYLES FOR LEAVE SCHEDULER === */
+        /* === START: NEW STYLES FOR DISPUTE STATUS === */
+        .dispute-status-pending {
+            color: #f39c12; /* Orange */
+            font-weight: bold;
+        }
+        .dispute-status-done {
+            color: #2ecc71; /* Green */
+            font-weight: bold;
+        }
+        /* === END: NEW STYLES FOR DISPUTE STATUS === */
+
     </style>
     <link rel="icon" type="image/png" href="icon.png">
 </head>
@@ -492,7 +704,7 @@
             <button id="signInBtn">
                 <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-l3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     <path d="M1 1h22v22H1z" fill="none"/>
@@ -527,13 +739,27 @@
                 <button id="openAddNewProjectBtn" class="btn btn-success btn-lg">➕ Add New Tracker</button>
                 <button id="openTlDashboardBtn" class="btn btn-primary btn-lg">👑 Project Settings</button>
                 <button id="openSettingsBtn" class="btn btn-info btn-lg" style="display:none;">⚙️ User Settings</button>
+                 <button id="openLeaveSchedulerBtn" class="btn btn-info btn-lg" style="position: relative;">
+                    🗓️ Leave Scheduler
+                    <span id="leaveNotificationBadge" class="chat-notification-badge" style="display: none;"></span>
+                </button>
                 <button id="openTlSummaryBtn" class="btn btn-info btn-lg">📝 TL Summary</button>
+                <button id="openTeamChatBtn" class="btn btn-secondary btn-lg" style="position: relative;">
+                    💬 Team Chat
+                    <span id="chatNotificationBadge" class="chat-notification-badge" style="display: none;"></span>
+                </button>
+                <button id="openDisputeBtn" class="btn btn-danger btn-lg" style="position: relative;">
+                    Dispute
+                    <span id="disputeNotificationBadge" class="chat-notification-badge" style="display: none;"></span>
+                </button>
+                <button id="tscLinkBtn" class="btn btn-warning btn-lg" style="display: none;"></button>
                 <button id="exportCsvBtn" class="btn btn-info btn-lg" style="margin-left: 10px;">📊 Export to CSV</button>
                 <button id="openImportCsvBtn" class="btn btn-secondary btn-lg" style="margin-left: 10px;">📥 Import CSV</button> 
+                <a href="https://jvteam123.github.io/qbase" target="_blank" class="btn btn-warning btn-lg" style="text-decoration: none; margin-left: 10px;">Estimate Bunos</a>
             </div>
             <div id="projectFormModal" class="modal">
                 <div class="modal-content">
-                    <span class="close-button" id="closeProjectFormBtn">&times;</span>
+                    <span class="close-btn" id="closeProjectFormBtn">&times;</span>
                     <h2>Add New Tracker</h2>
                     <form id="newProjectForm">
                         <label for="numRows">Number of Area:</label>
@@ -553,15 +779,14 @@
             </div>
             <div id="tlDashboardModal" class="modal">
                 <div class="modal-content">
-                    <span class="close-button" id="closeTlDashboardBtn">&times;</span>
+                    <span class="close-btn" id="closeTlDashboardBtn">&times;</span>
                     <h2>👑 Project Settings</h2>
                     <div id="tlDashboardContent"></div>
                 </div>
             </div>
-            <!-- === START: MODIFIED USER SETTINGS MODAL === -->
             <div id="settingsModal" class="modal">
                 <div class="modal-content">
-                    <span class="close-button" id="closeSettingsBtn">&times;</span>
+                    <span class="close-btn" id="closeSettingsBtn">&times;</span>
                     <div class="user-management-header">
                         <h2>⚙️ User Management</h2>
                         <div>
@@ -600,15 +825,84 @@
                             </tr>
                         </thead>
                         <tbody id="userManagementTableBody">
-                            <!-- User rows will be inserted here by the script -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
-            <!-- === END: MODIFIED USER SETTINGS MODAL === -->
+             <div id="leaveSchedulerModal" class="modal">
+                <div class="modal-content">
+                     <span class="close-btn" id="closeLeaveSchedulerBtn">&times;</span>
+                    <h2>🗓️ Leave Scheduler</h2>
+                    <div class="leave-scheduler-tabs">
+                        <button class="leave-tab-button active" data-tab="calendar">Calendar View</button>
+                        <button class="leave-tab-button" data-tab="request">Request Leave</button>
+                        <button class="leave-tab-button" data-tab="all">All Requests</button>
+                    </div>
+
+                    <div id="tab-calendar" class="leave-tab-content active">
+                        <div id="leaveCalendar"></div>
+                    </div>
+
+                    <div id="tab-request" class="leave-tab-content">
+                        <div id="leaveRequestFormContainer">
+                             <form id="leaveRequestForm">
+                                <h3 id="leaveFormTitle">Submit a New Leave Request</h3>
+                                <input type="hidden" id="editingLeaveId">
+                                <label for="leaveTechId">Tech ID</label>
+                                <select id="leaveTechId" required></select>
+
+                                <label for="leaveStartDate">Start Date</label>
+                                <input type="date" id="leaveStartDate" required>
+
+                                <label for="leaveEndDate">End Date</label>
+                                <input type="date" id="leaveEndDate" required>
+
+                                <label for="leaveType">Leave Type</label>
+                                <select id="leaveType" required>
+                                    <option value="Vacation">Vacation</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Personal">Personal</option>
+                                    <option value="Other">Other</option>
+                                </select>
+
+                                <label for="leaveReason">Reason</label>
+                                <textarea id="leaveReason" rows="3" required></textarea>
+
+                                <div id="leaveFormButtons">
+                                    <button type="submit" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Submit Request</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="tab-all" class="leave-tab-content">
+                        <div id="admin-leave-section" style="display:none;">
+                            <h4>Pending Requests</h4>
+                            <div id="pendingRequestsList" class="table-scroll-wrapper" style="max-height: 200px;"></div>
+                        </div>
+                        <h4>All Leave Requests</h4>
+                        <div class="table-scroll-wrapper" style="max-height: 400px;">
+                            <table id="allLeaveRequestsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tech ID</th>
+                                        <th>Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allLeaveRequestsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="tlSummaryModal" class="modal">
                 <div class="modal-content">
-                    <span class="close-button" id="closeTlSummaryBtn">&times;</span>
+                    <span class="close-btn" id="closeTlSummaryBtn">&times;</span>
                     <div class="summary-header">
                         <h2 class="summary-title">TL Summary</h2>
                     </div>
@@ -619,7 +913,7 @@
             </div>
             <div id="importCsvModal" class="modal">
                 <div class="modal-content">
-                    <span class="close-button" id="closeImportCsvBtn">&times;</span>
+                    <span class="close-btn" id="closeImportCsvBtn">&times;</span>
                     <h2>📥 Import Projects from CSV</h2>
                     <p>Upload a CSV file. The file should have headers matching the export format.</p>
                     <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 15px;">
@@ -627,6 +921,132 @@
                     <div id="csvImportStatus" style="margin-top: 10px; font-size: 0.9em; color: #555;"></div>
                 </div>
             </div>
+            <div id="disputeModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-btn" id="closeDisputeBtn">&times;</span>
+                    <h2>File a Dispute</h2>
+                    <form id="disputeForm">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <label for="disputeBlockId">Block ID:</label>
+                                <input type="text" id="disputeBlockId" required>
+
+                                <label for="disputeProjectName">Project Name:</label>
+                                <select id="disputeProjectName" required></select>
+
+                                <label for="disputePartial">Partial:</label>
+                                <select id="disputePartial" required>
+                                    <option value="">Select Partial</option>
+                                    <option value="Partial 1">Partial 1</option>
+                                    <option value="Partial 2">Partial 2</option>
+                                    <option value="Partial 3">Partial 3</option>
+                                    <option value="Partial 4">Partial 4</option>
+                                    <option value="Partial 5">Partial 5</option>
+                                    <option value="Partial 6">Partial 6</option>
+                                    <option value="Partial 7">Partial 7</option>
+                                    <option value="Partial 8">Partial 8</option>
+                                    <option value="Partial 9">Partial 9</option>
+                                    <option value="Partial 10">Partial 10</option>
+                                </select>
+
+                                <label for="disputePhase">Phase:</label>
+                                <select id="disputePhase" required>
+                                    <option value="">Select Phase</option>
+                                    <option value="Fix2">Fix2</option>
+                                    <option value="Fix3">Fix3</option>
+                                    <option value="Fix4">Fix4</option>
+                                    <option value="Fix5">Fix5</option>
+                                </select>
+
+                                <label for="disputeUid">UID (Initial FP's UID):</label>
+                                <input type="text" id="disputeUid" required>
+                            </div>
+                            <div>
+                                <label for="disputeTechId">Tech ID:</label>
+                                <select id="disputeTechId" required></select>
+
+                                <label for="disputeTechName">Tech Name:</label>
+                                <input type="text" id="disputeTechName" readonly>
+
+                                <label for="disputeTeam">Team:</label>
+                                <select id="disputeTeam" required>
+                                    <option value="">Select Team</option>
+                                    <option value="Team 123">Team 123</option>
+                                    <option value="Team 114">Team 114</option>
+                                    <option value="Team 64">Team 64</option>
+                                </select>
+
+                                <label for="disputeType">Type:</label>
+                                <select id="disputeType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Incorrect">Incorrect</option>
+                                    <option value="Skip">Skip</option>
+                                    <option value="Change">Change</option>
+                                </select>
+
+                                <label for="disputeCategory">Category:</label>
+                                <select id="disputeCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <label for="disputeWarning">Warning:</label>
+                        <select id="disputeWarning" name="warning">
+                            <option value="N/A" selected>N/A</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                        </select>
+
+                        <label for="disputeRqaTechId">RQA TechID:</label>
+                        <input type="text" id="disputeRqaTechId">
+
+                        <label for="disputeReason">Detailed Reason for Dispute:</label>
+                        <textarea id="disputeReason" rows="4" required></textarea>
+
+                        <button type="submit" class="btn btn-success">Save Dispute</button>
+                    </form>
+                    <hr>
+                    <h3>Disputes List</h3>
+                    <div class="table-scroll-wrapper">
+                        <table id="disputeTable">
+                            <thead>
+                                <tr>
+                                    <th>Block ID</th>
+                                    <th>Project Name</th>
+                                    <th>Phase</th>
+                                    <th>Tech ID</th>
+                                    <th>Team</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="disputeTableBody"></tbody>
+                        </table>
+                        <div id="disputePaginationControls" style="text-align: center; padding: 15px;">
+                            <button id="prevDisputePageBtn" class="btn">« Previous</button>
+                            <span id="disputePageInfo" style="margin: 0 15px; font-weight: bold;"></span>
+                            <button id="nextDisputePageBtn" class="btn">Next »</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <h3>Project Overview</h3>
             <div class="group-selector-controls">
                 <label for="monthFilter">Month:</label>
@@ -659,6 +1079,18 @@
                     <input type="checkbox" id="toggleDay3Checkbox" checked>
                     <label for="toggleDay3Checkbox">Show Day 3</label>
                 </div>
+                <div>
+                    <input type="checkbox" id="toggleDay4Checkbox">
+                    <label for="toggleDay4Checkbox">Show Day 4</label>
+                </div>
+                 <div>
+                    <input type="checkbox" id="toggleDay5Checkbox">
+                    <label for="toggleDay5Checkbox">Show Day 5</label>
+                </div>
+                 <div>
+                    <input type="checkbox" id="toggleDay6Checkbox">
+                    <label for="toggleDay6Checkbox">Show Day 6</label>
+                </div>
             </div>
             <div class="table-scroll-wrapper">
                 <table id="projectTable">
@@ -679,6 +1111,15 @@
                             <th class="column-day3">Day 3 Start</th>
                             <th class="column-day3">Day 3 Finish</th>
                             <th class="column-day3">Day 3 Break</th>
+                            <th class="column-day4">Day 4 Start</th>
+                            <th class="column-day4">Day 4 Finish</th>
+                            <th class="column-day4">Day 4 Break</th>
+                            <th class="column-day5">Day 5 Start</th>
+                            <th class="column-day5">Day 5 Finish</th>
+                            <th class="column-day5">Day 5 Break</th>
+                            <th class="column-day6">Day 6 Start</th>
+                            <th class="column-day6">Day 6 Finish</th>
+                            <th class="column-day6">Day 6 Break</th>
                             <th>Progress</th>
                             <th>Total (min)</th>
                             <th>Tech Notes</th>
@@ -702,6 +1143,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/build/vanilla-calendar.min.js"></script>
+    <script src="scriptv3.js"></script>
 </body>
 </html>
