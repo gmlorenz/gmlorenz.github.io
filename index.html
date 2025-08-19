@@ -776,8 +776,6 @@
                     <div class="input-field col s6">
                         <select id="modal-size">
                             <option value="3in">3IN</option>
-                            <option value="4in">4IN</option>
-                            <option value="6in">6IN</option>
                             <option value="9in">9IN</option>
                         </select>
                         <label for="modal-size">Project Size</label>
@@ -868,15 +866,9 @@
         const HARDCODED_PROJECTS_JSON_URL = 'https://raw.githubusercontent.com/serhgs/project_data.json/refs/heads/main/update.json';
         const HARDCODED_TL_CODE_URL = 'https://raw.githubusercontent.com/gmlorenz/gmlorenz.github.io/refs/heads/main/auth.json';
         const PRICES = [
-            { "3in": 2.19, "4in": 2.19, "6in": 2.19, "9in": 0.99 },
-            { "3in": 5.86, "4in": 5.86, "6in": 5.86, "9in": 2.07 },
-            { "3in": 7.44, "4in": 7.44, "6in": 7.44, "9in": 2.78 },
-            { "3in": 2.29, "4in": 2.29, "6in": 2.29, "9in": 1.57 },
-            { "3in": 1.55, "4in": 1.55, "6in": 1.55, "9in": 0.6 },
-            { "3in": 1.84, "4in": 1.84, "6in": 1.84, "9in": 0.78 },
-            { "3in": 1.00, "4in": 1.00, "6in": 1.00, "9in": 1.00 },
-            { "3in": 3.74, "4in": 3.74, "6in": 3.74, "9in": 3.74 },
-            { "3in": 1.73, "4in": 1.73, "6in": 1.73, "9in": 1.73 }
+            { "3in": 2.19, "9in": 0.99 }, { "3in": 5.86, "9in": 2.08 }, { "3in": 7.44, "9in": 2.78 },
+            { "3in": 2.29, "9in": 1.57 }, { "3in": 1.55, "9in": 0.60 }, { "3in": 1.84, "9in": 0.78 },
+            { "3in": 1.00, "9in": 1.00 }, { "3in": 3.74, "9in": 3.74 }, { "3in": 1.73, "9in": 1.73 }
         ];
 
         // --- DOM Elements ---
@@ -1052,101 +1044,38 @@
         }
 
         function getBonusPercentage(qualityPercentage) {
-            if (qualityPercentage >= 100) return 120;
-            if (qualityPercentage >= 99.5) return 118;
-            if (qualityPercentage >= 99) return 116;
-            if (qualityPercentage >= 98.5) return 114;
-            if (qualityPercentage >= 98) return 112;
-            if (qualityPercentage >= 97.5) return 110;
-            if (qualityPercentage >= 97) return 108;
-            if (qualityPercentage >= 96.5) return 106;
-            if (qualityPercentage >= 96) return 104;
-            if (qualityPercentage >= 95.5) return 102;
-            if (qualityPercentage >= 95) return 100;
-            if (qualityPercentage >= 94.5) return 99;
-            if (qualityPercentage >= 94) return 98;
-            if (qualityPercentage >= 93.5) return 97;
-            if (qualityPercentage >= 93) return 96;
-            if (qualityPercentage >= 92.5) return 95;
-            if (qualityPercentage >= 92) return 94;
-            if (qualityPercentage >= 91.5) return 93;
-            if (qualityPercentage >= 91) return 91;
-            if (qualityPercentage >= 90.5) return 90;
-            if (qualityPercentage >= 90) return 88;
-            if (qualityPercentage >= 89.5) return 87;
-            if (qualityPercentage >= 89) return 85;
-            if (qualityPercentage >= 88.5) return 83;
-            if (qualityPercentage >= 88) return 80;
-            if (qualityPercentage >= 87.5) return 78;
-            if (qualityPercentage >= 87) return 75;
-            if (qualityPercentage >= 86.5) return 73;
-            if (qualityPercentage >= 86) return 70;
-            if (qualityPercentage >= 85.5) return 68;
-            if (qualityPercentage >= 85) return 66;
-            if (qualityPercentage >= 84.5) return 64;
-            if (qualityPercentage >= 84) return 62;
-            if (qualityPercentage >= 83.5) return 60;
-            if (qualityPercentage >= 83) return 57;
-            if (qualityPercentage >= 82.5) return 55;
-            if (qualityPercentage >= 82) return 50;
-            if (qualityPercentage >= 81.5) return 45;
-            if (qualityPercentage >= 81) return 40;
-            if (qualityPercentage >= 80.5) return 35;
-            if (qualityPercentage >= 80) return 30;
-            if (qualityPercentage >= 79.5) return 25;
-            if (qualityPercentage >= 79) return 20;
-            if (qualityPercentage >= 78.5) return 15;
-            if (qualityPercentage >= 78) return 10;
-            if (qualityPercentage >= 77.5) return 5;
+            if (qualityPercentage < 77.50) return 0; if (qualityPercentage >= 100.00) return 120;
+            const bonusTiers = [
+                { quality: 77.50, bonus: 5 }, { quality: 78.00, bonus: 10 }, { quality: 78.50, bonus: 15 }, { quality: 79.00, bonus: 20 },
+                { quality: 79.50, bonus: 25 }, { quality: 80.00, bonus: 30 }, { quality: 80.50, bonus: 35 }, { quality: 81.00, bonus: 40 },
+                { quality: 81.50, bonus: 45 }, { quality: 82.00, bonus: 50 }, { quality: 82.50, bonus: 55 }, { quality: 83.00, bonus: 57 },
+                { quality: 83.50, bonus: 60 }, { quality: 84.00, bonus: 62 }, { quality: 84.50, bonus: 64 }, { quality: 85.00, bonus: 66 },
+                { quality: 85.50, bonus: 68 }, { quality: 86.00, bonus: 70 }, { quality: 86.50, bonus: 73 }, { quality: 87.00, bonus: 75 },
+                { quality: 87.50, bonus: 78 }, { quality: 88.00, bonus: 80 }, { quality: 88.50, bonus: 83 }, { quality: 89.00, bonus: 85 },
+                { quality: 89.50, bonus: 87 }, { quality: 90.00, bonus: 88 }, { quality: 90.50, bonus: 90 }, { quality: 91.00, bonus: 91 },
+                { quality: 91.50, bonus: 93 }, { quality: 92.00, bonus: 94 }, { quality: 92.50, bonus: 95 }, { quality: 93.00, bonus: 96 },
+                { quality: 93.50, bonus: 97 }, { quality: 94.00, bonus: 98 }, { quality: 94.50, bonus: 99 }, { quality: 95.00, bonus: 100 },
+                { quality: 95.50, bonus: 102 }, { quality: 96.00, bonus: 104 }, { quality: 96.50, bonus: 106 }, { quality: 97.00, bonus: 108 },
+                { quality: 97.50, bonus: 110 }, { quality: 98.00, bonus: 112 }, { quality: 98.50, bonus: 114 }, { quality: 99.00, bonus: 116 },
+                { quality: 99.50, bonus: 118 }
+            ];
+            for (let i = bonusTiers.length - 1; i >= 0; i--) if (qualityPercentage >= bonusTiers[i].quality) return bonusTiers[i].bonus;
             return 0;
         }
 
         function calculateRowDetails(fields, headers, size, ir) {
-            const idxMap = { 
-                cat: headers.indexOf("CATEGORY"), 
-                i3qa: headers.indexOf("I3QA_CAT"), 
-                rv1: headers.indexOf("RV1_CAT"), 
-                afp1: headers.indexOf("AFP1_CAT"), 
-                afp2: headers.indexOf("AFP2_CAT"), 
-                rv2: headers.indexOf("RV2_CAT") ,
-                initialTagging: headers.indexOf("INITIAL_TAGGING"),
-            };
-
+            const idxMap = { cat: headers.indexOf("CATEGORY"), i3qa: headers.indexOf("I3QA_CAT"), rv1: headers.indexOf("RV1_CAT"), afp1: headers.indexOf("AFP1_CAT"), afp2: headers.indexOf("AFP2_CAT"), rv2: headers.indexOf("RV2_CAT") };
             let pts = 0, counts = Array(9).fill(0), catPts = Array(9).fill(0);
-            
             [idxMap.cat, idxMap.i3qa, idxMap.rv1, idxMap.afp1, idxMap.afp2, idxMap.rv2].forEach(idx => {
                 if (idx !== -1 && fields[idx] && fields[idx].trim() !== "") {
                     const val = parseInt(fields[idx].trim());
                     if (!isNaN(val) && val >= 1 && val <= 9) {
                         const pObj = PRICES[val - 1];
-                        if (pObj && pObj[size] !== undefined) { 
-                            let cPts = pObj[size]; 
-                            if (ir) cPts += 1.5; 
-                            pts += cPts; 
-                            counts[val-1]++; 
-                            catPts[val-1] += cPts; 
-                        }
+                        if (pObj && pObj[size] !== undefined) { let cPts = pObj[size]; if (ir) cPts += 1.5; pts += cPts; counts[val-1]++; catPts[val-1] += cPts; }
                         else console.warn(`Price for cat ${val}, size ${size} missing.`);
                     }
                 }
             });
-
-            if (idxMap.initialTagging !== -1 && fields[idxMap.initialTagging] && fields[idxMap.initialTagging].trim() !== "") {
-                pts += 1/8;
-            }
-
-            if (idxMap.i3qa !== -1 && fields[idxMap.i3qa] && fields[idxMap.i3qa].trim() !== "") {
-                pts += 1/12;
-            }
-
-            if (idxMap.rv1 !== -1 && fields[idxMap.rv1] && fields[idxMap.rv1].trim() !== "") {
-                pts += ir ? 1/4 : 1/5;
-            }
-
-            if (idxMap.rv2 !== -1 && fields[idxMap.rv2] && fields[idxMap.rv2].trim() !== "") {
-                pts += 1/2;
-            }
-
             return { rowPoints: pts, categoryCounts: counts, categoryPoints: catPts };
         }
 
@@ -1155,29 +1084,11 @@
             if (allRows.length === 0) return null;
             const headerRow = allRows.shift(); if (!headerRow) return null;
             const headers = headerRow.split(/[\t,]/).map(h => h.trim().toUpperCase());
-            const idx = { 
-                fixId: headers.indexOf("FIX1_ID"), 
-                afp1stat: headers.indexOf("AFP1_STAT"), 
-                rv1lbl: headers.indexOf("RV1_LABEL"), 
-                i3qalbl: headers.indexOf("I3QA_LABEL"), 
-                rv2lbl: headers.indexOf("RV2_LABEL"), 
-                cat: headers.indexOf("CATEGORY"), 
-                i3qa: headers.indexOf("I3QA_CAT"), 
-                rv1cat: headers.indexOf("RV1_CAT"), 
-                afp1cat: headers.indexOf("AFP1_CAT"), 
-                afp2cat: headers.indexOf("AFP2_CAT"), 
-                rv2cat: headers.indexOf("RV2_CAT"),
-                refix: headers.indexOf("REFIX"),
-                warnings: headers.indexOf("WARNINGS"),
-            };
-
+            const idx = { fixId: headers.indexOf("FIX1_ID"), afp1stat: headers.indexOf("AFP1_STAT"), rv1lbl: headers.indexOf("RV1_LABEL"), i3qalbl: headers.indexOf("I3QA_LABEL"), rv2lbl: headers.indexOf("RV2_LABEL"), cat: headers.indexOf("CATEGORY"), i3qa: headers.indexOf("I3QA_CAT"), rv1cat: headers.indexOf("RV1_CAT"), afp1cat: headers.indexOf("AFP1_CAT"), afp2cat: headers.indexOf("AFP2_CAT"), rv2cat: headers.indexOf("RV2_CAT") };
             if (idx.fixId === -1) { console.error("FIX1_ID missing"); return null; }
 
             let tp=0, afp=0, efp=0, mfp=0, ic=0, ipv=0, cp=Array(9).fill(0), cc=Array(9).fill(0);
             let hasIncorrectWithEmptyCat = false;
-            let refixTasks = 0;
-            let warnings = 0;
-            let fixTasks = 0;
 
             const matchedRows = allRows.filter(row => row.split(/[\t,]/)[idx.fixId]?.trim().toUpperCase() === techIDValue);
 
@@ -1190,15 +1101,6 @@
                 if (idx.i3qalbl !== -1 && f[idx.i3qalbl]?.toUpperCase().includes("M")) mfp++;
                 if (idx.rv2lbl !== -1 && f[idx.rv2lbl]) { const l = f[idx.rv2lbl].toUpperCase(); if (l.includes("E")) efp++; if (l.includes("M")) mfp++; if (l.includes("I")) ic++; }
                 if (idx.afp1stat !== -1 && f[idx.afp1stat]?.toUpperCase() === "AA") afp++;
-                if (idx.refix !== -1 && f[idx.refix] && f[idx.refix].trim() !== "") {
-                    refixTasks++;
-                }
-                if (idx.warnings !== -1 && f[idx.warnings] && f[idx.warnings].trim() !== "") {
-                    warnings++;
-                }
-                if (idx.cat !== -1 && f[idx.cat] && f[idx.cat].trim() !== "") {
-                    fixTasks++;
-                }
 
                 const rd = calculateRowDetails(f, headers, size, ir); tp += rd.rowPoints;
                 rd.categoryCounts.forEach((c,i) => cc[i]+=c); rd.categoryPoints.forEach((p,i) => cp[i]+=p);
@@ -1206,16 +1108,8 @@
                 if (idx.rv1lbl !== -1 && f[idx.rv1lbl]?.toUpperCase().includes("I")) { if (idx.rv1cat !== -1 && f[idx.rv1cat] !== undefined && f[idx.rv1cat] !== "") { const v=parseInt(f[idx.rv1cat]); if(!isNaN(v)&&v>=1&&v<=9){ const p=PRICES[v-1]?.[size]; if(p!==undefined){let pts=p;if(ir)pts+=1.5;ipv+=pts;}}}}
                 if (idx.rv2lbl !== -1 && f[idx.rv2lbl]?.toUpperCase().includes("I")) { if (idx.rv2cat !== -1 && f[idx.rv2cat] !== undefined && f[idx.rv2cat] !== "") { const v=parseInt(f[idx.rv2cat]); if(!isNaN(v)&&v>=1&&v<=9){ const p=PRICES[v-1]?.[size]; if(p!==undefined){let pts=p;if(ir)pts+=1.5;ipv+=pts;}}}}
             });
-            const correctPts = tp - ipv;
-            const fixQualityPercentage = (fixTasks / (fixTasks + refixTasks + warnings)) * 100;
-            const bonusPercentage = getBonusPercentage(fixQualityPercentage);
-            const qb = tp * (bonusPercentage/100);
-            let es = tp + qb;
-            if (es < 9.5) {
-                es = 9.5;
-            }
-
-            return { techID:techIDValue, totalPoints:tp, additionalFixPoints:afp, excessiveFixPoints:efp, missFixPoints:mfp, incorrectCounting:ic, incorrectPointsValue:ipv, qualityPercentage:fixQualityPercentage, bonusPercentage:bonusPercentage, qualityBonus:qb, estimatedSalary:es, categoryPoints:cp, categoryCounts:cc, hasIncorrectWithEmptyCat, _foundRowsCount: matchedRows.length };
+            const correctPts = tp - ipv, qp = (tp > 0) ? (correctPts / tp) * 100 : 0, bp = getBonusPercentage(qp), qb = tp * (bp/100), es = tp + qb;
+            return { techID:techIDValue, totalPoints:tp, additionalFixPoints:afp, excessiveFixPoints:efp, missFixPoints:mfp, incorrectCounting:ic, incorrectPointsValue:ipv, qualityPercentage:qp, bonusPercentage:bp, qualityBonus:qb, estimatedSalary:es, categoryPoints:cp, categoryCounts:cc, hasIncorrectWithEmptyCat, _foundRowsCount: matchedRows.length };
         }
 
         // --- Main Functions ---
@@ -1857,7 +1751,7 @@
         function exportToCsv(filename, dataToExport) {
             if(!dataToExport||(Array.isArray(dataToExport)&&dataToExport.length===0)||(typeof dataToExport==='object'&&Object.keys(dataToExport).length===0&&dataToExport.constructor===Object)){showToast('No data to export.','red');return}
             let csv="data:text/csv;charset=utf-8,",hdrs=[],isArr=Array.isArray(dataToExport);
-            if(isArr){const s=dataToExport[0]||{};hdrs=['ID','CAT1 Pts','CAT2 Pts','CAT3 Pts','CAT4 Pts','CAT5 Pts','CAT6 Pts','CAT7 Pts','CAT8 Pts','CAT9 Pts','CAT1 Ct','CAT2 Ct','CAT3 Ct','CAT4 Ct','CAT5 Ct','CAT6 Ct','CAT7 Ct','CAT8 Ct','CAT9 Ct','Add.FP','Exc.FP','Miss.FP','Inc.Ct','Inc.PtsVal',s.hasOwnProperty('baseTotalPoints')?'BasePts':'TotalPts','Qual%','Bonus%','QualBonus','Salary'];}else hdrs=['Metric','Value','Count/N/A'];
+            if(isArr){const s=dataToExport[0]||{};hdrs=['ID','CAT1 Pts','CAT2 Pts','CAT3 Pts','CAT4 Pts','CAT5 Pts','CAT6 Pts','CAT7 Pts','CAT8 Pts','CAT9 Pts','CAT1 Ct','CAT2 Ct','CAT3 Ct','CAT4 Ct','CAT5 Ct','CAT6 Ct','CAT7 Ct','CAT8 Ct','CAT9 Ct','Add.FP','Exc.FP','Miss.FP','Inc.Ct','Inc.PtsVal',s.hasOwnProperty('baseTotalPoints')?'BasePts':'TotalPts','Qual%','Bonus%',s.hasOwnProperty('baseTotalPoints')?'Bonus(Base)':'Bonus',s.hasOwnProperty('baseTotalPoints')?'Salary(w/M)':'Salary']}else hdrs=['Metric','Value','Count/N/A'];
             csv+=hdrs.join(",")+"\n";
             if(isArr){const isAgg=dataToExport[0]?.hasOwnProperty('baseTotalPoints');dataToExport.forEach(it=>{let r=[it.techID,...it.categoryPoints.map(p=>p.toFixed(2)),...it.categoryCounts,it.additionalFixPoints,it.excessiveFixPoints,it.missFixPoints,it.incorrectCounting,it.incorrectPointsValue.toFixed(2),isAgg?it.baseTotalPoints.toFixed(2):it.totalPoints.toFixed(2),it.qualityPercentage.toFixed(2)+'%',it.bonusPercentage.toFixed(2)+'%',it.qualityBonus.toFixed(2),it.estimatedSalary.toFixed(2)];csv+=r.join(",")+"\n"})}else{const it=dataToExport;it.categoryPoints.forEach((t,i)=>csv+=`"CAT ${i+1}",${t.toFixed(2)},${it.categoryCounts[i]}\n`);csv+=`"Add.FP",N/A,${it.additionalFixPoints}\n`;csv+=`"Exc.FP",N/A,${it.excessiveFixPoints}\n`;csv+=`"Miss.FP",N/A,${it.missFixPoints}\n`;csv+=`"Inc.Ct",N/A,${it.incorrectCounting}\n`;csv+=`"Inc.PtsVal",${it.incorrectPointsValue.toFixed(2)},N/A\n`;csv+=`"TotalPts",${it.totalPoints.toFixed(2)},N/A\n`;csv+=`"Qual%",${it.qualityPercentage.toFixed(2)}%,N/A\n`;csv+=`"Bonus%",${it.bonusPercentage.toFixed(2)}%,N/A\n`;csv+=`"Bonus",${it.qualityBonus.toFixed(2)},N/A\n`;csv+=`"Salary",${it.estimatedSalary.toFixed(2)},N/A\n`}
             const enc=encodeURI(csv),lnk=document.createElement("a");lnk.setAttribute("href",enc);lnk.setAttribute("download",filename);document.body.appendChild(lnk);lnk.click();document.body.removeChild(lnk);showToast('CSV exported!','green');
